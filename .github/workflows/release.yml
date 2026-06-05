@@ -19,6 +19,12 @@ jobs:
     - name: Setup MSVC & CMake
       uses: ilammy/msvc-dev-cmd@v1
 
+    - name: Download Official DXC (for SPIR-V support)
+      run: |
+        Invoke-WebRequest -Uri https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.7.2308/dxc_2023_08_14.zip -OutFile dxc.zip
+        Expand-Archive dxc.zip -DestinationPath dxc
+        echo "$PWD/dxc/bin/x64" >> $env:GITHUB_PATH
+
     - name: Configure CMake
       run: cmake -B build -S . -A x64
 
