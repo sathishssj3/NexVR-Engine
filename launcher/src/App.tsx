@@ -58,6 +58,7 @@ export default function App() {
   const [logLines, setLogLines] = useState<string[]>([]);
   const [injectState, setInjectState] = useState<'default' | 'injecting' | 'success' | 'running' | 'error' | 'cancelled'>('default');
   const [currentTab, setCurrentTab] = useState<'library' | 'about'>('library');
+  const [transitioning, setTransitioning] = useState(false);
   const injectTokenRef = useRef<number>(0);
 
   const scanGames = async () => {
@@ -84,6 +85,15 @@ export default function App() {
       setConfig(null);
     }
   }, [selectedGame]);
+
+  const handleSelectGame = (g: GameEntry) => {
+    if (g.id === selectedGame?.id) return;
+    setTransitioning(true);
+    setTimeout(() => {
+      setSelectedGame(g);
+      setTransitioning(false);
+    }, 150);
+  };
 
   const handleConfigChange = async (newConfig: Partial<VRConfig>) => {
     if (!selectedGame) return;
@@ -132,7 +142,6 @@ export default function App() {
 
     const res = await window.ag.inject.deploy(selectedGame.id);
     
-    // If the user cancelled while deploy was running, ignore the result
     if (injectTokenRef.current !== token) return;
     
     window.ag.log.offLine();
@@ -142,10 +151,8 @@ export default function App() {
         if (injectTokenRef.current !== token) return;
         setInjectState('running');
         
-        // Wait for the game to close
         await window.ag.inject.monitor(res.pid);
         
-        // When game closes, revert to default only if still active
         if (injectTokenRef.current === token) {
           setInjectState('default');
         }
@@ -165,36 +172,73 @@ export default function App() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', zIndex: 1 }}>
-      <div className="glass-panel" style={{ height: 48, WebkitAppRegion: 'drag', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 0 0 24px', borderBottom: '1px solid var(--ag-border)', borderTop: 'none', borderLeft: 'none', borderRight: 'none', zIndex: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.3), inset 0 -1px 1px rgba(255,255,255,0.03)' } as any}>
+      {/* Title Bar */}
+      <div className="glass-panel" style={{ 
+        height: 46, WebkitAppRegion: 'drag', display: 'flex', alignItems: 'center', 
+        justifyContent: 'space-between', padding: '0 0 0 22px', 
+        borderBottom: '1px solid var(--ag-border)', 
+        borderTop: 'none', borderLeft: 'none', borderRight: 'none', zIndex: 10, 
+        boxShadow: '0 4px 20px rgba(0,0,0,0.3), inset 0 -1px 1px rgba(255,255,255,0.03)' 
+      } as any}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <strong style={{ color: '#fff', letterSpacing: '2.5px', textShadow: '0 0 10px rgba(255,255,255,0.3)' }}>NEXVR ENGINE</strong>
-          <span style={{ marginLeft: 12, marginRight: 24, color: 'var(--ag-accent)', fontSize: 11, fontFamily: 'var(--ag-font-mono)', letterSpacing: '1px', textShadow: '0 0 8px rgba(0,240,255,0.4)' }}>v0.1.0 // SYS.CORE</span>
-          <div style={{ display: 'flex', gap: 15, WebkitAppRegion: 'no-drag' } as any}>
-             <button onClick={() => setCurrentTab('library')} style={{ background: 'transparent', border: 'none', color: currentTab === 'library' ? '#fff' : 'var(--ag-text-muted)', fontFamily: 'var(--ag-font-mono)', fontSize: 12, letterSpacing: '1px', cursor: 'pointer', textShadow: currentTab === 'library' ? '0 0 8px rgba(255,255,255,0.5)' : 'none', padding: 0, outline: 'none' }}>LIBRARY</button>
-             <button onClick={() => setCurrentTab('about')} style={{ background: 'transparent', border: 'none', color: currentTab === 'about' ? '#fff' : 'var(--ag-text-muted)', fontFamily: 'var(--ag-font-mono)', fontSize: 12, letterSpacing: '1px', cursor: 'pointer', textShadow: currentTab === 'about' ? '0 0 8px rgba(255,255,255,0.5)' : 'none', padding: 0, outline: 'none' }}>ABOUT</button>
+          <strong style={{ 
+            color: '#fff', letterSpacing: '3px', fontSize: 13,
+            fontFamily: 'var(--ag-font-display)',
+            textShadow: '0 0 10px rgba(255,255,255,0.2)' 
+          }}>
+            NEXVR
+          </strong>
+          <span style={{ 
+            marginLeft: 10, marginRight: 24, color: 'var(--ag-accent)', fontSize: 10, 
+            fontFamily: 'var(--ag-font-mono)', letterSpacing: '1px', 
+            textShadow: '0 0 8px rgba(0,240,255,0.4)', opacity: 0.7 
+          }}>
+            v0.1.0
+          </span>
+          <div style={{ display: 'flex', gap: 2, WebkitAppRegion: 'no-drag' } as any}>
+             {(['library', 'about'] as const).map(tab => (
+               <button 
+                 key={tab}
+                 onClick={() => setCurrentTab(tab)} 
+                 style={{ 
+                   background: currentTab === tab ? 'rgba(0,240,255,0.08)' : 'transparent', 
+                   border: 'none', 
+                   borderBottom: currentTab === tab ? '2px solid var(--ag-accent)' : '2px solid transparent',
+                   color: currentTab === tab ? '#fff' : 'var(--ag-text-muted)', 
+                   fontFamily: 'var(--ag-font-mono)', fontSize: 11, letterSpacing: '1.5px', 
+                   cursor: 'pointer', 
+                   textShadow: currentTab === tab ? '0 0 8px rgba(255,255,255,0.4)' : 'none', 
+                   padding: '0 14px', outline: 'none', height: 46,
+                   transition: 'all 0.3s var(--ag-transition)'
+                 }}
+               >
+                 {tab.toUpperCase()}
+               </button>
+             ))}
           </div>
         </div>
         
+        {/* Window Controls */}
         <div style={{ display: 'flex', height: '100%', WebkitAppRegion: 'no-drag' } as any}>
           <button 
             onClick={() => window.ag.window.minimize()}
-            style={{ width: 46, height: '100%', background: 'transparent', border: 'none', color: 'var(--ag-text-muted)', cursor: 'pointer', transition: 'background 0.2s', fontSize: 16, outline: 'none' }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            style={{ width: 44, height: '100%', background: 'transparent', border: 'none', color: 'var(--ag-text-muted)', cursor: 'pointer', transition: 'all 0.2s', fontSize: 14, outline: 'none' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ag-text-muted)'; }}
           >
             &#x2014;
           </button>
           <button 
             onClick={() => window.ag.window.maximize()}
-            style={{ width: 46, height: '100%', background: 'transparent', border: 'none', color: 'var(--ag-text-muted)', cursor: 'pointer', transition: 'background 0.2s', fontSize: 16, outline: 'none' }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            style={{ width: 44, height: '100%', background: 'transparent', border: 'none', color: 'var(--ag-text-muted)', cursor: 'pointer', transition: 'all 0.2s', fontSize: 14, outline: 'none' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ag-text-muted)'; }}
           >
             &#x25A1;
           </button>
           <button 
             onClick={() => window.ag.window.close()}
-            style={{ width: 46, height: '100%', background: 'transparent', border: 'none', color: 'var(--ag-text-muted)', cursor: 'pointer', transition: 'all 0.2s', fontSize: 16, outline: 'none' }}
+            style={{ width: 44, height: '100%', background: 'transparent', border: 'none', color: 'var(--ag-text-muted)', cursor: 'pointer', transition: 'all 0.2s', fontSize: 14, outline: 'none' }}
             onMouseEnter={e => { e.currentTarget.style.background = '#e24b4a'; e.currentTarget.style.color = '#fff'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ag-text-muted)'; }}
           >
@@ -203,6 +247,7 @@ export default function App() {
         </div>
       </div>
       
+      {/* Main Content */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {currentTab === 'library' ? (
           <>
@@ -210,15 +255,21 @@ export default function App() {
               games={games} 
               waitingGames={waitingGames}
               selectedId={selectedGame?.id} 
-              onSelect={(g: GameEntry) => setSelectedGame(g)} 
+              onSelect={handleSelectGame} 
               onRescan={scanGames} 
               onRestore={async (id: string) => { await window.ag.library.restoreGame(id); scanGames(); }}
               onIgnore={async (id: string) => { await window.ag.library.ignoreGame(id); scanGames(); }}
               onRestoreIgnored={async () => { await window.ag.library.restoreIgnoredGames(); scanGames(); }}
             />
-            <div style={{ flex: 1, padding: '30px 40px', overflowY: 'auto', overflowX: 'hidden' }}>
+            <div style={{ 
+              flex: 1, padding: '28px 36px', overflowY: 'auto', overflowX: 'hidden',
+              opacity: transitioning ? 0 : 1,
+              transform: transitioning ? 'translateY(8px)' : 'translateY(0)',
+              transition: 'opacity 0.15s ease, transform 0.15s ease'
+            }}>
               {selectedGame && config ? (
                 <GameDetail 
+                  key={selectedGame.id}
                   game={selectedGame} 
                   config={config} 
                   onConfigChange={handleConfigChange}
@@ -226,8 +277,10 @@ export default function App() {
                   onRemoveGame={handleRemoveGame}
                 />
               ) : (
-                <div style={{ color: 'var(--ag-text-muted)', display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--ag-font-mono)', letterSpacing: '1px', opacity: 0.5 }}>
-                  &gt; AWAITING SELECTION...
+                <div className="empty-state">
+                  <div className="icon">⬡</div>
+                  <div className="text">&gt; AWAITING SELECTION...</div>
+                  <div className="hint">Select a game from the sidebar to configure VR settings</div>
                 </div>
               )}
             </div>
