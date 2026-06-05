@@ -1,22 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Orbitron:wght@400;500;600;700&display=swap');
+
 :root {
   --ag-bg-base:       #030508;
   --ag-bg-surface:    rgba(10, 13, 19, 0.65);
   --ag-bg-card:       rgba(16, 21, 30, 0.55);
+  --ag-bg-elevated:   rgba(22, 28, 40, 0.7);
   --ag-border:        rgba(40, 50, 75, 0.35);
   --ag-border-light:  rgba(255, 255, 255, 0.06);
   --ag-border-glow:   #00f0ff;
   --ag-accent:        #00f0ff;
   --ag-accent-dim:    #00404c;
+  --ag-accent-hover:  #33f5ff;
   --ag-accent-success:#00ff88;
   --ag-accent-danger: #ff003c;
+  --ag-accent-warn:   #ffaa00;
   --ag-text-primary:  #e2e8f0;
   --ag-text-muted:    #64748b;
   --ag-text-code:     #7dd3fc;
-  --ag-font-mono:     'Share Tech Mono', monospace;
+  --ag-font-mono:     'Share Tech Mono', 'Consolas', monospace;
   --ag-font-ui:       'Barlow', -apple-system, BlinkMacSystemFont, sans-serif;
+  --ag-font-display:  'Orbitron', 'Share Tech Mono', sans-serif;
+  --ag-radius-sm:     6px;
+  --ag-radius-md:     10px;
+  --ag-radius-lg:     14px;
+  --ag-transition:    cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ag-spring:        cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Background Pattern & Depth */
+/* ======================================== */
+/*  Background Pattern & Depth              */
+/* ======================================== */
 body {
   margin: 0;
   padding: 0;
@@ -39,7 +52,9 @@ body {
   height: 100vh;
 }
 
-/* Scrollbar styling */
+/* ======================================== */
+/*  Scrollbar                               */
+/* ======================================== */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -56,7 +71,9 @@ body {
   background: rgba(0, 240, 255, 0.4);
 }
 
-/* Glassmorphism Utilities */
+/* ======================================== */
+/*  Glassmorphism                           */
+/* ======================================== */
 .glass-panel {
   background: var(--ag-bg-surface);
   backdrop-filter: blur(20px) saturate(120%);
@@ -72,11 +89,11 @@ body {
   backdrop-filter: blur(12px) saturate(110%);
   -webkit-backdrop-filter: blur(12px) saturate(110%);
   border: 1px solid var(--ag-border);
-  border-radius: 10px;
+  border-radius: var(--ag-radius-md);
   box-shadow: 
     0 8px 32px rgba(0, 0, 0, 0.25),
     inset 0 1px 1px var(--ag-border-light);
-  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: all 0.4s var(--ag-transition);
   position: relative;
   overflow: hidden;
 }
@@ -99,7 +116,9 @@ body {
   transform: translateY(-2px);
 }
 
-/* UI Controls */
+/* ======================================== */
+/*  Toggle Switch                           */
+/* ======================================== */
 .ag-toggle {
   width: 44px;
   height: 24px;
@@ -108,7 +127,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.04);
   position: relative;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: all 0.3s var(--ag-spring);
   flex-shrink: 0;
   box-shadow: inset 0 2px 5px rgba(0,0,0,0.6), 0 1px 1px rgba(255,255,255,0.02);
 }
@@ -128,7 +147,7 @@ body {
   height: 18px;
   border-radius: 50%;
   background: linear-gradient(135deg, #8ba3ba, #4b5e71);
-  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.35s var(--ag-spring);
   box-shadow: 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.3);
 }
 
@@ -138,6 +157,9 @@ body {
   box-shadow: 0 2px 5px rgba(0,0,0,0.4), 0 0 6px rgba(0, 240, 255, 0.3), inset 0 1px 1px rgba(255,255,255,0.9);
 }
 
+/* ======================================== */
+/*  Range Slider                            */
+/* ======================================== */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
@@ -158,7 +180,7 @@ input[type="range"]::-webkit-slider-thumb {
   background: var(--ag-accent);
   cursor: pointer;
   box-shadow: 0 0 12px rgba(0, 240, 255, 0.8), inset 0 0 4px #fff;
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: transform 0.2s var(--ag-spring);
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
@@ -166,19 +188,88 @@ input[type="range"]::-webkit-slider-thumb:hover {
   box-shadow: 0 0 20px rgba(0, 240, 255, 1), inset 0 0 6px #fff;
 }
 
-/* Animations */
+/* ======================================== */
+/*  Animations                              */
+/* ======================================== */
 @keyframes pulseGlow {
-  0% { box-shadow: 0 0 10px rgba(0, 240, 255, 0.4), inset 0 0 10px rgba(0,240,255,0.1); border-color: rgba(0,240,255,0.5); }
-  50% { box-shadow: 0 0 35px rgba(0, 240, 255, 0.8), inset 0 0 20px rgba(0,240,255,0.3); border-color: rgba(0,255,255,1); }
+  0%   { box-shadow: 0 0 10px rgba(0, 240, 255, 0.4), inset 0 0 10px rgba(0,240,255,0.1); border-color: rgba(0,240,255,0.5); }
+  50%  { box-shadow: 0 0 35px rgba(0, 240, 255, 0.8), inset 0 0 20px rgba(0,240,255,0.3); border-color: rgba(0,255,255,1); }
   100% { box-shadow: 0 0 10px rgba(0, 240, 255, 0.4), inset 0 0 10px rgba(0,240,255,0.1); border-color: rgba(0,240,255,0.5); }
 }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
+@keyframes statusPulse {
+  0%, 100% { box-shadow: 0 0 6px currentColor, 0 0 12px currentColor; }
+  50%      { box-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor; }
+}
+
+@keyframes scanLine {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes progressGlow {
+  0%   { left: -30%; }
+  100% { left: 130%; }
+}
+
+/* Animation utilities */
+.fade-in-up {
+  animation: fadeInUp 0.5s var(--ag-transition) both;
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease-out both;
+}
+
+.slide-in-left {
+  animation: slideInLeft 0.4s var(--ag-transition) both;
+}
+
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
 
 .pulse-btn {
   animation: pulseGlow 2s ease-in-out infinite;
 }
 
+/* ======================================== */
+/*  Button Utilities                        */
+/* ======================================== */
 .btn-glow {
-  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: all 0.3s var(--ag-transition);
   position: relative;
   overflow: hidden;
 }
@@ -202,9 +293,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
   transform: translateY(1px);
 }
 
+/* ======================================== */
+/*  Glitch Hover                            */
+/* ======================================== */
 .glitch-hover {
   position: relative;
-  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: all 0.3s var(--ag-transition);
 }
 
 .glitch-hover::after {
@@ -224,18 +318,254 @@ input[type="range"]::-webkit-slider-thumb:hover {
   opacity: 1;
   box-shadow: 0 0 10px rgba(0, 240, 255, 0.2), inset 0 0 10px rgba(0, 240, 255, 0.1);
 }
+
+/* ======================================== */
+/*  Blinking Cursor                         */
+/* ======================================== */
 .blink-cursor {
   animation: blink 1s step-end infinite;
   color: var(--ag-accent);
 }
 
-/* CRT Scanlines and Vignette overlay */
+/* ======================================== */
+/*  Status Indicator                        */
+/* ======================================== */
+.status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: all 0.5s var(--ag-transition);
+  position: relative;
+}
+
+.status-dot.connected {
+  background: var(--ag-accent-success);
+  box-shadow: 0 0 15px var(--ag-accent-success);
+  animation: statusPulse 2.5s ease-in-out infinite;
+  color: var(--ag-accent-success);
+}
+
+.status-dot.disconnected {
+  background: #4a6072;
+  box-shadow: none;
+}
+
+/* ======================================== */
+/*  Progress Bar                            */
+/* ======================================== */
+.inject-progress {
+  height: 3px;
+  background: rgba(0, 240, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.inject-progress .bar {
+  position: absolute;
+  top: 0; left: -30%;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--ag-accent), transparent);
+  animation: progressGlow 1.2s ease-in-out infinite;
+  border-radius: 2px;
+}
+
+/* ======================================== */
+/*  Setting Row                             */
+/* ======================================== */
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  transition: all 0.2s ease;
+}
+
+.setting-row:last-child {
+  border-bottom: none;
+}
+
+.setting-row:hover {
+  background: rgba(255,255,255,0.01);
+  margin: 0 -8px;
+  padding: 14px 8px;
+  border-radius: 6px;
+}
+
+.setting-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.setting-label .title {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  color: var(--ag-text-primary);
+}
+
+.setting-label .desc {
+  font-size: 11px;
+  color: var(--ag-text-muted);
+  font-family: var(--ag-font-mono);
+  letter-spacing: 0.5px;
+}
+
+/* ======================================== */
+/*  Badge / Tag                             */
+/* ======================================== */
+.api-badge {
+  padding: 5px 14px;
+  border-radius: 20px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.08);
+  font-size: 12px;
+  font-family: var(--ag-font-mono);
+  letter-spacing: 1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+  transition: all 0.3s var(--ag-transition);
+}
+
+.api-badge:hover {
+  border-color: rgba(255,255,255,0.15);
+  background: rgba(0,0,0,0.6);
+}
+
+/* ======================================== */
+/*  Section Header                          */
+/* ======================================== */
+.section-header {
+  color: var(--ag-text-muted);
+  font-family: var(--ag-font-mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--ag-border), transparent);
+}
+
+/* ======================================== */
+/*  Skeleton Loading                        */
+/* ======================================== */
+.skeleton {
+  background: linear-gradient(90deg, rgba(30,40,60,0.3), rgba(50,60,80,0.3), rgba(30,40,60,0.3));
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--ag-radius-sm);
+}
+
+/* ======================================== */
+/*  CRT Scanlines and Vignette overlay      */
+/* ======================================== */
 .crt-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   pointer-events: none;
   z-index: 9999;
   background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
-  opacity: 0.2;
+  opacity: 0.15;
   box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
+}
+
+/* ======================================== */
+/*  Empty State                             */
+/* ======================================== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+  animation: fadeIn 0.8s ease-out both;
+}
+
+.empty-state .icon {
+  font-size: 48px;
+  opacity: 0.15;
+  margin-bottom: 8px;
+}
+
+.empty-state .text {
+  color: var(--ag-text-muted);
+  font-family: var(--ag-font-mono);
+  letter-spacing: 1px;
+  font-size: 13px;
+  opacity: 0.6;
+}
+
+.empty-state .hint {
+  color: var(--ag-text-muted);
+  font-family: var(--ag-font-mono);
+  letter-spacing: 0.5px;
+  font-size: 11px;
+  opacity: 0.35;
+}
+
+/* ======================================== */
+/*  Game Count Badge                        */
+/* ======================================== */
+.game-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  color: var(--ag-accent);
+  font-family: var(--ag-font-mono);
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+/* ======================================== */
+/*  Tooltip                                 */
+/* ======================================== */
+.tooltip-wrapper {
+  position: relative;
+}
+
+.tooltip-wrapper .tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  background: rgba(10, 15, 25, 0.95);
+  border: 1px solid var(--ag-border);
+  border-radius: 6px;
+  color: var(--ag-text-primary);
+  font-family: var(--ag-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 100;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+}
+
+.tooltip-wrapper:hover .tooltip {
+  opacity: 1;
 }
