@@ -13,6 +13,9 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#ifndef NTSTATUS
+typedef LONG NTSTATUS;
+#endif
 #include <bcrypt.h>
 
 
