@@ -2,6 +2,10 @@
 #include "../../core/logger.h"
 #include <vector>
 #include <string>
+#include <windows.h>
+#ifndef NTSTATUS
+typedef LONG NTSTATUS;
+#endif
 #include <bcrypt.h>
 #pragma comment(lib, "bcrypt.lib")
 
