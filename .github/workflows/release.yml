@@ -25,6 +25,12 @@ jobs:
         curl.exe -L https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.7.2308/dxc_2023_08_14.zip -o dxc.zip
         7z.exe x dxc.zip -odxc -y
 
+    - name: Setup Vulkan SDK
+      uses: vulkan-go/setup-vulkan@v1
+      with:
+        vulkan-query-version: 1.3.268.0
+        vulkan-components: Vulkan-Headers, Vulkan-Loader
+
     - name: Configure CMake
       run: cmake -B build -S . -A x64 -DDXC_EXECUTABLE="${{ github.workspace }}/dxc/bin/x64/dxc.exe"
 

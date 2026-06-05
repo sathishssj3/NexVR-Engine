@@ -62,6 +62,11 @@ set(ONNXRUNTIME_INCLUDE_DIR ${onnxruntime_SOURCE_DIR}/include)
 set(ONNXRUNTIME_LIB_DIR ${onnxruntime_SOURCE_DIR}/lib)
 
 # ---------------------------------------------------------------------------
+# Dependencies – Vulkan SDK
+# ---------------------------------------------------------------------------
+find_package(Vulkan REQUIRED)
+
+# ---------------------------------------------------------------------------
 # Dependencies – OpenXR SDK
 # ---------------------------------------------------------------------------
 FetchContent_Declare(
@@ -277,6 +282,7 @@ target_link_libraries(vrinject PRIVATE
     onnxruntime
     openxr_loader
     xinput
+    Vulkan::Vulkan
 )
 
 # Post-build step to copy onnxruntime.dll to output bin dir
