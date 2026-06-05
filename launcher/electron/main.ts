@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, dialog, session } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as child_process from 'child_process';
@@ -55,27 +55,13 @@ function createWindow() {
     });
   }
 
-  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        'Content-Security-Policy': [
-          "default-src 'self' file:;" +
-          "script-src 'self' file:;" +
-          "style-src 'self' file: 'unsafe-inline' https://fonts.googleapis.com;" +
-          "font-src 'self' file: https://fonts.gstatic.com;" +
-          "img-src 'self' file: data:;" +
-          "connect-src https://fonts.googleapis.com https://fonts.gstatic.com;"
-        ]
-      }
-    });
-  });
+  // NOTE: CSP is enforced via <meta> tag in index.html.
+  // Do NOT use session.webRequest.onHeadersReceived to inject CSP — it is
+  // incompatible with the file:// protocol in Electron 28+ and causes ERR_FAILED (-2).
 
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    const allowedUrl = isDev
-      ? (process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173')
-      : `file://${path.join(__dirname, '..', '..', 'frontend-dist', 'index.html')}`.replace(/\\/g, '/');
-    if (!url.startsWith(allowedUrl)) {
+    // Allow file:// navigations within our app directory
+    if (!isDev && !url.startsWith('file://')) {
       event.preventDefault();
       console.log(`[SECURITY] Blocked navigation to: ${url}`);
     }
