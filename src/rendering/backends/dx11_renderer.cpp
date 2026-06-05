@@ -3,6 +3,10 @@
 #include <d3dcompiler.h>
 #include <vector>
 #include <string>
+#include <windows.h>
+#ifndef NTSTATUS
+typedef LONG NTSTATUS;
+#endif
 #include <bcrypt.h>
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "bcrypt.lib")
