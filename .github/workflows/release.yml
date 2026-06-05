@@ -52,10 +52,13 @@ jobs:
         if ($LASTEXITCODE -ne 0) {
             Write-Host "Build failed! Pushing log to repo..."
             $LogTail = Get-Content build.log -Tail 300 | Out-String
+            Write-Host "=== ERROR PREVIEW ==="
+            Write-Host $LogTail
+            Write-Host "====================="
             Set-Content -Path build_crash.log -Value $LogTail
             git config --global user.name "GitHub Action"
             git config --global user.email "action@github.com"
-            git add build_crash.log
+            git add -f build_crash.log
             git commit -m "[bot] Upload build crash log for analysis"
             git push origin HEAD:main
             exit 1
