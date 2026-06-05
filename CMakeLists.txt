@@ -250,7 +250,7 @@ add_library(vrinject SHARED
     src/hooks/input_hook.h
     src/hooks/input_hook.cpp
     src/hooks/audio_hook.cpp
-    ai_matrix_classifier/matrix_classifier.cpp
+    src/ai_matrix_classifier/matrix_classifier.cpp
     src/core/config_manager.h
     src/core/config_manager.cpp
     ${MINHOOK_SOURCES}
