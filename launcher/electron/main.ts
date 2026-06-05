@@ -60,12 +60,12 @@ function createWindow() {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          "default-src 'self';" +
-          "script-src 'self';" +
-          "style-src 'self' https://fonts.googleapis.com;" +
-          "font-src 'self' https://fonts.gstatic.com;" +
-          "img-src 'self' data:;" +
-          "connect-src 'none';"
+          "default-src 'self' file:;" +
+          "script-src 'self' file:;" +
+          "style-src 'self' file: 'unsafe-inline' https://fonts.googleapis.com;" +
+          "font-src 'self' file: https://fonts.gstatic.com;" +
+          "img-src 'self' file: data:;" +
+          "connect-src https://fonts.googleapis.com https://fonts.gstatic.com;"
         ]
       }
     });
