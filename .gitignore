@@ -1,28 +1,44 @@
+# CMake and Build Artifacts
 build/
 out/
 bin/
-obj/
-*.exe
 *.dll
+*.exe
+*.cso
 *.lib
+*.exp
 *.ilk
 *.pdb
-*.exp
-*.cso
+*.obj
 
-node_modules/
-dist/
-.vite/
-.eslintcache
-*.log
-
-# VSCode/IDE
-.vscode/
+# Visual Studio
 .vs/
-*.sln
-*.vcxproj
-*.vcxproj.user
 *.suo
+*.user
+*.vcxproj.user
 
-# Antigravity artifacts
-.gemini/
+# Node.js and Electron
+node_modules/
+launcher/node_modules/
+launcher/dist/
+launcher/frontend-dist/
+launcher/electron-dist/
+launcher/dist-electron/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment and Secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.pfx
+*.cert
+
+# macOS
+.DS_Store
+
+# Logs and Scratch
+*.log
+scratch/

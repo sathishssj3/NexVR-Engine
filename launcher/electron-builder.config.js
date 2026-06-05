@@ -20,7 +20,9 @@ module.exports = {
 
   win: {
     target: [{ target: 'nsis', arch: ['x64'] }],
-    // requestedExecutionLevel:  'requireAdministrator',
+    certificateFile: process.env.SIGN_CERT_PATH,
+    certificatePassword: process.env.SIGN_CERT_PASS,
+    signDlls: true
   },
 
   nsis: {
