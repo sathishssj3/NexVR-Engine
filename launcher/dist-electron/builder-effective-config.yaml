@@ -1,0 +1,36 @@
+directories:
+  output: dist-electron
+  buildResources: assets
+appId: dev.antigravity.launcher
+productName: Antigravity
+copyright: Copyright © 2025 VOXIRA.VR
+files:
+  - filter:
+      - dist/**/*
+      - electron-dist/**/*
+      - '!**/*.map'
+      - '!**/*.ts'
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: assets/icon.ico
+  requestedExecutionLevel: requireAdministrator
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: assets/icon.ico
+  uninstallerIcon: assets/icon.ico
+  installerHeaderIcon: assets/icon.ico
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Antigravity VR
+  license: assets/LICENSE.txt
+extraResources:
+  - from: ../build/vrinject.dll
+    to: vrinject.dll
+  - from: ../build/vr-inject-cli.exe
+    to: vr-inject-cli.exe
+publish: null
+electronVersion: 42.3.2
