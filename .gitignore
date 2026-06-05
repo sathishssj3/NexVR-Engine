@@ -24,6 +24,9 @@ launcher/dist/
 launcher/frontend-dist/
 launcher/electron-dist/
 launcher/dist-electron/
+launcher/asar-out*/
+launcher/asar-test/
+launcher/temp_app/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -42,3 +45,28 @@ yarn-error.log*
 # Logs and Scratch
 *.log
 scratch/
+
+# Downloaded tools (fetched in CI)
+dxc/
+dxc.zip
+logs/
+logs.zip
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Temporary build outputs
+build_output.txt
+compile_output.txt
+config_output.txt
+dummy_log.txt
+launcher/out.txt
+launcher/output.txt
+launcher/run_out.txt
+launcher/asar-files.txt
+launcher/crash.log
+launcher/error.log
+launcher/temp.asar
+launcher/test-results/

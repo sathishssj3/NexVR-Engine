@@ -1,6 +1,0 @@
-{
-  "name": "launcher",
-  "private": true,
-  "version": "0.0.0",
-  "main": "dist/electron/electron/main.js"
-}
