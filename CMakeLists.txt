@@ -307,8 +307,12 @@ endif()
 # S1.4: Generate DLL hash header
 file(WRITE "${CMAKE_BINARY_DIR}/generate_hash.ps1"
 "param($DllPath, $OutPath)
-$hash = (Get-FileHash $DllPath -Algorithm SHA256).Hash
-Set-Content -Path $OutPath -Value \"constexpr wchar_t EXPECTED_DLL_HASH[] = L`\"$hash`\";\"
+$stream = [System.IO.File]::OpenRead($DllPath)
+$sha256 = [System.Security.Cryptography.SHA256]::Create()
+$hashBytes = $sha256.ComputeHash($stream)
+$stream.Close()
+$hashString = [System.BitConverter]::ToString($hashBytes).Replace('-', '')
+Set-Content -Path $OutPath -Value \"constexpr wchar_t EXPECTED_DLL_HASH[] = L`\"$hashString`\";\"
 ")
 
 add_custom_command(TARGET vrinject POST_BUILD
@@ -322,7 +326,7 @@ add_dependencies(vrinject compile_shaders)
 # injector – standalone process injector tool
 # ---------------------------------------------------------------------------
 add_executable(injector tools/injector.cpp)
-
+set_target_properties(injector PROPERTIES LINK_FLAGS "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\"")
 target_link_libraries(injector PRIVATE
     # No extra libs needed – the Win32 APIs we use are in kernel32 which is
     # linked implicitly.
@@ -350,7 +354,7 @@ add_executable(dummy_app WIN32 tools/dummy_d3d11_app.cpp)
 # ---------------------------------------------------------------------------
 add_executable(vr-inject-cli WIN32 src/injector/main.cpp)
 set_property(TARGET vr-inject-cli PROPERTY SUBSYSTEM CONSOLE)
-target_sources(vr-inject-cli PRIVATE src/injector/vr-inject-cli.manifest)
+set_target_properties(vr-inject-cli PROPERTIES LINK_FLAGS "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\"")
 target_include_directories(vr-inject-cli PRIVATE ${CMAKE_BINARY_DIR})
 add_dependencies(vr-inject-cli vrinject)
 
