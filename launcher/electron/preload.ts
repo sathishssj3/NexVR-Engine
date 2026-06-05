@@ -31,10 +31,13 @@ contextBridge.exposeInMainWorld('ag', {
               ipcRenderer.invoke('inject:monitor', pid),
   },
   log: {
-    onLine: (cb: (line: string) => void) =>
-              ipcRenderer.on('log:line', (_, l) => cb(l)),
+    onLine: (cb: (line: string) => void) => {
+      ipcRenderer.on('log:line', (_, l) => {
+        if (typeof l === 'string') cb(l);
+      });
+    },
     offLine: () =>
-              ipcRenderer.removeAllListeners('log:line'),
+      ipcRenderer.removeAllListeners('log:line'),
     export: (lines: unknown) => ipcRenderer.invoke('log:export', lines),
   },
   window: {

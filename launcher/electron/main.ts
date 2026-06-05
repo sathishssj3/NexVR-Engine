@@ -1,9 +1,13 @@
-import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, dialog, session } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as child_process from 'child_process';
 import * as util from 'util';
+import * as crypto from 'crypto';
 import { GameEntry, VRStatus, VRConfig, InjectResult } from '../src/types';
+
+const NEXVR_AUTH_TOKEN = crypto.randomUUID();
+process.env.NEXVR_AUTH_TOKEN = NEXVR_AUTH_TOKEN;
 
 const execAsync = util.promisify(child_process.exec);
 
@@ -32,6 +36,9 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      sandbox: true,
+      webSecurity: true,
+      allowRunningInsecureContent: false,
       preload: path.join(__dirname, 'preload.js'),
     },
   });
@@ -47,6 +54,36 @@ function createWindow() {
       dialog.showErrorBox('loadFile Error', String(err) + '\nPath was: ' + htmlPath);
     });
   }
+
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self';" +
+          "script-src 'self';" +
+          "style-src 'self' https://fonts.googleapis.com;" +
+          "font-src 'self' https://fonts.gstatic.com;" +
+          "img-src 'self' data:;" +
+          "connect-src 'none';"
+        ]
+      }
+    });
+  });
+
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    const allowedUrl = isDev
+      ? (process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173')
+      : `file://${path.join(__dirname, '..', '..', 'frontend-dist', 'index.html')}`.replace(/\\/g, '/');
+    if (!url.startsWith(allowedUrl)) {
+      event.preventDefault();
+      console.log(`[SECURITY] Blocked navigation to: ${url}`);
+    }
+  });
+
+  mainWindow.webContents.setWindowOpenHandler(() => {
+    return { action: 'deny' };
+  });
 }
 
 app.whenReady().then(() => {
@@ -62,7 +99,48 @@ app.on('window-all-closed', () => {
 });
 
 // IPC Handlers
+const gamePathsMap: Record<string, string> = {};
 const gameExeMap: Record<string, string> = {};
+const injectRateLimits: Record<string, number[]> = {};
+
+function validateGameId(id: unknown): string {
+  if (typeof id !== 'string') throw new Error('Invalid gameId type');
+  if (!/^[a-zA-Z0-9_]+$/.test(id)) throw new Error('gameId must be alphanumeric/underscore');
+  if (id.length > 50) throw new Error('gameId too long');
+  return id;
+}
+
+function validateConfig(cfg: unknown): VRConfig {
+  if (typeof cfg !== 'object' || cfg === null) throw new Error('Invalid config');
+  const c = cfg as Record<string, unknown>;
+  const sens = Number(c.motionAimSensitivity);
+  if (isNaN(sens) || sens < 0.1 || sens > 10.0) throw new Error('motionAimSensitivity out of range');
+  return {
+    motionAimSensitivity: sens,
+    useRecommendedResolution: Boolean(c.useRecommendedResolution),
+    srgbCorrection: Boolean(c.srgbCorrection),
+    depthSubmission: Boolean(c.depthSubmission),
+    rawInputMode: Boolean(c.rawInputMode),
+    autoInjectOnLaunch: Boolean(c.autoInjectOnLaunch),
+  };
+}
+
+function safeGamePath(installPath: string, filename: string): string {
+  if (/[\/\\:*?"<>|]/.test(filename)) throw new Error(`Invalid filename: ${filename}`);
+  const resolved = path.resolve(installPath, filename);
+  if (!resolved.startsWith(path.resolve(installPath))) throw new Error('Path traversal detected');
+  return resolved;
+}
+
+function sanitizeAcfString(val: string): string {
+  return val.replace(/[^\x20-\x7E]/g, '').substring(0, 256);
+}
+
+function validateSteamPath(p: string): boolean {
+  if (!path.isAbsolute(p)) return false;
+  if (p.includes('..')) return false;
+  return fs.existsSync(path.join(p, 'steam.exe'));
+}
 
 const isIgnoredSoftware = (name: string): boolean => {
   const lower = name.toLowerCase();
@@ -108,6 +186,10 @@ ipcMain.handle('library:scan', async (): Promise<{ active: GameEntry[], waiting:
     if (!match) return { active: games, waiting: waitingGames };
     
     const steamPath = match[1].trim().replace(/\//g, '\\');
+    if (!validateSteamPath(steamPath)) {
+      console.log('[SECURITY] Steam path validation failed');
+      return { active: games, waiting: waitingGames };
+    }
     const vdfPath = path.join(steamPath, 'steamapps', 'libraryfolders.vdf');
     
     if (!fs.existsSync(vdfPath)) return { active: games, waiting: waitingGames };
@@ -132,11 +214,16 @@ ipcMain.handle('library:scan', async (): Promise<{ active: GameEntry[], waiting:
           const nameMatch = content.match(/"name"\s+"([^"]+)"/);
           const dirMatch = content.match(/"installdir"\s+"([^"]+)"/);
           if (!idMatch || !nameMatch || !dirMatch) continue;
-          if (isIgnoredSoftware(nameMatch[1])) continue;
-          if (seenIds.has(idMatch[1])) continue;
-          seenIds.add(idMatch[1]);
           
-          const installPath = path.join(appsDir, 'common', dirMatch[1]);
+          const idStr = sanitizeAcfString(idMatch[1]);
+          const nameStr = sanitizeAcfString(nameMatch[1]);
+          const dirStr = sanitizeAcfString(dirMatch[1]);
+
+          if (isIgnoredSoftware(nameStr)) continue;
+          if (seenIds.has(idStr)) continue;
+          seenIds.add(idStr);
+          
+          const installPath = path.join(appsDir, 'common', dirStr);
           if (!fs.existsSync(installPath)) continue;
           
           let api: 'DX11' | 'DX12' | 'Vulkan' | 'Unknown' = 'DX11';
@@ -149,21 +236,21 @@ ipcMain.handle('library:scan', async (): Promise<{ active: GameEntry[], waiting:
           
           const hasInjector = fs.existsSync(path.join(installPath, 'vrinject.dll'));
           
-          if (ignoredIds.includes(idMatch[1])) continue;
+          if (ignoredIds.includes(idStr)) continue;
           
           const entry: GameEntry = {
-            id: idMatch[1],
-            name: nameMatch[1],
+            id: idStr,
+            name: nameStr,
             installPath,
             executablePath: '',
             sizeGB: 0,
             api,
-            compat: compatList[idMatch[1]] || 'unknown',
+            compat: compatList[idStr] || 'unknown',
             hasInjector
           };
-          gamePathsMap[idMatch[1]] = installPath;
+          gamePathsMap[idStr] = installPath;
 
-          if (hiddenIds.includes(idMatch[1])) {
+          if (hiddenIds.includes(idStr)) {
             waitingGames.push(entry);
           } else {
             games.push(entry);
@@ -472,13 +559,13 @@ const defaultVRConfig: VRConfig = {
   autoInjectOnLaunch: true,
 };
 
-let gamePathsMap: Record<string, string> = {};
 
 ipcMain.handle('config:read', async (_, id: string): Promise<VRConfig> => {
   try {
-    const installPath = gamePathsMap[id];
+    const validId = validateGameId(id);
+    const installPath = gamePathsMap[validId];
     if (!installPath) return defaultVRConfig;
-    const cfgPath = path.join(installPath, 'vrinject.json');
+    const cfgPath = safeGamePath(installPath, 'vrinject.json');
     if (fs.existsSync(cfgPath)) {
       const content = fs.readFileSync(cfgPath, 'utf-8');
       const parsed = JSON.parse(content);
@@ -486,16 +573,23 @@ ipcMain.handle('config:read', async (_, id: string): Promise<VRConfig> => {
     }
     return defaultVRConfig;
   } catch (e) {
+    console.error('config:read error', e);
     return defaultVRConfig;
   }
 });
 
 ipcMain.handle('config:write', async (_, id: string, cfg: unknown) => {
   try {
-    const installPath = gamePathsMap[id];
+    const cfgString = JSON.stringify(cfg);
+    if (cfgString.length > 10240) throw new Error('Payload too large (max 10KB)');
+    
+    const validId = validateGameId(id);
+    const validCfg = validateConfig(cfg);
+    const installPath = gamePathsMap[validId];
     if (!installPath) return { success: false, error: 'Game path not found' };
-    const cfgPath = path.join(installPath, 'vrinject.json');
-    fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2));
+    const cfgPath = safeGamePath(installPath, 'vrinject.json');
+    fs.writeFileSync(cfgPath, JSON.stringify(validCfg, null, 2));
+    fs.chmodSync(cfgPath, 0o600); // S6.3: Owner rw only
     return { success: true };
   } catch (e: any) {
     return { success: false, error: e.message };
@@ -536,11 +630,21 @@ ipcMain.handle('inject:cancel', async () => {
 
 ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult> => {
   try {
-    const installPath = gamePathsMap[id];
+    const now = Date.now();
+    const windowMs = 15 * 60 * 1000;
+    if (!injectRateLimits[id]) injectRateLimits[id] = [];
+    injectRateLimits[id] = injectRateLimits[id].filter(t => now - t < windowMs);
+    if (injectRateLimits[id].length >= 5) {
+      return { success: false, message: 'Rate limit exceeded: Max 5 attempts per 15 minutes.' };
+    }
+    injectRateLimits[id].push(now);
+
+    const validId = validateGameId(id);
+    const installPath = gamePathsMap[validId];
     if (!installPath) return { success: false, message: 'Game path not found' };
     
     // 1. Reset log file
-    const logPath = path.join(installPath, 'vrinject.log');
+    const logPath = safeGamePath(installPath, 'vrinject.log');
     fs.writeFileSync(logPath, '');
     let lastSize = 0;
 
@@ -689,7 +793,7 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
            }
        }, 10000);
 
-       child_process.execFile(cliPath, ['--pid', String(targetPid), '--dll', dllTarget, '--launcher-key', 'NexVR-Authorized-Launch'], { timeout: 10000, killSignal: 'SIGKILL' }, (err, stdout, stderr) => {
+       child_process.execFile(cliPath, ['--pid', String(targetPid), '--dll', dllTarget], { timeout: 10000, killSignal: 'SIGKILL' }, (err, stdout, stderr) => {
            if (isResolved) return;
            isResolved = true;
            clearTimeout(fallbackTimeout);

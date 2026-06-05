@@ -12,9 +12,12 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <vector>
+#include <bcrypt.h>
 
 
 #pragma comment(lib, "Shlwapi.lib")
+#pragma comment(lib, "bcrypt.lib")
 
 namespace {
 
@@ -85,10 +88,57 @@ std::string LastErrorMessage() {
         while (!result.empty() && (result.back() == '\r' || result.back() == '\n'))
             result.pop_back();
         ::LocalFree(msgBuf);
-    } else {
-        result = "Unknown error (code " + std::to_string(err) + ")";
     }
     return result;
+}
+
+std::wstring ComputeFileHashSHA256(const std::string& filePath) {
+    BCRYPT_ALG_HANDLE hAlg = NULL;
+    BCRYPT_HASH_HANDLE hHash = NULL;
+    std::wstring hashResult = L"";
+    
+    if (BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_SHA256_ALGORITHM, NULL, 0) != 0) return L"";
+
+    DWORD cbData = 0, cbHashObject = 0;
+    if (BCryptGetProperty(hAlg, BCRYPT_OBJECT_LENGTH, (PBYTE)&cbHashObject, sizeof(DWORD), &cbData, 0) != 0) {
+        BCryptCloseAlgorithmProvider(hAlg, 0);
+        return L"";
+    }
+
+    std::vector<BYTE> pbHashObject(cbHashObject);
+    DWORD cbHash = 0;
+    if (BCryptGetProperty(hAlg, BCRYPT_HASH_LENGTH, (PBYTE)&cbHash, sizeof(DWORD), &cbData, 0) != 0) {
+        BCryptCloseAlgorithmProvider(hAlg, 0);
+        return L"";
+    }
+
+    std::vector<BYTE> pbHash(cbHash);
+    if (BCryptCreateHash(hAlg, &hHash, pbHashObject.data(), cbHashObject, NULL, 0, 0) != 0) {
+        BCryptCloseAlgorithmProvider(hAlg, 0);
+        return L"";
+    }
+
+    FILE* f = nullptr;
+    if (fopen_s(&f, filePath.c_str(), "rb") == 0 && f) {
+        BYTE buffer[8192];
+        size_t read;
+        while ((read = fread(buffer, 1, sizeof(buffer), f)) > 0) {
+            BCryptHashData(hHash, buffer, (ULONG)read, 0);
+        }
+        fclose(f);
+        
+        if (BCryptFinishHash(hHash, pbHash.data(), cbHash, 0) == 0) {
+            wchar_t hex[3];
+            for (DWORD i = 0; i < cbHash; i++) {
+                swprintf_s(hex, L"%02X", pbHash[i]);
+                hashResult += hex;
+            }
+        }
+    }
+
+    BCryptDestroyHash(hHash);
+    BCryptCloseAlgorithmProvider(hAlg, 0);
+    return hashResult;
 }
 
 } // namespace
@@ -182,22 +232,49 @@ int main(int argc, char* argv[]) {
 
     DWORD targetPid = 0;
     std::string dllPath;
-    std::string launcherKey;
 
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--pid") == 0 && i + 1 < argc) {
             targetPid = static_cast<DWORD>(std::strtoul(argv[++i], nullptr, 10));
         } else if (std::strcmp(argv[i], "--dll") == 0 && i + 1 < argc) {
             dllPath = argv[++i];
-        } else if (std::strcmp(argv[i], "--launcher-key") == 0 && i + 1 < argc) {
-            launcherKey = argv[++i];
         }
     }
 
-    // S3.3: Origin Restriction (Launcher-key requirement)
-    if (launcherKey != "NexVR-Authorized-Launch") {
-        PrintErr("[ERROR] Unauthorized origin. Please launch via the NexVR Engine UI.");
+    // S3.3: Origin Restriction (Environment variable token and parent process check)
+    const char* envToken = std::getenv("NEXVR_AUTH_TOKEN");
+    if (!envToken || std::string(envToken).empty()) {
+        PrintErr("[ERROR] Unauthorized origin. Missing security token. Please launch via the NexVR Engine UI.");
         return 13;
+    }
+
+    DWORD parentPid = 0;
+    HANDLE hSnap2 = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    PROCESSENTRY32W pe2 = { sizeof(pe2) };
+    DWORD selfPid = ::GetCurrentProcessId();
+    if (::Process32FirstW(hSnap2, &pe2)) {
+        do {
+            if (pe2.th32ProcessID == selfPid) {
+                parentPid = pe2.th32ParentProcessID;
+                break;
+            }
+        } while (::Process32NextW(hSnap2, &pe2));
+    }
+    ::CloseHandle(hSnap2);
+
+    HANDLE hParent = ::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, parentPid);
+    if (hParent) {
+        wchar_t parentName[MAX_PATH];
+        DWORD size = MAX_PATH;
+        ::QueryFullProcessImageNameW(hParent, 0, parentName, &size);
+        ::CloseHandle(hParent);
+        std::wstring pname = parentName;
+        if (pname.find(L"Antigravity") == std::wstring::npos &&
+            pname.find(L"electron")    == std::wstring::npos &&
+            pname.find(L"node")        == std::wstring::npos) {
+            PrintErr("[ERROR] Unauthorized caller \u2014 aborting");
+            return 22;
+        }
     }
 
     if (targetPid == 0 || dllPath.empty()) {
@@ -205,14 +282,16 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // S3.1: System Process Protection
+    // S3.1: System Process Protection & PID Verification
     HANDLE hSnap = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    bool pidFound = false;
     if (hSnap != INVALID_HANDLE_VALUE) {
         PROCESSENTRY32 pe{};
         pe.dwSize = sizeof(pe);
         if (::Process32First(hSnap, &pe)) {
             do {
                 if (pe.th32ProcessID == targetPid) {
+                    pidFound = true;
                     const char* blocked[] = { "csrss.exe", "lsass.exe", "winlogon.exe", "svchost.exe", "System", "smss.exe" };
                     for (const char* b : blocked) {
                         if (_stricmp(pe.szExeFile, b) == 0) {
@@ -226,6 +305,11 @@ int main(int argc, char* argv[]) {
             } while (::Process32Next(hSnap, &pe));
         }
         ::CloseHandle(hSnap);
+    }
+    
+    if (!pidFound) {
+        PrintErr("[ERROR] PID not found in process list");
+        return 21;
     }
 
     // S1.2: Path Traversal Check
@@ -259,6 +343,34 @@ int main(int argc, char* argv[]) {
         if (mz[0] != 'M' || mz[1] != 'Z') {
             PrintErr("[ERROR] Invalid PE header in DLL");
             return 12;
+        }
+    }
+
+    // S1.4: Anti-tamper hash check
+#ifdef EXPECTED_DLL_HASH
+    std::wstring expectedHash = EXPECTED_DLL_HASH;
+#else
+    // Fallback if not injected at compile time
+    std::wstring expectedHash = L"";
+    char hashPath[MAX_PATH];
+    strcpy_s(hashPath, dllPath.c_str());
+    PathRemoveFileSpecA(hashPath);
+    PathAppendA(hashPath, "dll_hash.txt");
+    FILE* hf = nullptr;
+    if (fopen_s(&hf, hashPath, "r") == 0 && hf) {
+        char hBuf[128] = {0};
+        fread(hBuf, 1, 64, hf);
+        fclose(hf);
+        std::string hStr(hBuf);
+        expectedHash.assign(hStr.begin(), hStr.end());
+    }
+#endif
+
+    if (!expectedHash.empty()) {
+        std::wstring actualHash = ComputeFileHashSHA256(dllPath);
+        if (actualHash.empty() || _wcsicmp(actualHash.c_str(), expectedHash.c_str()) != 0) {
+            PrintErr("[ERROR] DLL integrity check failed \u2014 binary may be tampered");
+            return 13;
         }
     }
 

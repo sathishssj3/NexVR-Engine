@@ -60,5 +60,8 @@ npm install
 npm run package
 ```
 
+> [!WARNING]
+> **SECURITY REQUIREMENT:** Both `vrinject.dll` and `vr-inject-cli.exe` MUST be code-signed before any public release. Unsigned injection DLLs are flagged by Windows Defender and other Antivirus software as malicious by default. Set the `SIGN_CERT_PATH` and `SIGN_CERT_PASS` environment variables before running CMake to automatically sign these binaries during the build process.
+
 ---
 *Developed by the NexVR Team.*

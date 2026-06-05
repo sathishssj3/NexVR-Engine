@@ -298,11 +298,11 @@ if (DEFINED ENV{SIGN_CERT_PATH})
       COMMENT "Signing vrinject.dll")
 endif()
 
-# S1.4: Generate DLL hash
+# S1.4: Generate DLL hash header
 add_custom_command(TARGET vrinject POST_BUILD
   COMMAND powershell -Command
-    "(Get-FileHash '$<TARGET_FILE:vrinject>' -Algorithm SHA256).Hash | Out-File dll_hash.txt -NoNewline"
-  COMMENT "Generating DLL hash")
+    "$hash = (Get-FileHash '$<TARGET_FILE:vrinject>' -Algorithm SHA256).Hash; Set-Content -Path '${CMAKE_BINARY_DIR}/expected_hash.h' -Value \"constexpr wchar_t EXPECTED_DLL_HASH[] = L\\\"$hash\\\";\""
+  COMMENT "Generating DLL hash header")
 
 # Make sure shaders are compiled before the DLL is built.
 add_dependencies(vrinject compile_shaders)
@@ -340,6 +340,8 @@ add_executable(dummy_app WIN32 tools/dummy_d3d11_app.cpp)
 add_executable(vr-inject-cli WIN32 src/injector/main.cpp)
 set_property(TARGET vr-inject-cli PROPERTY SUBSYSTEM CONSOLE)
 target_sources(vr-inject-cli PRIVATE src/injector/vr-inject-cli.manifest)
+target_include_directories(vr-inject-cli PRIVATE ${CMAKE_BINARY_DIR})
+add_dependencies(vr-inject-cli vrinject)
 
 # S1.1: Code-sign vr-inject-cli.exe
 if (DEFINED ENV{SIGN_CERT_PATH})

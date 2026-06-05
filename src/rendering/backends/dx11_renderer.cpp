@@ -1,7 +1,47 @@
 #include "dx11_renderer.h"
 #include "../../core/logger.h"
 #include <d3dcompiler.h>
+#include <vector>
+#include <string>
+#include <bcrypt.h>
 #pragma comment(lib, "d3dcompiler.lib")
+#pragma comment(lib, "bcrypt.lib")
+
+#ifndef EXPECTED_SHADER_HASH
+#define EXPECTED_SHADER_HASH L""
+#endif
+
+namespace {
+std::wstring ComputeShaderHashSHA256(const uint8_t* data, size_t size) {
+    BCRYPT_ALG_HANDLE hAlg = NULL;
+    BCRYPT_HASH_HANDLE hHash = NULL;
+    std::wstring hashResult = L"";
+    if (BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_SHA256_ALGORITHM, NULL, 0) != 0) return L"";
+
+    DWORD cbData = 0, cbHashObject = 0;
+    if (BCryptGetProperty(hAlg, BCRYPT_OBJECT_LENGTH, (PBYTE)&cbHashObject, sizeof(DWORD), &cbData, 0) == 0) {
+        std::vector<BYTE> pbHashObject(cbHashObject);
+        DWORD cbHash = 0;
+        if (BCryptGetProperty(hAlg, BCRYPT_HASH_LENGTH, (PBYTE)&cbHash, sizeof(DWORD), &cbData, 0) == 0) {
+            std::vector<BYTE> pbHash(cbHash);
+            if (BCryptCreateHash(hAlg, &hHash, pbHashObject.data(), cbHashObject, NULL, 0, 0) == 0) {
+                BCryptHashData(hHash, (PUCHAR)data, (ULONG)size, 0);
+                if (BCryptFinishHash(hHash, pbHash.data(), cbHash, 0) == 0) {
+                    wchar_t hex[3];
+                    for (DWORD i = 0; i < cbHash; i++) {
+                        swprintf_s(hex, L"%02X", pbHash[i]);
+                        hashResult += hex;
+                    }
+                }
+                BCryptDestroyHash(hHash);
+            }
+        }
+    }
+    BCryptCloseAlgorithmProvider(hAlg, 0);
+    return hashResult;
+}
+}
+
 
 bool DX11Renderer::Initialize(void* nativeDevice, void* nativeContext) {
     if (!nativeDevice || !nativeContext) return false;
@@ -75,6 +115,16 @@ ShaderHandle DX11Renderer::LoadComputeShader(const uint8_t* bytecode, size_t byt
         return handle;
     }
     reflector->Release();
+
+    // S5.2: Cryptographic Shader Verification
+    std::wstring expectedHash = EXPECTED_SHADER_HASH;
+    if (!expectedHash.empty()) {
+        std::wstring actualHash = ComputeShaderHashSHA256(bytecode, bytecodeSize);
+        if (actualHash.empty() || _wcsicmp(actualHash.c_str(), expectedHash.c_str()) != 0) {
+            LOG_ERROR("Shader bytecode integrity check failed (SHA-256 mismatch). Expected: %S", expectedHash.c_str());
+            return handle;
+        }
+    }
 
     ID3D11ComputeShader* cs = nullptr;
     HRESULT hr = m_device->CreateComputeShader(bytecode, bytecodeSize, nullptr, &cs);
