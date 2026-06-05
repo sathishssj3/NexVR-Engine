@@ -26,7 +26,7 @@ jobs:
         echo "$PWD/dxc/bin/x64" >> $env:GITHUB_PATH
 
     - name: Configure CMake
-      run: cmake -B build -S . -A x64
+      run: cmake -B build -S . -A x64 -DDXC_EXECUTABLE="$env:GITHUB_WORKSPACE/dxc/bin/x64/dxc.exe"
 
     - name: Build C++ Components (DLL & CLI)
       run: cmake --build build --config Release
