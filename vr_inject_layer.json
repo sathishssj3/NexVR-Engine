@@ -1,0 +1,16 @@
+{
+    "file_format_version": "1.0.0",
+    "layer": {
+        "name": "VK_LAYER_VRINJECT_StereoPipeline",
+        "type": "GLOBAL",
+        "library_path": ".\\vrinject.dll",
+        "api_version": "1.2.0",
+        "implementation_version": "1",
+        "description": "VRInject Stereoscopic 3D Conversion Layer",
+        "functions": {
+            "vkGetInstanceProcAddr": "VRInject_vkGetInstanceProcAddr",
+            "vkGetDeviceProcAddr": "VRInject_vkGetDeviceProcAddr",
+            "vkNegotiateLoaderLayerInterfaceVersion": "VRInject_vkNegotiateLoaderLayerInterfaceVersion"
+        }
+    }
+}

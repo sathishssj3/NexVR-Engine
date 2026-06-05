@@ -1,0 +1,60 @@
+#pragma once
+#include <cstdint>
+
+// Opaque handles — backend fills these in, caller treats them as black boxes
+struct TextureHandle {
+    void* nativePtr  = nullptr;   // ID3D11Texture2D*, ID3D12Resource*, VkImage
+    void* nativeView = nullptr;   // UAV / descriptor handle / VkImageView
+    uint32_t width   = 0;
+    uint32_t height  = 0;
+};
+
+struct ShaderHandle {
+    void* pipelineState  = nullptr;   // PSO or VkPipeline
+    void* rootSignature  = nullptr;   // DX12 root sig / VkPipelineLayout
+    void* shaderBytecode = nullptr;   // for reuse/debug
+};
+
+enum class GraphicsAPI {
+    DX11,
+    DX12,
+    VULKAN,
+    UNKNOWN
+};
+
+class IRenderer {
+public:
+    virtual ~IRenderer() = default;
+
+    // Lifecycle
+    virtual bool Initialize(void* nativeDevice, void* nativeContext) = 0;
+    virtual void Shutdown() = 0;
+
+    // Resources
+    virtual TextureHandle CreateTexture(
+        uint32_t width, uint32_t height,
+        uint32_t format,        // DXGI_FORMAT or VkFormat cast to uint32_t
+        bool uav) = 0;
+    virtual void DestroyTexture(TextureHandle& handle) = 0;
+
+    // Shaders — accept pre-compiled bytecode byte arrays
+    virtual ShaderHandle LoadComputeShader(
+        const uint8_t* bytecode,
+        size_t bytecodeSize) = 0;
+    virtual void DestroyShader(ShaderHandle& handle) = 0;
+
+    // Dispatch
+    virtual void DispatchCompute(
+        ShaderHandle shader,
+        TextureHandle input,
+        TextureHandle output,
+        uint32_t groupsX,
+        uint32_t groupsY) = 0;
+
+    // Swapchain copy — MUST be in the abstraction to keep OpenXRManager API-agnostic
+    virtual void CopyToSwapchain(
+        TextureHandle source,
+        void* swapchainTexture) = 0;   // XrSwapchainImageD3D11KHR.texture etc.
+
+    virtual GraphicsAPI GetAPI() const = 0;
+};

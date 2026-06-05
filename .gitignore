@@ -1,0 +1,28 @@
+build/
+out/
+bin/
+obj/
+*.exe
+*.dll
+*.lib
+*.ilk
+*.pdb
+*.exp
+*.cso
+
+node_modules/
+dist/
+.vite/
+.eslintcache
+*.log
+
+# VSCode/IDE
+.vscode/
+.vs/
+*.sln
+*.vcxproj
+*.vcxproj.user
+*.suo
+
+# Antigravity artifacts
+.gemini/

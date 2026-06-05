@@ -1,0 +1,13 @@
+{
+  "name": "launcher",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Universal VR injection launcher",
+  "author": "VOXIRA.VR",
+  "homepage": "https://voxira.vr",
+  "main": "electron-dist/electron/main.js",
+  "dependencies": {
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  }
+}

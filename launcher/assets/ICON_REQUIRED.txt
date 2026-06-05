@@ -1,0 +1,1 @@
+An icon.ico file (256x256) is required in this directory before packaging. Please replace this file with the actual icon.
