@@ -1,2 +1,0 @@
-Window created. HWND: 0000000000340A9E
-D3D11 Device created.
