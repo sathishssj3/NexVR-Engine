@@ -47,15 +47,16 @@ jobs:
         $ErrorActionPreference = 'SilentlyContinue'
         cmake --build build --config Release > build.log 2>&1
         if ($LASTEXITCODE -ne 0) {
-            Write-Host "Build failed! Extracting logs..."
-            $LogTail = Get-Content build.log -Tail 150 | Out-String
-            $IssueBody = "### Build Failure Log`n``````text`n$LogTail`n``````"
-            Set-Content -Path issue.md -Value $IssueBody
-            gh issue create --title "Build Failure Log - $(Get-Date -Format 'yyyyMMdd-HHmmss')" --body-file issue.md
+            Write-Host "Build failed! Pushing log to repo..."
+            $LogTail = Get-Content build.log -Tail 300 | Out-String
+            Set-Content -Path build_crash.log -Value $LogTail
+            git config --global user.name "GitHub Action"
+            git config --global user.email "action@github.com"
+            git add build_crash.log
+            git commit -m "[bot] Upload build crash log for analysis"
+            git push origin HEAD:main
             exit 1
         }
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
