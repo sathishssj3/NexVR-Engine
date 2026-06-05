@@ -6,7 +6,11 @@
 #include "../core/logger.h"
 #include "../ai_matrix_classifier/matrix_classifier.h"
 
-extern vrinject::StereoPipeline g_stereoPipeline;
+namespace vrinject {
+    namespace DX11Hook {
+        extern StereoPipeline g_stereoPipeline;
+    }
+}
 vrinject::VulkanRenderer g_vkRenderer;
 vrinject::ai::MatrixClassifier g_matrixClassifierVK;
 static std::once_flag s_vkInitFlag;
@@ -17,7 +21,7 @@ VKAPI_ATTR VkResult VKAPI_CALL VRInject_QueuePresentKHR(VkQueue queue, const VkP
         // Note: For a true layer, we need to track device/queue from vkCreateDevice/vkGetDeviceQueue
         // For this prototype, we'll just initialize it on first present
         g_vkRenderer.Initialize(VK_NULL_HANDLE /* stub device */, queue);
-        g_stereoPipeline.GetOpenXRManager()->SetRenderer(&g_vkRenderer);
+        vrinject::DX11Hook::g_stereoPipeline.GetOpenXRManager()->SetRenderer(&g_vkRenderer);
         LOG_INFO("Vulkan backend initialized via IRenderer (Implicit Layer)");
     });
 
