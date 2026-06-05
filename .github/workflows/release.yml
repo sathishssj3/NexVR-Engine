@@ -42,7 +42,20 @@ jobs:
       run: cmake -B build -S . -A x64 -DDXC_EXECUTABLE="${{ github.workspace }}/dxc/bin/x64/dxc.exe"
 
     - name: Build C++ Components (DLL & CLI)
-      run: cmake --build build --config Release
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'SilentlyContinue'
+        cmake --build build --config Release > build.log 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Build failed! Extracting logs..."
+            $LogTail = Get-Content build.log -Tail 150 | Out-String
+            $IssueBody = "### Build Failure Log`n``````text`n$LogTail`n``````"
+            Set-Content -Path issue.md -Value $IssueBody
+            gh issue create --title "Build Failure Log - $(Get-Date -Format 'yyyyMMdd-HHmmss')" --body-file issue.md
+            exit 1
+        }
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
