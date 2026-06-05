@@ -352,7 +352,7 @@ add_executable(dummy_app WIN32 tools/dummy_d3d11_app.cpp)
 # ---------------------------------------------------------------------------
 # vr-inject-cli - injection CLI
 # ---------------------------------------------------------------------------
-add_executable(vr-inject-cli WIN32 src/injector/main.cpp)
+add_executable(vr-inject-cli src/injector/main.cpp)
 set_property(TARGET vr-inject-cli PROPERTY SUBSYSTEM CONSOLE)
 set_target_properties(vr-inject-cli PROPERTIES LINK_FLAGS "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\"")
 target_include_directories(vr-inject-cli PRIVATE ${CMAKE_BINARY_DIR})
