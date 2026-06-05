@@ -305,9 +305,14 @@ if (DEFINED ENV{SIGN_CERT_PATH})
 endif()
 
 # S1.4: Generate DLL hash header
+file(WRITE "${CMAKE_BINARY_DIR}/generate_hash.ps1"
+"param($DllPath, $OutPath)
+$hash = (Get-FileHash $DllPath -Algorithm SHA256).Hash
+Set-Content -Path $OutPath -Value \"constexpr wchar_t EXPECTED_DLL_HASH[] = L`\"$hash`\";\"
+")
+
 add_custom_command(TARGET vrinject POST_BUILD
-  COMMAND powershell -Command
-    "$hash = (Get-FileHash '$<TARGET_FILE:vrinject>' -Algorithm SHA256).Hash; Set-Content -Path '${CMAKE_BINARY_DIR}/expected_hash.h' -Value \"constexpr wchar_t EXPECTED_DLL_HASH[] = L\\\"$hash\\\";\""
+  COMMAND powershell -NonInteractive -NoProfile -ExecutionPolicy Bypass -File "${CMAKE_BINARY_DIR}/generate_hash.ps1" "$<TARGET_FILE:vrinject>" "${CMAKE_BINARY_DIR}/expected_hash.h"
   COMMENT "Generating DLL hash header")
 
 # Make sure shaders are compiled before the DLL is built.
