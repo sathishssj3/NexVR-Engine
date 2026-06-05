@@ -113,18 +113,8 @@ MSBuild version 17.14.40+3e7442088 for .NET Framework
      Creating library D:/a/NixVR-Engine/NixVR-Engine/build/bin/vrinject.lib and object D:/a/NixVR-Engine/NixVR-Engine/build/bin/vrinject.exp
   vrinject.vcxproj -> D:\a\NixVR-Engine\NixVR-Engine\build\bin\vrinject.dll
   	Generating DLL hash header
-  Get-FileHash : The term 'Get-FileHash' is not recognized as the name of a cmdlet, function, script file, or operable 
-  program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
-  At D:\a\NixVR-Engine\NixVR-Engine\build\generate_hash.ps1:2 char:10
-  + $hash = (Get-FileHash $DllPath -Algorithm SHA256).Hash
-  +          ~~~~~~~~~~~~
-      + CategoryInfo          : ObjectNotFound: (Get-FileHash:String) [], CommandNotFoundException
-      + FullyQualifiedErrorId : CommandNotFoundException
-   
   Building Custom Rule D:/a/NixVR-Engine/NixVR-Engine/CMakeLists.txt
   main.cpp
-  
-  \\?\C:\Users\RUNNER~1\AppData\Local\Temp\lnk{E5E060DB-54C0-4B07-B57E-C593FD1749E0}.tmp : manifest authoring error c1010001: Values of attribute "level" not equal in different manifest snippets.
-  
-LINK : fatal error LNK1327: failure during running mt.exe [D:\a\NixVR-Engine\NixVR-Engine\build\vr-inject-cli.vcxproj]
+MSVCRT.lib(exe_winmain.obj) : error LNK2019: unresolved external symbol WinMain referenced in function "int __cdecl __scrt_common_main_seh(void)" (?__scrt_common_main_seh@@YAHXZ) [D:\a\NixVR-Engine\NixVR-Engine\build\vr-inject-cli.vcxproj]
+D:\a\NixVR-Engine\NixVR-Engine\build\bin\vr-inject-cli.exe : fatal error LNK1120: 1 unresolved externals [D:\a\NixVR-Engine\NixVR-Engine\build\vr-inject-cli.vcxproj]
 
