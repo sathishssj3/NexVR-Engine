@@ -16,6 +16,12 @@ process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 
 const isDev = !app.isPackaged;
 
+// Prevent GPU process crashes (STATUS_BREAKPOINT / exit_code=-2147483645)
+// on certain Windows builds. The GPU subprocess crashes when the exe path
+// contains spaces. Running GPU in-process avoids the subprocess entirely.
+app.commandLine.appendSwitch('in-process-gpu');
+app.commandLine.appendSwitch('disable-gpu-sandbox');
+app.commandLine.appendSwitch('disable-software-rasterizer');
 app.disableHardwareAcceleration();
 
 // Register custom protocol scheme BEFORE app is ready.
@@ -69,7 +75,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: true,
+      sandbox: false,
       webSecurity: true,
       allowRunningInsecureContent: false,
       preload: path.join(__dirname, 'preload.js'),
@@ -82,7 +88,7 @@ function createWindow() {
     });
     mainWindow.webContents.openDevTools();
   } else {
-    // Load via our custom protocol — this works with ASAR + sandbox
+    // Load via our custom nexvr:// protocol — this works with ASAR + sandbox:false
     mainWindow.loadURL('nexvr://app/index.html').catch(err => {
       dialog.showErrorBox('loadURL Error', String(err));
     });
@@ -112,24 +118,23 @@ app.whenReady().then(() => {
   protocol.handle('nexvr', (request) => {
     const url = new URL(request.url);
     let filePath = decodeURIComponent(url.pathname);
-    // Remove leading slash on Windows
     if (filePath.startsWith('/')) filePath = filePath.substring(1);
-    // Default to index.html
     if (!filePath || filePath === '' || filePath === '/') filePath = 'index.html';
 
     const fullPath = path.join(frontendDir, filePath);
 
     try {
-      const data = fs.readFileSync(fullPath);
+      const nodeBuffer = fs.readFileSync(fullPath);
+      const uint8 = new Uint8Array(nodeBuffer.buffer, nodeBuffer.byteOffset, nodeBuffer.byteLength);
       const ext = path.extname(filePath).toLowerCase();
       const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
-      return new Response(data, {
+      return new Response(uint8, {
         status: 200,
         headers: { 'Content-Type': mimeType },
       });
     } catch (err: any) {
       console.error(`[nexvr://] Failed to serve: ${fullPath}`, err.message);
-      return new Response('Not Found', { status: 404 });
+      return new Response(`Not Found: ${filePath}`, { status: 404, headers: { 'Content-Type': 'text/plain' } });
     }
   });
 
