@@ -2,7 +2,7 @@ module.exports = {
   appId:       'dev.nexvr.engine',
   productName: 'NexVR Engine',
   copyright:   'Copyright © 2026 NexVR',
-  asar:        false,
+  asar:        true,
 
   directories: {
     output: 'dist-electron',

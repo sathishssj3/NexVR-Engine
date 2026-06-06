@@ -27,7 +27,12 @@ electron_1.contextBridge.exposeInMainWorld('ag', {
         monitor: (pid) => electron_1.ipcRenderer.invoke('inject:monitor', pid),
     },
     log: {
-        onLine: (cb) => electron_1.ipcRenderer.on('log:line', (_, l) => cb(l)),
+        onLine: (cb) => {
+            electron_1.ipcRenderer.on('log:line', (_, l) => {
+                if (typeof l === 'string')
+                    cb(l);
+            });
+        },
         offLine: () => electron_1.ipcRenderer.removeAllListeners('log:line'),
         export: (lines) => electron_1.ipcRenderer.invoke('log:export', lines),
     },
