@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as child_process from 'child_process';
 import * as util from 'util';
+import { pathToFileURL } from 'url';
 import * as crypto from 'crypto';
 import { GameEntry, VRStatus, VRConfig, InjectResult } from '../src/types';
 
@@ -50,7 +51,7 @@ function createWindow() {
     mainWindow.webContents.openDevTools();
   } else {
     const htmlPath = path.join(__dirname, '..', '..', 'frontend-dist', 'index.html');
-    mainWindow.loadFile(htmlPath).catch(err => {
+    mainWindow.loadURL(pathToFileURL(htmlPath).href).catch(err => {
       dialog.showErrorBox('loadFile Error', String(err) + '\nPath was: ' + htmlPath);
     });
   }
