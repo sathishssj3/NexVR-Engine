@@ -44,7 +44,26 @@ process.env.NEXVR_AUTH_TOKEN = NEXVR_AUTH_TOKEN;
 const execAsync = util.promisify(child_process.exec);
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 const isDev = !electron_1.app.isPackaged;
+// Prevent GPU process crashes (STATUS_BREAKPOINT / exit_code=-2147483645)
+// on certain Windows builds. The GPU subprocess crashes when the exe path
+// contains spaces. Running GPU in-process avoids the subprocess entirely.
+electron_1.app.commandLine.appendSwitch('in-process-gpu');
+electron_1.app.commandLine.appendSwitch('disable-gpu-sandbox');
+electron_1.app.commandLine.appendSwitch('disable-software-rasterizer');
 electron_1.app.disableHardwareAcceleration();
+// Register custom protocol scheme BEFORE app is ready.
+// This allows the main process (which can read ASAR) to serve files
+// to the sandboxed renderer, bypassing file:// + ASAR + sandbox issues.
+electron_1.protocol.registerSchemesAsPrivileged([{
+        scheme: 'nexvr',
+        privileges: {
+            standard: true,
+            secure: true,
+            supportFetchAPI: true,
+            corsEnabled: false,
+            bypassCSP: false,
+        }
+    }]);
 process.on('uncaughtException', (err) => {
     electron_1.dialog.showErrorBox('Uncaught Exception', err.stack || err.message || String(err));
 });
@@ -52,6 +71,23 @@ process.on('unhandledRejection', (reason) => {
     electron_1.dialog.showErrorBox('Unhandled Rejection', reason?.stack || reason?.message || String(reason));
 });
 let mainWindow = null;
+const MIME_TYPES = {
+    '.html': 'text/html',
+    '.js': 'text/javascript',
+    '.css': 'text/css',
+    '.json': 'application/json',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+    '.ttf': 'font/ttf',
+    '.eot': 'application/vnd.ms-fontobject',
+    '.map': 'application/json',
+};
 function createWindow() {
     mainWindow = new electron_1.BrowserWindow({
         width: 1000,
@@ -62,7 +98,7 @@ function createWindow() {
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
-            sandbox: true,
+            sandbox: false,
             webSecurity: true,
             allowRunningInsecureContent: false,
             preload: path.join(__dirname, 'preload.js'),
@@ -75,17 +111,15 @@ function createWindow() {
         mainWindow.webContents.openDevTools();
     }
     else {
-        const htmlPath = path.join(__dirname, '..', '..', 'frontend-dist', 'index.html');
-        mainWindow.loadFile(htmlPath).catch(err => {
-            electron_1.dialog.showErrorBox('loadFile Error', String(err) + '\nPath was: ' + htmlPath);
+        // Load via our custom nexvr:// protocol — this works with ASAR + sandbox:false
+        mainWindow.loadURL('nexvr://app/index.html').catch(err => {
+            electron_1.dialog.showErrorBox('loadURL Error', String(err));
         });
     }
     // NOTE: CSP is enforced via <meta> tag in index.html.
-    // Do NOT use session.webRequest.onHeadersReceived to inject CSP — it is
-    // incompatible with the file:// protocol in Electron 28+ and causes ERR_FAILED (-2).
     mainWindow.webContents.on('will-navigate', (event, url) => {
-        // Allow file:// navigations within our app directory
-        if (!isDev && !url.startsWith('file://')) {
+        // Allow nexvr:// and file:// navigations within our app
+        if (!isDev && !url.startsWith('nexvr://') && !url.startsWith('file://')) {
             event.preventDefault();
             console.log(`[SECURITY] Blocked navigation to: ${url}`);
         }
@@ -95,6 +129,33 @@ function createWindow() {
     });
 }
 electron_1.app.whenReady().then(() => {
+    // Register protocol handler to serve frontend files from ASAR.
+    // The main process can read ASAR (Node's fs is patched), so we read
+    // the file with fs and return a Response object.
+    const frontendDir = path.join(__dirname, '..', '..', 'frontend-dist');
+    electron_1.protocol.handle('nexvr', (request) => {
+        const url = new URL(request.url);
+        let filePath = decodeURIComponent(url.pathname);
+        if (filePath.startsWith('/'))
+            filePath = filePath.substring(1);
+        if (!filePath || filePath === '' || filePath === '/')
+            filePath = 'index.html';
+        const fullPath = path.join(frontendDir, filePath);
+        try {
+            const nodeBuffer = fs.readFileSync(fullPath);
+            const uint8 = new Uint8Array(nodeBuffer.buffer, nodeBuffer.byteOffset, nodeBuffer.byteLength);
+            const ext = path.extname(filePath).toLowerCase();
+            const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
+            return new Response(uint8, {
+                status: 200,
+                headers: { 'Content-Type': mimeType },
+            });
+        }
+        catch (err) {
+            console.error(`[nexvr://] Failed to serve: ${fullPath}`, err.message);
+            return new Response(`Not Found: ${filePath}`, { status: 404, headers: { 'Content-Type': 'text/plain' } });
+        }
+    });
     createWindow();
     electron_1.app.on('activate', () => {
         if (electron_1.BrowserWindow.getAllWindows().length === 0)
