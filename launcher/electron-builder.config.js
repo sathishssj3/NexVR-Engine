@@ -14,9 +14,7 @@ module.exports = {
     'electron-dist/**/*',
     'package.json'
   ],
-  asarUnpack: [
-    'frontend-dist/**/*'
-  ],
+
 
   win: {
     target: [{ target: 'nsis', arch: ['x64'] }],
