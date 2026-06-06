@@ -38,6 +38,9 @@ const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
 const child_process = __importStar(require("child_process"));
 const util = __importStar(require("util"));
+const crypto = __importStar(require("crypto"));
+const NEXVR_AUTH_TOKEN = crypto.randomUUID();
+process.env.NEXVR_AUTH_TOKEN = NEXVR_AUTH_TOKEN;
 const execAsync = util.promisify(child_process.exec);
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 const isDev = !electron_1.app.isPackaged;
@@ -59,6 +62,9 @@ function createWindow() {
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
+            sandbox: true,
+            webSecurity: true,
+            allowRunningInsecureContent: false,
             preload: path.join(__dirname, 'preload.js'),
         },
     });
@@ -74,6 +80,19 @@ function createWindow() {
             electron_1.dialog.showErrorBox('loadFile Error', String(err) + '\nPath was: ' + htmlPath);
         });
     }
+    // NOTE: CSP is enforced via <meta> tag in index.html.
+    // Do NOT use session.webRequest.onHeadersReceived to inject CSP — it is
+    // incompatible with the file:// protocol in Electron 28+ and causes ERR_FAILED (-2).
+    mainWindow.webContents.on('will-navigate', (event, url) => {
+        // Allow file:// navigations within our app directory
+        if (!isDev && !url.startsWith('file://')) {
+            event.preventDefault();
+            console.log(`[SECURITY] Blocked navigation to: ${url}`);
+        }
+    });
+    mainWindow.webContents.setWindowOpenHandler(() => {
+        return { action: 'deny' };
+    });
 }
 electron_1.app.whenReady().then(() => {
     createWindow();
@@ -87,7 +106,52 @@ electron_1.app.on('window-all-closed', () => {
         electron_1.app.quit();
 });
 // IPC Handlers
+const gamePathsMap = {};
 const gameExeMap = {};
+const injectRateLimits = {};
+function validateGameId(id) {
+    if (typeof id !== 'string')
+        throw new Error('Invalid gameId type');
+    if (!/^[a-zA-Z0-9_]+$/.test(id))
+        throw new Error('gameId must be alphanumeric/underscore');
+    if (id.length > 50)
+        throw new Error('gameId too long');
+    return id;
+}
+function validateConfig(cfg) {
+    if (typeof cfg !== 'object' || cfg === null)
+        throw new Error('Invalid config');
+    const c = cfg;
+    const sens = Number(c.motionAimSensitivity);
+    if (isNaN(sens) || sens < 0.1 || sens > 10.0)
+        throw new Error('motionAimSensitivity out of range');
+    return {
+        motionAimSensitivity: sens,
+        useRecommendedResolution: Boolean(c.useRecommendedResolution),
+        srgbCorrection: Boolean(c.srgbCorrection),
+        depthSubmission: Boolean(c.depthSubmission),
+        rawInputMode: Boolean(c.rawInputMode),
+        autoInjectOnLaunch: Boolean(c.autoInjectOnLaunch),
+    };
+}
+function safeGamePath(installPath, filename) {
+    if (/[\/\\:*?"<>|]/.test(filename))
+        throw new Error(`Invalid filename: ${filename}`);
+    const resolved = path.resolve(installPath, filename);
+    if (!resolved.startsWith(path.resolve(installPath)))
+        throw new Error('Path traversal detected');
+    return resolved;
+}
+function sanitizeAcfString(val) {
+    return val.replace(/[^\x20-\x7E]/g, '').substring(0, 256);
+}
+function validateSteamPath(p) {
+    if (!path.isAbsolute(p))
+        return false;
+    if (p.includes('..'))
+        return false;
+    return fs.existsSync(path.join(p, 'steam.exe'));
+}
 const isIgnoredSoftware = (name) => {
     const lower = name.toLowerCase();
     return lower.includes('steamworks common redistributables') ||
@@ -130,6 +194,10 @@ electron_1.ipcMain.handle('library:scan', async () => {
         if (!match)
             return { active: games, waiting: waitingGames };
         const steamPath = match[1].trim().replace(/\//g, '\\');
+        if (!validateSteamPath(steamPath)) {
+            console.log('[SECURITY] Steam path validation failed');
+            return { active: games, waiting: waitingGames };
+        }
         const vdfPath = path.join(steamPath, 'steamapps', 'libraryfolders.vdf');
         if (!fs.existsSync(vdfPath))
             return { active: games, waiting: waitingGames };
@@ -153,12 +221,15 @@ electron_1.ipcMain.handle('library:scan', async () => {
                     const dirMatch = content.match(/"installdir"\s+"([^"]+)"/);
                     if (!idMatch || !nameMatch || !dirMatch)
                         continue;
-                    if (isIgnoredSoftware(nameMatch[1]))
+                    const idStr = sanitizeAcfString(idMatch[1]);
+                    const nameStr = sanitizeAcfString(nameMatch[1]);
+                    const dirStr = sanitizeAcfString(dirMatch[1]);
+                    if (isIgnoredSoftware(nameStr))
                         continue;
-                    if (seenIds.has(idMatch[1]))
+                    if (seenIds.has(idStr))
                         continue;
-                    seenIds.add(idMatch[1]);
-                    const installPath = path.join(appsDir, 'common', dirMatch[1]);
+                    seenIds.add(idStr);
+                    const installPath = path.join(appsDir, 'common', dirStr);
                     if (!fs.existsSync(installPath))
                         continue;
                     let api = 'DX11';
@@ -170,20 +241,20 @@ electron_1.ipcMain.handle('library:scan', async () => {
                     else if (hasDX12)
                         api = 'DX12';
                     const hasInjector = fs.existsSync(path.join(installPath, 'vrinject.dll'));
-                    if (ignoredIds.includes(idMatch[1]))
+                    if (ignoredIds.includes(idStr))
                         continue;
                     const entry = {
-                        id: idMatch[1],
-                        name: nameMatch[1],
+                        id: idStr,
+                        name: nameStr,
                         installPath,
                         executablePath: '',
                         sizeGB: 0,
                         api,
-                        compat: compatList[idMatch[1]] || 'unknown',
+                        compat: compatList[idStr] || 'unknown',
                         hasInjector
                     };
-                    gamePathsMap[idMatch[1]] = installPath;
-                    if (hiddenIds.includes(idMatch[1])) {
+                    gamePathsMap[idStr] = installPath;
+                    if (hiddenIds.includes(idStr)) {
                         waitingGames.push(entry);
                     }
                     else {
@@ -493,13 +564,13 @@ const defaultVRConfig = {
     rawInputMode: true,
     autoInjectOnLaunch: true,
 };
-let gamePathsMap = {};
 electron_1.ipcMain.handle('config:read', async (_, id) => {
     try {
-        const installPath = gamePathsMap[id];
+        const validId = validateGameId(id);
+        const installPath = gamePathsMap[validId];
         if (!installPath)
             return defaultVRConfig;
-        const cfgPath = path.join(installPath, 'vrinject.json');
+        const cfgPath = safeGamePath(installPath, 'vrinject.json');
         if (fs.existsSync(cfgPath)) {
             const content = fs.readFileSync(cfgPath, 'utf-8');
             const parsed = JSON.parse(content);
@@ -508,16 +579,23 @@ electron_1.ipcMain.handle('config:read', async (_, id) => {
         return defaultVRConfig;
     }
     catch (e) {
+        console.error('config:read error', e);
         return defaultVRConfig;
     }
 });
 electron_1.ipcMain.handle('config:write', async (_, id, cfg) => {
     try {
-        const installPath = gamePathsMap[id];
+        const cfgString = JSON.stringify(cfg);
+        if (cfgString.length > 10240)
+            throw new Error('Payload too large (max 10KB)');
+        const validId = validateGameId(id);
+        const validCfg = validateConfig(cfg);
+        const installPath = gamePathsMap[validId];
         if (!installPath)
             return { success: false, error: 'Game path not found' };
-        const cfgPath = path.join(installPath, 'vrinject.json');
-        fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2));
+        const cfgPath = safeGamePath(installPath, 'vrinject.json');
+        fs.writeFileSync(cfgPath, JSON.stringify(validCfg, null, 2));
+        fs.chmodSync(cfgPath, 0o600); // S6.3: Owner rw only
         return { success: true };
     }
     catch (e) {
@@ -556,11 +634,21 @@ electron_1.ipcMain.handle('inject:cancel', async () => {
 });
 electron_1.ipcMain.handle('inject:deploy', async (event, id) => {
     try {
-        const installPath = gamePathsMap[id];
+        const now = Date.now();
+        const windowMs = 15 * 60 * 1000;
+        if (!injectRateLimits[id])
+            injectRateLimits[id] = [];
+        injectRateLimits[id] = injectRateLimits[id].filter(t => now - t < windowMs);
+        if (injectRateLimits[id].length >= 5) {
+            return { success: false, message: 'Rate limit exceeded: Max 5 attempts per 15 minutes.' };
+        }
+        injectRateLimits[id].push(now);
+        const validId = validateGameId(id);
+        const installPath = gamePathsMap[validId];
         if (!installPath)
             return { success: false, message: 'Game path not found' };
         // 1. Reset log file
-        const logPath = path.join(installPath, 'vrinject.log');
+        const logPath = safeGamePath(installPath, 'vrinject.log');
         fs.writeFileSync(logPath, '');
         let lastSize = 0;
         // Watch log file immediately so we capture early errors
@@ -701,7 +789,7 @@ electron_1.ipcMain.handle('inject:deploy', async (event, id) => {
                     resolve({ success: false, message: 'Injector timed out or was blocked by Anti-Cheat.' });
                 }
             }, 10000);
-            child_process.execFile(cliPath, ['--pid', String(targetPid), '--dll', dllTarget, '--launcher-key', 'NexVR-Authorized-Launch'], { timeout: 10000, killSignal: 'SIGKILL' }, (err, stdout, stderr) => {
+            child_process.execFile(cliPath, ['--pid', String(targetPid), '--dll', dllTarget], { timeout: 10000, killSignal: 'SIGKILL' }, (err, stdout, stderr) => {
                 if (isResolved)
                     return;
                 isResolved = true;
