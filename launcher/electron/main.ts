@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, dialog, protocol, net } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as child_process from 'child_process';
@@ -18,6 +18,20 @@ const isDev = !app.isPackaged;
 
 app.disableHardwareAcceleration();
 
+// Register custom protocol scheme BEFORE app is ready.
+// This allows the main process (which can read ASAR) to serve files
+// to the sandboxed renderer, bypassing file:// + ASAR + sandbox issues.
+protocol.registerSchemesAsPrivileged([{
+  scheme: 'nexvr',
+  privileges: {
+    standard: true,
+    secure: true,
+    supportFetchAPI: true,
+    corsEnabled: false,
+    bypassCSP: false,
+  }
+}]);
+
 process.on('uncaughtException', (err) => {
   dialog.showErrorBox('Uncaught Exception', err.stack || err.message || String(err));
 });
@@ -26,6 +40,24 @@ process.on('unhandledRejection', (reason: any) => {
 });
 
 let mainWindow: BrowserWindow | null = null;
+
+const MIME_TYPES: Record<string, string> = {
+  '.html': 'text/html',
+  '.js':   'text/javascript',
+  '.css':  'text/css',
+  '.json': 'application/json',
+  '.png':  'image/png',
+  '.jpg':  'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif':  'image/gif',
+  '.svg':  'image/svg+xml',
+  '.ico':  'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2':'font/woff2',
+  '.ttf':  'font/ttf',
+  '.eot':  'application/vnd.ms-fontobject',
+  '.map':  'application/json',
+};
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -50,19 +82,17 @@ function createWindow() {
     });
     mainWindow.webContents.openDevTools();
   } else {
-    const htmlPath = path.join(__dirname, '..', '..', 'frontend-dist', 'index.html');
-    mainWindow.loadFile(htmlPath).catch(err => {
-      dialog.showErrorBox('loadFile Error', String(err) + '\nPath was: ' + htmlPath);
+    // Load via our custom protocol — this works with ASAR + sandbox
+    mainWindow.loadURL('nexvr://app/index.html').catch(err => {
+      dialog.showErrorBox('loadURL Error', String(err));
     });
   }
 
   // NOTE: CSP is enforced via <meta> tag in index.html.
-  // Do NOT use session.webRequest.onHeadersReceived to inject CSP — it is
-  // incompatible with the file:// protocol in Electron 28+ and causes ERR_FAILED (-2).
 
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    // Allow file:// navigations within our app directory
-    if (!isDev && !url.startsWith('file://')) {
+    // Allow nexvr:// and file:// navigations within our app
+    if (!isDev && !url.startsWith('nexvr://') && !url.startsWith('file://')) {
       event.preventDefault();
       console.log(`[SECURITY] Blocked navigation to: ${url}`);
     }
@@ -74,6 +104,35 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  // Register protocol handler to serve frontend files from ASAR.
+  // The main process can read ASAR (Node's fs is patched), so we read
+  // the file with fs and return a Response object.
+  const frontendDir = path.join(__dirname, '..', '..', 'frontend-dist');
+
+  protocol.handle('nexvr', (request) => {
+    const url = new URL(request.url);
+    let filePath = decodeURIComponent(url.pathname);
+    // Remove leading slash on Windows
+    if (filePath.startsWith('/')) filePath = filePath.substring(1);
+    // Default to index.html
+    if (!filePath || filePath === '' || filePath === '/') filePath = 'index.html';
+
+    const fullPath = path.join(frontendDir, filePath);
+
+    try {
+      const data = fs.readFileSync(fullPath);
+      const ext = path.extname(filePath).toLowerCase();
+      const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
+      return new Response(data, {
+        status: 200,
+        headers: { 'Content-Type': mimeType },
+      });
+    } catch (err: any) {
+      console.error(`[nexvr://] Failed to serve: ${fullPath}`, err.message);
+      return new Response('Not Found', { status: 404 });
+    }
+  });
+
   createWindow();
 
   app.on('activate', () => {
