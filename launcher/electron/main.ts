@@ -51,7 +51,7 @@ function createWindow() {
     mainWindow.webContents.openDevTools();
   } else {
     const htmlPath = path.join(__dirname, '..', '..', 'frontend-dist', 'index.html');
-    mainWindow.loadURL(pathToFileURL(htmlPath).href).catch(err => {
+    mainWindow.loadFile(htmlPath).catch(err => {
       dialog.showErrorBox('loadFile Error', String(err) + '\nPath was: ' + htmlPath);
     });
   }
