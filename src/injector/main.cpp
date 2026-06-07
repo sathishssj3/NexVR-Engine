@@ -350,23 +350,15 @@ int main(int argc, char* argv[]) {
     }
 
     // S1.4: Anti-tamper hash check
+#if __has_include("expected_hash.h")
+#include "expected_hash.h"
+#endif
+
 #ifdef EXPECTED_DLL_HASH
     std::wstring expectedHash = EXPECTED_DLL_HASH;
 #else
-    // Fallback if not injected at compile time
-    std::wstring expectedHash = L"";
-    char hashPath[MAX_PATH];
-    strcpy_s(hashPath, dllPath.c_str());
-    PathRemoveFileSpecA(hashPath);
-    PathAppendA(hashPath, "dll_hash.txt");
-    FILE* hf = nullptr;
-    if (fopen_s(&hf, hashPath, "r") == 0 && hf) {
-        char hBuf[128] = {0};
-        fread(hBuf, 1, 64, hf);
-        fclose(hf);
-        std::string hStr(hBuf);
-        expectedHash.assign(hStr.begin(), hStr.end());
-    }
+    PrintErr("[ERROR] DLL hash not compiled into injector. Security check cannot be performed.");
+    return 13;
 #endif
 
     if (!expectedHash.empty()) {
