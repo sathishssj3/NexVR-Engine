@@ -205,8 +205,8 @@ if(FXC_EXECUTABLE)
                 VERBATIM
             )
 
-            set(SHADER_HDR_VK ${SHADER_OUTPUT_DIR}/${SHADER_NAME}_cs_vk.h)
-            list(APPEND SHADER_OUTPUTS ${SHADER_HDR_VK})
+            # set(SHADER_HDR_VK ${SHADER_OUTPUT_DIR}/${SHADER_NAME}_cs_vk.h)
+            # list(APPEND SHADER_OUTPUTS ${SHADER_HDR_VK})
 
             # Vulkan SPIR-V shader compilation disabled because default Windows Kits dxc doesn't support it
             # and we only need D3D11 for Stumble Guys.
