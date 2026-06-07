@@ -352,9 +352,6 @@ int main(int argc, char* argv[]) {
     // S1.4: Anti-tamper hash check
 #if __has_include("expected_hash.h")
 #include "expected_hash.h"
-#endif
-
-#ifdef EXPECTED_DLL_HASH
     std::wstring expectedHash = EXPECTED_DLL_HASH;
 #else
     PrintErr("[ERROR] DLL hash not compiled into injector. Security check cannot be performed.");
