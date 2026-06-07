@@ -60,6 +60,7 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState<'library' | 'about'>('library');
   const [transitioning, setTransitioning] = useState(false);
   const injectTokenRef = useRef<number>(0);
+  const mainContentRef = useRef<HTMLDivElement>(null);
 
   const scanGames = async () => {
     if (window.ag && window.ag.library) {
@@ -84,6 +85,13 @@ export default function App() {
     } else {
       setConfig(null);
     }
+    
+    // Ensure we scroll to top AFTER the render completes
+    requestAnimationFrame(() => {
+      if (mainContentRef.current) {
+        mainContentRef.current.scrollTop = 0;
+      }
+    });
   }, [selectedGame]);
 
   const handleSelectGame = (g: GameEntry) => {
@@ -92,6 +100,11 @@ export default function App() {
     setTimeout(() => {
       setSelectedGame(g);
       setTransitioning(false);
+      requestAnimationFrame(() => {
+        if (mainContentRef.current) {
+          mainContentRef.current.scrollTop = 0;
+        }
+      });
     }, 150);
   };
 
@@ -186,7 +199,7 @@ export default function App() {
             fontFamily: 'var(--ag-font-display)',
             textShadow: '0 0 10px rgba(255,255,255,0.2)' 
           }}>
-            NEXVR
+            NEX/<span style={{ marginLeft: '-0.15em' }}>R</span> ENGINE
           </strong>
           <span style={{ 
             marginLeft: 10, marginRight: 24, color: 'var(--ag-accent)', fontSize: 10, 
@@ -261,11 +274,13 @@ export default function App() {
               onIgnore={async (id: string) => { await window.ag.library.ignoreGame(id); scanGames(); }}
               onRestoreIgnored={async () => { await window.ag.library.restoreIgnoredGames(); scanGames(); }}
             />
-            <div style={{ 
+            <div 
+              ref={mainContentRef}
+              style={{ 
               flex: 1, padding: '28px 36px', overflowY: 'auto', overflowX: 'hidden',
               opacity: transitioning ? 0 : 1,
-              transform: transitioning ? 'translateY(8px)' : 'translateY(0)',
-              transition: 'opacity 0.15s ease, transform 0.15s ease'
+              transform: transitioning ? 'translateY(6px)' : 'translateY(0)',
+              transition: 'opacity 0.2s ease, transform 0.2s ease'
             }}>
               {selectedGame && config ? (
                 <GameDetail 

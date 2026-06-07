@@ -25,7 +25,7 @@ export function AboutPanel() {
           fontFamily: 'var(--ag-font-display)',
           textShadow: '0 0 30px rgba(0,240,255,0.3), 0 0 60px rgba(0,240,255,0.1)' 
         }}>
-          NEXVR
+          NEX/<span style={{ marginLeft: '-0.15em' }}>R</span> ENGINE
         </h1>
         <div style={{ 
           fontSize: 12, fontFamily: 'var(--ag-font-mono)', 
