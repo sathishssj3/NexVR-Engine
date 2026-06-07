@@ -23,10 +23,12 @@ function TypewriterLine({ text, isLast }: { text: string, isLast: boolean }) {
 }
 
 export function SessionLog({ logLines }: { logLines: string[] }) {
-  const endRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
   }, [logLines]);
 
   const getColor = (line: string) => {
@@ -96,16 +98,18 @@ export function SessionLog({ logLines }: { logLines: string[] }) {
         </button>
       </div>
       
-      <div style={{ 
+      <div 
+        ref={scrollContainerRef}
+        style={{ 
         flex: 1, minHeight: 140, 
-        background: 'rgba(2, 3, 6, 0.9)', 
-        border: '1px solid var(--ag-border)', 
-        borderRadius: 'var(--ag-radius-sm)', 
+        background: 'rgba(2, 3, 5, 0.95)', 
+        border: '1px solid rgba(0,240,255,0.15)', 
+        borderRadius: 'var(--ag-radius-md)', 
         padding: '16px 20px', 
         fontFamily: 'var(--ag-font-mono)', 
-        fontSize: 11, lineHeight: 1.9, 
+        fontSize: 12, lineHeight: 1.8, 
         overflowY: 'auto', 
-        boxShadow: 'inset 0 0 30px rgba(0,0,0,0.8), 0 4px 10px rgba(0,0,0,0.2)', 
+        boxShadow: 'inset 0 0 40px rgba(0,0,0,0.9), 0 5px 15px rgba(0,0,0,0.4), 0 0 20px rgba(0,240,255,0.05)', 
         position: 'relative', display: 'flex', flexDirection: 'column' 
       }}>
         {/* Scanline overlay */}
@@ -148,7 +152,6 @@ export function SessionLog({ logLines }: { logLines: string[] }) {
               );
             })
           )}
-          <div ref={endRef} />
         </div>
       </div>
     </div>

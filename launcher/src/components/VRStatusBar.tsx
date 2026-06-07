@@ -91,21 +91,22 @@ export function VRStatusBar({ status, selectedGame, injectState, onInject }: any
             disabled={!selectedGame || injectState === 'success' || injectState === 'error' || injectState === 'cancelled'}
             className={isReady ? 'pulse-btn btn-glow' : 'btn-glow'}
             style={{ 
-              background: isActive ? 'rgba(255,0,60,0.15)' : injectState === 'success' ? 'rgba(0,255,136,0.15)' : 'rgba(0,240,255,0.08)', 
+              background: isActive ? 'rgba(255,0,60,0.15)' : injectState === 'success' ? 'rgba(0,255,136,0.15)' : 'linear-gradient(135deg, rgba(0,240,255,0.15), rgba(0,240,255,0.05))', 
               border: `1px solid ${getButtonColor()}`, 
               color: getButtonColor(),
-              padding: '12px 28px',
-              borderRadius: 8,
+              padding: '16px 36px',
+              borderRadius: 'var(--ag-radius-sm)',
               cursor: (!selectedGame || injectState === 'success' || injectState === 'error' || injectState === 'cancelled') ? 'not-allowed' : 'pointer',
               opacity: (!selectedGame && injectState === 'default') ? 0.3 : 1,
-              fontFamily: 'var(--ag-font-mono)',
-              fontWeight: 'bold',
-              fontSize: 14,
+              fontFamily: 'var(--ag-font-display)',
+              fontWeight: 800,
+              fontSize: 16,
               letterSpacing: '2px',
-              minWidth: 220,
-              textShadow: `0 0 10px ${getButtonColor()}`,
-              boxShadow: injectState !== 'default' ? `0 0 20px ${getButtonColor()}60, inset 0 2px 15px ${getButtonColor()}30` : `0 4px 15px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,255,255,0.1)`,
-              transition: 'all 0.4s var(--ag-transition)'
+              minWidth: 260,
+              textShadow: `0 0 15px ${getButtonColor()}90`,
+              boxShadow: injectState !== 'default' ? `0 0 25px ${getButtonColor()}60, inset 0 2px 20px ${getButtonColor()}40` : `0 8px 25px rgba(0,0,0,0.4), 0 0 15px rgba(0,240,255,0.15), inset 0 1px 2px rgba(255,255,255,0.2)`,
+              transition: 'all 0.4s var(--ag-transition)',
+              transform: isActive ? 'scale(0.98)' : 'scale(1)'
             }}
           >
             {getButtonContent()}

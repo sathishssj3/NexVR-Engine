@@ -2,7 +2,7 @@
 #include <d3d11.h>
 #include <dxgi.h>
 #include <wrl/client.h>
-
+#include <mutex>
 namespace vrinject {
 
 // Per-frame captured resources from the hooked game
@@ -19,9 +19,12 @@ struct FrameResources {
     
     UINT width = 0;
     UINT height = 0;
+    UINT depthWidth = 0;
+    UINT depthHeight = 0;
     DXGI_FORMAT depthFormat = DXGI_FORMAT_UNKNOWN;
     bool reversedZ = false;
     bool valid = false;
+    bool initAttempted = false;
 };
 
 namespace DX11Hook {
@@ -32,6 +35,7 @@ namespace DX11Hook {
     void Shutdown();
     
     // Access the latest captured frame resources
+    extern std::recursive_mutex g_resourceMutex;
     FrameResources GetCurrentFrame();
     
     // Callbacks for pipeline integration

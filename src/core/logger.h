@@ -30,8 +30,8 @@ namespace Logger {
 
 // ---- Internal state (defined inline so this stays header-only) -------------
 
-inline std::ofstream g_logFile;
-inline std::mutex    g_mutex;
+inline FILE* g_logFile = nullptr;
+inline std::mutex g_mutex;
 
 enum class Level {
     Debug,
@@ -55,25 +55,15 @@ inline const char* LevelToString(Level level) {
 /// Returns a timestamp string in "YYYY-MM-DD HH:MM:SS.mmm" format.
 inline std::string Timestamp() {
     using namespace std::chrono;
-
     auto now       = system_clock::now();
     auto ms        = duration_cast<milliseconds>(now.time_since_epoch()) % 1000;
-    auto time_t_now = system_clock::to_time_t(now);
-
-    std::tm local_tm{};
-    localtime_s(&local_tm, &time_t_now);
-
-    char buf[32];
-    std::snprintf(buf, sizeof(buf),
-                  "%04d-%02d-%02d %02d:%02d:%02d.%03lld",
-                  local_tm.tm_year + 1900,
-                  local_tm.tm_mon + 1,
-                  local_tm.tm_mday,
-                  local_tm.tm_hour,
-                  local_tm.tm_min,
-                  local_tm.tm_sec,
-                  static_cast<long long>(ms.count()));
-    return std::string(buf);
+    auto timer     = system_clock::to_time_t(now);
+    std::tm bt     = *std::localtime(&timer);
+    char buf[64];
+    std::snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d.%03d",
+                  bt.tm_year + 1900, bt.tm_mon + 1, bt.tm_mday,
+                  bt.tm_hour, bt.tm_min, bt.tm_sec, static_cast<int>(ms.count()));
+    return buf;
 }
 
 // ---- Public API ------------------------------------------------------------
@@ -81,19 +71,12 @@ inline std::string Timestamp() {
 /// Open the log file. Call once at startup.
 inline void Init(const std::string& logPath) {
     std::lock_guard<std::mutex> lock(g_mutex);
-    if (g_logFile.is_open()) return;           // already initialised
+    if (g_logFile) return;
 
-    // S6.2 Cap log file size and rotate
-    std::error_code ec;
-    if (std::filesystem::exists(logPath, ec)) {
-        if (std::filesystem::file_size(logPath, ec) > 10 * 1024 * 1024) {
-            std::filesystem::rename(logPath, logPath + ".old", ec);
-        }
-    }
-
-    g_logFile.open(logPath, std::ios::out | std::ios::app); // append mode after rotation
-    if (g_logFile.is_open()) {
-        g_logFile << "=== VRInject Log Started: " << Timestamp() << " ===" << std::endl;
+    g_logFile = _fsopen(logPath.c_str(), "a", _SH_DENYNO);
+    if (g_logFile) {
+        std::fprintf(g_logFile, "=== VRInject Log Started: %s ===\n", Timestamp().c_str());
+        std::fflush(g_logFile);
     }
     OutputDebugStringA("[VRInject] Logger initialised\n");
 }
@@ -101,35 +84,32 @@ inline void Init(const std::string& logPath) {
 /// Flush and close the log file. Call once at shutdown.
 inline void Shutdown() {
     std::lock_guard<std::mutex> lock(g_mutex);
-    if (g_logFile.is_open()) {
-        g_logFile << "=== VRInject Log Ended: " << Timestamp() << " ===" << std::endl;
-        g_logFile.close();
+    if (g_logFile) {
+        std::fprintf(g_logFile, "=== VRInject Log Ended: %s ===\n", Timestamp().c_str());
+        std::fclose(g_logFile);
+        g_logFile = nullptr;
     }
     OutputDebugStringA("[VRInject] Logger shut down\n");
 }
 
 /// Core logging function – thread-safe, supports printf-style formatting.
 inline void Log(Level level, const char* file, int line, const char* fmt, ...) {
-    // Format the user message first (on the stack to avoid allocations).
     char userBuf[1024];
     va_list args;
     va_start(args, fmt);
     std::vsnprintf(userBuf, sizeof(userBuf), fmt, args);
     va_end(args);
 
-    // S6.1 Sanitize log string
     std::string safeMessage = userBuf;
     std::regex pathRegex(R"([A-Za-z]:\\[^\s]+\\([^\s\\]+))");
     safeMessage = std::regex_replace(safeMessage, pathRegex, "$1");
 
-    // Strip path down to filename for readability.
     const char* filename = file;
     if (const char* slash = std::strrchr(file, '\\'))
         filename = slash + 1;
     else if (const char* fslash = std::strrchr(file, '/'))
         filename = fslash + 1;
 
-    // Build the final line: "[TIMESTAMP] LEVEL filename:line | message"
     char lineBuf[2048];
     std::snprintf(lineBuf, sizeof(lineBuf),
                   "[%s] %s %s:%d | %s\n",
@@ -139,17 +119,13 @@ inline void Log(Level level, const char* file, int line, const char* fmt, ...) {
                   line,
                   safeMessage.c_str());
 
-    // Write to both destinations under the lock.
-    {
-        std::lock_guard<std::mutex> lock(g_mutex);
-        if (g_logFile.is_open()) {
-            g_logFile << lineBuf;
-            g_logFile.flush();               // flush every line; we're debugging
-        }
-    }
-
-    // OutputDebugString is already thread-safe on Windows.
     OutputDebugStringA(lineBuf);
+
+    std::lock_guard<std::mutex> lock(g_mutex);
+    if (g_logFile) {
+        std::fprintf(g_logFile, "%s", lineBuf);
+        std::fflush(g_logFile);
+    }
 }
 
 } // namespace Logger

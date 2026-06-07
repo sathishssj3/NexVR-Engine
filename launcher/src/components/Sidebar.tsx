@@ -35,15 +35,15 @@ export function Sidebar({ games, waitingGames = [], selectedId, onSelect, onResc
             value={search}
             onChange={e => setSearch(e.target.value)}
             style={{ 
-              width: '100%', boxSizing: 'border-box', padding: '11px 14px 11px 32px', 
+              width: '100%', boxSizing: 'border-box', padding: '12px 14px 12px 36px', 
               background: 'rgba(5, 8, 12, 0.6)', border: '1px solid var(--ag-border)', 
-              color: 'var(--ag-accent)', outline: 'none', borderRadius: 'var(--ag-radius-sm)', 
-              fontFamily: 'var(--ag-font-mono)', fontSize: 12, letterSpacing: '1px', 
-              transition: 'all 0.3s var(--ag-transition)', 
+              color: 'var(--ag-text-primary)', outline: 'none', borderRadius: 'var(--ag-radius-sm)', 
+              fontFamily: 'var(--ag-font-mono)', fontSize: 13, letterSpacing: '1px', 
+              transition: 'all 0.4s var(--ag-transition)', 
               boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.8), 0 1px 1px rgba(255,255,255,0.03)' 
             }}
-            onFocus={e => { e.target.style.borderColor = 'rgba(0, 240, 255, 0.5)'; e.target.style.boxShadow = '0 0 15px rgba(0, 240, 255, 0.15), inset 0 2px 6px rgba(0,0,0,0.8)'; }}
-            onBlur={e => { e.target.style.borderColor = 'var(--ag-border)'; e.target.style.boxShadow = 'inset 0 2px 6px rgba(0,0,0,0.8), 0 1px 1px rgba(255,255,255,0.03)'; }}
+            onFocus={e => { e.target.style.borderColor = 'rgba(0, 240, 255, 0.6)'; e.target.style.boxShadow = '0 0 20px rgba(0, 240, 255, 0.2), inset 0 2px 6px rgba(0,0,0,0.8)'; e.target.style.background = 'rgba(10, 15, 25, 0.8)'; }}
+            onBlur={e => { e.target.style.borderColor = 'var(--ag-border)'; e.target.style.boxShadow = 'inset 0 2px 6px rgba(0,0,0,0.8), 0 1px 1px rgba(255,255,255,0.03)'; e.target.style.background = 'rgba(5, 8, 12, 0.6)'; }}
           />
         </div>
         {/* Game count */}
@@ -117,33 +117,33 @@ export function Sidebar({ games, waitingGames = [], selectedId, onSelect, onResc
                 className={`glitch-hover slide-in-left stagger-${Math.min(i + 1, 5)}`}
                 onClick={() => onSelect(g)}
                 style={{ 
-                  padding: '11px 14px', 
+                  padding: '12px 16px', 
                   cursor: 'pointer', 
                   display: 'flex', 
                   alignItems: 'center',
-                  borderLeft: selectedId === g.id ? '3px solid var(--ag-accent)' : '3px solid transparent',
-                  background: selectedId === g.id ? 'radial-gradient(150% 100% at 0% 50%, rgba(0,240,255,0.15), rgba(0,240,255,0.01) 80%, transparent)' : 'transparent',
-                  marginBottom: 3,
+                  borderLeft: selectedId === g.id ? '4px solid var(--ag-accent)' : '4px solid transparent',
+                  background: selectedId === g.id ? 'linear-gradient(90deg, rgba(0,240,255,0.15) 0%, rgba(0,240,255,0.02) 100%)' : 'transparent',
+                  marginBottom: 6,
                   borderRadius: 'var(--ag-radius-sm)',
-                  transition: 'all 0.3s var(--ag-transition)',
-                  boxShadow: selectedId === g.id ? '-1px 0 15px rgba(0,240,255,0.2), inset 0 1px 1px rgba(255,255,255,0.03)' : 'none',
+                  transition: 'all 0.4s var(--ag-transition)',
+                  boxShadow: selectedId === g.id ? 'inset 0 1px 1px rgba(255,255,255,0.05), -2px 0 15px rgba(0,240,255,0.2)' : 'none',
                   position: 'relative'
                 }}
-                onMouseEnter={e => { if (selectedId !== g.id) e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
-                onMouseLeave={e => { if (selectedId !== g.id) e.currentTarget.style.background = 'transparent'; }}
+                onMouseEnter={e => { if (selectedId !== g.id) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.transform = 'translateX(4px)'; } }}
+                onMouseLeave={e => { if (selectedId !== g.id) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateX(0)'; } }}
               >
                 {/* Game Icon */}
                 <div style={{ 
-                  width: 44, height: 58, borderRadius: 'var(--ag-radius-sm)', 
-                  background: selectedId === g.id ? 'linear-gradient(135deg, rgba(40,50,75,0.6), #050608)' : 'linear-gradient(135deg, rgba(20,25,35,0.4), #050608)', 
+                  width: 48, height: 64, borderRadius: 'var(--ag-radius-sm)', 
+                  background: selectedId === g.id ? 'linear-gradient(135deg, rgba(40,50,75,0.8), #050608)' : 'linear-gradient(135deg, rgba(20,25,35,0.5), #050608)', 
                   display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                  marginRight: 12, fontSize: 18, fontWeight: 'bold', 
+                  marginRight: 16, fontSize: 20, fontWeight: 'bold', 
                   color: selectedId === g.id ? '#fff' : 'var(--ag-text-muted)', 
                   flexShrink: 0, 
-                  boxShadow: selectedId === g.id ? '0 6px 12px rgba(0,240,255,0.2), inset 0 1px 2px rgba(255,255,255,0.2)' : '0 4px 10px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.05)', 
+                  boxShadow: selectedId === g.id ? '0 8px 16px rgba(0,240,255,0.25), inset 0 1px 2px rgba(255,255,255,0.3)' : '0 4px 10px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.05)', 
                   overflow: 'hidden', 
-                  border: selectedId === g.id ? '1px solid rgba(0,240,255,0.4)' : '1px solid rgba(255,255,255,0.05)', 
-                  transition: 'all 0.3s var(--ag-transition)' 
+                  border: selectedId === g.id ? '1px solid rgba(0,240,255,0.5)' : '1px solid rgba(255,255,255,0.08)', 
+                  transition: 'all 0.4s var(--ag-transition)' 
                 }}>
                   {g.iconBase64 ? (
                      <img src={g.iconBase64} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt={g.name} />

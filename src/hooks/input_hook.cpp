@@ -113,28 +113,15 @@ void InputHook::InjectAimDelta(float pitchDeg, float yawDeg) {
         LONG dy = static_cast<LONG>(pitchDeg * sens * 10.0f);
         if (abs(dx) < 1 && abs(dy) < 1) return;
 
-    if (m_usesRawInput) {
-        // Raw Input path: post a synthetic WM_INPUT message
-        HWND hwnd = GetForegroundWindow();
-        if (hwnd) {
-            BYTE buffer[sizeof(RAWINPUT)] = {};
-            RAWINPUT* raw = (RAWINPUT*)buffer;
-            raw->header.dwType = RIM_TYPEMOUSE;
-            raw->header.dwSize = sizeof(RAWINPUT);
-            raw->data.mouse.usFlags = MOUSE_MOVE_RELATIVE;
-            raw->data.mouse.lLastX = dx;
-            raw->data.mouse.lLastY = dy;
-            PostMessage(hwnd, WM_INPUT, 0, (LPARAM)buffer);
-        }
-    } else {
-        // Standard SendInput path
-        INPUT inp         = {};
-        inp.type          = INPUT_MOUSE;
-        inp.mi.dwFlags    = MOUSEEVENTF_MOVE;
-        inp.mi.dx         = dx;
-        inp.mi.dy         = dy;
-        SendInput(1, &inp, sizeof(INPUT));
-    }
+    // Standard SendInput path. This generates hardware-level mouse events that the OS 
+    // will naturally translate into both standard WM_MOUSEMOVE and raw WM_INPUT messages.
+    // Forging WM_INPUT messages manually via PostMessage with a stack pointer causes Access Violations.
+    INPUT inp         = {};
+    inp.type          = INPUT_MOUSE;
+    inp.mi.dwFlags    = MOUSEEVENTF_MOVE;
+    inp.mi.dx         = dx;
+    inp.mi.dy         = dy;
+    SendInput(1, &inp, sizeof(INPUT));
 }
 
 } // namespace vrinject
