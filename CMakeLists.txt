@@ -159,6 +159,12 @@ set(SHADER_SOURCES
 # Create output directory for compiled shaders.
 file(MAKE_DIRECTORY ${SHADER_OUTPUT_DIR})
 
+# Copy the raw .hlsl files to the output directory so the launcher can deploy them for dynamic compilation
+foreach(shader_src ${SHADER_SOURCES})
+    get_filename_component(shader_name ${shader_src} NAME)
+    configure_file(${shader_src} ${SHADER_OUTPUT_DIR}/${shader_name} COPYONLY)
+endforeach()
+
 set(SHADER_OUTPUTS "")
 
 if(FXC_EXECUTABLE)
@@ -202,21 +208,23 @@ if(FXC_EXECUTABLE)
             set(SHADER_HDR_VK ${SHADER_OUTPUT_DIR}/${SHADER_NAME}_cs_vk.h)
             list(APPEND SHADER_OUTPUTS ${SHADER_HDR_VK})
 
-            add_custom_command(
-                OUTPUT  ${SHADER_HDR_VK}
-                COMMAND ${DXC_EXECUTABLE}
-                        -spirv
-                        -T cs_6_0
-                        -E CSMain
-                        -O3
-                        -fspv-target-env=vulkan1.1
-                        -Fh ${SHADER_HDR_VK}
-                        -Vn g_${SHADER_NAME}_VK
-                        ${SHADER_SRC}
-                DEPENDS ${SHADER_SRC}
-                COMMENT "Compiling HLSL compute shader to SPIR-V: ${SHADER_NAME}.hlsl -> ${SHADER_NAME}_cs_vk.h"
-                VERBATIM
-            )
+            # Vulkan SPIR-V shader compilation disabled because default Windows Kits dxc doesn't support it
+            # and we only need D3D11 for Stumble Guys.
+            # add_custom_command(
+            #     OUTPUT  ${SHADER_HDR_VK}
+            #     COMMAND ${DXC_EXECUTABLE}
+            #             -spirv
+            #             -T cs_6_0
+            #             -E CSMain
+            #             -O3
+            #             -fspv-target-env=vulkan1.1
+            #             -Fh ${SHADER_HDR_VK}
+            #             -Vn g_${SHADER_NAME}_VK
+            #             ${SHADER_SRC}
+            #     DEPENDS ${SHADER_SRC}
+            #     COMMENT "Compiling HLSL compute shader to SPIR-V: ${SHADER_NAME}.hlsl -> ${SHADER_NAME}_cs_vk.h"
+            #     VERBATIM
+            # )
         endif()
     endforeach()
 endif()
@@ -353,8 +361,7 @@ add_executable(dummy_app WIN32 tools/dummy_d3d11_app.cpp)
 # vr-inject-cli - injection CLI
 # ---------------------------------------------------------------------------
 add_executable(vr-inject-cli src/injector/main.cpp)
-set_property(TARGET vr-inject-cli PROPERTY SUBSYSTEM CONSOLE)
-set_target_properties(vr-inject-cli PROPERTIES LINK_FLAGS "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\"")
+set_target_properties(vr-inject-cli PROPERTIES LINK_FLAGS "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\" /SUBSYSTEM:CONSOLE")
 target_include_directories(vr-inject-cli PRIVATE ${CMAKE_BINARY_DIR})
 add_dependencies(vr-inject-cli vrinject)
 
@@ -374,3 +381,9 @@ target_link_libraries(dummy_app PRIVATE
     d3d11
     user32
 )
+
+# ---------------------------------------------------------------------------
+# test_app - testing vrinject DLL dynamically
+# ---------------------------------------------------------------------------
+add_executable(test_app WIN32 test_app/test_app.cpp)
+target_link_libraries(test_app PRIVATE d3d11 dxgi user32)
