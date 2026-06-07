@@ -17,6 +17,7 @@ module.exports = {
 
 
   win: {
+    icon: 'assets/icon.ico',
     target: [{ target: 'nsis', arch: ['x64'] }],
   },
 
