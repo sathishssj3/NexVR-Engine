@@ -353,10 +353,6 @@ int main(int argc, char* argv[]) {
 #if __has_include("expected_hash.h")
 #include "expected_hash.h"
     std::wstring expectedHash = EXPECTED_DLL_HASH;
-#else
-    PrintErr("[ERROR] DLL hash not compiled into injector. Security check cannot be performed.");
-    return 13;
-#endif
 
     if (!expectedHash.empty()) {
         std::wstring actualHash = ComputeFileHashSHA256(dllPath);
@@ -365,6 +361,10 @@ int main(int argc, char* argv[]) {
             return 13;
         }
     }
+#else
+    PrintErr("[ERROR] DLL hash not compiled into injector. Security check cannot be performed.");
+    return 13;
+#endif
 
     PrintInfo("Target PID:  %lu", targetPid);
     PrintInfo("DLL path:    %s", dllPath.c_str());

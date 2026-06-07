@@ -11,11 +11,15 @@ OpenXRManager::OpenXRManager() {}
 
 OpenXRManager::~OpenXRManager() {
     Shutdown();
+    if (m_instance != XR_NULL_HANDLE) {
+        xrDestroyInstance(m_instance);
+        m_instance = XR_NULL_HANDLE;
+    }
 }
 
 bool OpenXRManager::Initialize(GraphicsAPI api, void* nativeDevice, void* nativeQueue) {
-    if (!CreateInstance()) return false;
-    if (!GetSystemId()) return false;
+    if (m_instance == XR_NULL_HANDLE && !CreateInstance()) return false;
+    if (m_systemId == XR_NULL_SYSTEM_ID && !GetSystemId()) return false;
     if (!CreateSession(api, nativeDevice, nativeQueue)) return false;
     if (!CreateSwapchains()) return false;
     if (!CreateReferenceSpace()) return false;
@@ -54,10 +58,8 @@ void OpenXRManager::Shutdown() {
         xrDestroySession(m_session);
         m_session = XR_NULL_HANDLE;
     }
-    if (m_instance != XR_NULL_HANDLE) {
-        xrDestroyInstance(m_instance);
-        m_instance = XR_NULL_HANDLE;
-    }
+    // We intentionally DO NOT destroy m_instance here. OpenXR runtimes will often reject
+    // rapid recreation of an XrInstance within the same process. It will be cleaned up by the destructor.
 }
 
 bool OpenXRManager::CreateInstance() {
@@ -66,17 +68,33 @@ bool OpenXRManager::CreateInstance() {
     strcpy_s(createInfo.applicationInfo.applicationName, "VRInject");
     createInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
     
-    const char* extensions[] = {
-        XR_KHR_D3D11_ENABLE_EXTENSION_NAME,
-        XR_KHR_D3D12_ENABLE_EXTENSION_NAME,
-        XR_KHR_VULKAN_ENABLE_EXTENSION_NAME
+    // Query available extensions
+    uint32_t extensionCount = 0;
+    xrEnumerateInstanceExtensionProperties(nullptr, 0, &extensionCount, nullptr);
+    std::vector<XrExtensionProperties> extensionProperties(extensionCount, {XR_TYPE_EXTENSION_PROPERTIES});
+    xrEnumerateInstanceExtensionProperties(nullptr, extensionCount, &extensionCount, extensionProperties.data());
+    
+    std::vector<const char*> enabledExtensions;
+    auto isExtensionSupported = [&](const char* extName) {
+        for (const auto& prop : extensionProperties) {
+            if (strcmp(prop.extensionName, extName) == 0) return true;
+        }
+        return false;
     };
-    createInfo.enabledExtensionCount = 3;
-    createInfo.enabledExtensionNames = extensions;
+    
+    if (isExtensionSupported(XR_KHR_D3D11_ENABLE_EXTENSION_NAME))
+        enabledExtensions.push_back(XR_KHR_D3D11_ENABLE_EXTENSION_NAME);
+    if (isExtensionSupported(XR_KHR_D3D12_ENABLE_EXTENSION_NAME))
+        enabledExtensions.push_back(XR_KHR_D3D12_ENABLE_EXTENSION_NAME);
+    if (isExtensionSupported(XR_KHR_VULKAN_ENABLE_EXTENSION_NAME))
+        enabledExtensions.push_back(XR_KHR_VULKAN_ENABLE_EXTENSION_NAME);
+
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(enabledExtensions.size());
+    createInfo.enabledExtensionNames = enabledExtensions.empty() ? nullptr : enabledExtensions.data();
 
     XrResult res = xrCreateInstance(&createInfo, &m_instance);
     if (XR_FAILED(res)) {
-        LOG_ERROR("Failed to create OpenXR instance.");
+        LOG_ERROR("Failed to create OpenXR instance. (Code: %d)", res);
         return false;
     }
     return true;

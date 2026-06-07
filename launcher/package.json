@@ -3,8 +3,8 @@
   "private": true,
   "version": "0.1.0",
   "description": "Universal VR injection launcher",
-  "author": "VOXIRA.VR",
-  "homepage": "https://voxira.vr",
+  "author": "NexVR Engine",
+  "homepage": "https://github.com/sathishssj3/NixVR-Engine",
   "main": "electron-dist/electron/main.js",
   "scripts": {
     "dev": "node scripts/dev.mjs",

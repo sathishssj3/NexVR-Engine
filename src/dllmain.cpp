@@ -74,7 +74,7 @@ unsigned __stdcall InitThread(void* /*param*/) {
 // ============================================================================
 // DllMain
 // ============================================================================
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID /*reserved*/) {
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID reserved) {
     switch (reason) {
         case DLL_PROCESS_ATTACH: {
             // We never need per-thread attach/detach notifications.
@@ -102,11 +102,16 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID /*reserved*/) {
         }
 
         case DLL_PROCESS_DETACH: {
+            if (reserved != nullptr) {
+                // Process is terminating. Do not clean up COM/DirectX/User32 resources
+                // to avoid deadlocking the Windows Loader lock.
+                break;
+            }
             vrinject::InputHook::GetInstance().Shutdown();
             LOG_INFO("VRInject Framework - Shutting down");
             vrinject::DX11Hook::Shutdown();
             vrinject::DX12Hook::Shutdown();
-            LOG_INFO("Shutdown complete – goodbye.");
+            LOG_INFO("Shutdown complete - goodbye.");
             vrinject::Logger::Shutdown();
             break;
         }

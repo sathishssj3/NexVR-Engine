@@ -1,7 +1,7 @@
 module.exports = {
   appId:       'dev.nexvr.engine',
   productName: 'NexVR Engine',
-  copyright:   'Copyright © 2026 NexVR',
+  copyright:   'Copyright © 2026 NexVR Engine',
   asar:        true,
 
   directories: {

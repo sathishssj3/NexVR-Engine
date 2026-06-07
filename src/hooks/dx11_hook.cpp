@@ -35,8 +35,8 @@ LRESULT CALLBACK HookedWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
         if (io.WantCaptureKeyboard && (uMsg >= WM_KEYFIRST && uMsg <= WM_KEYLAST)) return true;
     }
     
-    if (g_oWndProc) return CallWindowProc(g_oWndProc, hWnd, uMsg, wParam, lParam);
-    return DefWindowProc(hWnd, uMsg, wParam, lParam);
+    if (g_oWndProc) return CallWindowProcW(g_oWndProc, hWnd, uMsg, wParam, lParam);
+    return DefWindowProcW(hWnd, uMsg, wParam, lParam);
 }
 
 #pragma comment(lib, "d3d11.lib")
@@ -54,7 +54,7 @@ Present_t OriginalPresent = nullptr;
 OMSetRenderTargets_t OriginalOMSetRenderTargets = nullptr;
 
 FrameResources g_frameResources;
-std::mutex g_resourceMutex;
+std::recursive_mutex g_resourceMutex;
 OnFrameCallback g_onFrameCallback = nullptr;
 
 // Per-frame tracking
@@ -72,7 +72,7 @@ bool g_classifierInitialized = false;
 // Sub-Phase 7B: Global Renderers
 DX11Renderer g_dx11Renderer;
 DX12Renderer g_dx12Renderer;
-static std::once_flag s_initFlag;
+static bool s_backendInitialized = false;
 GraphicsAPI g_currentAPI = GraphicsAPI::UNKNOWN;
 
 void InitializeBackend(IDXGISwapChain* pSwapChain) {
@@ -110,22 +110,31 @@ static int s_scanFrameThrottle = 0;
 static Microsoft::WRL::ComPtr<ID3D11Buffer> s_cachedStagingBuffer;
 static UINT s_cachedStagingSize = 0;
 
+void ResetAIState() {
+    s_projectionFound = false;
+    s_projectionBufferIndex = -1;
+    s_projectionOffset = 0;
+    s_scanFrameThrottle = 0;
+    s_cachedStagingBuffer.Reset();
+    s_cachedStagingSize = 0;
+}
+
 void ScanActiveConstantBuffers(ID3D11DeviceContext* context, StereoParams& params) {
     if (!g_classifierInitialized) return;
 
-    ID3D11Buffer* boundCBs[4] = { nullptr };
-    context->VSGetConstantBuffers(0, 4, boundCBs);
+    ID3D11Buffer* boundCBs[14] = { nullptr };
+    context->VSGetConstantBuffers(0, 14, boundCBs);
 
     // If projection matrix slot & offset has been found previously, read it directly and skip ONNX!
     if (s_projectionFound && s_projectionBufferIndex >= 0) {
-        ID3D11Buffer* cb = boundCBs[s_projectionBufferIndex];
-        if (cb) {
+        if (s_projectionBufferIndex < 14 && boundCBs[s_projectionBufferIndex]) {
+            ID3D11Buffer* cb = boundCBs[s_projectionBufferIndex];
             D3D11_BUFFER_DESC desc;
             cb->GetDesc(&desc);
 
             if (desc.ByteWidth >= s_projectionOffset + 64) {
-                // Ensure staging buffer matches the width
-                if (!s_cachedStagingBuffer || s_cachedStagingSize < desc.ByteWidth) {
+                // Ensure staging buffer exactly matches the width
+                if (!s_cachedStagingBuffer || s_cachedStagingSize != desc.ByteWidth) {
                     D3D11_BUFFER_DESC stagingDesc = {};
                     stagingDesc.ByteWidth = desc.ByteWidth;
                     stagingDesc.Usage = D3D11_USAGE_STAGING;
@@ -168,22 +177,21 @@ void ScanActiveConstantBuffers(ID3D11DeviceContext* context, StereoParams& param
                 }
             }
         }
-
-        for (int i = 0; i < 4; ++i) {
+        for (int i = 0; i < 14; ++i) {
             if (boundCBs[i]) boundCBs[i]->Release();
         }
         return;
     }
 
-    // Throttle the full ONNX scan to run once every 120 frames (2 seconds at 60fps)
-    if (s_scanFrameThrottle++ % 120 != 0) {
-        for (int i = 0; i < 4; ++i) {
+    // Throttle the full ONNX scan to run once every 10 frames (166ms at 60fps) to find it quickly
+    if (s_scanFrameThrottle++ % 10 != 0) {
+        for (int i = 0; i < 14; ++i) {
             if (boundCBs[i]) boundCBs[i]->Release();
         }
         return;
     }
 
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 14; ++i) {
         if (!boundCBs[i]) continue;
 
         D3D11_BUFFER_DESC desc;
@@ -191,7 +199,7 @@ void ScanActiveConstantBuffers(ID3D11DeviceContext* context, StereoParams& param
 
         if (desc.ByteWidth >= 64) {
             // Allocate staging buffer (cached on subsequent throttled frames if matching width)
-            if (!s_cachedStagingBuffer || s_cachedStagingSize < desc.ByteWidth) {
+            if (!s_cachedStagingBuffer || s_cachedStagingSize != desc.ByteWidth) {
                 D3D11_BUFFER_DESC stagingDesc = {};
                 stagingDesc.ByteWidth = desc.ByteWidth;
                 stagingDesc.Usage = D3D11_USAGE_STAGING;
@@ -258,29 +266,49 @@ void ScanActiveConstantBuffers(ID3D11DeviceContext* context, StereoParams& param
         }
     }
 
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 14; ++i) {
         if (boundCBs[i]) boundCBs[i]->Release();
     }
 }
 
 HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
-    std::unique_lock<std::mutex> lock(g_resourceMutex);
+    std::unique_lock<std::recursive_mutex> lock(g_resourceMutex);
 
     if (g_frameResources.swapChain != pSwapChain) {
         if (g_frameResources.device) g_frameResources.device->Release();
         if (g_frameResources.context) g_frameResources.context->Release();
 
+        // FATAL CRASH FIX: When the swapchain/device changes (e.g. during a scene transition or exit to main menu),
+        // we MUST destroy all captured textures. Otherwise, we will attempt to call CopyResource
+        // between a texture from the OLD device and a texture from the NEW device, instantly crashing the GPU.
+        g_frameResources.colorBuffer.Reset();
+        g_frameResources.colorSRV.Reset();
+        g_frameResources.depthBuffer.Reset();
+        g_frameResources.depthSRV.Reset();
+        g_frameResources.width = 0;
+        g_frameResources.height = 0;
+        g_frameResources.depthWidth = 0;
+        g_frameResources.depthHeight = 0;
+        g_frameResources.depthFormat = DXGI_FORMAT_UNKNOWN;
+        g_frameResources.valid = false;
+        
+        ResetAIState();
+        g_largestDSVThisFrame.Reset();
+        g_maxDepthPixels = 0;
+
         pSwapChain->GetDevice(__uuidof(ID3D11Device), (void**)&g_frameResources.device);
         g_frameResources.device->GetImmediateContext(&g_frameResources.context);
         g_frameResources.swapChain = pSwapChain;
         
+        s_backendInitialized = false; // Force backend reinitialization!
         g_pipelineInitialized = false;
         g_stereoPipeline.Shutdown();
     }
 
-    std::call_once(s_initFlag, [&]() {
+    if (!s_backendInitialized) {
         InitializeBackend(pSwapChain);
-    });
+        s_backendInitialized = true;
+    }
 
     if (g_currentAPI != GraphicsAPI::DX11) {
         // Prototype currently relies on DX11 for the rest of the stereopipeline (stereo_pipeline.cpp).
@@ -328,8 +356,14 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
             D3D11_TEXTURE2D_DESC desc;
             depthTex->GetDesc(&desc);
 
-            if (!g_frameResources.depthBuffer || g_frameResources.depthFormat != desc.Format) {
+            if (!g_frameResources.depthBuffer || g_frameResources.depthFormat != desc.Format ||
+                g_frameResources.depthWidth != desc.Width || g_frameResources.depthHeight != desc.Height) {
+                
                 g_frameResources.depthFormat = desc.Format;
+                g_frameResources.depthWidth = desc.Width;
+                g_frameResources.depthHeight = desc.Height;
+                g_frameResources.depthSRV.Reset();
+                g_frameResources.depthBuffer.Reset();
                 
                 D3D11_TEXTURE2D_DESC stagingDesc = desc;
                 stagingDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
@@ -385,14 +419,21 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
             if (GetModuleFileNameA(g_hModule, dllPath, MAX_PATH)) {
                 std::string moduleDir = std::string(dllPath);
                 moduleDir = moduleDir.substr(0, moduleDir.find_last_of("\\/"));
+                if (g_frameResources.colorSRV && !g_frameResources.initAttempted) {
+                    if (g_frameResources.width > 0 && g_frameResources.height > 0) {
+                        g_frameResources.initAttempted = true;
+                        g_pipelineInitialized = g_stereoPipeline.Initialize(
+                            g_frameResources.device, 
+                            g_frameResources.width, 
+                            g_frameResources.height, 
+                            moduleDir
+                        );
+                        if (!g_pipelineInitialized) {
+                            LOG_ERROR("Failed to initialize VR Stereo Pipeline. Disabling VR for this SwapChain.");
+                        }
+                    }
+                }
                 
-                g_pipelineInitialized = g_stereoPipeline.Initialize(
-                    g_frameResources.device, 
-                    g_frameResources.width, 
-                    g_frameResources.height, 
-                    moduleDir
-                );
-
                 if (g_pipelineInitialized) {
                     InputHook::GetInstance().SetOpenXRManager(g_stereoPipeline.GetOpenXRManager());
                 }
@@ -402,7 +443,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
                     DXGI_SWAP_CHAIN_DESC sd;
                     if (SUCCEEDED(pSwapChain->GetDesc(&sd)) && sd.OutputWindow) {
                         g_gameHwnd = sd.OutputWindow;
-                        g_oWndProc = (WNDPROC)SetWindowLongPtrA(g_gameHwnd, GWLP_WNDPROC, (LONG_PTR)HookedWndProc);
+                        g_oWndProc = (WNDPROC)SetWindowLongPtrW(g_gameHwnd, GWLP_WNDPROC, (LONG_PTR)HookedWndProc);
                         
                         IMGUI_CHECKVERSION();
                         ImGui::CreateContext();
@@ -514,8 +555,15 @@ void __stdcall hkOMSetRenderTargets(ID3D11DeviceContext* pContext, UINT NumViews
             tex->GetDesc(&desc);
 
             UINT pixels = desc.Width * desc.Height;
-            if (pixels > g_maxDepthPixels) {
-                std::lock_guard<std::mutex> lock(g_resourceMutex);
+            
+            // FATAL CRASH FIX: Shadow maps are often massive (e.g., 4096x4096 or 8192x8192).
+            // If we select a shadow map, we feed a mismatching texture size into ONNX DirectML 
+            // inside NeuralInpainter, which instantly causes a hard freeze and driver crash.
+            // We must filter out depth buffers that are excessively larger than the backbuffer.
+            UINT maxAllowedPixels = g_frameResources.width * g_frameResources.height * 2; // Allow up to 2x supersampling
+            
+            if (pixels > g_maxDepthPixels && pixels <= maxAllowedPixels) {
+                std::lock_guard<std::recursive_mutex> lock(g_resourceMutex);
                 if (pixels > g_maxDepthPixels) { // Double-checked lock for thread safety
                     g_maxDepthPixels = pixels;
                     g_largestDSVThisFrame = pDepthStencilView;
@@ -612,14 +660,26 @@ bool Initialize() {
 void Shutdown() {
     MH_DisableHook(MH_ALL_HOOKS);
     MH_Uninitialize();
+
+    if (g_imguiInitialized) {
+        ImGui_ImplDX11_Shutdown();
+        ImGui_ImplWin32_Shutdown();
+        ImGui::DestroyContext();
+        g_imguiInitialized = false;
+    }
+
+    if (g_oWndProc && g_gameHwnd) {
+        SetWindowLongPtrW(g_gameHwnd, GWLP_WNDPROC, (LONG_PTR)g_oWndProc);
+        g_oWndProc = nullptr;
+    }
     
-    std::lock_guard<std::mutex> lock(g_resourceMutex);
+    std::lock_guard<std::recursive_mutex> lock(g_resourceMutex);
     g_stereoPipeline.Shutdown();
     g_frameResources = FrameResources();
 }
 
 FrameResources GetCurrentFrame() {
-    std::lock_guard<std::mutex> lock(g_resourceMutex);
+    std::lock_guard<std::recursive_mutex> lock(g_resourceMutex);
     return g_frameResources;
 }
 

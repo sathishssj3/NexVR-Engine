@@ -101,7 +101,7 @@ bool StereoPipeline::LoadShader(ID3D11Device* device, const std::string& path, I
     }
 
     // Compile from .hlsl source at runtime
-    HRESULT hr = D3DCompileFromFile(wPath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "cs_5_0", D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &shaderBlob, &errBlob);
+    HRESULT hr = D3DCompileFromFile(wPath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "CSMain", "cs_5_0", D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &shaderBlob, &errBlob);
     if (FAILED(hr) || !shaderBlob) {
         LOG_ERROR("Failed to compile shader %s: %s", path.c_str(), errBlob ? (char*)errBlob->GetBufferPointer() : "Unknown error");
         return false;
@@ -327,7 +327,7 @@ void StereoPipeline::RenderSideBySide(ID3D11DeviceContext* ctx, ID3D11RenderTarg
 }
 
 void StereoPipeline::Shutdown() {
-    m_warpCS.Reset(); m_resolveCS.Reset(); m_fillCS.Reset(); m_blurCS.Reset();
+    m_warpCS.Reset(); m_resolveCS.Reset(); m_fillCS.Reset(); m_blurCS.Reset(); m_blendCS.Reset();
     m_rightEyeTex.Reset(); m_rightEyeUAV.Reset(); m_rightEyeSRV.Reset();
     m_blurTempTex.Reset(); m_blurTempUAV.Reset(); m_blurTempSRV.Reset();
     m_warpBufferTex.Reset(); m_warpBufferUAV.Reset(); m_warpBufferSRV.Reset();
@@ -338,6 +338,7 @@ void StereoPipeline::Shutdown() {
     m_resolveEndQuery.Reset(); m_fillEndQuery.Reset(); m_blurEndQuery.Reset();
 
     m_comfortGuard.Shutdown();
+    m_neuralInpainter.Shutdown();
     m_openxrManager.Shutdown();
 }
 

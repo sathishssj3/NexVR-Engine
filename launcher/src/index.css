@@ -1,12 +1,12 @@
 /* Fonts loaded via <link> in index.html: Barlow, Share Tech Mono, Orbitron */
 
 :root {
-  --ag-bg-base:       #030508;
-  --ag-bg-surface:    rgba(10, 13, 19, 0.65);
-  --ag-bg-card:       rgba(16, 21, 30, 0.55);
-  --ag-bg-elevated:   rgba(22, 28, 40, 0.7);
-  --ag-border:        rgba(40, 50, 75, 0.35);
-  --ag-border-light:  rgba(255, 255, 255, 0.06);
+  --ag-bg-base:       #020305;
+  --ag-bg-surface:    rgba(8, 11, 16, 0.75);
+  --ag-bg-card:       rgba(14, 18, 26, 0.6);
+  --ag-bg-elevated:   rgba(20, 26, 38, 0.85);
+  --ag-border:        rgba(45, 55, 80, 0.4);
+  --ag-border-light:  rgba(255, 255, 255, 0.08);
   --ag-border-glow:   #00f0ff;
   --ag-accent:        #00f0ff;
   --ag-accent-dim:    #00404c;
@@ -14,16 +14,16 @@
   --ag-accent-success:#00ff88;
   --ag-accent-danger: #ff003c;
   --ag-accent-warn:   #ffaa00;
-  --ag-text-primary:  #e2e8f0;
-  --ag-text-muted:    #64748b;
+  --ag-text-primary:  #f1f5f9;
+  --ag-text-muted:    #94a3b8;
   --ag-text-code:     #7dd3fc;
   --ag-font-mono:     'Share Tech Mono', 'Consolas', monospace;
   --ag-font-ui:       'Barlow', -apple-system, BlinkMacSystemFont, sans-serif;
   --ag-font-display:  'Orbitron', 'Share Tech Mono', sans-serif;
-  --ag-radius-sm:     6px;
-  --ag-radius-md:     10px;
-  --ag-radius-lg:     14px;
-  --ag-transition:    cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ag-radius-sm:     8px;
+  --ag-radius-md:     12px;
+  --ag-radius-lg:     16px;
+  --ag-transition:    cubic-bezier(0.16, 1, 0.3, 1);
   --ag-spring:        cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -37,10 +37,10 @@ body {
   -webkit-user-select: none;
   background-color: var(--ag-bg-base);
   background-image: 
-    radial-gradient(ellipse at 20% 40%, rgba(0, 240, 255, 0.08), transparent 40%),
-    radial-gradient(ellipse at 80% 60%, rgba(0, 100, 255, 0.06), transparent 45%),
-    radial-gradient(ellipse at 50% 100%, rgba(0, 255, 136, 0.04), transparent 50%),
-    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.02'/%3E%3C/svg%3E");
+    radial-gradient(circle at 15% 35%, rgba(0, 240, 255, 0.12), transparent 45%),
+    radial-gradient(circle at 85% 65%, rgba(255, 0, 60, 0.08), transparent 50%),
+    radial-gradient(circle at 50% 100%, rgba(0, 255, 136, 0.06), transparent 55%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.035'/%3E%3C/svg%3E");
   color: var(--ag-text-primary);
   font-family: var(--ag-font-ui);
   overflow: hidden;
@@ -63,12 +63,13 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(40, 50, 75, 0.5);
+  background: rgba(45, 55, 80, 0.6);
   border-radius: 3px;
   transition: background 0.3s;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 240, 255, 0.4);
+  background: rgba(0, 240, 255, 0.6);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
 }
 
 /* ======================================== */
@@ -76,23 +77,23 @@ body {
 /* ======================================== */
 .glass-panel {
   background: var(--ag-bg-surface);
-  backdrop-filter: blur(20px) saturate(120%);
-  -webkit-backdrop-filter: blur(20px) saturate(120%);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
   border: 1px solid var(--ag-border);
   box-shadow: 
-    0 10px 40px rgba(0, 0, 0, 0.4),
-    inset 0 1px 1px var(--ag-border-light);
+    0 15px 50px rgba(0, 0, 0, 0.5),
+    inset 0 1px 2px var(--ag-border-light);
 }
 
 .glass-card {
   background: var(--ag-bg-card);
-  backdrop-filter: blur(12px) saturate(110%);
-  -webkit-backdrop-filter: blur(12px) saturate(110%);
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
   border: 1px solid var(--ag-border);
   border-radius: var(--ag-radius-md);
   box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.25),
-    inset 0 1px 1px var(--ag-border-light);
+    0 10px 40px rgba(0, 0, 0, 0.35),
+    inset 0 1px 2px var(--ag-border-light);
   transition: all 0.4s var(--ag-transition);
   position: relative;
   overflow: hidden;
@@ -102,18 +103,18 @@ body {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0; height: 100%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%);
+  background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%);
   pointer-events: none;
 }
 
 .glass-card:hover {
-  border-color: rgba(0, 240, 255, 0.25);
-  background: rgba(22, 28, 42, 0.65);
+  border-color: rgba(0, 240, 255, 0.35);
+  background: rgba(20, 26, 40, 0.75);
   box-shadow: 
-    0 12px 40px rgba(0, 0, 0, 0.35), 
-    0 0 20px rgba(0, 240, 255, 0.04), 
-    inset 0 1px 1px rgba(255, 255, 255, 0.08);
-  transform: translateY(-2px);
+    0 15px 50px rgba(0, 0, 0, 0.45), 
+    0 0 25px rgba(0, 240, 255, 0.08), 
+    inset 0 1px 2px rgba(255, 255, 255, 0.12);
+  transform: translateY(-3px);
 }
 
 /* ======================================== */
@@ -198,7 +199,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
@@ -244,7 +245,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 /* Animation utilities */
 .fade-in-up {
-  animation: fadeInUp 0.5s var(--ag-transition) both;
+  animation: fadeInUp 0.6s cubic-bezier(0.25, 0.8, 0.25, 1) both;
 }
 
 .fade-in {
