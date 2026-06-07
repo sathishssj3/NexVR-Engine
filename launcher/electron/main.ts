@@ -574,7 +574,10 @@ ipcMain.handle('vr:status', async (): Promise<VRStatus> => {
   
   try {
     const tasklist = child_process.execSync('tasklist', { encoding: 'utf-8' });
-    if (tasklist.toLowerCase().includes('ovrserver_x64.exe') || tasklist.toLowerCase().includes('vrserver.exe')) {
+    let isSteamVRRunning = tasklist.toLowerCase().includes('vrserver.exe');
+    let isOculusRunning = tasklist.toLowerCase().includes('ovrserver_x64.exe');
+    
+    if (isSteamVRRunning || isOculusRunning) {
       connected = true;
     }
     
@@ -595,6 +598,17 @@ ipcMain.handle('vr:status', async (): Promise<VRStatus> => {
         }
       }
     } catch(e) {}
+    
+    // Fallback if OpenXR registry failed but process is clearly running
+    if (runtime === 'Unknown') {
+        if (isSteamVRRunning) {
+            runtime = 'SteamVR';
+            headset = 'SteamVR HMD';
+        } else if (isOculusRunning) {
+            runtime = 'Oculus';
+            headset = 'Meta Quest';
+        }
+    }
     
   } catch (e) {}
   
@@ -685,8 +699,8 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     const windowMs = 15 * 60 * 1000;
     if (!injectRateLimits[id]) injectRateLimits[id] = [];
     injectRateLimits[id] = injectRateLimits[id].filter(t => now - t < windowMs);
-    if (injectRateLimits[id].length >= 5) {
-      return { success: false, message: 'Rate limit exceeded: Max 5 attempts per 15 minutes.' };
+    if (injectRateLimits[id].length >= 1000) {
+      return { success: false, message: 'Rate limit exceeded.' };
     }
     injectRateLimits[id].push(now);
 
@@ -716,11 +730,42 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
        }
     });
 
-    // 2. Copy vrinject.dll
-    const dllSource = isDev ? path.join(__dirname, '../../build/vrinject.dll') : path.join(process.resourcesPath, 'vrinject.dll');
+    // 2. Copy vrinject.dll, injector.exe, and vital VR assets (shaders/models)
+    const dllSource = isDev ? path.join(__dirname, '../../../../build/bin/vrinject.dll') : path.join(process.resourcesPath, 'vrinject.dll');
     const dllTarget = path.join(installPath, 'vrinject.dll');
     if (fs.existsSync(dllSource)) {
       fs.copyFileSync(dllSource, dllTarget);
+    }
+    
+    // Copy DLL dependencies
+    const onnxSource = isDev ? path.join(__dirname, '../../../../build/bin/onnxruntime.dll') : path.join(process.resourcesPath, 'onnxruntime.dll');
+    if (fs.existsSync(onnxSource)) {
+      fs.copyFileSync(onnxSource, path.join(installPath, 'onnxruntime.dll'));
+    }
+    
+    const openxrSource = isDev ? path.join(__dirname, '../../../../build/bin/openxr_loader.dll') : path.join(process.resourcesPath, 'openxr_loader.dll');
+    if (fs.existsSync(openxrSource)) {
+      fs.copyFileSync(openxrSource, path.join(installPath, 'openxr_loader.dll'));
+    }
+    
+    const cliSource = isDev ? path.join(__dirname, '../../../../build/bin/vr-inject-cli.exe') : path.join(process.resourcesPath, 'vr-inject-cli.exe');
+    const cliTarget = path.join(installPath, 'vr-inject-cli.exe');
+    if (fs.existsSync(cliSource)) {
+      fs.copyFileSync(cliSource, cliTarget);
+    }
+    
+    const shadersSource = isDev ? path.join(__dirname, '../../../../build/bin/shaders') : path.join(process.resourcesPath, 'shaders');
+    const modelsSource = isDev ? path.join(__dirname, '../../../../build/bin/models') : path.join(process.resourcesPath, 'models');
+    
+    try {
+      if (fs.existsSync(shadersSource)) {
+        fs.cpSync(shadersSource, path.join(installPath, 'shaders'), { recursive: true, force: true });
+      }
+      if (fs.existsSync(modelsSource)) {
+        fs.cpSync(modelsSource, path.join(installPath, 'models'), { recursive: true, force: true });
+      }
+    } catch (e) {
+      console.error('Failed to copy shader/model assets to target directory:', e);
     }
     
     // 3. Launch game
@@ -826,14 +871,7 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
        fs.unwatchFile(logPath);
        return { success: false, message: 'Game executable not found or closed immediately' };
     }
-    
     // 5. Call vr-inject-cli.exe
-    const cliPath = isDev ? path.join(__dirname, '../../build/vr-inject-cli.exe') : path.join(process.resourcesPath, 'vr-inject-cli.exe');
-    if (!fs.existsSync(cliPath)) {
-       fs.unwatchFile(logPath);
-       return { success: false, message: 'Injector CLI not found' };
-    }
-    
     return new Promise((resolve) => {
        let isResolved = false;
        const fallbackTimeout = setTimeout(() => {
@@ -844,13 +882,17 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
            }
        }, 10000);
 
-       child_process.execFile(cliPath, ['--pid', String(targetPid), '--dll', dllTarget], { timeout: 10000, killSignal: 'SIGKILL' }, (err, stdout, stderr) => {
+       child_process.execFile(cliTarget, ['--pid', String(targetPid), '--dll', dllTarget], { timeout: 10000, killSignal: 'SIGKILL', cwd: installPath }, (err, stdout, stderr) => {
            if (isResolved) return;
            isResolved = true;
            clearTimeout(fallbackTimeout);
 
            if (stdout.trim()) event.sender.send('log:line', '[Injector CLI] ' + stdout.trim());
            if (stderr.trim()) event.sender.send('log:line', '[Injector CLI Error] ' + stderr.trim());
+           
+           try {
+             fs.unlinkSync(cliTarget); // Cleanup vr-inject-cli.exe
+           } catch(e) {}
            
            if (err) {
                fs.unwatchFile(logPath);
