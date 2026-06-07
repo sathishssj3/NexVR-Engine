@@ -1,5 +1,8 @@
 # NexVR Engine
 
+<p align="center">
+  <img src="assets/logo.png" width="200" alt="NexVR Engine Logo" />
+</p>
 [![Build](https://github.com/sathishssj3/NexVR-Engine/actions/workflows/release.yml/badge.svg)](https://github.com/sathishssj3/NexVR-Engine/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
