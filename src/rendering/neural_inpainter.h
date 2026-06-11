@@ -7,10 +7,10 @@
 
 // Forward declare ONNX Runtime types to avoid polluting header
 namespace Ort {
-    struct Env;
-    struct Session;
-    struct SessionOptions;
-    struct MemoryInfo;
+    class Env;
+    class Session;
+    class SessionOptions;
+    class MemoryInfo;
 }
 
 namespace vrinject {
@@ -38,10 +38,7 @@ public:
 private:
     bool CreateD3D11Resources(ID3D11Device* device);
 
-    // ONNX Runtime Core
-    std::unique_ptr<Ort::Env> m_ortEnv;
-    std::unique_ptr<Ort::Session> m_session;
-    std::unique_ptr<Ort::MemoryInfo> m_memoryInfo;
+    // ONNX Runtime Core (Stubbed out)
 
     // Direct3D 11 Interop resources for Zero-Copy inference
     Microsoft::WRL::ComPtr<ID3D11Device> m_device;

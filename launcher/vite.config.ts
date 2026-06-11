@@ -16,6 +16,7 @@ export default defineConfig({
     'process.env.VITE_BUILD_DATE': JSON.stringify(new Date().toISOString().split('T')[0])
   },
   server: {
+    host: true,
     port: 5173,
     strictPort: false,
   },

@@ -21,6 +21,8 @@ bool Initialize();
 void Shutdown();
 FrameResourcesDX12 GetCurrentFrame();
 void SetOnFrameCallback(OnFrameCallbackDX12 callback);
+void OnPresent(IDXGISwapChain* pSwapChain);
+void DynamicHookSwapChain(IDXGISwapChain* pSwapChain);
 
 } // namespace DX12Hook
 } // namespace vrinject

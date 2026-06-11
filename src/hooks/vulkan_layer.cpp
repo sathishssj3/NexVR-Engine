@@ -4,7 +4,7 @@
 #include "../rendering/backends/vulkan_renderer.h"
 #include "../rendering/stereo_pipeline.h"
 #include "../core/logger.h"
-#include "../ai_matrix_classifier/matrix_classifier.h"
+
 
 namespace vrinject {
     namespace DX11Hook {
@@ -12,7 +12,7 @@ namespace vrinject {
     }
 }
 vrinject::VulkanRenderer g_vkRenderer;
-vrinject::ai::MatrixClassifier g_matrixClassifierVK;
+
 static std::once_flag s_vkInitFlag;
 
 VKAPI_ATTR VkResult VKAPI_CALL VRInject_QueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) {
@@ -46,10 +46,7 @@ VKAPI_ATTR VkResult VKAPI_CALL VRInject_vkMapMemory(VkDevice device, VkDeviceMem
 
 VKAPI_ATTR void VKAPI_CALL VRInject_vkCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize dataSize, const void* pData) {
     if (pData && dataSize >= 64) {
-        auto detections = g_matrixClassifierVK.ScanBuffer(pData, dataSize);
-        if (!detections.empty()) {
-            // Found projection matrix in CmdUpdateBuffer payload
-        }
+
     }
     // Call next layer...
 }

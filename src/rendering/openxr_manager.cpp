@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "../rendering/backends/vulkan_renderer.h"
+#include "stereo_pipeline.h"
 
 namespace vrinject {
 
@@ -17,11 +18,12 @@ OpenXRManager::~OpenXRManager() {
     }
 }
 
-bool OpenXRManager::Initialize(GraphicsAPI api, void* nativeDevice, void* nativeQueue) {
+bool OpenXRManager::Initialize(GraphicsAPI api, void* nativeDevice, void* nativeQueue, uint32_t targetWidth, uint32_t targetHeight) {
+    m_api = api;
     if (m_instance == XR_NULL_HANDLE && !CreateInstance()) return false;
     if (m_systemId == XR_NULL_SYSTEM_ID && !GetSystemId()) return false;
     if (!CreateSession(api, nativeDevice, nativeQueue)) return false;
-    if (!CreateSwapchains()) return false;
+    if (!CreateSwapchains(targetWidth, targetHeight)) return false;
     if (!CreateReferenceSpace()) return false;
     if (!InitializeActions()) return false;
     
@@ -66,7 +68,7 @@ bool OpenXRManager::CreateInstance() {
     XrInstanceCreateInfo createInfo = {XR_TYPE_INSTANCE_CREATE_INFO};
     createInfo.applicationInfo.applicationVersion = 1;
     strcpy_s(createInfo.applicationInfo.applicationName, "VRInject");
-    createInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
+    createInfo.applicationInfo.apiVersion = XR_API_VERSION_1_0;
     
     // Query available extensions
     uint32_t extensionCount = 0;
@@ -75,6 +77,10 @@ bool OpenXRManager::CreateInstance() {
     xrEnumerateInstanceExtensionProperties(nullptr, extensionCount, &extensionCount, extensionProperties.data());
     
     std::vector<const char*> enabledExtensions;
+    LOG_INFO("OpenXR Supported Extensions:");
+    for (const auto& prop : extensionProperties) {
+        LOG_INFO("  - %s", prop.extensionName);
+    }
     auto isExtensionSupported = [&](const char* extName) {
         for (const auto& prop : extensionProperties) {
             if (strcmp(prop.extensionName, extName) == 0) return true;
@@ -82,12 +88,14 @@ bool OpenXRManager::CreateInstance() {
         return false;
     };
     
-    if (isExtensionSupported(XR_KHR_D3D11_ENABLE_EXTENSION_NAME))
+    if (m_api == GraphicsAPI::DX11 && isExtensionSupported(XR_KHR_D3D11_ENABLE_EXTENSION_NAME))
         enabledExtensions.push_back(XR_KHR_D3D11_ENABLE_EXTENSION_NAME);
-    if (isExtensionSupported(XR_KHR_D3D12_ENABLE_EXTENSION_NAME))
+    if (m_api == GraphicsAPI::DX12 && isExtensionSupported(XR_KHR_D3D12_ENABLE_EXTENSION_NAME))
         enabledExtensions.push_back(XR_KHR_D3D12_ENABLE_EXTENSION_NAME);
-    if (isExtensionSupported(XR_KHR_VULKAN_ENABLE_EXTENSION_NAME))
+    if (m_api == GraphicsAPI::VULKAN && isExtensionSupported(XR_KHR_VULKAN_ENABLE_EXTENSION_NAME))
         enabledExtensions.push_back(XR_KHR_VULKAN_ENABLE_EXTENSION_NAME);
+
+    // (Removed headless mode as we need graphics binding for rendering)
 
     createInfo.enabledExtensionCount = static_cast<uint32_t>(enabledExtensions.size());
     createInfo.enabledExtensionNames = enabledExtensions.empty() ? nullptr : enabledExtensions.data();
@@ -137,7 +145,10 @@ bool OpenXRManager::CreateSession(GraphicsAPI api, void* nativeDevice, void* nat
             return false;
         }
 
-        graphicsBindingDX11.device = static_cast<ID3D11Device*>(nativeDevice);
+        m_d3dDevice = static_cast<ID3D11Device*>(nativeDevice);
+        m_d3dDevice->GetImmediateContext(&m_d3dContext);
+        m_depthReprojector.Initialize(m_d3dDevice);
+        graphicsBindingDX11.device = m_d3dDevice;
         sessionInfo.next = &graphicsBindingDX11;
     } else if (api == GraphicsAPI::DX12) {
         PFN_xrGetD3D12GraphicsRequirementsKHR pfnGetD3D12GraphicsRequirementsKHR = nullptr;
@@ -204,14 +215,14 @@ bool OpenXRManager::CreateSession(GraphicsAPI api, void* nativeDevice, void* nat
 
     XrResult res = xrCreateSession(m_instance, &sessionInfo, &m_session);
     if (XR_FAILED(res)) {
-        LOG_ERROR("Failed to create OpenXR session.");
+        LOG_ERROR("Failed to create OpenXR session. Code: %d", res);
         return false;
     }
     m_aimPredictor.Reset();
     return true;
 }
 
-bool OpenXRManager::CreateSwapchains() {
+bool OpenXRManager::CreateSwapchains(uint32_t width, uint32_t height) {
     uint32_t viewConfigCount = 0;
     if (XR_FAILED(xrEnumerateViewConfigurations(m_instance, m_systemId, 0, &viewConfigCount, nullptr))) return false;
 
@@ -241,8 +252,8 @@ bool OpenXRManager::CreateSwapchains() {
     m_viewConfigs[1] = {XR_TYPE_VIEW_CONFIGURATION_VIEW};
     if (XR_FAILED(xrEnumerateViewConfigurationViews(m_instance, m_systemId, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, 2, &viewCount, m_viewConfigs))) return false;
 
-    m_renderWidth = m_viewConfigs[0].recommendedImageRectWidth;
-    m_renderHeight = m_viewConfigs[0].recommendedImageRectHeight;
+    m_renderWidth = width;
+    m_renderHeight = height;
 
     uint32_t formatCount = 0;
     if (XR_FAILED(xrEnumerateSwapchainFormats(m_session, 0, &formatCount, nullptr))) return false;
@@ -298,8 +309,13 @@ bool OpenXRManager::CreateSwapchains() {
         uint32_t imageCount = 0;
         if (XR_FAILED(xrEnumerateSwapchainImages(m_swapchains[i].handle, 0, &imageCount, nullptr))) return false;
 
-        m_swapchains[i].images.resize(imageCount, {XR_TYPE_SWAPCHAIN_IMAGE_D3D11_KHR});
-        if (XR_FAILED(xrEnumerateSwapchainImages(m_swapchains[i].handle, imageCount, &imageCount, (XrSwapchainImageBaseHeader*)m_swapchains[i].images.data()))) return false;
+        if (m_api == GraphicsAPI::DX12) {
+            m_swapchains[i].imagesD3D12.resize(imageCount, {XR_TYPE_SWAPCHAIN_IMAGE_D3D12_KHR});
+            if (XR_FAILED(xrEnumerateSwapchainImages(m_swapchains[i].handle, imageCount, &imageCount, (XrSwapchainImageBaseHeader*)m_swapchains[i].imagesD3D12.data()))) return false;
+        } else {
+            m_swapchains[i].images.resize(imageCount, {XR_TYPE_SWAPCHAIN_IMAGE_D3D11_KHR});
+            if (XR_FAILED(xrEnumerateSwapchainImages(m_swapchains[i].handle, imageCount, &imageCount, (XrSwapchainImageBaseHeader*)m_swapchains[i].images.data()))) return false;
+        }
     }
 
     return true;
@@ -321,7 +337,49 @@ bool OpenXRManager::CreateReferenceSpace() {
     return XR_SUCCEEDED(res);
 }
 
+void OpenXRManager::PollEvents() {
+    XrEventDataBuffer eventData = {XR_TYPE_EVENT_DATA_BUFFER};
+    while (xrPollEvent(m_instance, &eventData) == XR_SUCCESS) {
+        if (eventData.type == XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED) {
+            XrEventDataSessionStateChanged* sessionStateChanged = reinterpret_cast<XrEventDataSessionStateChanged*>(&eventData);
+            XrSessionState state = sessionStateChanged->state;
+            
+            LOG_INFO("OpenXR Session State Changed: %d", state);
+
+            switch (state) {
+                case XR_SESSION_STATE_READY: {
+                    XrSessionBeginInfo sessionBeginInfo = {XR_TYPE_SESSION_BEGIN_INFO};
+                    sessionBeginInfo.primaryViewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
+                    if (XR_SUCCEEDED(xrBeginSession(m_session, &sessionBeginInfo))) {
+                        m_sessionRunning = true;
+                        LOG_INFO("OpenXR Session Begun!");
+                    } else {
+                        LOG_ERROR("Failed to begin OpenXR session");
+                    }
+                    break;
+                }
+                case XR_SESSION_STATE_STOPPING: {
+                    m_sessionRunning = false;
+                    xrEndSession(m_session);
+                    LOG_INFO("OpenXR Session Ended");
+                    break;
+                }
+                case XR_SESSION_STATE_EXITING:
+                case XR_SESSION_STATE_LOSS_PENDING: {
+                    m_sessionRunning = false;
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+        eventData = {XR_TYPE_EVENT_DATA_BUFFER};
+    }
+}
+
 bool OpenXRManager::BeginFrame(XrFrameState& frameState) {
+    if (!m_sessionRunning) return false;
+
     XrFrameWaitInfo waitInfo = {XR_TYPE_FRAME_WAIT_INFO};
     if (XR_FAILED(xrWaitFrame(m_session, &waitInfo, &frameState))) return false;
     
@@ -332,7 +390,7 @@ bool OpenXRManager::BeginFrame(XrFrameState& frameState) {
     return XR_SUCCEEDED(xrBeginFrame(m_session, &beginInfo));
 }
 
-bool OpenXRManager::EndFrame(XrFrameState frameState, TextureHandle leftEye, TextureHandle rightEye) {
+bool OpenXRManager::EndFrame(XrFrameState frameState, TextureHandle leftEye, TextureHandle rightEye, TextureHandle depthBuffer, const StereoParams* params) {
     XrViewLocateInfo viewLocateInfo = {XR_TYPE_VIEW_LOCATE_INFO};
     viewLocateInfo.viewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
     viewLocateInfo.displayTime = frameState.predictedDisplayTime;
@@ -362,9 +420,26 @@ bool OpenXRManager::EndFrame(XrFrameState frameState, TextureHandle leftEye, Tex
         }
         if (XR_FAILED(waitRes)) return false;
 
-        // Copy our rendered eye texture into the OpenXR swapchain texture
-        if (eyeTextures[i].nativePtr && m_renderer) {
-            m_renderer->CopyToSwapchain(eyeTextures[i], m_swapchains[i].images[imageIndex].texture);
+        if (i == 1 && !eyeTextures[i].nativePtr && leftEye.nativePtr && depthBuffer.nativePtr && params && m_d3dDevice) {
+            ID3D11Texture2D* rightEyeSwapchainTex = m_swapchains[i].images[imageIndex].texture;
+
+            Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> colorSRV;
+            m_d3dDevice->CreateShaderResourceView((ID3D11Resource*)leftEye.nativePtr, nullptr, &colorSRV);
+            
+            Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> depthSRV;
+            m_d3dDevice->CreateShaderResourceView((ID3D11Resource*)depthBuffer.nativePtr, nullptr, &depthSRV);
+
+            Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> rightEyeUAV;
+            m_d3dDevice->CreateUnorderedAccessView(rightEyeSwapchainTex, nullptr, &rightEyeUAV);
+
+            if (colorSRV && depthSRV && rightEyeUAV) {
+                m_depthReprojector.Reproject(m_d3dContext, colorSRV.Get(), depthSRV.Get(), rightEyeUAV.Get(), *params);
+            }
+        } else if (eyeTextures[i].nativePtr && m_renderer) {
+            void* destTex = (m_api == GraphicsAPI::DX12) 
+                ? (void*)m_swapchains[i].imagesD3D12[imageIndex].texture 
+                : (void*)m_swapchains[i].images[imageIndex].texture;
+            m_renderer->CopyToSwapchain(eyeTextures[i], destTex);
         }
 
         XrSwapchainImageReleaseInfo releaseInfo = {XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};

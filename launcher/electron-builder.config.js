@@ -35,12 +35,28 @@ module.exports = {
 
   extraResources: [
     {
-      from: '../build/vrinject.dll',
+      from: '../build/bin/vrinject.dll',
       to:   'vrinject.dll'
     },
     {
-      from: '../build/vr-inject-cli.exe',
+      from: '../build/bin/vr-inject-cli.exe',
       to:   'vr-inject-cli.exe'
+    },
+    {
+      from: '../build/bin/onnxruntime.dll',
+      to:   'onnxruntime.dll'
+    },
+    {
+      from: '../build/bin/openxr_loader.dll',
+      to:   'openxr_loader.dll'
+    },
+    {
+      from: '../build/bin/shaders',
+      to:   'shaders'
+    },
+    {
+      from: '../build/bin/models',
+      to:   'models'
     },
   ],
 

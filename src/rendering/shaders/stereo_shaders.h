@@ -10,4 +10,5 @@
 #include "stereo_resolve_cs_dx11.h"
 #include "disocclusion_fill_cs_dx11.h"
 #include "bilateral_blur_cs_dx11.h"
-#include "stereo_blend_cs_dx11.h"
+#include "bilateral_blend_cs_dx11.h"
+#include "depth_reprojection_cs_dx11.h"

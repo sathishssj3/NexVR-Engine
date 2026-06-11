@@ -22,8 +22,8 @@ test.describe('Launcher E2E Tests', () => {
     }
   });
 
-  test('should render the top bar with NEXVR ENGINE title', async () => {
-    const title = window.locator('strong:has-text("NEXVR ENGINE")');
+  test('should render the top bar with NEX/R ENGINE title', async () => {
+    const title = window.locator('strong:has-text("NEX/R ENGINE")');
     await expect(title).toBeVisible();
     
     const version = window.locator('span:has-text("v0.1.0")');

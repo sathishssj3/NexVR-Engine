@@ -6,6 +6,7 @@
 #include "../core/motion_predictor.h"
 #include "irenderer.h"
 #include <d3d12.h>
+#include "depth_reprojector.h"
 #define VK_USE_PLATFORM_WIN32_KHR
 #include "vulkan/vulkan.h"
 
@@ -18,18 +19,23 @@
 
 namespace vrinject {
 
+struct StereoParams;
+
 class OpenXRManager {
 public:
     OpenXRManager();
     ~OpenXRManager();
 
-    bool Initialize(GraphicsAPI api, void* nativeDevice, void* nativeQueue = nullptr);
+    bool Initialize(GraphicsAPI api, void* nativeDevice, void* nativeQueue, uint32_t targetWidth, uint32_t targetHeight);
     void Shutdown();
 
+    void PollEvents();
     void SetRenderer(IRenderer* renderer) { m_renderer = renderer; }
 
+    bool IsSessionRunning() const { return m_sessionRunning; }
+
     bool BeginFrame(XrFrameState& frameState);
-    bool EndFrame(XrFrameState frameState, TextureHandle leftEye, TextureHandle rightEye);
+    bool EndFrame(XrFrameState frameState, TextureHandle leftEye, TextureHandle rightEye, TextureHandle depthBuffer = {}, const StereoParams* params = nullptr);
 
     bool GetHeadPose(XrTime time, XrPosef& outPose);
     
@@ -52,15 +58,21 @@ private:
     bool CreateInstance();
     bool GetSystemId();
     bool CreateSession(GraphicsAPI api, void* nativeDevice, void* nativeQueue);
-    bool CreateSwapchains();
+    bool CreateSwapchains(uint32_t width, uint32_t height);
     bool CreateReferenceSpace();
     bool InitializeActions();
 
     IRenderer* m_renderer = nullptr;
+    GraphicsAPI m_api = GraphicsAPI::UNKNOWN;
+
+    DepthReprojector m_depthReprojector;
+    ID3D11Device* m_d3dDevice = nullptr;
+    ID3D11DeviceContext* m_d3dContext = nullptr;
 
     XrInstance m_instance = XR_NULL_HANDLE;
     XrSystemId m_systemId = XR_NULL_SYSTEM_ID;
     XrSession m_session = XR_NULL_HANDLE;
+    bool m_sessionRunning = false;
     XrSpace m_appSpace = XR_NULL_HANDLE;
     XrSpace m_headSpace = XR_NULL_HANDLE;
 
@@ -76,6 +88,7 @@ private:
         uint32_t width;
         uint32_t height;
         std::vector<XrSwapchainImageD3D11KHR> images;
+        std::vector<XrSwapchainImageD3D12KHR> imagesD3D12;
     };
 
     Swapchain m_swapchains[2]; // Left and right eyes

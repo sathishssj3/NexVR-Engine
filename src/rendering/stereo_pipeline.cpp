@@ -28,7 +28,7 @@ bool StereoPipeline::Initialize(ID3D11Device* device, UINT width, UINT height, c
 
     if (!CreateResources(device, width, height)) return false;
 
-    if (!m_openxrManager.Initialize(GraphicsAPI::DX11, device)) {
+    if (!m_openxrManager.Initialize(GraphicsAPI::DX11, device, nullptr, width, height)) {
         LOG_WARN("Failed to initialize OpenXRManager (No VR headset?). Falling back to 2D Side-By-Side monitor display.");
     }
 
@@ -295,7 +295,14 @@ void StereoPipeline::Render(ID3D11DeviceContext* deferredCtx, ID3D11DeviceContex
         TextureHandle rightHandle = {};
         rightHandle.nativePtr = m_rightEyeTex.Get();
 
-        m_openxrManager.EndFrame(frameState, leftHandle, rightHandle);
+        TextureHandle depthHandle = {};
+        Microsoft::WRL::ComPtr<ID3D11Resource> depthRes;
+        if (depthSRV) {
+            depthSRV->GetResource(&depthRes);
+            depthHandle.nativePtr = depthRes.Get();
+        }
+
+        m_openxrManager.EndFrame(frameState, leftHandle, rightHandle, depthHandle, &params);
     }
 }
 

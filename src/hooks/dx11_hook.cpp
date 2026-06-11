@@ -6,18 +6,17 @@
 #include "../rendering/stereo_pipeline.h"
 #include "../core/logger.h"
 #include "../core/config_manager.h"
-#include "../ai_matrix_classifier/matrix_classifier.h"
+#include "../core/matrix_classifier.h"
 
 #include <string>
 #include <chrono>
-#include <utility>
-
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_impl_dx11.h"
 #include "../rendering/backends/dx11_renderer.h"
 #include "../rendering/backends/dx12_renderer.h"
 #include "../hooks/input_hook.h"
+#include "../hooks/dx12_hook.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -49,9 +48,13 @@ namespace DX11Hook {
 
 typedef HRESULT(__stdcall* Present_t)(IDXGISwapChain*, UINT, UINT);
 typedef void(__stdcall* OMSetRenderTargets_t)(ID3D11DeviceContext*, UINT, ID3D11RenderTargetView* const*, ID3D11DepthStencilView*);
+typedef HRESULT(__stdcall* Map_t)(ID3D11DeviceContext*, ID3D11Resource*, UINT, D3D11_MAP, UINT, D3D11_MAPPED_SUBRESOURCE*);
+typedef void(__stdcall* UpdateSubresource_t)(ID3D11DeviceContext*, ID3D11Resource*, UINT, const D3D11_BOX*, const void*, UINT, UINT);
 
 Present_t OriginalPresent = nullptr;
 OMSetRenderTargets_t OriginalOMSetRenderTargets = nullptr;
+Map_t Original_Map = nullptr;
+UpdateSubresource_t Original_UpdateSubresource = nullptr;
 
 FrameResources g_frameResources;
 std::recursive_mutex g_resourceMutex;
@@ -65,9 +68,9 @@ bool g_firstFrame = true;
 StereoPipeline g_stereoPipeline;
 bool g_pipelineInitialized = false;
 
-// GameSense AI Matrix Classifier
-vrinject::ai::MatrixClassifier g_matrixClassifier;
-bool g_classifierInitialized = false;
+// Matrix Classifier
+vrinject::MatrixClassifier& g_matrixClassifier = vrinject::MatrixClassifier::Get();
+bool g_classifierInitialized = true;
 
 // Sub-Phase 7B: Global Renderers
 DX11Renderer g_dx11Renderer;
@@ -102,174 +105,6 @@ void InitializeBackend(IDXGISwapChain* pSwapChain) {
     }
 }
 
-// Caching and throttling state to prevent CPU-GPU stalls and ONNX overhead
-static bool s_projectionFound = false;
-static int s_projectionBufferIndex = -1;
-static size_t s_projectionOffset = 0;
-static int s_scanFrameThrottle = 0;
-static Microsoft::WRL::ComPtr<ID3D11Buffer> s_cachedStagingBuffer;
-static UINT s_cachedStagingSize = 0;
-
-void ResetAIState() {
-    s_projectionFound = false;
-    s_projectionBufferIndex = -1;
-    s_projectionOffset = 0;
-    s_scanFrameThrottle = 0;
-    s_cachedStagingBuffer.Reset();
-    s_cachedStagingSize = 0;
-}
-
-void ScanActiveConstantBuffers(ID3D11DeviceContext* context, StereoParams& params) {
-    if (!g_classifierInitialized) return;
-
-    ID3D11Buffer* boundCBs[14] = { nullptr };
-    context->VSGetConstantBuffers(0, 14, boundCBs);
-
-    // If projection matrix slot & offset has been found previously, read it directly and skip ONNX!
-    if (s_projectionFound && s_projectionBufferIndex >= 0) {
-        if (s_projectionBufferIndex < 14 && boundCBs[s_projectionBufferIndex]) {
-            ID3D11Buffer* cb = boundCBs[s_projectionBufferIndex];
-            D3D11_BUFFER_DESC desc;
-            cb->GetDesc(&desc);
-
-            if (desc.ByteWidth >= s_projectionOffset + 64) {
-                // Ensure staging buffer exactly matches the width
-                if (!s_cachedStagingBuffer || s_cachedStagingSize != desc.ByteWidth) {
-                    D3D11_BUFFER_DESC stagingDesc = {};
-                    stagingDesc.ByteWidth = desc.ByteWidth;
-                    stagingDesc.Usage = D3D11_USAGE_STAGING;
-                    stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-                    stagingDesc.BindFlags = 0;
-                    stagingDesc.MiscFlags = 0;
-                    stagingDesc.StructureByteStride = 0;
-
-                    Microsoft::WRL::ComPtr<ID3D11Device> device;
-                    context->GetDevice(&device);
-                    s_cachedStagingBuffer.Reset();
-                    if (SUCCEEDED(device->CreateBuffer(&stagingDesc, nullptr, &s_cachedStagingBuffer))) {
-                        s_cachedStagingSize = desc.ByteWidth;
-                    }
-                }
-
-                if (s_cachedStagingBuffer) {
-                    context->CopyResource(s_cachedStagingBuffer.Get(), cb);
-
-                    D3D11_MAPPED_SUBRESOURCE mapped;
-                    // Read staging buffer asynchronously without CPU stall if possible
-                    HRESULT hr = context->Map(s_cachedStagingBuffer.Get(), 0, D3D11_MAP_READ, D3D11_MAP_FLAG_DO_NOT_WAIT, &mapped);
-                    if (SUCCEEDED(hr)) {
-                        const float* mat = reinterpret_cast<const float*>(reinterpret_cast<const char*>(mapped.pData) + s_projectionOffset);
-                        float xScale = mat[0];
-                        float yScale = mat[5];
-                        float A = mat[10];
-                        float B = mat[14];
-
-                        if (xScale > 0.0f && yScale > 0.0f && std::abs(A) > 0.001f) {
-                            float nearP = -B / A;
-                            float farP = -B / (A - 1.0f);
-                            if (nearP > 0.001f && farP > nearP && farP < 100000.0f) {
-                                params.nearPlane = nearP;
-                                params.farPlane = farP;
-                            }
-                        }
-                        context->Unmap(s_cachedStagingBuffer.Get(), 0);
-                    }
-                }
-            }
-        }
-        for (int i = 0; i < 14; ++i) {
-            if (boundCBs[i]) boundCBs[i]->Release();
-        }
-        return;
-    }
-
-    // Throttle the full ONNX scan to run once every 10 frames (166ms at 60fps) to find it quickly
-    if (s_scanFrameThrottle++ % 10 != 0) {
-        for (int i = 0; i < 14; ++i) {
-            if (boundCBs[i]) boundCBs[i]->Release();
-        }
-        return;
-    }
-
-    for (int i = 0; i < 14; ++i) {
-        if (!boundCBs[i]) continue;
-
-        D3D11_BUFFER_DESC desc;
-        boundCBs[i]->GetDesc(&desc);
-
-        if (desc.ByteWidth >= 64) {
-            // Allocate staging buffer (cached on subsequent throttled frames if matching width)
-            if (!s_cachedStagingBuffer || s_cachedStagingSize != desc.ByteWidth) {
-                D3D11_BUFFER_DESC stagingDesc = {};
-                stagingDesc.ByteWidth = desc.ByteWidth;
-                stagingDesc.Usage = D3D11_USAGE_STAGING;
-                stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-                stagingDesc.BindFlags = 0;
-                stagingDesc.MiscFlags = 0;
-                stagingDesc.StructureByteStride = 0;
-
-                Microsoft::WRL::ComPtr<ID3D11Device> device;
-                context->GetDevice(&device);
-                s_cachedStagingBuffer.Reset();
-                if (SUCCEEDED(device->CreateBuffer(&stagingDesc, nullptr, &s_cachedStagingBuffer))) {
-                    s_cachedStagingSize = desc.ByteWidth;
-                }
-            }
-
-            if (s_cachedStagingBuffer) {
-                context->CopyResource(s_cachedStagingBuffer.Get(), boundCBs[i]);
-
-                D3D11_MAPPED_SUBRESOURCE mapped;
-                // Since this is a throttled scan, we can block to ensure we successfully classify it
-                if (SUCCEEDED(context->Map(s_cachedStagingBuffer.Get(), 0, D3D11_MAP_READ, 0, &mapped))) {
-                    auto detections = g_matrixClassifier.ScanBuffer(mapped.pData, desc.ByteWidth);
-
-                    for (const auto& result : detections) {
-                        int offset = result.first;
-                        const auto& pred = result.second;
-
-                        if (pred.type == ai::MatrixType::PerspectiveProjection && pred.confidence > 0.85f) {
-                            const float* mat = reinterpret_cast<const float*>(reinterpret_cast<const char*>(mapped.pData) + offset);
-                            
-                            float xScale = mat[0];
-                            float yScale = mat[5];
-                            float A = mat[10];
-                            float B = mat[14];
-
-                            if (xScale > 0.0f && yScale > 0.0f && std::abs(A) > 0.001f) {
-                                float nearP = -B / A;
-                                float farP = -B / (A - 1.0f);
-                                float aspect = yScale / xScale;
-
-                                if (nearP > 0.001f && farP > nearP && farP < 100000.0f && aspect > 0.1f && aspect < 10.0f) {
-                                    params.nearPlane = nearP;
-                                    params.farPlane = farP;
-                                    
-                                    // Cache the findings to permanently disable ONNX scanning
-                                    s_projectionFound = true;
-                                    s_projectionBufferIndex = i;
-                                    s_projectionOffset = offset;
-
-                                    LOG_INFO("GameSense AI: Active Projection Matrix detected & cached! Slot: %d | Offset: %zu | Near: %.3f | Far: %.1f (Confidence: %.1f%%)", 
-                                        i, offset, nearP, farP, pred.confidence * 100.0f);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    context->Unmap(s_cachedStagingBuffer.Get(), 0);
-                    if (s_projectionFound) {
-                        break; // Stop scanning other buffers if found
-                    }
-                }
-            }
-        }
-    }
-
-    for (int i = 0; i < 14; ++i) {
-        if (boundCBs[i]) boundCBs[i]->Release();
-    }
-}
 
 HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
     std::unique_lock<std::recursive_mutex> lock(g_resourceMutex);
@@ -292,12 +127,39 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
         g_frameResources.depthFormat = DXGI_FORMAT_UNKNOWN;
         g_frameResources.valid = false;
         
-        ResetAIState();
+        g_matrixClassifier.Reset();
         g_largestDSVThisFrame.Reset();
         g_maxDepthPixels = 0;
 
-        pSwapChain->GetDevice(__uuidof(ID3D11Device), (void**)&g_frameResources.device);
+        HRESULT deviceHr = pSwapChain->GetDevice(__uuidof(ID3D11Device), (void**)&g_frameResources.device);
+        if (FAILED(deviceHr) || !g_frameResources.device) {
+            s_backendInitialized = false;
+            
+            // It might be a DX12 swapchain! Check if we can get a DX12 device or queue.
+            Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue;
+            if (SUCCEEDED(pSwapChain->GetDevice(__uuidof(ID3D12CommandQueue), (void**)&queue))) {
+                g_currentAPI = GraphicsAPI::DX12;
+            } else {
+                g_currentAPI = GraphicsAPI::UNKNOWN;
+            }
+            
+            lock.unlock();
+            
+            if (g_currentAPI == GraphicsAPI::DX12) {
+                DX12Hook::OnPresent(pSwapChain);
+            }
+            
+            return OriginalPresent(pSwapChain, SyncInterval, Flags);
+        }
         g_frameResources.device->GetImmediateContext(&g_frameResources.context);
+        if (!g_frameResources.context) {
+            g_frameResources.device->Release();
+            g_frameResources.device = nullptr;
+            s_backendInitialized = false;
+            g_currentAPI = GraphicsAPI::UNKNOWN;
+            lock.unlock();
+            return OriginalPresent(pSwapChain, SyncInterval, Flags);
+        }
         g_frameResources.swapChain = pSwapChain;
         
         s_backendInitialized = false; // Force backend reinitialization!
@@ -311,6 +173,9 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
     }
 
     if (g_currentAPI != GraphicsAPI::DX11) {
+        if (g_currentAPI == GraphicsAPI::DX12) {
+            DX12Hook::OnPresent(pSwapChain);
+        }
         // Prototype currently relies on DX11 for the rest of the stereopipeline (stereo_pipeline.cpp).
         // For Phase 7B, we just verify that DX12 is detected and initialized, and then bail out of the DX11-specific capture logic.
         return OriginalPresent(pSwapChain, SyncInterval, Flags);
@@ -327,6 +192,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
             g_frameResources.height = desc.Height;
             g_frameResources.colorBuffer.Reset();
             g_frameResources.colorSRV.Reset();
+            g_frameResources.initAttempted = false;
             g_pipelineInitialized = false; // Re-init on resize
             g_stereoPipeline.Shutdown();
         }
@@ -421,13 +287,13 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
                 moduleDir = moduleDir.substr(0, moduleDir.find_last_of("\\/"));
                 if (g_frameResources.colorSRV && !g_frameResources.initAttempted) {
                     if (g_frameResources.width > 0 && g_frameResources.height > 0) {
-                        g_frameResources.initAttempted = true;
                         g_pipelineInitialized = g_stereoPipeline.Initialize(
                             g_frameResources.device, 
                             g_frameResources.width, 
                             g_frameResources.height, 
                             moduleDir
                         );
+                        g_frameResources.initAttempted = g_pipelineInitialized;
                         if (!g_pipelineInitialized) {
                             LOG_ERROR("Failed to initialize VR Stereo Pipeline. Disabling VR for this SwapChain.");
                         }
@@ -464,8 +330,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
             params.height = g_frameResources.height;
             params.reversedZ = g_frameResources.reversedZ ? 1 : 0;
             
-            // Scan bound constant buffers to dynamically update projection parameters via GameSense AI
-            ScanActiveConstantBuffers(g_frameResources.context, params);
+            // Matrix classifier runs asynchronously on Map/UpdateSubresource hooks now
             
             // Calculate deltaTime between frames
             static auto lastTime = std::chrono::high_resolution_clock::now();
@@ -575,10 +440,62 @@ void __stdcall hkOMSetRenderTargets(ID3D11DeviceContext* pContext, UINT NumViews
     OriginalOMSetRenderTargets(pContext, NumViews, ppRenderTargetViews, pDepthStencilView);
 }
 
-bool Initialize() {
-    if (MH_Initialize() != MH_OK) return false;
+// Hook ID3D11DeviceContext::Map
+HRESULT STDMETHODCALLTYPE Hooked_Map(
+    ID3D11DeviceContext* pCtx,
+    ID3D11Resource*      pResource,
+    UINT                 Subresource,
+    D3D11_MAP            MapType,
+    UINT                 MapFlags,
+    D3D11_MAPPED_SUBRESOURCE* pMappedResource)
+{
+    HRESULT hr = Original_Map(pCtx, pResource, Subresource, MapType, MapFlags, pMappedResource);
+    if (SUCCEEDED(hr) && pMappedResource && pMappedResource->pData && MapType == D3D11_MAP_WRITE_DISCARD) {
+        D3D11_RESOURCE_DIMENSION dim;
+        pResource->GetType(&dim);
+        if (dim == D3D11_RESOURCE_DIMENSION_BUFFER) {
+            D3D11_BUFFER_DESC desc = {};
+            static_cast<ID3D11Buffer*>(pResource)->GetDesc(&desc);
+            if (desc.BindFlags & D3D11_BIND_CONSTANT_BUFFER) {
+                g_matrixClassifier.OnConstantBufferUpdate(pMappedResource->pData, desc.ByteWidth, pMappedResource->pData);
+            }
+        }
+    }
+    return hr;
+}
 
-    // Initialize GameSense AI Matrix Classifier
+// Hook ID3D11DeviceContext::UpdateSubresource
+void STDMETHODCALLTYPE Hooked_UpdateSubresource(
+    ID3D11DeviceContext* pCtx,
+    ID3D11Resource*      pDstResource,
+    UINT                 DstSubresource,
+    const D3D11_BOX*     pDstBox,
+    const void*          pSrcData,
+    UINT                 SrcRowPitch,
+    UINT                 SrcDepthPitch)
+{
+    if (pSrcData) {
+        D3D11_RESOURCE_DIMENSION dim;
+        pDstResource->GetType(&dim);
+        if (dim == D3D11_RESOURCE_DIMENSION_BUFFER) {
+            D3D11_BUFFER_DESC desc = {};
+            static_cast<ID3D11Buffer*>(pDstResource)->GetDesc(&desc);
+            if (desc.BindFlags & D3D11_BIND_CONSTANT_BUFFER) {
+                g_matrixClassifier.OnConstantBufferUpdate(pSrcData, desc.ByteWidth, const_cast<void*>(pSrcData));
+            }
+        }
+    }
+    Original_UpdateSubresource(pCtx, pDstResource, DstSubresource, pDstBox, pSrcData, SrcRowPitch, SrcDepthPitch);
+}
+
+bool Initialize() {
+    MH_STATUS status = MH_Initialize();
+    if (status != MH_OK && status != MH_ERROR_ALREADY_INITIALIZED) {
+        LOG_ERROR("DX11Hook: MH_Initialize failed");
+        return false;
+    }
+
+    // Initialize Path and Config
     char dllPath[MAX_PATH] = {};
     if (GetModuleFileNameA(g_hModule, dllPath, MAX_PATH)) {
         std::string baseDir = std::string(dllPath);
@@ -586,15 +503,6 @@ bool Initialize() {
         
         // Load Configuration
         ConfigManager::GetInstance().Load(baseDir);
-
-        std::string modelPath = baseDir + "\\models\\matrix_classifier.onnx";
-        std::wstring wModelPath(modelPath.begin(), modelPath.end());
-        g_classifierInitialized = g_matrixClassifier.Initialize(wModelPath);
-        if (g_classifierInitialized) {
-            LOG_INFO("GameSense AI: Matrix Classifier successfully initialized.");
-        } else {
-            LOG_WARN("GameSense AI: Failed to initialize Matrix Classifier. Heuristic fallback will be used.");
-        }
     }
 
     // Create dummy window and swapchain to get vtables
@@ -633,6 +541,8 @@ bool Initialize() {
 
     void* presentAddress = pSwapChainVtable[8];
     void* omSetRenderTargetsAddress = pContextVtable[33];
+    void* mapAddress = pContextVtable[14];
+    void* updateSubresourceAddress = pContextVtable[16];
 
     pSwapChain->Release();
     pContext->Release();
@@ -647,6 +557,14 @@ bool Initialize() {
     }
     if (MH_CreateHook(omSetRenderTargetsAddress, (void*)hkOMSetRenderTargets, (void**)&OriginalOMSetRenderTargets) != MH_OK) {
         LOG_ERROR("MH_CreateHook failed for OMSetRenderTargets");
+        return false;
+    }
+    if (MH_CreateHook(mapAddress, (void*)Hooked_Map, (void**)&Original_Map) != MH_OK) {
+        LOG_ERROR("MH_CreateHook failed for Map");
+        return false;
+    }
+    if (MH_CreateHook(updateSubresourceAddress, (void*)Hooked_UpdateSubresource, (void**)&Original_UpdateSubresource) != MH_OK) {
+        LOG_ERROR("MH_CreateHook failed for UpdateSubresource");
         return false;
     }
     if (MH_EnableHook(MH_ALL_HOOKS) != MH_OK) {
