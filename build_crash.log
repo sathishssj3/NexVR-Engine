@@ -25,6 +25,12 @@ MSBuild version 17.14.40+3e7442088 for .NET Framework
   
   compilation header save succeeded; see D:\a\NexVR-Engine\NexVR-Engine\build\bin\shaders\comfort_guard_analysis_cs_dx11.h
   Compiling HLSL compute shader to DXIL: comfort_guard_analysis.hlsl -> comfort_guard_analysis_cs_dx12.h
+  Compiling HLSL compute shader: depth_reprojection.hlsl -> depth_reprojection_cs_dx11.h
+  Microsoft (R) Direct3D Shader Compiler 10.1
+  Copyright (C) 2013 Microsoft. All rights reserved.
+  
+  compilation header save succeeded; see D:\a\NexVR-Engine\NexVR-Engine\build\bin\shaders\depth_reprojection_cs_dx11.h
+  Compiling HLSL compute shader to DXIL: depth_reprojection.hlsl -> depth_reprojection_cs_dx12.h
   Compiling HLSL compute shader: disocclusion_fill.hlsl -> disocclusion_fill_cs_dx11.h
   Microsoft (R) Direct3D Shader Compiler 10.1
   Copyright (C) 2013 Microsoft. All rights reserved.
@@ -47,6 +53,10 @@ MSBuild version 17.14.40+3e7442088 for .NET Framework
   Building Custom Rule D:/a/NexVR-Engine/NexVR-Engine/CMakeLists.txt
   dummy_d3d11_app.cpp
   dummy_app.vcxproj -> D:\a\NexVR-Engine\NexVR-Engine\build\bin\dummy_app.exe
+  Building Custom Rule D:/a/NexVR-Engine/NexVR-Engine/CMakeLists.txt
+  dxgi_proxy.cpp
+     Creating library D:/a/NexVR-Engine/NexVR-Engine/build/bin/dxgi.lib and object D:/a/NexVR-Engine/NexVR-Engine/build/bin/dxgi.exp
+  dxgi_proxy.vcxproj -> D:\a\NexVR-Engine\NexVR-Engine\build\bin\dxgi.dll
   Building Custom Rule D:/a/NexVR-Engine/NexVR-Engine/CMakeLists.txt
   injector.cpp
   injector.vcxproj -> D:\a\NexVR-Engine\NexVR-Engine\build\bin\injector.exe
@@ -75,19 +85,63 @@ MSBuild version 17.14.40+3e7442088 for .NET Framework
   xr_generated_dispatch_table_core.c
   openxr_loader.vcxproj -> D:\a\NexVR-Engine\NexVR-Engine\build\bin\openxr_loader.lib
   Building Custom Rule D:/a/NexVR-Engine/NexVR-Engine/CMakeLists.txt
+  test_xr.cpp
+D:\a\NexVR-Engine\NexVR-Engine\build\_deps\openxr-src\include\openxr\openxr_platform.h(321,17): error C2143: syntax error: missing ';' before '*' [D:\a\NexVR-Engine\NexVR-Engine\build\test_xr.vcxproj]
+  (compiling source file '../src/test_xr.cpp')
+  
+D:\a\NexVR-Engine\NexVR-Engine\build\_deps\openxr-src\include\openxr\openxr_platform.h(321,5): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\NexVR-Engine\NexVR-Engine\build\test_xr.vcxproj]
+  (compiling source file '../src/test_xr.cpp')
+  
+D:\a\NexVR-Engine\NexVR-Engine\build\_deps\openxr-src\include\openxr\openxr_platform.h(321,39): error C2238: unexpected token(s) preceding ';' [D:\a\NexVR-Engine\NexVR-Engine\build\test_xr.vcxproj]
+  (compiling source file '../src/test_xr.cpp')
+  
+D:\a\NexVR-Engine\NexVR-Engine\build\_deps\openxr-src\include\openxr\openxr_platform.h(322,23): error C2143: syntax error: missing ';' before '*' [D:\a\NexVR-Engine\NexVR-Engine\build\test_xr.vcxproj]
+  (compiling source file '../src/test_xr.cpp')
+  
+D:\a\NexVR-Engine\NexVR-Engine\build\_deps\openxr-src\include\openxr\openxr_platform.h(322,5): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\NexVR-Engine\NexVR-Engine\build\test_xr.vcxproj]
+  (compiling source file '../src/test_xr.cpp')
+  
+D:\a\NexVR-Engine\NexVR-Engine\build\_deps\openxr-src\include\openxr\openxr_platform.h(322,38): error C2238: unexpected token(s) preceding ';' [D:\a\NexVR-Engine\NexVR-Engine\build\test_xr.vcxproj]
+  (compiling source file '../src/test_xr.cpp')
+  
+D:\a\NexVR-Engine\NexVR-Engine\build\_deps\openxr-src\include\openxr\openxr_platform.h(328,19): error C2143: syntax error: missing ';' before '*' [D:\a\NexVR-Engine\NexVR-Engine\build\test_xr.vcxproj]
+  (compiling source file '../src/test_xr.cpp')
+  
+D:\a\NexVR-Engine\NexVR-Engine\build\_deps\openxr-src\include\openxr\openxr_platform.h(328,5): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\NexVR-Engine\NexVR-Engine\build\test_xr.vcxproj]
+  (compiling source file '../src/test_xr.cpp')
+  
+D:\a\NexVR-Engine\NexVR-Engine\build\_deps\openxr-src\include\openxr\openxr_platform.h(328,34): error C2238: unexpected token(s) preceding ';' [D:\a\NexVR-Engine\NexVR-Engine\build\test_xr.vcxproj]
+  (compiling source file '../src/test_xr.cpp')
+  
+D:\a\NexVR-Engine\NexVR-Engine\build\_deps\openxr-src\include\openxr\openxr_platform.h(335,27): error C3646: 'minFeatureLevel': unknown override specifier [D:\a\NexVR-Engine\NexVR-Engine\build\test_xr.vcxproj]
+  (compiling source file '../src/test_xr.cpp')
+  
+D:\a\NexVR-Engine\NexVR-Engine\build\_deps\openxr-src\include\openxr\openxr_platform.h(335,5): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int [D:\a\NexVR-Engine\NexVR-Engine\build\test_xr.vcxproj]
+  (compiling source file '../src/test_xr.cpp')
+  
+  Building Custom Rule D:/a/NexVR-Engine/NexVR-Engine/CMakeLists.txt
   dllmain.cpp
+  engine_detector.cpp
+  hook_manager.cpp
+  unreal_hook.cpp
+  unity_hook.cpp
+  memory_scanner.cpp
   dx11_renderer.cpp
   dx12_renderer.cpp
   vulkan_renderer.cpp
   dx11_hook.cpp
   dx12_hook.cpp
+  dxgi_factory_hook.cpp
   vulkan_layer.cpp
   stereo_pipeline.cpp
   comfort_guard.cpp
+  depth_reprojector.cpp
   neural_inpainter.cpp
   openxr_manager.cpp
   motion_predictor.cpp
   input_hook.cpp
+  Generating Code...
+  Compiling...
   audio_hook.cpp
   matrix_classifier.cpp
   config_manager.cpp
@@ -95,8 +149,6 @@ MSBuild version 17.14.40+3e7442088 for .NET Framework
   imgui_draw.cpp
   imgui_tables.cpp
   imgui_widgets.cpp
-  Generating Code...
-  Compiling...
   imgui_impl_win32.cpp
   imgui_impl_dx11.cpp
   Generating Code...
@@ -111,16 +163,5 @@ MSBuild version 17.14.40+3e7442088 for .NET Framework
   	Generating DLL hash header
   Building Custom Rule D:/a/NexVR-Engine/NexVR-Engine/CMakeLists.txt
   main.cpp
-D:\a\NexVR-Engine\NexVR-Engine\src\injector\main.cpp(364,10): error C2065: 'expectedHash': undeclared identifier [D:\a\NexVR-Engine\NexVR-Engine\build\vr-inject-cli.vcxproj]
-D:\a\NexVR-Engine\NexVR-Engine\src\injector\main.cpp(366,64): error C2065: 'expectedHash': undeclared identifier [D:\a\NexVR-Engine\NexVR-Engine\build\vr-inject-cli.vcxproj]
-D:\a\NexVR-Engine\NexVR-Engine\src\injector\main.cpp(366,35): error C2660: '_wcsicmp': function does not take 1 arguments [D:\a\NexVR-Engine\NexVR-Engine\build\vr-inject-cli.vcxproj]
-      C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt\corecrt_wstring.h(305,37):
-      see declaration of '_wcsicmp'
-      D:\a\NexVR-Engine\NexVR-Engine\src\injector\main.cpp(366,35):
-      while trying to match the argument list '(const _Elem *)'
-          with
-          [
-              _Elem=wchar_t
-          ]
-  
+  vr-inject-cli.vcxproj -> D:\a\NexVR-Engine\NexVR-Engine\build\bin\vr-inject-cli.exe
 
