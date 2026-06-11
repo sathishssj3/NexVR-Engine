@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.25)
 project(VRInject VERSION 0.1.0 LANGUAGES C CXX)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # ---------------------------------------------------------------------------
 # Global settings
 # ---------------------------------------------------------------------------
@@ -154,6 +156,7 @@ set(SHADER_SOURCES
     ${SHADER_SOURCE_DIR}/bilateral_blend.hlsl
     ${SHADER_SOURCE_DIR}/comfort_guard_analysis.hlsl
     ${SHADER_SOURCE_DIR}/asw_shader.hlsl
+    ${SHADER_SOURCE_DIR}/depth_reprojection.hlsl
 )
 
 # Create output directory for compiled shaders.
@@ -238,6 +241,14 @@ add_custom_target(compile_shaders ALL DEPENDS ${SHADER_OUTPUTS})
 add_library(vrinject SHARED
     src/dllmain.cpp
     src/core/logger.h
+    src/core/engine_detector.h
+    src/core/engine_detector.cpp
+    src/core/hook_manager.cpp
+    src/hooks/unreal_hook.cpp
+    src/hooks/unity_hook.cpp
+    src/core/memory_scanner.h
+    src/core/memory_scanner.cpp
+    src/core/ue_sdk.h
     src/rendering/irenderer.h
     src/rendering/backends/dx11_renderer.h
     src/rendering/backends/dx11_renderer.cpp
@@ -245,15 +256,17 @@ add_library(vrinject SHARED
     src/rendering/backends/dx12_renderer.cpp
     src/rendering/backends/vulkan_renderer.h
     src/rendering/backends/vulkan_renderer.cpp
-    src/hooks/dx11_hook.h
     src/hooks/dx11_hook.cpp
     src/hooks/dx12_hook.h
     src/hooks/dx12_hook.cpp
+    src/hooks/dxgi_factory_hook.h
+    src/hooks/dxgi_factory_hook.cpp
     src/hooks/vulkan_layer.cpp
     src/rendering/stereo_pipeline.h
     src/rendering/stereo_pipeline.cpp
     src/rendering/comfort_guard.h
     src/rendering/comfort_guard.cpp
+    src/rendering/depth_reprojector.cpp
     src/rendering/neural_inpainter.h
     src/rendering/neural_inpainter.cpp
     src/rendering/openxr_manager.h
@@ -263,12 +276,34 @@ add_library(vrinject SHARED
     src/hooks/input_hook.h
     src/hooks/input_hook.cpp
     src/hooks/audio_hook.cpp
-    src/ai_matrix_classifier/matrix_classifier.cpp
+    src/core/matrix_classifier.h
+    src/core/matrix_classifier.cpp
     src/core/config_manager.h
     src/core/config_manager.cpp
     ${MINHOOK_SOURCES}
     ${IMGUI_SOURCES}
 )
+
+# ---------------------------------------------------------------------------
+# Proxy DLL (dxgi.dll)
+# ---------------------------------------------------------------------------
+add_library(dxgi_proxy SHARED
+    src/proxy/dxgi_proxy.cpp
+)
+set_target_properties(dxgi_proxy PROPERTIES OUTPUT_NAME "dxgi")
+target_link_libraries(dxgi_proxy PRIVATE user32)
+
+# S1.1: Code-sign dxgi.dll
+if (DEFINED ENV{SIGN_CERT_PATH})
+    add_custom_command(TARGET dxgi_proxy POST_BUILD
+      COMMAND signtool.exe sign
+        /f "$ENV{SIGN_CERT_PATH}"
+        /p "$ENV{SIGN_CERT_PASS}"
+        /tr http://timestamp.digicert.com
+        /td sha256 /fd sha256
+        "$<TARGET_FILE:dxgi_proxy>"
+      COMMENT "Signing dxgi.dll")
+endif()
 
 target_include_directories(vrinject PRIVATE 
     ${CMAKE_SOURCE_DIR}/src
@@ -284,10 +319,12 @@ target_link_directories(vrinject PRIVATE ${ONNXRUNTIME_LIB_DIR})
 
 target_link_libraries(vrinject PRIVATE
     d3d11
+    d3d12
     dxgi
     d3dcompiler
     dxguid
     onnxruntime
+    onnxruntime_providers_shared
     openxr_loader
     xinput
     Vulkan::Vulkan
@@ -387,3 +424,6 @@ target_link_libraries(dummy_app PRIVATE
 # ---------------------------------------------------------------------------
 add_executable(test_app WIN32 test_app/test_app.cpp)
 target_link_libraries(test_app PRIVATE d3d11 dxgi user32)
+
+add_executable(test_xr src/test_xr.cpp)
+target_link_libraries(test_xr PRIVATE OpenXR::openxr_loader)

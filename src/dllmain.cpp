@@ -13,6 +13,7 @@
 #include "hooks/dx11_hook.h"
 #include "hooks/dx12_hook.h"
 #include "hooks/input_hook.h"
+#include "core/hook_manager.h"
 
 #include <process.h>   // _beginthreadex
 
@@ -20,9 +21,14 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <Windows.h>
+#include <atomic>
 
 // Global module handle – needed to resolve our own DLL path at runtime.
 HMODULE g_hModule = nullptr;
+
+// Thread handle for synchronization during shutdown
+HANDLE g_hInitThread = nullptr;
+std::atomic<bool> g_bIsShuttingDown{false};
 
 namespace {
 
@@ -30,7 +36,10 @@ namespace {
 unsigned __stdcall InitThread(void* /*param*/) {
     // Give the host process a moment to finish its own init. Some games
     // crash if we create a D3D dummy device too early.
-    ::Sleep(500);
+    for (int i = 0; i < 50; ++i) {
+        if (g_bIsShuttingDown) return 0;
+        ::Sleep(10);
+    }
 
     // Resolve the directory our DLL lives in so the log file lands next to it.
     char dllDir[MAX_PATH]{};
@@ -40,7 +49,7 @@ unsigned __stdcall InitThread(void* /*param*/) {
         if (lastSlash) *(lastSlash + 1) = '\0';
     }
 
-    std::string logPath = std::string(dllDir) + "vrinject.log";
+    std::string logPath = "C:\\Users\\sathi\\vrinject.log";
     vrinject::Logger::Init(logPath);
 
     LOG_INFO("========================================");
@@ -48,22 +57,10 @@ unsigned __stdcall InitThread(void* /*param*/) {
     LOG_INFO("========================================");
     LOG_INFO("Module base: 0x%p", static_cast<void*>(g_hModule));
 
-    if (vrinject::DX11Hook::Initialize()) {
-        LOG_INFO("DX11 hook installation succeeded");
+    if (vrinject::HookManager::Get().InitializeHooks()) {
+        LOG_INFO("Engine-specific hook initialization complete.");
     } else {
-        LOG_ERROR("DX11 hook installation FAILED");
-    }
-
-    if (vrinject::DX12Hook::Initialize()) {
-        LOG_INFO("DX12 hook installation succeeded");
-    } else {
-        LOG_ERROR("DX12 hook installation FAILED");
-    }
-
-    if (vrinject::InputHook::GetInstance().Initialize()) {
-        LOG_INFO("XInput hook installation succeeded");
-    } else {
-        LOG_ERROR("XInput hook installation failed");
+        LOG_ERROR("Engine-specific hook initialization FAILED.");
     }
 
     return 0;
@@ -94,14 +91,20 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID reserved) {
             );
 
             if (hThread) {
-                // We don't need the handle; let the OS clean up when the
-                // thread exits.
-                ::CloseHandle(reinterpret_cast<HANDLE>(hThread));
+                // Keep the handle for synchronization on unload
+                g_hInitThread = reinterpret_cast<HANDLE>(hThread);
             }
             break;
         }
 
         case DLL_PROCESS_DETACH: {
+            g_bIsShuttingDown = true;
+            if (g_hInitThread) {
+                ::WaitForSingleObject(g_hInitThread, 1000);
+                ::CloseHandle(g_hInitThread);
+                g_hInitThread = nullptr;
+            }
+
             if (reserved != nullptr) {
                 // Process is terminating. Do not clean up COM/DirectX/User32 resources
                 // to avoid deadlocking the Windows Loader lock.
@@ -112,6 +115,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID reserved) {
             vrinject::DX11Hook::Shutdown();
             vrinject::DX12Hook::Shutdown();
             LOG_INFO("Shutdown complete - goodbye.");
+            vrinject::HookManager::Get().ShutdownHooks();
             vrinject::Logger::Shutdown();
             break;
         }

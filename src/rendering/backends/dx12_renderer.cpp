@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <windows.h>
+#include <d3dcompiler.h>
 #ifndef NTSTATUS
 typedef LONG NTSTATUS;
 #endif
@@ -165,7 +166,7 @@ ShaderHandle DX12Renderer::LoadComputeShader(const uint8_t* bytecode, size_t byt
         }
     }
 
-    // Create a dummy root signature for the prototype
+    // Create a minimal root signature so compute PSO creation is valid.
     D3D12_ROOT_SIGNATURE_DESC rootDesc = {};
     rootDesc.NumParameters = 0;
     rootDesc.pParameters = nullptr;
@@ -175,20 +176,39 @@ ShaderHandle DX12Renderer::LoadComputeShader(const uint8_t* bytecode, size_t byt
 
     ID3DBlob* signatureBlob = nullptr;
     ID3DBlob* errorBlob = nullptr;
-    // Note: D3D12SerializeRootSignature requires d3d12.lib
-    // For simplicity, we assume we might serialize it or pass a pre-built one.
-    // We will leave the Root Signature creation as a stub for the full implementation.
+    if (FAILED(D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signatureBlob, &errorBlob))) {
+        if (errorBlob) {
+            LOG_ERROR("DX12 root signature serialization failed: %s", static_cast<const char*>(errorBlob->GetBufferPointer()));
+            errorBlob->Release();
+        }
+        return handle;
+    }
+
+    ID3D12RootSignature* rootSignature = nullptr;
+    if (FAILED(m_device->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature)))) {
+        signatureBlob->Release();
+        if (errorBlob) errorBlob->Release();
+        LOG_ERROR("DX12 CreateRootSignature failed");
+        return handle;
+    }
     
     // Create PSO
     D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
     psoDesc.CS.pShaderBytecode = bytecode;
     psoDesc.CS.BytecodeLength = bytecodeSize;
-    // psoDesc.pRootSignature = ...
+    psoDesc.pRootSignature = rootSignature;
 
     ID3D12PipelineState* pso = nullptr;
     if (SUCCEEDED(m_device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&pso)))) {
         handle.pipelineState = pso;
+        handle.rootSignature = rootSignature;
+        rootSignature = nullptr;
+    } else {
+        LOG_ERROR("DX12 CreateComputePipelineState failed");
     }
+    if (rootSignature) rootSignature->Release();
+    signatureBlob->Release();
+    if (errorBlob) errorBlob->Release();
 
     return handle;
 }

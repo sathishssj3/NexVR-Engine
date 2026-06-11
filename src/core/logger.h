@@ -28,10 +28,17 @@
 namespace vrinject {
 namespace Logger {
 
-// ---- Internal state (defined inline so this stays header-only) -------------
+// ---- Internal state (using static locals to stay header-only in C++11) -----
 
-inline FILE* g_logFile = nullptr;
-inline std::mutex g_mutex;
+inline FILE*& GetLogFile() {
+    static FILE* s_logFile = nullptr;
+    return s_logFile;
+}
+
+inline std::mutex& GetMutex() {
+    static std::mutex s_mutex;
+    return s_mutex;
+}
 
 enum class Level {
     Debug,
@@ -70,24 +77,24 @@ inline std::string Timestamp() {
 
 /// Open the log file. Call once at startup.
 inline void Init(const std::string& logPath) {
-    std::lock_guard<std::mutex> lock(g_mutex);
-    if (g_logFile) return;
+    std::lock_guard<std::mutex> lock(GetMutex());
+    if (GetLogFile()) return;
 
-    g_logFile = _fsopen(logPath.c_str(), "a", _SH_DENYNO);
-    if (g_logFile) {
-        std::fprintf(g_logFile, "=== VRInject Log Started: %s ===\n", Timestamp().c_str());
-        std::fflush(g_logFile);
+    GetLogFile() = _fsopen(logPath.c_str(), "a", _SH_DENYNO);
+    if (GetLogFile()) {
+        std::fprintf(GetLogFile(), "=== VRInject Log Started: %s ===\n", Timestamp().c_str());
+        std::fflush(GetLogFile());
     }
     OutputDebugStringA("[VRInject] Logger initialised\n");
 }
 
 /// Flush and close the log file. Call once at shutdown.
 inline void Shutdown() {
-    std::lock_guard<std::mutex> lock(g_mutex);
-    if (g_logFile) {
-        std::fprintf(g_logFile, "=== VRInject Log Ended: %s ===\n", Timestamp().c_str());
-        std::fclose(g_logFile);
-        g_logFile = nullptr;
+    std::lock_guard<std::mutex> lock(GetMutex());
+    if (GetLogFile()) {
+        std::fprintf(GetLogFile(), "=== VRInject Log Ended: %s ===\n", Timestamp().c_str());
+        std::fclose(GetLogFile());
+        GetLogFile() = nullptr;
     }
     OutputDebugStringA("[VRInject] Logger shut down\n");
 }
@@ -121,10 +128,10 @@ inline void Log(Level level, const char* file, int line, const char* fmt, ...) {
 
     OutputDebugStringA(lineBuf);
 
-    std::lock_guard<std::mutex> lock(g_mutex);
-    if (g_logFile) {
-        std::fprintf(g_logFile, "%s", lineBuf);
-        std::fflush(g_logFile);
+    std::lock_guard<std::mutex> lock(GetMutex());
+    if (GetLogFile()) {
+        std::fprintf(GetLogFile(), "%s", lineBuf);
+        std::fflush(GetLogFile());
     }
 }
 
