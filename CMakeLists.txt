@@ -54,7 +54,7 @@ set(MINHOOK_SOURCES
 # (URL is a placeholder for the actual GitHub release zip)
 FetchContent_Declare(
     onnxruntime
-    URL file://${CMAKE_CURRENT_SOURCE_DIR}/onnxruntime.zip
+    URL https://github.com/microsoft/onnxruntime/releases/download/v1.16.3/onnxruntime-win-x64-1.16.3.zip
 )
 FetchContent_GetProperties(onnxruntime)
 if(NOT onnxruntime_POPULATED)
