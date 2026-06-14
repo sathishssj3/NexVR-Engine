@@ -14,23 +14,71 @@ import {
 
 const isDev = !app.isPackaged;
 
+
+function detectAPI(dirPath: string, depth = 0): 'DX11' | 'DX12' | 'Vulkan' | 'Unknown' {
+  if (depth > 6) return 'Unknown';
+  try {
+    const files = fs.readdirSync(dirPath, { withFileTypes: true });
+    let hasDirs = [];
+    for (const file of files) {
+      if (file.isFile()) {
+        const lower = file.name.toLowerCase();
+        if (lower === 'vulkan-1.dll' || lower.endsWith('.spv')) return 'Vulkan';
+        if (lower === 'd3d12.dll' || lower === 'd3d12core.dll' || lower === 'dxil.dll') return 'DX12';
+      } else if (file.isDirectory()) {
+        hasDirs.push(file.name);
+      }
+    }
+    for (const d of hasDirs) {
+      const res = detectAPI(path.join(dirPath, d), depth + 1);
+      if (res !== 'Unknown') return res;
+    }
+  } catch(e) {}
+  return 'Unknown';
+}
+let cachedHiddenIds: string[] | null = null;
+let cachedIgnoredIds: string[] | null = null;
+
+function getHiddenIds(): string[] {
+  if (cachedHiddenIds !== null) return cachedHiddenIds as string[];
+  try {
+    const p = path.join(app.getPath('userData'), 'hidden_games.json');
+    if (fs.existsSync(p)) cachedHiddenIds = JSON.parse(fs.readFileSync(p, 'utf-8'));
+    else cachedHiddenIds = [];
+  } catch(e) { cachedHiddenIds = []; }
+  return cachedHiddenIds as string[];
+}
+
+function getIgnoredIds(): string[] {
+  if (cachedIgnoredIds !== null) return cachedIgnoredIds as string[];
+  try {
+    const p = path.join(app.getPath('userData'), 'ignored_games.json');
+    if (fs.existsSync(p)) cachedIgnoredIds = JSON.parse(fs.readFileSync(p, 'utf-8'));
+    else cachedIgnoredIds = [];
+  } catch(e) { cachedIgnoredIds = []; }
+  return cachedIgnoredIds as string[];
+}
+
+function saveHiddenIds(ids: string[]) {
+  cachedHiddenIds = ids;
+  fs.writeFileSync(path.join(app.getPath('userData'), 'hidden_games.json'), JSON.stringify(ids, null, 2));
+}
+
+function saveIgnoredIds(ids: string[]) {
+  cachedIgnoredIds = ids;
+  fs.writeFileSync(path.join(app.getPath('userData'), 'ignored_games.json'), JSON.stringify(ids, null, 2));
+}
+
+
 ipcMain.handle('library:scan', async (): Promise<{ active: GameEntry[], waiting: GameEntry[] }> => {
   const games: GameEntry[] = [];
   const waitingGames: GameEntry[] = [];
   const seenIds = new Set<string>();
 
-  let hiddenIds: string[] = [];
-  let ignoredIds: string[] = [];
+  let hiddenIds = getHiddenIds();
+  let ignoredIds = getIgnoredIds();
   let compatList: Record<string, any> = {};
   try {
-    const hiddenGamesFile = path.join(app.getPath('userData'), 'hidden_games.json');
-    if (fs.existsSync(hiddenGamesFile)) {
-      hiddenIds = JSON.parse(fs.readFileSync(hiddenGamesFile, 'utf-8'));
-    }
-    const ignoredGamesFile = path.join(app.getPath('userData'), 'ignored_games.json');
-    if (fs.existsSync(ignoredGamesFile)) {
-      ignoredIds = JSON.parse(fs.readFileSync(ignoredGamesFile, 'utf-8'));
-    }
     const compatGamesFile = path.join(app.getPath('userData'), 'compat_games.json');
     if (fs.existsSync(compatGamesFile)) {
       compatList = JSON.parse(fs.readFileSync(compatGamesFile, 'utf-8'));
@@ -82,13 +130,8 @@ ipcMain.handle('library:scan', async (): Promise<{ active: GameEntry[], waiting:
           const installPath = path.join(appsDir, 'common', dirStr);
           if (!fs.existsSync(installPath)) continue;
           
-          let api: 'DX11' | 'DX12' | 'Vulkan' | 'Unknown' = 'DX11';
-          const filesInInstall = fs.readdirSync(installPath);
-          const hasVulkan = filesInInstall.some(f => f.toLowerCase() === 'vulkan-1.dll' || f.endsWith('.spv'));
-          const hasDX12 = filesInInstall.some(f => f.toLowerCase() === 'd3d12.dll' || f.toLowerCase() === 'd3d12core.dll');
-          
-          if (hasVulkan) api = 'Vulkan';
-          else if (hasDX12) api = 'DX12';
+          let api = detectAPI(installPath);
+          if (api === 'Unknown') api = 'DX11'; // default
           
           const hasInjector = fs.existsSync(path.join(installPath, 'vrinject.dll'));
           
@@ -127,14 +170,8 @@ ipcMain.handle('library:scan', async (): Promise<{ active: GameEntry[], waiting:
             const parsed = JSON.parse(data);
             const installPath = parsed.InstallLocation;
             if (installPath && fs.existsSync(installPath)) {
-               let api: 'DX11' | 'DX12' | 'Vulkan' | 'Unknown' = 'DX11';
-               try {
-                  const filesInInstall = fs.readdirSync(installPath);
-                  const hasVulkan = filesInInstall.some(f => f.toLowerCase() === 'vulkan-1.dll' || f.toLowerCase().endsWith('.spv'));
-                  const hasDX12 = filesInInstall.some(f => f.toLowerCase() === 'd3d12.dll' || f.toLowerCase() === 'd3d12core.dll');
-                  if (hasVulkan) api = 'Vulkan';
-                  else if (hasDX12) api = 'DX12';
-               } catch(e) {}
+               let api = detectAPI(installPath);
+               if (api === 'Unknown') api = 'DX11';
                
                const hasInjector = fs.existsSync(path.join(installPath, 'vrinject.dll'));
                const id = parsed.AppName || parsed.CatalogItemId;
@@ -276,14 +313,10 @@ ipcMain.handle('library:addCustom', async (): Promise<{ success: boolean }> => {
 
 ipcMain.handle('library:removeGame', async (event, id: string): Promise<{ success: boolean }> => {
   try {
-    const hiddenGamesFile = path.join(app.getPath('userData'), 'hidden_games.json');
-    let hiddenIds: string[] = [];
-    if (fs.existsSync(hiddenGamesFile)) {
-      hiddenIds = JSON.parse(fs.readFileSync(hiddenGamesFile, 'utf-8'));
-    }
+    let hiddenIds = getHiddenIds();
     if (!hiddenIds.includes(id)) {
       hiddenIds.push(id);
-      fs.writeFileSync(hiddenGamesFile, JSON.stringify(hiddenIds, null, 2));
+      saveHiddenIds(hiddenIds);
     }
     return { success: true };
   } catch(e) {
@@ -293,12 +326,9 @@ ipcMain.handle('library:removeGame', async (event, id: string): Promise<{ succes
 
 ipcMain.handle('library:restoreGame', async (event, id: string): Promise<{ success: boolean }> => {
   try {
-    const hiddenGamesFile = path.join(app.getPath('userData'), 'hidden_games.json');
-    if (fs.existsSync(hiddenGamesFile)) {
-      let hiddenIds: string[] = JSON.parse(fs.readFileSync(hiddenGamesFile, 'utf-8'));
-      hiddenIds = hiddenIds.filter(x => x !== id);
-      fs.writeFileSync(hiddenGamesFile, JSON.stringify(hiddenIds, null, 2));
-    }
+    let hiddenIds = getHiddenIds();
+    hiddenIds = hiddenIds.filter(x => x !== id);
+    saveHiddenIds(hiddenIds);
     return { success: true };
   } catch(e) {
     return { success: false };
@@ -307,32 +337,14 @@ ipcMain.handle('library:restoreGame', async (event, id: string): Promise<{ succe
 
 ipcMain.handle('library:ignoreGame', async (event, id: string): Promise<{ success: boolean }> => {
   try {
-    const hiddenGamesFile = path.join(app.getPath('userData'), 'hidden_games.json');
-    if (fs.existsSync(hiddenGamesFile)) {
-      let hiddenIds: string[] = JSON.parse(fs.readFileSync(hiddenGamesFile, 'utf-8'));
-      hiddenIds = hiddenIds.filter(x => x !== id);
-      fs.writeFileSync(hiddenGamesFile, JSON.stringify(hiddenIds, null, 2));
-    }
+    let hiddenIds = getHiddenIds();
+    hiddenIds = hiddenIds.filter(x => x !== id);
+    saveHiddenIds(hiddenIds);
     
-    const ignoredGamesFile = path.join(app.getPath('userData'), 'ignored_games.json');
-    let ignoredIds: string[] = [];
-    if (fs.existsSync(ignoredGamesFile)) {
-      ignoredIds = JSON.parse(fs.readFileSync(ignoredGamesFile, 'utf-8'));
-    }
+    let ignoredIds = getIgnoredIds();
     if (!ignoredIds.includes(id)) {
       ignoredIds.push(id);
-      fs.writeFileSync(ignoredGamesFile, JSON.stringify(ignoredIds, null, 2));
-    }
-    
-    if (id.startsWith('custom_')) {
-      const customGamesFile = path.join(app.getPath('userData'), 'custom_games.json');
-      if (fs.existsSync(customGamesFile)) {
-        let existing: GameEntry[] = JSON.parse(fs.readFileSync(customGamesFile, 'utf-8'));
-        existing = existing.filter(g => g.id !== id);
-        fs.writeFileSync(customGamesFile, JSON.stringify(existing, null, 2));
-      }
-      delete gameExeMap[id];
-      delete gamePathsMap[id];
+      saveIgnoredIds(ignoredIds);
     }
     return { success: true };
   } catch(e) {
@@ -342,26 +354,13 @@ ipcMain.handle('library:ignoreGame', async (event, id: string): Promise<{ succes
 
 ipcMain.handle('library:restoreIgnoredGames', async (): Promise<{ success: boolean }> => {
   try {
-    const ignoredGamesFile = path.join(app.getPath('userData'), 'ignored_games.json');
-    const hiddenGamesFile = path.join(app.getPath('userData'), 'hidden_games.json');
-    
-    if (fs.existsSync(ignoredGamesFile)) {
-      const ignoredIds: string[] = JSON.parse(fs.readFileSync(ignoredGamesFile, 'utf-8'));
-      if (ignoredIds.length > 0) {
-        let hiddenIds: string[] = [];
-        if (fs.existsSync(hiddenGamesFile)) {
-          hiddenIds = JSON.parse(fs.readFileSync(hiddenGamesFile, 'utf-8'));
-        }
-        
-        for (const id of ignoredIds) {
-          if (!hiddenIds.includes(id)) {
-            hiddenIds.push(id);
-          }
-        }
-        
-        fs.writeFileSync(hiddenGamesFile, JSON.stringify(hiddenIds, null, 2));
-        fs.writeFileSync(ignoredGamesFile, JSON.stringify([], null, 2));
-      }
+    let ignoredIds = getIgnoredIds();
+    if (ignoredIds.length > 0) {
+      let hiddenIds = getHiddenIds();
+      // Completely restore them to the Active menu
+      hiddenIds = hiddenIds.filter(id => !ignoredIds.includes(id));
+      saveHiddenIds(hiddenIds);
+      saveIgnoredIds([]);
     }
     return { success: true };
   } catch(e) {

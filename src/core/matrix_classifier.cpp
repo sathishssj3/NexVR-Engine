@@ -27,11 +27,23 @@ void MatrixClassifier::OnConstantBufferUpdate(const void* pData, size_t byteSize
                 [matrixAddr](const MatrixCandidate& c) { return c.bufferAddress == matrixAddr; });
 
             if (it != m_candidates.end()) {
+                it->previousMatrix = it->matrix;
                 it->matrix = m;
                 it->updateCount++;
-                it->confidence = score;
+                
+                // Track dynamic movement
+                float delta = CalculateDelta(it->previousMatrix, it->matrix);
+                if (delta > 0.00001f && delta < 5.0f) {
+                    it->deltaScore += 0.02f; // Active camera
+                } else if (delta == 0.0f) {
+                    it->deltaScore -= 0.05f; // Static matrix (e.g. UI)
+                }
+                
+                // Clamp delta score
+                it->deltaScore = (std::max)(0.0f, (std::min)(0.5f, it->deltaScore));
+                it->confidence = score + it->deltaScore;
             } else {
-                m_candidates.push_back({m, matrixAddr, 1, score, false});
+                m_candidates.push_back({m, m, matrixAddr, 1, score, false, 0.0f});
             }
         }
     }
@@ -107,13 +119,27 @@ float MatrixClassifier::ScoreMatrix(const DirectX::XMFLOAT4X4& m) const {
     if (LooksLikeProjectionMatrix(m)) score += 0.4f;
     if (LooksLikeViewMatrix(m)) score += 0.35f;
 
-    // FOV checking for projection matrices
+    // FOV and Aspect Ratio checking for projection matrices
     if (m._44 == 0.0f && m._22 > 0.0f) { // Likely projection
-        float fovY = 2.0f * atan(1.0f / m._22) * (180.0f / 3.1415926535f);
+        float fovY = 2.0f * std::atan(1.0f / m._22) * (180.0f / 3.1415926535f);
         if (fovY >= 40.0f && fovY <= 120.0f) {
             score += 0.1f;
         } else {
             score -= 0.5f;
+        }
+        
+        // Aspect Ratio checking
+        if (m._11 > 0.0f) {
+            float aspect = m._22 / m._11;
+            // Typical aspect ratios: 16:9 (1.777), 16:10 (1.6), 21:9 (2.333), 4:3 (1.333)
+            if (std::abs(aspect - 1.777f) < 0.05f || 
+                std::abs(aspect - 1.6f) < 0.05f || 
+                std::abs(aspect - 2.333f) < 0.05f ||
+                std::abs(aspect - 1.333f) < 0.05f) {
+                score += 0.2f;
+            } else {
+                score -= 0.1f;
+            }
         }
     }
 
@@ -138,6 +164,16 @@ bool MatrixClassifier::LooksLikeViewMatrix(const DirectX::XMFLOAT4X4& m) const {
     if (std::abs(len0 - 1.0f) > 0.01f) return false;
 
     return true;
+}
+
+float MatrixClassifier::CalculateDelta(const DirectX::XMFLOAT4X4& m1, const DirectX::XMFLOAT4X4& m2) const {
+    float delta = 0.0f;
+    const float* a = &m1._11;
+    const float* b = &m2._11;
+    for (int i = 0; i < 16; ++i) {
+        delta += std::abs(a[i] - b[i]);
+    }
+    return delta;
 }
 
 } // namespace vrinject

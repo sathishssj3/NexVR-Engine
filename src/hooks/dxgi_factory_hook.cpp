@@ -1,5 +1,4 @@
 #include "dxgi_factory_hook.h"
-#include "dx12_hook.h"
 #include "MinHook.h"
 #include "../core/logger.h"
 #include <mutex>
@@ -18,7 +17,16 @@ std::mutex g_mutex;
 
 HRESULT __stdcall hkCreateSwapChain(IDXGIFactory* pFactory, IUnknown* pDevice, DXGI_SWAP_CHAIN_DESC* pDesc, IDXGISwapChain** ppSwapChain) {
     LOG_INFO("DXGIFactoryHook: CreateSwapChain called");
-    HRESULT hr = OriginalCreateSwapChain(pFactory, pDevice, pDesc, ppSwapChain);
+
+    DXGI_SWAP_CHAIN_DESC modifiedDesc = {};
+    if (pDesc) {
+        modifiedDesc = *pDesc;
+        LOG_INFO("DXGIFactoryHook: CreateSwapChain requested format %d", modifiedDesc.BufferDesc.Format);
+        modifiedDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        modifiedDesc.BufferUsage |= DXGI_USAGE_SHADER_INPUT;
+    }
+
+    HRESULT hr = OriginalCreateSwapChain(pFactory, pDevice, pDesc ? &modifiedDesc : nullptr, ppSwapChain);
     if (SUCCEEDED(hr) && pDevice) {
         Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue;
         if (SUCCEEDED(pDevice->QueryInterface(__uuidof(ID3D12CommandQueue), (void**)&queue))) {
@@ -26,9 +34,7 @@ HRESULT __stdcall hkCreateSwapChain(IDXGIFactory* pFactory, IUnknown* pDevice, D
             g_capturedCommandQueue = queue;
             LOG_INFO("DXGIFactoryHook: Captured ID3D12CommandQueue via CreateSwapChain");
         }
-        if (ppSwapChain && *ppSwapChain) {
-            DX12Hook::DynamicHookSwapChain(*ppSwapChain);
-        }
+
     }
     LOG_INFO("DXGIFactoryHook: CreateSwapChain returned hr=0x%X", hr);
     return hr;
@@ -36,7 +42,16 @@ HRESULT __stdcall hkCreateSwapChain(IDXGIFactory* pFactory, IUnknown* pDevice, D
 
 HRESULT __stdcall hkCreateSwapChainForHwnd(IDXGIFactory2* pFactory, IUnknown* pDevice, HWND hWnd, const DXGI_SWAP_CHAIN_DESC1* pDesc, const DXGI_SWAP_CHAIN_FULLSCREEN_DESC* pFullscreenDesc, IDXGIOutput* pRestrictToOutput, IDXGISwapChain1** ppSwapChain) {
     LOG_INFO("DXGIFactoryHook: CreateSwapChainForHwnd called");
-    HRESULT hr = OriginalCreateSwapChainForHwnd(pFactory, pDevice, hWnd, pDesc, pFullscreenDesc, pRestrictToOutput, ppSwapChain);
+
+    DXGI_SWAP_CHAIN_DESC1 modifiedDesc = {};
+    if (pDesc) {
+        modifiedDesc = *pDesc;
+        LOG_INFO("DXGIFactoryHook: CreateSwapChainForHwnd requested format %d", modifiedDesc.Format);
+        modifiedDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        modifiedDesc.BufferUsage |= DXGI_USAGE_SHADER_INPUT;
+    }
+
+    HRESULT hr = OriginalCreateSwapChainForHwnd(pFactory, pDevice, hWnd, pDesc ? &modifiedDesc : nullptr, pFullscreenDesc, pRestrictToOutput, ppSwapChain);
     if (SUCCEEDED(hr) && pDevice) {
         Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue;
         if (SUCCEEDED(pDevice->QueryInterface(__uuidof(ID3D12CommandQueue), (void**)&queue))) {
@@ -44,9 +59,7 @@ HRESULT __stdcall hkCreateSwapChainForHwnd(IDXGIFactory2* pFactory, IUnknown* pD
             g_capturedCommandQueue = queue;
             LOG_INFO("DXGIFactoryHook: Captured ID3D12CommandQueue via CreateSwapChainForHwnd");
         }
-        if (ppSwapChain && *ppSwapChain) {
-            DX12Hook::DynamicHookSwapChain(*ppSwapChain);
-        }
+
     }
     LOG_INFO("DXGIFactoryHook: CreateSwapChainForHwnd returned hr=0x%X", hr);
     return hr;

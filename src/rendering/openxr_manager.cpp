@@ -1,10 +1,15 @@
 #include "openxr_manager.h"
 #include "../core/logger.h"
+#include "../core/matrix_classifier.h"
+#include "../core/config_manager.h"
+#include "../hooks/dx11_hook.h"
 #include "../hooks/input_hook.h"
 #include <vector>
+#include <cmath>
 
 #include "../rendering/backends/vulkan_renderer.h"
 #include "stereo_pipeline.h"
+#include "../rendering/backends/dx12_renderer.h"
 
 namespace vrinject {
 
@@ -18,20 +23,28 @@ OpenXRManager::~OpenXRManager() {
     }
 }
 
-bool OpenXRManager::Initialize(GraphicsAPI api, void* nativeDevice, void* nativeQueue, uint32_t targetWidth, uint32_t targetHeight) {
+bool OpenXRManager::Initialize(GraphicsAPI api, void* nativeDevice, void* nativeQueue, uint32_t targetWidth, uint32_t targetHeight, int64_t gameFormat) {
     m_api = api;
     if (m_instance == XR_NULL_HANDLE && !CreateInstance()) return false;
     if (m_systemId == XR_NULL_SYSTEM_ID && !GetSystemId()) return false;
     if (!CreateSession(api, nativeDevice, nativeQueue)) return false;
-    if (!CreateSwapchains(targetWidth, targetHeight)) return false;
+    if (!CreateSwapchains(targetWidth, targetHeight, gameFormat)) return false;
     if (!CreateReferenceSpace()) return false;
     if (!InitializeActions()) return false;
+    
+    m_vrThreadRunning = true;
+    m_vrThread = std::thread(&OpenXRManager::VRRenderLoop, this);
     
     LOG_INFO("OpenXR Initialized successfully.");
     return true;
 }
 
 void OpenXRManager::Shutdown() {
+    m_vrThreadRunning = false;
+    if (m_vrThread.joinable()) {
+        m_vrThread.join();
+    }
+
     for (int i = 0; i < 2; ++i) {
         if (m_swapchains[i].handle != XR_NULL_HANDLE) {
             xrDestroySwapchain(m_swapchains[i].handle);
@@ -155,8 +168,8 @@ bool OpenXRManager::CreateSession(GraphicsAPI api, void* nativeDevice, void* nat
         XrResult res = xrGetInstanceProcAddr(m_instance, "xrGetD3D12GraphicsRequirementsKHR", 
             (PFN_xrVoidFunction*)&pfnGetD3D12GraphicsRequirementsKHR);
         
+        XrGraphicsRequirementsD3D12KHR graphicsRequirements = {XR_TYPE_GRAPHICS_REQUIREMENTS_D3D12_KHR};
         if (XR_SUCCEEDED(res) && pfnGetD3D12GraphicsRequirementsKHR) {
-            XrGraphicsRequirementsD3D12KHR graphicsRequirements = {XR_TYPE_GRAPHICS_REQUIREMENTS_D3D12_KHR};
             res = pfnGetD3D12GraphicsRequirementsKHR(m_instance, m_systemId, &graphicsRequirements);
             if (XR_FAILED(res)) {
                 LOG_ERROR("Failed to query OpenXR D3D12 graphics requirements (Res: %d)", res);
@@ -167,9 +180,19 @@ bool OpenXRManager::CreateSession(GraphicsAPI api, void* nativeDevice, void* nat
             return false;
         }
 
+        DX12Renderer* dx12Renderer = static_cast<DX12Renderer*>(m_renderer);
         graphicsBindingDX12.device = static_cast<ID3D12Device*>(nativeDevice);
-        graphicsBindingDX12.queue = static_cast<ID3D12CommandQueue*>(nativeQueue);
+        graphicsBindingDX12.queue = dx12Renderer ? dx12Renderer->GetVRCommandQueue() : static_cast<ID3D12CommandQueue*>(nativeQueue);
         sessionInfo.next = &graphicsBindingDX12;
+
+        LUID oxrLuid = graphicsRequirements.adapterLuid;
+        LUID devLuid = {0,0};
+        if (graphicsBindingDX12.device) {
+            LUID nodeLuid = graphicsBindingDX12.device->GetAdapterLuid();
+            devLuid = nodeLuid;
+        }
+        LOG_INFO("OpenXR expects Adapter LUID: %ld,%ld. Game Device LUID: %ld,%ld", 
+            oxrLuid.HighPart, oxrLuid.LowPart, devLuid.HighPart, devLuid.LowPart);
     } else if (api == GraphicsAPI::VULKAN) {
         PFN_xrGetVulkanGraphicsRequirements2KHR pfnGetVulkanGraphicsRequirements2KHR = nullptr;
         XrResult res = xrGetInstanceProcAddr(m_instance, "xrGetVulkanGraphicsRequirements2KHR", 
@@ -222,7 +245,7 @@ bool OpenXRManager::CreateSession(GraphicsAPI api, void* nativeDevice, void* nat
     return true;
 }
 
-bool OpenXRManager::CreateSwapchains(uint32_t width, uint32_t height) {
+bool OpenXRManager::CreateSwapchains(uint32_t width, uint32_t height, int64_t gameFormat) {
     uint32_t viewConfigCount = 0;
     if (XR_FAILED(xrEnumerateViewConfigurations(m_instance, m_systemId, 0, &viewConfigCount, nullptr))) return false;
 
@@ -261,16 +284,22 @@ bool OpenXRManager::CreateSwapchains(uint32_t width, uint32_t height) {
     std::vector<int64_t> formats(formatCount);
     if (XR_FAILED(xrEnumerateSwapchainFormats(m_session, formatCount, &formatCount, formats.data()))) return false;
 
-    int64_t selectedFormat = -1;
-    std::vector<int64_t> preferredFormats = {
-        DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
-        DXGI_FORMAT_R8G8B8A8_UNORM,
-        DXGI_FORMAT_B8G8R8A8_UNORM_SRGB,
-        DXGI_FORMAT_B8G8R8A8_UNORM
-    };
+    LOG_INFO("OpenXR Supported Swapchain Formats:");
+    for (int64_t f : formats) {
+        LOG_INFO("  - %lld", f);
+    }
 
-    for (int64_t runtimeFormat : formats) {
-        for (int64_t preferredFormat : preferredFormats) {
+    int64_t selectedFormat = -1;
+    std::vector<int64_t> preferredFormats;
+    // Force OpenXR to prefer non-SRGB formats. D3D12 CopyResource requires exact format matches,
+    // and we cannot create UAVs for SRGB textures, so we must use UNORM and do SRGB conversion manually.
+    preferredFormats.push_back(DXGI_FORMAT_R8G8B8A8_UNORM);
+    preferredFormats.push_back(DXGI_FORMAT_B8G8R8A8_UNORM);
+    preferredFormats.push_back(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
+    preferredFormats.push_back(DXGI_FORMAT_B8G8R8A8_UNORM_SRGB);
+
+    for (int64_t preferredFormat : preferredFormats) {
+        for (int64_t runtimeFormat : formats) {
             if (runtimeFormat == preferredFormat) {
                 selectedFormat = runtimeFormat;
                 break;
@@ -287,12 +316,16 @@ bool OpenXRManager::CreateSwapchains(uint32_t width, uint32_t height) {
     LOG_INFO("Selected OpenXR swapchain format: %lld", selectedFormat);
     m_swapchainFormat = selectedFormat;
 
+    if (m_api == GraphicsAPI::DX12) {
+        static_cast<DX12Renderer*>(m_renderer)->SetVRFormat(selectedFormat);
+    }
+
     for (int i = 0; i < 2; ++i) {
         XrSwapchainCreateInfo createInfo = {XR_TYPE_SWAPCHAIN_CREATE_INFO};
         createInfo.arraySize = 1;
         createInfo.format = selectedFormat;
-        createInfo.width = m_viewConfigs[i].recommendedImageRectWidth;
-        createInfo.height = m_viewConfigs[i].recommendedImageRectHeight;
+        createInfo.width = width;
+        createInfo.height = height;
         createInfo.mipCount = 1;
         createInfo.faceCount = 1;
         createInfo.sampleCount = m_viewConfigs[i].recommendedSwapchainSampleCount;
@@ -310,6 +343,7 @@ bool OpenXRManager::CreateSwapchains(uint32_t width, uint32_t height) {
         if (XR_FAILED(xrEnumerateSwapchainImages(m_swapchains[i].handle, 0, &imageCount, nullptr))) return false;
 
         if (m_api == GraphicsAPI::DX12) {
+            static_cast<DX12Renderer*>(m_renderer)->SetVRResolutionAndFormat(m_swapchains[i].width, m_swapchains[i].height, selectedFormat);
             m_swapchains[i].imagesD3D12.resize(imageCount, {XR_TYPE_SWAPCHAIN_IMAGE_D3D12_KHR});
             if (XR_FAILED(xrEnumerateSwapchainImages(m_swapchains[i].handle, imageCount, &imageCount, (XrSwapchainImageBaseHeader*)m_swapchains[i].imagesD3D12.data()))) return false;
         } else {
@@ -387,19 +421,43 @@ bool OpenXRManager::BeginFrame(XrFrameState& frameState) {
     PollActions(frameState.predictedDisplayTime);
 
     XrFrameBeginInfo beginInfo = {XR_TYPE_FRAME_BEGIN_INFO};
-    return XR_SUCCEEDED(xrBeginFrame(m_session, &beginInfo));
+    if (XR_FAILED(xrBeginFrame(m_session, &beginInfo))) return false;
+
+    // Spec: If xrBeginFrame succeeds, we MUST call xrEndFrame, even if shouldRender is false!
+    return true; 
 }
 
 bool OpenXRManager::EndFrame(XrFrameState frameState, TextureHandle leftEye, TextureHandle rightEye, TextureHandle depthBuffer, const StereoParams* params) {
+    if (!frameState.shouldRender) {
+        // If we shouldn't render, just submit 0 layers
+        XrFrameEndInfo endInfo = {XR_TYPE_FRAME_END_INFO};
+        endInfo.displayTime = frameState.predictedDisplayTime;
+        endInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+        endInfo.layerCount = 0;
+        endInfo.layers = nullptr;
+        
+        XrResult endRes = xrEndFrame(m_session, &endInfo);
+        
+        // WE MUST SIGNAL THE VR FENCE EVEN IF NOT RENDERING TO PREVENT GAME QUEUE DEADLOCKS!
+        if (m_api == GraphicsAPI::DX12) {
+            static_cast<DX12Renderer*>(m_renderer)->SkipVRFrame(); 
+        }
+        return XR_SUCCEEDED(endRes);
+    }
+
     XrViewLocateInfo viewLocateInfo = {XR_TYPE_VIEW_LOCATE_INFO};
     viewLocateInfo.viewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
     viewLocateInfo.displayTime = frameState.predictedDisplayTime;
-    viewLocateInfo.space = m_appSpace; // Usually located relative to app/reference space
+    viewLocateInfo.space = m_appSpace; // Locate relative to appSpace to avoid runtime errors
 
     XrViewState viewState = {XR_TYPE_VIEW_STATE};
     uint32_t viewCount = 0;
     XrView views[2] = {{XR_TYPE_VIEW}, {XR_TYPE_VIEW}};
-    if (XR_FAILED(xrLocateViews(m_session, &viewLocateInfo, &viewState, 2, &viewCount, views))) return false;
+    XrResult locRes = xrLocateViews(m_session, &viewLocateInfo, &viewState, 2, &viewCount, views);
+    if (XR_FAILED(locRes)) {
+        LOG_ERROR("xrLocateViews failed: %d", locRes);
+        return false;
+    }
 
     XrCompositionLayerProjectionView projectionViews[2] = {};
     TextureHandle eyeTextures[2] = {leftEye, rightEye};
@@ -435,11 +493,16 @@ bool OpenXRManager::EndFrame(XrFrameState frameState, TextureHandle leftEye, Tex
             if (colorSRV && depthSRV && rightEyeUAV) {
                 m_depthReprojector.Reproject(m_d3dContext, colorSRV.Get(), depthSRV.Get(), rightEyeUAV.Get(), *params);
             }
-        } else if (eyeTextures[i].nativePtr && m_renderer) {
+        } else if (m_renderer) {
             void* destTex = (m_api == GraphicsAPI::DX12) 
                 ? (void*)m_swapchains[i].imagesD3D12[imageIndex].texture 
                 : (void*)m_swapchains[i].images[imageIndex].texture;
-            m_renderer->CopyToSwapchain(eyeTextures[i], destTex);
+            
+            if (m_api == GraphicsAPI::DX12) {
+                static_cast<DX12Renderer*>(m_renderer)->CopyToSwapchainVR(destTex, params);
+            } else if (eyeTextures[i].nativePtr) {
+                m_renderer->CopyToSwapchain(eyeTextures[i], destTex);
+            }
         }
 
         XrSwapchainImageReleaseInfo releaseInfo = {XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};
@@ -457,7 +520,7 @@ bool OpenXRManager::EndFrame(XrFrameState frameState, TextureHandle leftEye, Tex
     }
 
     XrCompositionLayerProjection layer = {XR_TYPE_COMPOSITION_LAYER_PROJECTION};
-    layer.space = m_appSpace; // Poses were located relative to appSpace
+    layer.space = m_appSpace; // World-locked — SteamVR Motion Smoothing operates correctly
     layer.viewCount = 2;
     layer.views = projectionViews;
 
@@ -466,10 +529,60 @@ bool OpenXRManager::EndFrame(XrFrameState frameState, TextureHandle leftEye, Tex
     XrFrameEndInfo endInfo = {XR_TYPE_FRAME_END_INFO};
     endInfo.displayTime = frameState.predictedDisplayTime;
     endInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
-    endInfo.layerCount = 1;
-    endInfo.layers = layers;
+    if (viewCount == 2) {
+        endInfo.layerCount = 1;
+        endInfo.layers = layers;
+    } else {
+        endInfo.layerCount = 0;
+        endInfo.layers = nullptr;
+    }
     
-    return XR_SUCCEEDED(xrEndFrame(m_session, &endInfo));
+    XrResult endRes = xrEndFrame(m_session, &endInfo);
+    if (XR_FAILED(endRes)) {
+        LOG_ERROR("xrEndFrame failed: %d", endRes);
+        return false;
+    }
+    return true;
+}
+
+void OpenXRManager::VRRenderLoop() {
+    LOG_INFO("OpenXR VRRenderLoop thread started.");
+    
+    // Elevate thread to highest priority to ensure 90Hz+ VR frame pacing
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
+
+    while (m_vrThreadRunning) {
+        PollEvents();
+        
+        if (!m_sessionRunning) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            continue;
+        }
+
+        XrFrameState frameState = {XR_TYPE_FRAME_STATE};
+        if (BeginFrame(frameState)) {
+            vrinject::StereoParams params;
+            auto& cfg = ConfigManager::GetInstance().GetConfig();
+            params.ipd = cfg.ipd;
+            params.convergence = cfg.convergence;
+            params.depthStrength = 1.0f;
+            params.reversedZ = 1; // Hogwarts Legacy uses reversed-Z depth
+
+            DirectX::XMFLOAT4X4 camMat;
+            if (MatrixClassifier::Get().GetCameraMatrix(camMat)) {
+                // Determine focal length from projection matrix M22 (1.0 / tan(fov/2))
+                if (camMat._22 > 0.001f) {
+                    params.focalLength = 1.0f / camMat._22;
+                }
+            }
+
+            TextureHandle dummy = {};
+            EndFrame(frameState, dummy, dummy, dummy, &params);
+        } else {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    }
+    LOG_INFO("OpenXR VRRenderLoop thread stopped.");
 }
 
 bool OpenXRManager::GetHeadPose(XrTime time, XrPosef& outPose) {
@@ -510,8 +623,12 @@ bool OpenXRManager::InitializeActions() {
     CreateAction(XR_ACTION_TYPE_BOOLEAN_INPUT, "btn_b", &m_actionB);
     CreateAction(XR_ACTION_TYPE_BOOLEAN_INPUT, "btn_x", &m_actionX);
     CreateAction(XR_ACTION_TYPE_BOOLEAN_INPUT, "btn_y", &m_actionY);
+    CreateAction(XR_ACTION_TYPE_BOOLEAN_INPUT, "thumb_click_l", &m_actionThumbClickL);
+    CreateAction(XR_ACTION_TYPE_BOOLEAN_INPUT, "thumb_click_r", &m_actionThumbClickR);
     CreateAction(XR_ACTION_TYPE_FLOAT_INPUT, "trigger_l", &m_actionTriggerL);
     CreateAction(XR_ACTION_TYPE_FLOAT_INPUT, "trigger_r", &m_actionTriggerR);
+    CreateAction(XR_ACTION_TYPE_FLOAT_INPUT, "grip_l", &m_actionGripL);
+    CreateAction(XR_ACTION_TYPE_FLOAT_INPUT, "grip_r", &m_actionGripR);
     CreateAction(XR_ACTION_TYPE_VECTOR2F_INPUT, "thumbstick_l", &m_actionThumbstickL);
     CreateAction(XR_ACTION_TYPE_VECTOR2F_INPUT, "thumbstick_r", &m_actionThumbstickR);
     CreateAction(XR_ACTION_TYPE_VIBRATION_OUTPUT, "haptic", &m_actionHaptic);
@@ -519,7 +636,7 @@ bool OpenXRManager::InitializeActions() {
     xrStringToPath(m_instance, "/user/hand/left", &m_handSubactionPath[0]);
     xrStringToPath(m_instance, "/user/hand/right", &m_handSubactionPath[1]);
 
-    // Bindings for Oculus Touch (as a baseline example)
+    // Bindings for Oculus Touch
     XrPath profilePath;
     xrStringToPath(m_instance, "/interaction_profiles/oculus/touch_controller", &profilePath);
     
@@ -533,8 +650,12 @@ bool OpenXRManager::InitializeActions() {
         {m_actionX, GetPath("/user/hand/left/input/x/click")},
         {m_actionY, GetPath("/user/hand/left/input/y/click")},
         {m_actionMenu, GetPath("/user/hand/left/input/menu/click")},
+        {m_actionThumbClickL, GetPath("/user/hand/left/input/thumbstick/click")},
+        {m_actionThumbClickR, GetPath("/user/hand/right/input/thumbstick/click")},
         {m_actionTriggerL, GetPath("/user/hand/left/input/trigger/value")},
         {m_actionTriggerR, GetPath("/user/hand/right/input/trigger/value")},
+        {m_actionGripL, GetPath("/user/hand/left/input/squeeze/value")},
+        {m_actionGripR, GetPath("/user/hand/right/input/squeeze/value")},
         {m_actionThumbstickL, GetPath("/user/hand/left/input/thumbstick")},
         {m_actionThumbstickR, GetPath("/user/hand/right/input/thumbstick")},
         {m_aimPoseAction, GetPath("/user/hand/right/input/aim/pose")},
@@ -577,6 +698,7 @@ void OpenXRManager::PollActions(XrTime displayTime) {
 
     if (XR_FAILED(xrSyncActions(m_session, &syncInfo))) return;
 
+    // --- Controller aim pose tracking ---
     m_aimPoseLocation = { XR_TYPE_SPACE_LOCATION };
     xrLocateSpace(m_aimPoseSpace,
                   m_appSpace,
@@ -590,11 +712,67 @@ void OpenXRManager::PollActions(XrTime displayTime) {
         m_aimPredictor.Reset();
     }
 
-    auto GetBool = [&](XrAction action) -> bool {
+    // --- HMD head pose tracking for latency compensation ---
+    XrSpaceLocation headLocation = { XR_TYPE_SPACE_LOCATION };
+    xrLocateSpace(m_headSpace, m_appSpace, displayTime, &headLocation);
+
+    if ((headLocation.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) &&
+        (headLocation.locationFlags & XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT)) {
+
+        XrQuaternionf headOrient = headLocation.pose.orientation;
+
+        // Normalize to prevent quaternion drift
+        float len = std::sqrt(
+            headOrient.x * headOrient.x +
+            headOrient.y * headOrient.y +
+            headOrient.z * headOrient.z +
+            headOrient.w * headOrient.w);
+        if (len > 0.001f) {
+            headOrient.x /= len; headOrient.y /= len;
+            headOrient.z /= len; headOrient.w /= len;
+        }
+
+        // Convert OpenXR Quaternion to Euler angles (Pitch and Yaw)
+        float sinp = 2.0f * (headOrient.w * headOrient.y - headOrient.z * headOrient.x);
+        float pitch = std::abs(sinp) >= 1.0f ? std::copysign(3.14159265f / 2.0f, sinp) : std::asin(sinp);
+
+        float siny_cosp = 2.0f * (headOrient.w * headOrient.z + headOrient.x * headOrient.y);
+        float cosy_cosp = 1.0f - 2.0f * (headOrient.y * headOrient.y + headOrient.z * headOrient.z);
+        float yaw = std::atan2(siny_cosp, cosy_cosp);
+
+        float pitchDeg = pitch * (180.0f / 3.14159265f);
+        float yawDeg = yaw * (180.0f / 3.14159265f);
+
+        static float lastPitch = pitchDeg;
+        static float lastYaw = yawDeg;
+        static bool firstFrame = true;
+
+        if (firstFrame) {
+            lastPitch = pitchDeg;
+            lastYaw = yawDeg;
+            firstFrame = false;
+        }
+
+        // Compute pitch/yaw delta from head movement and inject as game camera rotation
+        AimDelta headDelta = { pitchDeg - lastPitch, yawDeg - lastYaw };
+        
+        lastPitch = pitchDeg;
+        lastYaw = yawDeg;
+
+        if (std::abs(headDelta.pitchDeg) > 0.01f || std::abs(headDelta.yawDeg) > 0.01f) {
+            InputHook::GetInstance().InjectAimDelta(headDelta.pitchDeg, headDelta.yawDeg);
+        }
+    } else {
+        // Tracking lost — reset predictor to avoid stale delta on recovery
+        LOG_WARN("Head tracking lost — camera injection paused");
+    }
+
+    auto GetBool = [&](XrAction action, bool* outActive = nullptr) -> bool {
         XrActionStateGetInfo getInfo{XR_TYPE_ACTION_STATE_GET_INFO};
         getInfo.action = action;
         XrActionStateBoolean state{XR_TYPE_ACTION_STATE_BOOLEAN};
         xrGetActionStateBoolean(m_session, &getInfo, &state);
+        if (outActive) *outActive = state.isActive;
         return state.isActive && state.currentState;
     };
     
@@ -618,11 +796,18 @@ void OpenXRManager::PollActions(XrTime displayTime) {
     XINPUT_STATE xstate = {};
     xstate.Gamepad.wButtons = 0;
 
-    if (GetBool(m_actionA)) xstate.Gamepad.wButtons |= XINPUT_GAMEPAD_A;
+    bool vrActive = false;
+    if (GetBool(m_actionA, &vrActive)) xstate.Gamepad.wButtons |= XINPUT_GAMEPAD_A;
     if (GetBool(m_actionB)) xstate.Gamepad.wButtons |= XINPUT_GAMEPAD_B;
     if (GetBool(m_actionX)) xstate.Gamepad.wButtons |= XINPUT_GAMEPAD_X;
     if (GetBool(m_actionY)) xstate.Gamepad.wButtons |= XINPUT_GAMEPAD_Y;
     if (GetBool(m_actionMenu)) xstate.Gamepad.wButtons |= XINPUT_GAMEPAD_START;
+    if (GetBool(m_actionThumbClickL)) xstate.Gamepad.wButtons |= XINPUT_GAMEPAD_LEFT_THUMB;
+    if (GetBool(m_actionThumbClickR)) xstate.Gamepad.wButtons |= XINPUT_GAMEPAD_RIGHT_THUMB;
+    if (GetFloat(m_actionGripL) > 0.5f) xstate.Gamepad.wButtons |= XINPUT_GAMEPAD_LEFT_SHOULDER;
+    if (GetFloat(m_actionGripR) > 0.5f) xstate.Gamepad.wButtons |= XINPUT_GAMEPAD_RIGHT_SHOULDER;
+
+    InputHook::GetInstance().SetVRControllersActive(vrActive);
 
     xstate.Gamepad.bLeftTrigger = (BYTE)(GetFloat(m_actionTriggerL) * 255.0f);
     xstate.Gamepad.bRightTrigger = (BYTE)(GetFloat(m_actionTriggerR) * 255.0f);
@@ -636,12 +821,6 @@ void OpenXRManager::PollActions(XrTime displayTime) {
     xstate.Gamepad.sThumbRY = (SHORT)(stickR.y * 32767.0f);
 
     InputHook::GetInstance().UpdateEmulatedState(xstate);
-
-    // 6DOF Motion Aiming Injection
-    AimDelta aimDelta = m_aimPredictor.ComputeAimDelta(m_currentAimRotation);
-    if (std::abs(aimDelta.pitchDeg) > 0.01f || std::abs(aimDelta.yawDeg) > 0.01f) {
-        InputHook::GetInstance().InjectAimDelta(aimDelta.pitchDeg, aimDelta.yawDeg);
-    }
 }
 
 void OpenXRManager::ApplyHapticFeedback(float leftMotor, float rightMotor) {

@@ -172,11 +172,13 @@ export default function App() {
       }, 3000);
     } else if (res.cancelled) {
       setInjectState('cancelled');
+      setLogLines(prev => [...prev, `[ERROR] Injection Cancelled: ${res.message}`]);
       setTimeout(() => {
         setInjectState('default');
       }, 1500);
     } else {
       setInjectState('error');
+      setLogLines(prev => [...prev, `[ERROR] Injection Failed: ${res.message}`]);
       setTimeout(() => {
         setInjectState('default');
       }, 3000);

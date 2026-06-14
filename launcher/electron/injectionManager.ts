@@ -74,27 +74,9 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
        }
      });
 
-    const dllSource = isDev ? path.join(__dirname, '../../../build/bin/vrinject.dll') : path.join(process.resourcesPath, 'vrinject.dll');
+    const binSourceDir = isDev ? path.join(__dirname, '../../../build/bin') : process.resourcesPath;
     const dllTarget = path.join(installPath, 'vrinject.dll');
-    if (fs.existsSync(dllSource)) {
-      fs.copyFileSync(dllSource, dllTarget);
-    }
-    
-    const onnxSource = isDev ? path.join(__dirname, '../../../build/bin/onnxruntime.dll') : path.join(process.resourcesPath, 'onnxruntime.dll');
-    if (fs.existsSync(onnxSource)) {
-      fs.copyFileSync(onnxSource, path.join(installPath, 'onnxruntime.dll'));
-    }
-    
-    const openxrSource = isDev ? path.join(__dirname, '../../../build/bin/openxr_loader.dll') : path.join(process.resourcesPath, 'openxr_loader.dll');
-    if (fs.existsSync(openxrSource)) {
-      fs.copyFileSync(openxrSource, path.join(installPath, 'openxr_loader.dll'));
-    }
-    
-    const cliSource = isDev ? path.join(__dirname, '../../../build/bin/vr-inject-cli.exe') : path.join(process.resourcesPath, 'vr-inject-cli.exe');
-    const cliTarget = path.join(installPath, 'vr-inject-cli.exe');
-    if (fs.existsSync(cliSource)) {
-      fs.copyFileSync(cliSource, cliTarget);
-    }
+    const cliSource = path.join(binSourceDir, 'vr-inject-cli.exe');
     
     const shadersSource = isDev ? path.join(__dirname, '../../../build/bin/shaders') : path.join(process.resourcesPath, 'shaders');
     const modelsSource = isDev ? path.join(__dirname, '../../../build/bin/models') : path.join(process.resourcesPath, 'models');
@@ -162,7 +144,9 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     let attempts = 0;
     cancelInjectionFlag = false;
     
-    while (attempts < 60) {
+    event.sender.send('log:line', '[Injector] Waiting up to 120s for: ' + targetExeName);
+    
+    while (attempts < 240) {
       if (cancelInjectionFlag) {
          fs.unwatchFile(logPath);
          return { success: false, cancelled: true, message: 'Cancelled by user.' };
@@ -220,22 +204,21 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
            if (!isResolved) {
                isResolved = true;
                fs.unwatchFile(logPath);
-               resolve({ success: false, message: 'Injector timed out or was blocked by Anti-Cheat.' });
+               resolve({ success: false, message: 'Injector timed out or was blocked by Anti-Cheat. (UAC timeout?)' });
            }
-       }, 10000);
+       }, 60000);
 
-       child_process.execFile(cliTarget, ['--pid', String(targetPid), '--dll', dllTarget], { timeout: 10000, killSignal: 'SIGKILL', cwd: installPath }, (err, stdout, stderr) => {
+       const innerScript = `$env:NEXVR_AUTH_TOKEN="${process.env.NEXVR_AUTH_TOKEN}"; & "${cliSource}" --pid ${targetPid} --dll "${dllTarget}" --copy-src "${binSourceDir}" --copy-dst "${installPath}" >> "${logPath}" 2>&1`;
+       const base64Inner = Buffer.from(innerScript, 'utf16le').toString('base64');
+       const outerScript = `Start-Process powershell -Verb RunAs -Wait -WindowStyle Hidden -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", "${base64Inner}"`;
+       const base64Outer = Buffer.from(outerScript, 'utf16le').toString('base64');
+       const psCmd = `powershell -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${base64Outer}`;
+       
+       child_process.exec(psCmd, { timeout: 60000, killSignal: 'SIGKILL', cwd: installPath }, (err, stdout, stderr) => {
            if (isResolved) return;
            isResolved = true;
            clearTimeout(fallbackTimeout);
 
-           if (stdout.trim()) event.sender.send('log:line', '[Injector CLI] ' + stdout.trim());
-           if (stderr.trim()) event.sender.send('log:line', '[Injector CLI Error] ' + stderr.trim());
-           
-           try {
-             fs.unlinkSync(cliTarget);
-           } catch(e) {}
-           
            if (err) {
                fs.unwatchFile(logPath);
                resolve({ success: false, message: `CLI failed: ${err.message}` });

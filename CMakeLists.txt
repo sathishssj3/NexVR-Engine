@@ -54,7 +54,7 @@ set(MINHOOK_SOURCES
 # (URL is a placeholder for the actual GitHub release zip)
 FetchContent_Declare(
     onnxruntime
-    URL https://github.com/microsoft/onnxruntime/releases/download/v1.16.3/onnxruntime-win-x64-1.16.3.zip
+    URL file://${CMAKE_CURRENT_SOURCE_DIR}/onnxruntime.zip
 )
 FetchContent_GetProperties(onnxruntime)
 if(NOT onnxruntime_POPULATED)
@@ -157,6 +157,7 @@ set(SHADER_SOURCES
     ${SHADER_SOURCE_DIR}/comfort_guard_analysis.hlsl
     ${SHADER_SOURCE_DIR}/asw_shader.hlsl
     ${SHADER_SOURCE_DIR}/depth_reprojection.hlsl
+    ${SHADER_SOURCE_DIR}/tonemap.hlsl
 )
 
 # Create output directory for compiled shaders.
@@ -243,6 +244,8 @@ add_library(vrinject SHARED
     src/core/logger.h
     src/core/engine_detector.h
     src/core/engine_detector.cpp
+    src/core/drm_manager.h
+    src/core/drm_manager.cpp
     src/core/hook_manager.cpp
     src/hooks/unreal_hook.cpp
     src/hooks/unity_hook.cpp
@@ -275,6 +278,8 @@ add_library(vrinject SHARED
     src/core/motion_predictor.cpp
     src/hooks/input_hook.h
     src/hooks/input_hook.cpp
+    src/hooks/input_manager.h
+    src/hooks/input_manager.cpp
     src/hooks/audio_hook.cpp
     src/core/matrix_classifier.h
     src/core/matrix_classifier.cpp
@@ -324,7 +329,6 @@ target_link_libraries(vrinject PRIVATE
     d3dcompiler
     dxguid
     onnxruntime
-    onnxruntime_providers_shared
     openxr_loader
     xinput
     Vulkan::Vulkan
@@ -398,6 +402,9 @@ add_executable(dummy_app WIN32 tools/dummy_d3d11_app.cpp)
 # vr-inject-cli - injection CLI
 # ---------------------------------------------------------------------------
 add_executable(vr-inject-cli src/injector/main.cpp)
+add_dependencies(vr-inject-cli vrinject)
+add_custom_target(generate_expected_hash DEPENDS "${CMAKE_BINARY_DIR}/expected_hash.h")
+add_dependencies(vr-inject-cli generate_expected_hash)
 set_target_properties(vr-inject-cli PROPERTIES LINK_FLAGS "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\" /SUBSYSTEM:CONSOLE")
 target_include_directories(vr-inject-cli PRIVATE ${CMAKE_BINARY_DIR})
 add_dependencies(vr-inject-cli vrinject)
@@ -426,4 +433,5 @@ add_executable(test_app WIN32 test_app/test_app.cpp)
 target_link_libraries(test_app PRIVATE d3d11 dxgi user32)
 
 add_executable(test_xr src/test_xr.cpp)
-target_link_libraries(test_xr PRIVATE OpenXR::openxr_loader)
+target_include_directories(test_xr PRIVATE ${OPENXR_INCLUDE_DIR})
+target_link_libraries(test_xr PRIVATE openxr_loader)

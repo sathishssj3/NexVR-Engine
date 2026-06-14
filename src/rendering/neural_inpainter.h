@@ -4,14 +4,7 @@
 #include <wrl/client.h>
 #include <string>
 #include <memory>
-
-// Forward declare ONNX Runtime types to avoid polluting header
-namespace Ort {
-    class Env;
-    class Session;
-    class SessionOptions;
-    class MemoryInfo;
-}
+#include <onnxruntime_cxx_api.h>
 
 namespace vrinject {
 
@@ -38,7 +31,11 @@ public:
 private:
     bool CreateD3D11Resources(ID3D11Device* device);
 
-    // ONNX Runtime Core (Stubbed out)
+    // ONNX Runtime Core
+    std::unique_ptr<Ort::Env> m_env;
+    std::unique_ptr<Ort::SessionOptions> m_sessionOptions;
+    std::unique_ptr<Ort::Session> m_session;
+    std::unique_ptr<Ort::MemoryInfo> m_memoryInfo;
 
     // Direct3D 11 Interop resources for Zero-Copy inference
     Microsoft::WRL::ComPtr<ID3D11Device> m_device;
