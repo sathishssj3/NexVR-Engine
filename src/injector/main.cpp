@@ -341,7 +341,7 @@ int main(int argc, char* argv[]) {
         ::CloseHandle(hSnap);
     }
     
-    if (bestPid != 0 && maxMem > 50 * 1024 * 1024) { // Must be larger than 50MB (launcher is ~6MB)
+    if (bestPid != 0 && maxMem > 15 * 1024 * 1024) { // Must be larger than 15MB (launcher is ~6MB)
         targetPid = bestPid;
         pidFound = true;
     }

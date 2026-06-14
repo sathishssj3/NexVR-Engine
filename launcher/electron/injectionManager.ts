@@ -75,7 +75,6 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
      });
 
     const binSourceDir = isDev ? path.join(__dirname, '../../../build/bin') : process.resourcesPath;
-    const dllTarget = path.join(installPath, 'vrinject.dll');
     const cliSource = path.join(binSourceDir, 'vr-inject-cli.exe');
     
     const shadersSource = isDev ? path.join(__dirname, '../../../build/bin/shaders') : path.join(process.resourcesPath, 'shaders');
@@ -101,8 +100,10 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     }
     
     let targetExeName = '';
+    let targetExeDir = installPath;
     if (gameExeMap[id]) {
        targetExeName = path.basename(gameExeMap[id]).toLowerCase();
+       targetExeDir = path.dirname(gameExeMap[id]);
     } else {
        let largestSize = 0;
        const scan = (dir: string) => {
@@ -116,12 +117,13 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
                  scan(fullPath);
                } else if (f.toLowerCase().endsWith('.exe')) {
                  const lower = f.toLowerCase();
-                 if (lower.includes('launcher') || lower.includes('crash') || lower.includes('reporter') || lower.includes('anticheat') || lower.includes('eosbootstrapper') || lower.includes('start_protected_game')) {
+                 if (lower.includes('launcher') || lower.includes('crashreporter') || lower.includes('crashhandler') || lower.includes('reporter') || lower.includes('anticheat') || lower.includes('eosbootstrapper') || lower.includes('start_protected_game')) {
                     continue;
                  }
                  if (stats.size > largestSize) {
                     largestSize = stats.size;
                     targetExeName = f.toLowerCase();
+                    targetExeDir = dir;
                  }
                }
              } catch(e) {}
@@ -208,7 +210,8 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
            }
        }, 60000);
 
-       const innerScript = `$env:NEXVR_AUTH_TOKEN="${process.env.NEXVR_AUTH_TOKEN}"; & "${cliSource}" --pid ${targetPid} --dll "${dllTarget}" --copy-src "${binSourceDir}" --copy-dst "${installPath}" >> "${logPath}" 2>&1`;
+       const dllTarget = path.join(targetExeDir, 'vrinject.dll');
+       const innerScript = `$env:NEXVR_AUTH_TOKEN="${process.env.NEXVR_AUTH_TOKEN}"; & "${cliSource}" --pid ${targetPid} --dll "${dllTarget}" --copy-src "${binSourceDir}" --copy-dst "${targetExeDir}" >> "${logPath}" 2>&1`;
        const base64Inner = Buffer.from(innerScript, 'utf16le').toString('base64');
        const outerScript = `Start-Process powershell -Verb RunAs -Wait -WindowStyle Hidden -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", "${base64Inner}"`;
        const base64Outer = Buffer.from(outerScript, 'utf16le').toString('base64');
