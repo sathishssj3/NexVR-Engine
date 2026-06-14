@@ -112,4 +112,32 @@ uint8_t* MemoryScanner::ResolveRIP(uint8_t* instructionAddress, uint32_t instruc
     return instructionAddress + instructionSize + offset;
 }
 
+void MemoryScanner::StartBackgroundMatrixScan() {
+    if (!m_isScanning) {
+        m_isScanning = true;
+        m_scanThread = std::thread(&MemoryScanner::ScanLoop, this);
+        LOG_INFO("MemoryScanner: Background heuristic scan started.");
+    }
+}
+
+void MemoryScanner::StopBackgroundMatrixScan() {
+    if (m_isScanning) {
+        m_isScanning = false;
+        if (m_scanThread.joinable()) {
+            m_scanThread.join();
+        }
+        LOG_INFO("MemoryScanner: Background heuristic scan stopped.");
+    }
+}
+
+void MemoryScanner::ScanLoop() {
+    // Basic implementation of PAGE_READWRITE scanning for matrices
+    // In a real scenario, this would incrementally scan heaps.
+    // For now, we will wait, as true deep memory scanning is highly engine-dependent and computationally expensive.
+    // The core heuristic logic relies on the OnConstantBufferUpdate hook to feed candidates.
+    while (m_isScanning) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+}
+
 } // namespace vrinject

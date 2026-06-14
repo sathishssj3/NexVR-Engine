@@ -39,11 +39,10 @@ bool HookManager::InitializeHooks() {
         }
     });
 
-    // Setup Graphics Pipeline Hook (DX11)
-    // if (!DX11Hook::Initialize()) {
-    //     LOG_ERROR("DX11Hook initialization failed");
-    //     return false;
-    // }
+    // Setup Graphics Pipeline Hook (DXGI + DX11)
+    if (!DX11Hook::Initialize()) {
+        LOG_WARN("DX11Hook initialization failed. This is expected for DX12-only games.");
+    }
 
     EngineDetector::Get().Detect();
     EngineType type = EngineDetector::Get().GetEngineType();

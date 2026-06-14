@@ -14,11 +14,9 @@
 #include <cstdarg>
 #include <cstdio>
 #include <ctime>
-#include <fstream>
 #include <mutex>
 #include <string>
 #include <regex>
-#include <filesystem>
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN

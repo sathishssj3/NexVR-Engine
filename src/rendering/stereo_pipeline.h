@@ -32,6 +32,10 @@ public:
                 ID3D11ShaderResourceView* depthSRV,
                 StereoParams& params,
                 float deltaTime);
+    void RenderComputeOnly(ID3D11DeviceContext* ctx,
+                           ID3D11ShaderResourceView* colorSRV,
+                           ID3D11ShaderResourceView* depthSRV,
+                           const StereoParams& params);
     void RenderSideBySide(ID3D11DeviceContext* ctx,
                           ID3D11RenderTargetView* backbufferRTV);
     void Shutdown();

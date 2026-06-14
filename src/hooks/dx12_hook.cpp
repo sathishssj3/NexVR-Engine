@@ -19,76 +19,137 @@ namespace DX12Hook {
 typedef void(__stdcall* ExecuteCommandLists_t)(ID3D12CommandQueue*, UINT, ID3D12CommandList* const*);
 typedef HRESULT(__stdcall* Present_t)(IDXGISwapChain*, UINT, UINT);
 typedef HRESULT(__stdcall* Present1_t)(IDXGISwapChain1*, UINT, UINT, const DXGI_PRESENT_PARAMETERS*);
+typedef void(__stdcall* DrawIndexedInstanced_t)(ID3D12GraphicsCommandList*, UINT, UINT, UINT, INT, UINT);
+
 Present_t OriginalPresentDX12 = nullptr;
 Present1_t OriginalPresent1DX12 = nullptr;
 
+typedef HRESULT(__stdcall* ResizeBuffers_t)(IDXGISwapChain*, UINT, UINT, UINT, DXGI_FORMAT, UINT);
+ResizeBuffers_t OriginalResizeBuffers = nullptr;
+
+typedef HRESULT(__stdcall* ResizeBuffers1_t)(IDXGISwapChain3*, UINT, UINT, UINT, DXGI_FORMAT, UINT, const UINT*, IUnknown* const*);
+ResizeBuffers1_t OriginalResizeBuffers1 = nullptr;
+
+ExecuteCommandLists_t OriginalExecuteCommandLists = nullptr;
+DrawIndexedInstanced_t OriginalDrawIndexedInstanced = nullptr;
+
+extern OpenXRManager g_openxrManager;
+extern bool g_openxrInitialized;
+void OnPresent(IDXGISwapChain* pSwapChain);
+
 HRESULT __stdcall hkPresentDX12(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
-    static int s_count = 0;
-    if (s_count++ < 10) LOG_INFO("hkPresentDX12 called! pSwapChain=%p", pSwapChain);
     OnPresent(pSwapChain);
+    // Note: We cannot skip OriginalPresent without starving the game's input message pump.
     return OriginalPresentDX12(pSwapChain, SyncInterval, Flags);
 }
 
 HRESULT __stdcall hkPresent1DX12(IDXGISwapChain1* pSwapChain, UINT SyncInterval, UINT PresentFlags, const DXGI_PRESENT_PARAMETERS* pPresentParameters) {
-    static int s_count1 = 0;
-    if (s_count1++ < 10) LOG_INFO("hkPresent1DX12 called! pSwapChain=%p", pSwapChain);
     OnPresent(pSwapChain);
+    // Note: We cannot skip OriginalPresent without starving the game's input message pump.
     return OriginalPresent1DX12(pSwapChain, SyncInterval, PresentFlags, pPresentParameters);
 }
 
-ExecuteCommandLists_t OriginalExecuteCommandLists = nullptr;
+HRESULT __stdcall hkResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags) {
+    LOG_INFO("DX12Hook: hkResizeBuffers requested format %d", NewFormat);
+    return OriginalResizeBuffers(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
+}
 
-
+HRESULT __stdcall hkResizeBuffers1(IDXGISwapChain3* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags, const UINT* pCreationNodeMask, IUnknown* const* ppPresentQueue) {
+    LOG_INFO("DX12Hook: hkResizeBuffers1 requested format %d", NewFormat);
+    return OriginalResizeBuffers1(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags, pCreationNodeMask, ppPresentQueue);
+}
 
 FrameResourcesDX12 g_frameResources;
-std::mutex g_resourceMutex;
+std::recursive_mutex g_resourceMutex;
 OnFrameCallbackDX12 g_onFrameCallback = nullptr;
 
 DX12Renderer g_dx12Renderer;
 OpenXRManager g_openxrManager;
+
 bool g_openxrInitialized = false;
+IDXGISwapChain* g_mainSwapChain = nullptr;
 
 void OnPresent(IDXGISwapChain* pSwapChain) {
-    std::lock_guard<std::mutex> lock(g_resourceMutex);
+    if (g_mainSwapChain != nullptr && pSwapChain != g_mainSwapChain) {
+        return; // Ignore secondary swapchains (UI, Overlays, CEF)
+    }
+
+    std::lock_guard<std::recursive_mutex> lock(g_resourceMutex);
+
+    if (!g_frameResources.valid) {
+        // Capture device and queue from swapchain
+        Microsoft::WRL::ComPtr<ID3D12CommandQueue> localQueue;
+        if (SUCCEEDED(pSwapChain->GetDevice(__uuidof(ID3D12CommandQueue), (void**)&localQueue))) {
+            // Direct3D 12 swapchains return the command queue used for presentation!
+            g_frameResources.commandQueue = localQueue.Detach();
+            
+            Microsoft::WRL::ComPtr<ID3D12Device> localDevice;
+            if (SUCCEEDED(g_frameResources.commandQueue->GetDevice(__uuidof(ID3D12Device), (void**)&localDevice))) {
+                if (g_frameResources.device) {
+                    g_frameResources.device->Release();
+                }
+                g_frameResources.device = localDevice.Detach();
+                g_frameResources.valid = true;
+            }
+        }
+    }
 
     if (g_frameResources.swapChain != pSwapChain) {
         g_frameResources.swapChain = pSwapChain;
-        Microsoft::WRL::ComPtr<ID3D12Device> device;
-        if (FAILED(pSwapChain->GetDevice(__uuidof(ID3D12Device), (void**)&device))) {
-            LOG_ERROR("DX12Hook: SwapChain->GetDevice(ID3D12Device) failed");
-            // In DX12, the SwapChain might return the CommandQueue instead of the Device!
-            Microsoft::WRL::ComPtr<ID3D12CommandQueue> swapQueue;
-            if (SUCCEEDED(pSwapChain->GetDevice(__uuidof(ID3D12CommandQueue), (void**)&swapQueue))) {
-                LOG_INFO("DX12Hook: SwapChain returned CommandQueue instead of Device! Fetching Device from Queue.");
-                if (!g_frameResources.commandQueue) {
-                    g_frameResources.commandQueue = swapQueue.Detach();
-                }
-                if (FAILED(g_frameResources.commandQueue->GetDevice(__uuidof(ID3D12Device), (void**)&device))) {
-                    LOG_ERROR("DX12Hook: CommandQueue->GetDevice failed");
-                }
-            } else if (g_frameResources.commandQueue) {
-                LOG_INFO("DX12Hook: Fetching Device from captured CommandQueue.");
-                if (FAILED(g_frameResources.commandQueue->GetDevice(__uuidof(ID3D12Device), (void**)&device))) {
-                    LOG_ERROR("DX12Hook: Captured CommandQueue->GetDevice failed");
-                }
+        if (g_mainSwapChain == nullptr) {
+            g_mainSwapChain = pSwapChain;
+        }
+        
+        // In DX12, IDXGISwapChain::GetDevice returns the ID3D12CommandQueue that was used to create it!
+        Microsoft::WRL::ComPtr<ID3D12CommandQueue> swapQueue;
+        if (SUCCEEDED(pSwapChain->GetDevice(__uuidof(ID3D12CommandQueue), (void**)&swapQueue))) {
+            if (g_frameResources.commandQueue) {
+                g_frameResources.commandQueue->Release();
             }
+            g_frameResources.commandQueue = swapQueue.Detach();
             
-            if (!device) {
-                g_frameResources.device = nullptr;
-                g_frameResources.valid = false;
-                return;
+            // Now get the actual device from the command queue
+            Microsoft::WRL::ComPtr<ID3D12Device> localDevice;
+            if (SUCCEEDED(g_frameResources.commandQueue->GetDevice(__uuidof(ID3D12Device), (void**)&localDevice))) {
+                if (g_frameResources.device) {
+                    g_frameResources.device->Release();
+                }
+                g_frameResources.device = localDevice.Detach();
+                g_frameResources.valid = true;
+            } else {
+                LOG_ERROR("DX12Hook: CommandQueue->GetDevice failed");
+            }
+        } else {
+            // Fallback just in case some weird wrapper returned the Device directly
+            Microsoft::WRL::ComPtr<ID3D12Device> localDevice;
+            if (SUCCEEDED(pSwapChain->GetDevice(__uuidof(ID3D12Device), (void**)&localDevice))) {
+                if (g_frameResources.device) {
+                    g_frameResources.device->Release();
+                }
+                g_frameResources.device = localDevice.Detach();
+                g_frameResources.valid = true;
+            } else {
+                LOG_ERROR("DX12Hook: SwapChain->GetDevice failed to return CommandQueue OR Device");
             }
         }
-        if (g_frameResources.device) g_frameResources.device->Release();
-        g_frameResources.device = device.Detach();
         
         DXGI_SWAP_CHAIN_DESC desc;
         pSwapChain->GetDesc(&desc);
         g_frameResources.width = desc.BufferDesc.Width;
         g_frameResources.height = desc.BufferDesc.Height;
+        
+        static bool s_formatLogged = false;
+        if (!s_formatLogged) {
+            LOG_INFO("DX12Hook: SwapChain Format = %d, Resolution = %dx%d", desc.BufferDesc.Format, desc.BufferDesc.Width, desc.BufferDesc.Height);
+            s_formatLogged = true;
+        }
     }
 
     g_frameResources.valid = (g_frameResources.device != nullptr && g_frameResources.commandQueue != nullptr);
+
+    if (g_frameResources.valid && g_openxrInitialized) {
+        g_dx12Renderer.UpdateGameCommandQueue(g_frameResources.commandQueue);
+    }
 
     if (!g_frameResources.commandQueue) {
         g_frameResources.commandQueue = DXGIFactoryHook::GetCapturedCommandQueue();
@@ -99,7 +160,14 @@ void OnPresent(IDXGISwapChain* pSwapChain) {
         Microsoft::WRL::ComPtr<ID3D12Resource> backBuffer;
         uint32_t width = 1920;
         uint32_t height = 1080;
-        if (SUCCEEDED(pSwapChain->GetBuffer(0, __uuidof(ID3D12Resource), (void**)&backBuffer))) {
+        
+        UINT backBufferIndex = 0;
+        Microsoft::WRL::ComPtr<IDXGISwapChain3> swapChain3;
+        if (SUCCEEDED(pSwapChain->QueryInterface(__uuidof(IDXGISwapChain3), (void**)&swapChain3))) {
+            backBufferIndex = swapChain3->GetCurrentBackBufferIndex();
+        }
+
+        if (SUCCEEDED(pSwapChain->GetBuffer(backBufferIndex, __uuidof(ID3D12Resource), (void**)&backBuffer))) {
             D3D12_RESOURCE_DESC resDesc = backBuffer->GetDesc();
             width = static_cast<uint32_t>(resDesc.Width);
             height = resDesc.Height;
@@ -107,36 +175,36 @@ void OnPresent(IDXGISwapChain* pSwapChain) {
 
         g_dx12Renderer.Initialize(g_frameResources.device, g_frameResources.commandQueue);
         g_openxrManager.SetRenderer(&g_dx12Renderer);
-        if (g_openxrManager.Initialize(GraphicsAPI::DX12, g_frameResources.device, g_frameResources.commandQueue, width, height)) {
+        
+        DXGI_SWAP_CHAIN_DESC desc;
+        pSwapChain->GetDesc(&desc);
+        
+        if (g_openxrManager.Initialize(GraphicsAPI::DX12, g_frameResources.device, g_frameResources.commandQueue, width, height, desc.BufferDesc.Format)) {
             InputHook::GetInstance().SetOpenXRManager(&g_openxrManager);
             g_openxrInitialized = true;
-            LOG_INFO("DX12Hook: OpenXR initialized successfully for DX12 (Size: %ux%u)", width, height);
+            LOG_INFO("DX12Hook: OpenXR initialized successfully for DX12 (Size: %ux%u, Format: %d)", width, height, desc.BufferDesc.Format);
         } else {
             LOG_ERROR("DX12Hook: Failed to initialize OpenXR");
         }
     }
 
-    if (g_openxrInitialized) {
-        g_openxrManager.PollEvents();
-        
-        if (g_openxrManager.IsSessionRunning()) {
-            XrFrameState frameState = {XR_TYPE_FRAME_STATE};
-            if (g_openxrManager.BeginFrame(frameState)) {
-            Microsoft::WRL::ComPtr<ID3D12Resource> backBuffer;
-            if (SUCCEEDED(pSwapChain->GetBuffer(0, __uuidof(ID3D12Resource), (void**)&backBuffer))) {
-                TextureHandle tex;
-                tex.nativePtr = backBuffer.Get();
-                
-                D3D12_RESOURCE_DESC resDesc = backBuffer->GetDesc();
-                tex.width = static_cast<uint32_t>(resDesc.Width);
-                tex.height = resDesc.Height;
+    if (g_openxrInitialized && g_openxrManager.IsSessionRunning()) {
+        Microsoft::WRL::ComPtr<ID3D12Resource> backBuffer;
+        UINT backBufferIndex = 0;
+        Microsoft::WRL::ComPtr<IDXGISwapChain3> swapChain3;
+        if (SUCCEEDED(pSwapChain->QueryInterface(__uuidof(IDXGISwapChain3), (void**)&swapChain3))) {
+            backBufferIndex = swapChain3->GetCurrentBackBufferIndex();
+        }
 
-                // For now, submit the same 2D backbuffer to both eyes (Virtual Cinema mode)
-                g_openxrManager.EndFrame(frameState, tex, tex, {}, nullptr);
-            } else {
-                g_openxrManager.EndFrame(frameState, {}, {}, {}, nullptr);
-            }
-            }
+        if (SUCCEEDED(pSwapChain->GetBuffer(backBufferIndex, __uuidof(ID3D12Resource), (void**)&backBuffer))) {
+            TextureHandle tex;
+            tex.nativePtr = backBuffer.Get();
+            
+            D3D12_RESOURCE_DESC resDesc = backBuffer->GetDesc();
+            tex.width = static_cast<uint32_t>(resDesc.Width);
+            tex.height = resDesc.Height;
+
+            g_dx12Renderer.ExecuteTonemapToIntermediate(tex);
         }
     }
 
@@ -158,13 +226,22 @@ void OnPresent(IDXGISwapChain* pSwapChain) {
 }
 
 void __stdcall hkExecuteCommandLists(ID3D12CommandQueue* pCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists) {
-    std::lock_guard<std::mutex> lock(g_resourceMutex);
-    
-    if (pCommandQueue->GetDesc().Type == D3D12_COMMAND_LIST_TYPE_DIRECT) {
-        g_frameResources.commandQueue = pCommandQueue;
+    {
+        std::lock_guard<std::recursive_mutex> lock(g_resourceMutex);
+        
+        // Only capture if we don't have a definitive presentation queue yet
+        if (!g_frameResources.commandQueue && pCommandQueue->GetDesc().Type == D3D12_COMMAND_LIST_TYPE_DIRECT) {
+            g_frameResources.commandQueue = pCommandQueue;
+            // Don't AddRef here because it's a weak pointer in this context,
+            // and OnPresent will permanently lock the exact presentation queue shortly.
+        }
     }
 
     OriginalExecuteCommandLists(pCommandQueue, NumCommandLists, ppCommandLists);
+}
+
+void __stdcall hkDrawIndexedInstanced(ID3D12GraphicsCommandList* pCommandList, UINT IndexCountPerInstance, UINT InstanceCount, UINT StartIndexLocation, INT BaseVertexLocation, UINT StartInstanceLocation) {
+    OriginalDrawIndexedInstanced(pCommandList, IndexCountPerInstance, InstanceCount, StartIndexLocation, BaseVertexLocation, StartInstanceLocation);
 }
 
 
@@ -281,8 +358,18 @@ bool Initialize() {
     }
 
     void* present0Address = pSwapChain0Vtable[8];
+    void* resizeBuffersAddress = pSwapChain0Vtable[13];
     void* present1Address = pSwapChain1Vtable[8];
     void* present1ExAddress = pSwapChain1Vtable[22];
+    void* resizeBuffers1Address = nullptr;
+    
+    // Check if IDXGISwapChain3 is supported
+    IDXGISwapChain3* pSwapChain3 = nullptr;
+    if (pSwapChain1 && SUCCEEDED(pSwapChain1->QueryInterface(__uuidof(IDXGISwapChain3), (void**)&pSwapChain3))) {
+        void** pSwapChain3Vtable = *reinterpret_cast<void***>(pSwapChain3);
+        resizeBuffers1Address = pSwapChain3Vtable[39];
+        pSwapChain3->Release();
+    }
     void* executeCommandListsAddress = pCommandQueueVtable[10];
     
     pSwapChain0->Release();
@@ -297,6 +384,18 @@ bool Initialize() {
         pDummyResource->Release();
     }
 
+    // Extract Command List VTable for DrawIndexedInstanced
+    void* drawIndexedInstancedAddress = nullptr;
+    ID3D12CommandAllocator* pAllocator = nullptr;
+    if (SUCCEEDED(pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, __uuidof(ID3D12CommandAllocator), (void**)&pAllocator))) {
+        ID3D12GraphicsCommandList* pCommandList = nullptr;
+        if (SUCCEEDED(pDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, pAllocator, nullptr, __uuidof(ID3D12GraphicsCommandList), (void**)&pCommandList))) {
+            void** pCommandListVtable = *reinterpret_cast<void***>(pCommandList);
+            drawIndexedInstancedAddress = pCommandListVtable[13]; // DrawIndexedInstanced
+            pCommandList->Release();
+        }
+        pAllocator->Release();
+    }
 
     pCommandQueue->Release();
     pDevice->Release();
@@ -310,68 +409,41 @@ bool Initialize() {
     }
     MH_EnableHook(executeCommandListsAddress);
 
+    if (drawIndexedInstancedAddress && MH_CreateHook(drawIndexedInstancedAddress, (void*)hkDrawIndexedInstanced, (void**)&OriginalDrawIndexedInstanced) == MH_OK) {
+        MH_EnableHook(drawIndexedInstancedAddress);
+    } else {
+        LOG_ERROR("DX12Hook: MH_CreateHook failed for DrawIndexedInstanced");
+    }
+
+    if (present0Address && MH_CreateHook(present0Address, (void*)hkPresentDX12, (void**)&OriginalPresentDX12) == MH_OK) {
+        MH_EnableHook(present0Address);
+    } else {
+        LOG_ERROR("DX12Hook: MH_CreateHook failed for Present");
+    }
+
+    if (present1ExAddress && MH_CreateHook(present1ExAddress, (void*)hkPresent1DX12, (void**)&OriginalPresent1DX12) == MH_OK) {
+        MH_EnableHook(present1ExAddress);
+    } else {
+        LOG_ERROR("DX12Hook: MH_CreateHook failed for Present1");
+    }
+
+    if (resizeBuffersAddress && MH_CreateHook(resizeBuffersAddress, (void*)hkResizeBuffers, (void**)&OriginalResizeBuffers) == MH_OK) {
+        MH_EnableHook(resizeBuffersAddress);
+    } else {
+        LOG_ERROR("DX12Hook: MH_CreateHook failed for ResizeBuffers");
+    }
+
+    if (resizeBuffers1Address && MH_CreateHook(resizeBuffers1Address, (void*)hkResizeBuffers1, (void**)&OriginalResizeBuffers1) == MH_OK) {
+        MH_EnableHook(resizeBuffers1Address);
+    }
+
     LOG_INFO("DX12Hook: Dummy Initialize success, waiting for DynamicHook");
     return true;
 }
 
-void DynamicHookSwapChain(IDXGISwapChain* pSwapChain) {
-    if (!pSwapChain) return;
-    
-    static std::mutex s_hookMutex;
-    std::lock_guard<std::mutex> lock(s_hookMutex);
-    
-    void** pVtable = *reinterpret_cast<void***>(pSwapChain);
-    void* presentAddress = pVtable[8];
-    void* present1Address = nullptr;
-    
-    static void* s_originalPresent0 = nullptr;
-    static void* s_originalPresent1 = nullptr;
-    
-    IDXGISwapChain1* pSwapChain1 = nullptr;
-    if (SUCCEEDED(pSwapChain->QueryInterface(__uuidof(IDXGISwapChain1), (void**)&pSwapChain1))) {
-        void** pVtable1 = *reinterpret_cast<void***>(pSwapChain1);
-        present1Address = pVtable1[22];
-    }
-    
-    LOG_INFO("DX12Hook: DynamicHookSwapChain called with pSwapChain=%p", pSwapChain);
-    LOG_INFO("DX12Hook:   presentAddress=%p, hkPresentDX12=%p", presentAddress, (void*)hkPresentDX12);
-    LOG_INFO("DX12Hook:   present1Address=%p, hkPresent1DX12=%p", present1Address, (void*)hkPresent1DX12);
-
-    if (presentAddress && presentAddress != (void*)hkPresentDX12) {
-        DWORD oldProtect;
-        if (VirtualProtect(&pVtable[8], sizeof(void*), PAGE_EXECUTE_READWRITE, &oldProtect)) {
-            s_originalPresent0 = pVtable[8];
-            OriginalPresentDX12 = (Present_t)s_originalPresent0;
-            pVtable[8] = (void*)hkPresentDX12;
-            VirtualProtect(&pVtable[8], sizeof(void*), oldProtect, &oldProtect);
-            LOG_INFO("DX12Hook: VTable hooked Present");
-        } else {
-            LOG_ERROR("DX12Hook: VirtualProtect failed for Present");
-        }
-    }
-    
-    if (present1Address && present1Address != presentAddress && present1Address != (void*)hkPresent1DX12) {
-        if (pSwapChain1) {
-            void** pVtable1 = *reinterpret_cast<void***>(pSwapChain1);
-            DWORD oldProtect;
-            if (VirtualProtect(&pVtable1[22], sizeof(void*), PAGE_EXECUTE_READWRITE, &oldProtect)) {
-                s_originalPresent1 = pVtable1[22];
-                OriginalPresent1DX12 = (Present1_t)s_originalPresent1;
-                pVtable1[22] = (void*)hkPresent1DX12;
-                VirtualProtect(&pVtable1[22], sizeof(void*), oldProtect, &oldProtect);
-                LOG_INFO("DX12Hook: VTable hooked Present1");
-            } else {
-                LOG_ERROR("DX12Hook: VirtualProtect failed for Present1");
-            }
-        }
-    }
-    
-    if (pSwapChain1) pSwapChain1->Release();
-}
-
 void Shutdown() {
     MH_DisableHook(MH_ALL_HOOKS);
-    std::lock_guard<std::mutex> lock(g_resourceMutex);
+    std::lock_guard<std::recursive_mutex> lock(g_resourceMutex);
     if (g_frameResources.device) {
         g_frameResources.device->Release();
     }
@@ -379,7 +451,7 @@ void Shutdown() {
 }
 
 FrameResourcesDX12 GetCurrentFrame() {
-    std::lock_guard<std::mutex> lock(g_resourceMutex);
+    std::lock_guard<std::recursive_mutex> lock(g_resourceMutex);
     return g_frameResources;
 }
 

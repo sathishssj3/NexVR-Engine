@@ -1,6 +1,7 @@
 #include "stereo_pipeline.h"
 #include "../core/logger.h"
 #include "../core/config_manager.h"
+#include "../hooks/input_hook.h"
 #include <d3dcompiler.h>
 #include <vector>
 
@@ -283,6 +284,40 @@ void StereoPipeline::Render(ID3D11DeviceContext* deferredCtx, ID3D11DeviceContex
 
     if (m_disjointQuery) deferredCtx->End(m_disjointQuery.Get());
 
+    // Execute commands and perfectly restore game's state!
+    Microsoft::WRL::ComPtr<ID3D11CommandList> cmdList;
+    if (SUCCEEDED(deferredCtx->FinishCommandList(FALSE, &cmdList))) {
+        immediateCtx->ExecuteCommandList(cmdList.Get(), TRUE); // TRUE = Restore Context State
+        
+        // --- DRAW FAKE VR CURSOR ---
+        if (InputHook::GetInstance().IsCaptureActive()) {
+            int cx = InputHook::GetInstance().GetVirtualCursorX();
+            int cy = InputHook::GetInstance().GetVirtualCursorY();
+            
+            D3D11_BOX box;
+            box.left = (std::max)(0, cx - 3);
+            box.right = (std::min)((int)m_width, cx + 3);
+            box.top = (std::max)(0, cy - 3);
+            box.bottom = (std::min)((int)m_height, cy + 3);
+            box.front = 0;
+            box.back = 1;
+            
+            if (box.right > box.left && box.bottom > box.top) {
+                // RGBA8 red (depends on DXGI format, usually R8G8B8A8 so 0xFF0000FF = A:255, B:0, G:0, R:255)
+                uint32_t cursorPixels[8 * 8];
+                for (int i=0; i<64; i++) cursorPixels[i] = 0xFF0000FF; 
+                
+                // Draw cursor directly onto both eyes so it appears in stereo VR!
+                immediateCtx->UpdateSubresource(m_leftEyeTex.Get(), 0, &box, cursorPixels, (box.right - box.left) * 4, 0);
+                immediateCtx->UpdateSubresource(m_rightEyeTex.Get(), 0, &box, cursorPixels, (box.right - box.left) * 4, 0);
+            }
+        }
+        // ---------------------------
+        
+        // Profiling is finished. Active and stall-free!
+        ReadAndLogProfiling(immediateCtx);
+    }
+
     if (openxrActive) {
         Microsoft::WRL::ComPtr<ID3D11Resource> leftEyeRes;
         if (m_leftEyeSRV) m_leftEyeSRV->GetResource(&leftEyeRes);
@@ -304,6 +339,67 @@ void StereoPipeline::Render(ID3D11DeviceContext* deferredCtx, ID3D11DeviceContex
 
         m_openxrManager.EndFrame(frameState, leftHandle, rightHandle, depthHandle, &params);
     }
+}
+
+void StereoPipeline::RenderComputeOnly(ID3D11DeviceContext* ctx, ID3D11ShaderResourceView* colorSRV, ID3D11ShaderResourceView* depthSRV, const StereoParams& params) {
+    m_leftEyeSRV = colorSRV;
+
+    D3D11_MAPPED_SUBRESOURCE mapped;
+    if (m_paramsCB && SUCCEEDED(ctx->Map(m_paramsCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
+        memcpy(mapped.pData, &params, sizeof(StereoParams));
+        ctx->Unmap(m_paramsCB.Get(), 0);
+    }
+
+    UINT clearValue[4] = {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
+    ctx->ClearUnorderedAccessViewUint(m_warpBufferUAV.Get(), clearValue);
+
+    ID3D11Buffer* cbs[] = { m_paramsCB.Get() };
+    ctx->CSSetConstantBuffers(0, 1, cbs);
+
+    // Warp Pass
+    ID3D11ShaderResourceView* srvs[] = { colorSRV, depthSRV };
+    ctx->CSSetShaderResources(0, 2, srvs);
+    ID3D11UnorderedAccessView* uavs[] = { m_warpBufferUAV.Get() };
+    ctx->CSSetUnorderedAccessViews(0, 1, uavs, nullptr);
+    ctx->CSSetShader(m_warpCS.Get(), nullptr, 0);
+    ctx->Dispatch((m_width + 7) / 8, (m_height + 7) / 8, 1);
+
+    ID3D11ShaderResourceView* nullSRVs[2] = { nullptr, nullptr };
+    ctx->CSSetShaderResources(0, 2, nullSRVs);
+    ID3D11UnorderedAccessView* nullUAVs[1] = { nullptr };
+    ctx->CSSetUnorderedAccessViews(0, 1, nullUAVs, nullptr);
+
+    // Resolve Pass
+    srvs[0] = colorSRV;
+    srvs[1] = m_warpBufferSRV.Get();
+    ctx->CSSetShaderResources(0, 2, srvs);
+    uavs[0] = m_rightEyeUAV.Get();
+    ctx->CSSetUnorderedAccessViews(0, 1, uavs, nullptr);
+    ctx->CSSetShader(m_resolveCS.Get(), nullptr, 0);
+    ctx->Dispatch((m_width + 7) / 8, (m_height + 7) / 8, 1);
+
+    ctx->CSSetShaderResources(0, 2, nullSRVs);
+    ctx->CSSetUnorderedAccessViews(0, 1, nullUAVs, nullptr);
+
+    // Fallback to Legacy Fill Shader (Skipping Neural Inpainter for pure compute)
+    uavs[0] = m_rightEyeUAV.Get();
+    ctx->CSSetUnorderedAccessViews(0, 1, uavs, nullptr);
+    ctx->CSSetShader(m_fillCS.Get(), nullptr, 0);
+    ctx->Dispatch((m_width + 15) / 16, (m_height + 15) / 16, 1);
+
+    ctx->CSSetUnorderedAccessViews(0, 1, nullUAVs, nullptr);
+    
+    // Blur Pass
+    srvs[0] = m_rightEyeSRV.Get();
+    ctx->CSSetShaderResources(0, 1, srvs);
+    uavs[0] = m_blurTempUAV.Get();
+    ctx->CSSetUnorderedAccessViews(0, 1, uavs, nullptr);
+    ctx->CSSetShader(m_blurCS.Get(), nullptr, 0);
+    ctx->Dispatch((m_width + 15) / 16, (m_height + 15) / 16, 1);
+    
+    ctx->CSSetShaderResources(0, 2, nullSRVs);
+    ctx->CSSetUnorderedAccessViews(0, 1, nullUAVs, nullptr);
+    ctx->CopyResource(m_rightEyeTex.Get(), m_blurTempTex.Get());
 }
 
 void StereoPipeline::RenderSideBySide(ID3D11DeviceContext* ctx, ID3D11RenderTargetView* backbufferRTV) {

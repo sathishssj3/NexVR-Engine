@@ -1,16 +1,9 @@
 # NexVR Engine
 
-<p align="center">
-  <img src="assets/logo.png" width="200" alt="NexVR Engine Logo" />
-</p>
-<p align="center">
-  <a href="https://github.com/sathishssj3/NexVR-Engine/actions/workflows/release.yml">
-    <img src="https://img.shields.io/github/actions/workflow/status/sathishssj3/NexVR-Engine/release.yml?branch=main&style=flat-square" alt="Build Status" />
-  </a>
-  <a href="LICENSE">
-    <img src="https://img.shields.io/github/license/sathishssj3/NexVR-Engine?style=flat-square" alt="License" />
-  </a>
-</p>
+![NexVR Engine Logo](assets/logo.png)
+
+[![Build Status](https://img.shields.io/github/actions/workflow/status/sathishssj3/NexVR-Engine/release.yml?branch=main&style=flat-square)](https://github.com/sathishssj3/NexVR-Engine/actions/workflows/release.yml)
+[![License](https://img.shields.io/github/license/sathishssj3/NexVR-Engine?style=flat-square)](LICENSE)
 
 > **Universal VR Injector** — Brings native OpenXR stereo rendering to flat-screen PC games by hooking into DX11, DX12, and Vulkan render pipelines.
 
@@ -21,7 +14,7 @@ NexVR Engine intercepts a game's graphics pipeline in real time, converts its mo
 ## ✨ Key Features
 
 | Feature | Description |
-|---------|-------------|
+| :--- | :--- |
 | **Universal Graphics Hook** | Hooks DirectX 11, DirectX 12, and Vulkan swapchains automatically |
 | **Stereo Rendering Pipeline** | GPU compute shaders for stereo warp, depth reconstruction, and disocclusion fill |
 | **Comfort Guard** | Motion-sickness reduction via vignette and comfort analysis shaders |
@@ -35,7 +28,7 @@ NexVR Engine intercepts a game's graphics pipeline in real time, converts its mo
 
 ## 🏗️ Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │  Electron/React Launcher (launcher/)                    │
 │  ├── Game Library Browser (Steam auto-detect)           │
@@ -66,10 +59,10 @@ NexVR Engine intercepts a game's graphics pipeline in real time, converts its mo
 
 ### Requirements
 
-- Windows 10/11 (x64)
-- A VR headset with an OpenXR-compatible runtime (Meta Quest Link, SteamVR, or WMR)
-- DirectX 11/12 or Vulkan-based game
-- Steam (for auto-detection of game libraries)
+* Windows 10/11 (x64)
+* A VR headset with an OpenXR-compatible runtime (Meta Quest Link, SteamVR, or WMR)
+* DirectX 11/12 or Vulkan-based game
+* Steam (for auto-detection of game libraries)
 
 ---
 
@@ -84,7 +77,7 @@ NexVR Engine intercepts a game's graphics pipeline in real time, converts its mo
 ### Configuration Options
 
 | Setting | Description |
-|---------|-------------|
+| :--- | :--- |
 | **Use Recommended Resolution** | Overrides game render resolution to match headset native panel resolution |
 | **Motion Sensitivity** | Adjusts head-tracking and controller movement scaling |
 | **Raw Input Mode** | Bypasses Windows input processing for lower latency tracking |
@@ -98,11 +91,11 @@ NexVR Engine intercepts a game's graphics pipeline in real time, converts its mo
 
 ### Prerequisites
 
-- **MSVC** (Visual Studio 2022 with C++ workload)
-- **CMake** 3.20+
-- **Node.js** 20+
-- **Vulkan SDK** (optional, for Vulkan backend)
-- **DXC** (DirectX Shader Compiler, downloaded automatically by CMake)
+* **MSVC** (Visual Studio 2022 with C++ workload)
+* **CMake** 3.20+
+* **Node.js** 20+
+* **Vulkan SDK** (optional, for Vulkan backend)
+* **DXC** (DirectX Shader Compiler, downloaded automatically by CMake)
 
 ### Build Steps
 
@@ -128,7 +121,7 @@ The NSIS installer will be generated in `launcher/dist-electron/`.
 ## 🔍 Troubleshooting
 
 | Problem | Solution |
-|---------|----------|
+| :--- | :--- |
 | **Game crashes on inject** | Disable conflicting overlays (Discord, MSI Afterburner, RivaTuner) |
 | **"Game path not found"** | Click **Rescan Library** at the bottom of the sidebar |
 | **Headset shows black** | Check Live Session Logs — try setting the game to Windowed/Borderless mode |
@@ -149,4 +142,4 @@ This project is licensed under the [MIT License](LICENSE).
 
 ---
 
-*Developed by sathishssj3*
+### Developed by sathishssj3

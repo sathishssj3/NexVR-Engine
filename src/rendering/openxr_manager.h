@@ -1,8 +1,10 @@
 #pragma once
 #include <d3d11.h>
 #include <wrl/client.h>
-#include <string>
 #include <vector>
+#include <thread>
+#include <atomic>
+#include <mutex>
 #include "../core/motion_predictor.h"
 #include "irenderer.h"
 #include <d3d12.h>
@@ -26,7 +28,7 @@ public:
     OpenXRManager();
     ~OpenXRManager();
 
-    bool Initialize(GraphicsAPI api, void* nativeDevice, void* nativeQueue, uint32_t targetWidth, uint32_t targetHeight);
+    bool Initialize(GraphicsAPI api, void* nativeDevice, void* nativeContext, uint32_t width, uint32_t height, int64_t gameFormat = 0);
     void Shutdown();
 
     void PollEvents();
@@ -54,11 +56,13 @@ public:
                m_swapchainFormat == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
     }
 
+
+
 private:
     bool CreateInstance();
     bool GetSystemId();
     bool CreateSession(GraphicsAPI api, void* nativeDevice, void* nativeQueue);
-    bool CreateSwapchains(uint32_t width, uint32_t height);
+    bool CreateSwapchains(uint32_t width, uint32_t height, int64_t gameFormat = 0);
     bool CreateReferenceSpace();
     bool InitializeActions();
 
@@ -72,9 +76,16 @@ private:
     XrInstance m_instance = XR_NULL_HANDLE;
     XrSystemId m_systemId = XR_NULL_SYSTEM_ID;
     XrSession m_session = XR_NULL_HANDLE;
+    bool m_hasActiveSession = false;
+
     bool m_sessionRunning = false;
     XrSpace m_appSpace = XR_NULL_HANDLE;
     XrSpace m_headSpace = XR_NULL_HANDLE;
+    
+    // VR Compositor Thread
+    std::thread m_vrThread;
+    std::atomic<bool> m_vrThreadRunning{false};
+    void VRRenderLoop();
 
     // Aim Pose Tracking
     XrAction          m_aimPoseAction      = XR_NULL_HANDLE;
@@ -105,13 +116,19 @@ private:
     XrAction m_actionB = XR_NULL_HANDLE;
     XrAction m_actionX = XR_NULL_HANDLE;
     XrAction m_actionY = XR_NULL_HANDLE;
+    XrAction m_actionThumbClickL = XR_NULL_HANDLE;
+    XrAction m_actionThumbClickR = XR_NULL_HANDLE;
     XrAction m_actionTriggerL = XR_NULL_HANDLE;
     XrAction m_actionTriggerR = XR_NULL_HANDLE;
+    XrAction m_actionGripL = XR_NULL_HANDLE;
+    XrAction m_actionGripR = XR_NULL_HANDLE;
     XrAction m_actionThumbstickL = XR_NULL_HANDLE;
     XrAction m_actionThumbstickR = XR_NULL_HANDLE;
     XrAction m_actionHaptic = XR_NULL_HANDLE;
     
     XrPath m_handSubactionPath[2]; // 0: Left, 1: Right
+
+
 };
 
 } // namespace vrinject

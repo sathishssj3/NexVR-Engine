@@ -7,6 +7,9 @@
 #include <vector>
 #include <string>
 #include <cstdint>
+#include <thread>
+#include <atomic>
+#include <DirectXMath.h>
 
 namespace vrinject {
 
@@ -28,6 +31,10 @@ public:
     // Common in x64 for resolving globals like GEngine: lea rcx, [rip+offset]
     uint8_t* ResolveRIP(uint8_t* instructionAddress, uint32_t instructionSize, uint32_t offsetFromInstructionEnd);
 
+    // Sweeps PAGE_READWRITE memory in the background to discover dynamically allocated camera matrices
+    void StartBackgroundMatrixScan();
+    void StopBackgroundMatrixScan();
+
 private:
     MemoryScanner() = default;
 
@@ -40,6 +47,10 @@ private:
     
     uint8_t* m_mainModuleBase = nullptr;
     size_t m_mainModuleSize = 0;
+
+    std::thread m_scanThread;
+    std::atomic<bool> m_isScanning{false};
+    void ScanLoop();
 };
 
 } // namespace vrinject

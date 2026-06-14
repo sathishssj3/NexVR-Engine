@@ -14,6 +14,8 @@
 #include "hooks/dx12_hook.h"
 #include "hooks/input_hook.h"
 #include "core/hook_manager.h"
+#include "core/config_manager.h"
+#include "core/drm_manager.h"
 
 #include <process.h>   // _beginthreadex
 
@@ -79,6 +81,10 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID reserved) {
 
             g_hModule = hModule;
 
+            if (!vrinject::TrialManager::GetInstance().CheckAndEnforceTrial()) {
+                return FALSE;
+            }
+
             // Kick off initialization on a separate thread.
             // _beginthreadex is safer than CreateThread when the CRT is in use.
             uintptr_t hThread = _beginthreadex(
@@ -110,6 +116,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID reserved) {
                 // to avoid deadlocking the Windows Loader lock.
                 break;
             }
+            vrinject::TrialManager::GetInstance().Shutdown();
             vrinject::InputHook::GetInstance().Shutdown();
             LOG_INFO("VRInject Framework - Shutting down");
             vrinject::DX11Hook::Shutdown();

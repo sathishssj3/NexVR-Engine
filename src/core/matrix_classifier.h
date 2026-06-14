@@ -10,10 +10,12 @@ namespace vrinject {
 // Candidate camera matrix with metadata
 struct MatrixCandidate {
     DirectX::XMFLOAT4X4 matrix;
+    DirectX::XMFLOAT4X4 previousMatrix;
     void*    bufferAddress;   // CPU-side memory address
     uint32_t updateCount;     // times updated this session
     float    confidence;      // 0.0 - 1.0 heuristic score
     bool     locked;          // true = confirmed camera matrix
+    float    deltaScore;      // Accumulated score for active movement
 };
 
 class MatrixClassifier {
@@ -58,6 +60,7 @@ private:
               const DirectX::XMFLOAT4X4& m) const;
     bool  LooksLikeViewMatrix(
               const DirectX::XMFLOAT4X4& m) const;
+    float CalculateDelta(const DirectX::XMFLOAT4X4& m1, const DirectX::XMFLOAT4X4& m2) const;
 };
 
 } // namespace vrinject

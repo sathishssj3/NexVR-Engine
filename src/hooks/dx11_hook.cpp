@@ -47,14 +47,19 @@ namespace vrinject {
 namespace DX11Hook {
 
 typedef HRESULT(__stdcall* Present_t)(IDXGISwapChain*, UINT, UINT);
+typedef HRESULT(__stdcall* Present1_t)(IDXGISwapChain1*, UINT, UINT, const DXGI_PRESENT_PARAMETERS*);
 typedef void(__stdcall* OMSetRenderTargets_t)(ID3D11DeviceContext*, UINT, ID3D11RenderTargetView* const*, ID3D11DepthStencilView*);
 typedef HRESULT(__stdcall* Map_t)(ID3D11DeviceContext*, ID3D11Resource*, UINT, D3D11_MAP, UINT, D3D11_MAPPED_SUBRESOURCE*);
 typedef void(__stdcall* UpdateSubresource_t)(ID3D11DeviceContext*, ID3D11Resource*, UINT, const D3D11_BOX*, const void*, UINT, UINT);
 
+typedef void(__stdcall* DrawIndexed_t)(ID3D11DeviceContext*, UINT, UINT, INT);
+
 Present_t OriginalPresent = nullptr;
+Present1_t OriginalPresent1 = nullptr;
 OMSetRenderTargets_t OriginalOMSetRenderTargets = nullptr;
 Map_t Original_Map = nullptr;
 UpdateSubresource_t Original_UpdateSubresource = nullptr;
+DrawIndexed_t OriginalDrawIndexed = nullptr;
 
 FrameResources g_frameResources;
 std::recursive_mutex g_resourceMutex;
@@ -106,7 +111,8 @@ void InitializeBackend(IDXGISwapChain* pSwapChain) {
 }
 
 
-HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
+template<typename T, typename OriginalFunc, typename... Args>
+HRESULT ProcessPresent(T* pSwapChain, OriginalFunc originalFunc, Args... args) {
     std::unique_lock<std::recursive_mutex> lock(g_resourceMutex);
 
     if (g_frameResources.swapChain != pSwapChain) {
@@ -149,7 +155,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
                 DX12Hook::OnPresent(pSwapChain);
             }
             
-            return OriginalPresent(pSwapChain, SyncInterval, Flags);
+            return originalFunc(pSwapChain, args...);
         }
         g_frameResources.device->GetImmediateContext(&g_frameResources.context);
         if (!g_frameResources.context) {
@@ -158,7 +164,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
             s_backendInitialized = false;
             g_currentAPI = GraphicsAPI::UNKNOWN;
             lock.unlock();
-            return OriginalPresent(pSwapChain, SyncInterval, Flags);
+            return originalFunc(pSwapChain, args...);
         }
         g_frameResources.swapChain = pSwapChain;
         
@@ -178,7 +184,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
         }
         // Prototype currently relies on DX11 for the rest of the stereopipeline (stereo_pipeline.cpp).
         // For Phase 7B, we just verify that DX12 is detected and initialized, and then bail out of the DX11-specific capture logic.
-        return OriginalPresent(pSwapChain, SyncInterval, Flags);
+        return originalFunc(pSwapChain, args...);
     }
 
     // Capture color buffer (backbuffer)
@@ -381,10 +387,12 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
                 ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
             }
 
-            // Create RTV for backbuffer to draw side-by-side directly to screen
-            Microsoft::WRL::ComPtr<ID3D11RenderTargetView> backBufferRTV;
-            if (SUCCEEDED(g_frameResources.device->CreateRenderTargetView(backBuffer.Get(), nullptr, &backBufferRTV))) {
-                g_stereoPipeline.RenderSideBySide(defCtx, backBufferRTV.Get());
+            // Prevent target game from rendering to the monitor (Monitor Blanking)
+            // We clear the backbuffer to solid black before presenting
+            Microsoft::WRL::ComPtr<ID3D11RenderTargetView> clearRTV;
+            if (SUCCEEDED(g_frameResources.device->CreateRenderTargetView(backBuffer.Get(), nullptr, &clearRTV))) {
+                const float clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+                g_frameResources.context->ClearRenderTargetView(clearRTV.Get(), clearColor);
             }
 
             // Execute commands and perfectly restore game's state!
@@ -406,7 +414,16 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 
     lock.unlock(); // Release lock before blocking in OriginalPresent
 
-    return OriginalPresent(pSwapChain, SyncInterval, Flags);
+    return originalFunc(pSwapChain, args...);
+}
+
+
+HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
+    return ProcessPresent(pSwapChain, OriginalPresent, SyncInterval, Flags);
+}
+
+HRESULT __stdcall hkPresent1(IDXGISwapChain1* pSwapChain, UINT SyncInterval, UINT PresentFlags, const DXGI_PRESENT_PARAMETERS* pPresentParameters) {
+    return ProcessPresent(pSwapChain, OriginalPresent1, SyncInterval, PresentFlags, pPresentParameters);
 }
 
 void __stdcall hkOMSetRenderTargets(ID3D11DeviceContext* pContext, UINT NumViews, ID3D11RenderTargetView* const* ppRenderTargetViews, ID3D11DepthStencilView* pDepthStencilView) {
@@ -438,6 +455,32 @@ void __stdcall hkOMSetRenderTargets(ID3D11DeviceContext* pContext, UINT NumViews
     }
 
     OriginalOMSetRenderTargets(pContext, NumViews, ppRenderTargetViews, pDepthStencilView);
+}
+
+void __stdcall hkDrawIndexed(ID3D11DeviceContext* pContext, UINT IndexCount, UINT StartIndexLocation, INT BaseVertexLocation) {
+    if (IndexCount > 1000) { // arbitrary threshold to filter out tiny UI quads
+        Microsoft::WRL::ComPtr<ID3D11DepthStencilView> dsv;
+        pContext->OMGetRenderTargets(0, nullptr, &dsv);
+        if (dsv) {
+            Microsoft::WRL::ComPtr<ID3D11Resource> res;
+            dsv->GetResource(&res);
+            Microsoft::WRL::ComPtr<ID3D11Texture2D> tex;
+            if (SUCCEEDED(res.As(&tex))) {
+                D3D11_TEXTURE2D_DESC desc;
+                tex->GetDesc(&desc);
+                UINT pixels = desc.Width * desc.Height;
+                UINT maxAllowedPixels = g_frameResources.width * g_frameResources.height * 2;
+                if (pixels > g_maxDepthPixels && pixels <= maxAllowedPixels) {
+                    std::lock_guard<std::recursive_mutex> lock(g_resourceMutex);
+                    if (pixels > g_maxDepthPixels) {
+                        g_maxDepthPixels = pixels;
+                        g_largestDSVThisFrame = dsv;
+                    }
+                }
+            }
+        }
+    }
+    OriginalDrawIndexed(pContext, IndexCount, StartIndexLocation, BaseVertexLocation);
 }
 
 // Hook ID3D11DeviceContext::Map
@@ -543,6 +586,15 @@ bool Initialize() {
     void* omSetRenderTargetsAddress = pContextVtable[33];
     void* mapAddress = pContextVtable[14];
     void* updateSubresourceAddress = pContextVtable[16];
+    void* drawIndexedAddress = pContextVtable[12];
+
+    void* present1Address = nullptr;
+    IDXGISwapChain1* pSwapChain1 = nullptr;
+    if (SUCCEEDED(pSwapChain->QueryInterface(__uuidof(IDXGISwapChain1), (void**)&pSwapChain1))) {
+        void** pSwapChain1Vtable = *reinterpret_cast<void***>(pSwapChain1);
+        present1Address = pSwapChain1Vtable[22];
+        pSwapChain1->Release();
+    }
 
     pSwapChain->Release();
     pContext->Release();
@@ -555,8 +607,16 @@ bool Initialize() {
         LOG_ERROR("MH_CreateHook failed for Present");
         return false;
     }
+    if (present1Address && MH_CreateHook(present1Address, (void*)hkPresent1, (void**)&OriginalPresent1) != MH_OK) {
+        LOG_ERROR("MH_CreateHook failed for Present1");
+        return false;
+    }
     if (MH_CreateHook(omSetRenderTargetsAddress, (void*)hkOMSetRenderTargets, (void**)&OriginalOMSetRenderTargets) != MH_OK) {
         LOG_ERROR("MH_CreateHook failed for OMSetRenderTargets");
+        return false;
+    }
+    if (MH_CreateHook(drawIndexedAddress, (void*)hkDrawIndexed, (void**)&OriginalDrawIndexed) != MH_OK) {
+        LOG_ERROR("MH_CreateHook failed for DrawIndexed");
         return false;
     }
     if (MH_CreateHook(mapAddress, (void*)Hooked_Map, (void**)&Original_Map) != MH_OK) {
