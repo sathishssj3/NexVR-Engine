@@ -51,6 +51,16 @@ void OpenXRManager::Shutdown() {
             m_swapchains[i].handle = XR_NULL_HANDLE;
             m_swapchains[i].images.clear();
         }
+        m_crossAdapterCopiers[i].Shutdown();
+    }
+
+    if (m_proxyContext) {
+        m_proxyContext->Release();
+        m_proxyContext = nullptr;
+    }
+    if (m_proxyDevice) {
+        m_proxyDevice->Release();
+        m_proxyDevice = nullptr;
     }
 
     if (m_appSpace != XR_NULL_HANDLE) {
@@ -160,8 +170,48 @@ bool OpenXRManager::CreateSession(GraphicsAPI api, void* nativeDevice, void* nat
 
         m_d3dDevice = static_cast<ID3D11Device*>(nativeDevice);
         m_d3dDevice->GetImmediateContext(&m_d3dContext);
+
+        LUID oxrLuid = graphicsRequirements.adapterLuid;
+        LUID devLuid = {0,0};
+        
+        Microsoft::WRL::ComPtr<IDXGIDevice> dxgiDevice;
+        if (SUCCEEDED(m_d3dDevice->QueryInterface(__uuidof(IDXGIDevice), &dxgiDevice))) {
+            Microsoft::WRL::ComPtr<IDXGIAdapter> adapter;
+            if (SUCCEEDED(dxgiDevice->GetAdapter(&adapter))) {
+                DXGI_ADAPTER_DESC desc;
+                adapter->GetDesc(&desc);
+                devLuid = desc.AdapterLuid;
+            }
+        }
+
+        LOG_INFO("OpenXR DX11 expects Adapter LUID: %ld,%ld. Game Device LUID: %ld,%ld", 
+            oxrLuid.HighPart, oxrLuid.LowPart, devLuid.HighPart, devLuid.LowPart);
+
+        if (oxrLuid.HighPart != devLuid.HighPart || oxrLuid.LowPart != devLuid.LowPart) {
+            LOG_WARN("Adapter LUID mismatch! Creating cross-adapter proxy device for OpenXR.");
+            Microsoft::WRL::ComPtr<IDXGIFactory4> factory;
+            if (SUCCEEDED(CreateDXGIFactory1(__uuidof(IDXGIFactory4), &factory))) {
+                Microsoft::WRL::ComPtr<IDXGIAdapter> targetAdapter;
+                if (SUCCEEDED(factory->EnumAdapterByLuid(oxrLuid, __uuidof(IDXGIAdapter), &targetAdapter))) {
+                    D3D_FEATURE_LEVEL featureLevel;
+                    HRESULT hr = D3D11CreateDevice(targetAdapter.Get(), D3D_DRIVER_TYPE_UNKNOWN, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &m_proxyDevice, &featureLevel, &m_proxyContext);
+                    if (SUCCEEDED(hr)) {
+                        LOG_INFO("Successfully created proxy D3D11 device on OpenXR adapter.");
+                        graphicsBindingDX11.device = m_proxyDevice;
+                    } else {
+                        LOG_ERROR("Failed to create proxy D3D11 device. HR: 0x%08X", hr);
+                    }
+                }
+            }
+        } else {
+            graphicsBindingDX11.device = m_d3dDevice;
+        }
+
+        if (!graphicsBindingDX11.device) {
+            graphicsBindingDX11.device = m_d3dDevice;
+        }
+
         m_depthReprojector.Initialize(m_d3dDevice);
-        graphicsBindingDX11.device = m_d3dDevice;
         sessionInfo.next = &graphicsBindingDX11;
     } else if (api == GraphicsAPI::DX12) {
         PFN_xrGetD3D12GraphicsRequirementsKHR pfnGetD3D12GraphicsRequirementsKHR = nullptr;
@@ -352,6 +402,12 @@ bool OpenXRManager::CreateSwapchains(uint32_t width, uint32_t height, int64_t ga
         }
     }
 
+    if (m_proxyDevice) {
+        for (int i = 0; i < 2; ++i) {
+            m_crossAdapterCopiers[i].Initialize(m_d3dDevice, m_proxyDevice, m_swapchains[i].width, m_swapchains[i].height, (DXGI_FORMAT)selectedFormat);
+        }
+    }
+
     return true;
 }
 
@@ -478,9 +534,11 @@ bool OpenXRManager::EndFrame(XrFrameState frameState, TextureHandle leftEye, Tex
         }
         if (XR_FAILED(waitRes)) return false;
 
-        if (i == 1 && !eyeTextures[i].nativePtr && leftEye.nativePtr && depthBuffer.nativePtr && params && m_d3dDevice) {
-            ID3D11Texture2D* rightEyeSwapchainTex = m_swapchains[i].images[imageIndex].texture;
+        ID3D11Texture2D* rightEyeSwapchainTex = m_swapchains[i].images[imageIndex].texture;
+        
+        ID3D11Texture2D* renderTargetTex = m_proxyDevice ? m_crossAdapterCopiers[i].GetGameSharedTexture() : rightEyeSwapchainTex;
 
+        if (i == 1 && !eyeTextures[i].nativePtr && leftEye.nativePtr && depthBuffer.nativePtr && params && m_d3dDevice) {
             Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> colorSRV;
             m_d3dDevice->CreateShaderResourceView((ID3D11Resource*)leftEye.nativePtr, nullptr, &colorSRV);
             
@@ -488,7 +546,7 @@ bool OpenXRManager::EndFrame(XrFrameState frameState, TextureHandle leftEye, Tex
             m_d3dDevice->CreateShaderResourceView((ID3D11Resource*)depthBuffer.nativePtr, nullptr, &depthSRV);
 
             Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> rightEyeUAV;
-            m_d3dDevice->CreateUnorderedAccessView(rightEyeSwapchainTex, nullptr, &rightEyeUAV);
+            m_d3dDevice->CreateUnorderedAccessView(renderTargetTex, nullptr, &rightEyeUAV);
 
             if (colorSRV && depthSRV && rightEyeUAV) {
                 m_depthReprojector.Reproject(m_d3dContext, colorSRV.Get(), depthSRV.Get(), rightEyeUAV.Get(), *params);
@@ -496,13 +554,17 @@ bool OpenXRManager::EndFrame(XrFrameState frameState, TextureHandle leftEye, Tex
         } else if (m_renderer) {
             void* destTex = (m_api == GraphicsAPI::DX12) 
                 ? (void*)m_swapchains[i].imagesD3D12[imageIndex].texture 
-                : (void*)m_swapchains[i].images[imageIndex].texture;
+                : (void*)renderTargetTex;
             
             if (m_api == GraphicsAPI::DX12) {
                 static_cast<DX12Renderer*>(m_renderer)->CopyToSwapchainVR(destTex, params);
             } else if (eyeTextures[i].nativePtr) {
                 m_renderer->CopyToSwapchain(eyeTextures[i], destTex);
             }
+        }
+
+        if (m_proxyDevice && m_api == GraphicsAPI::DX11) {
+            m_crossAdapterCopiers[i].CopyFrame(m_d3dContext, m_proxyContext, renderTargetTex, rightEyeSwapchainTex);
         }
 
         XrSwapchainImageReleaseInfo releaseInfo = {XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};
