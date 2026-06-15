@@ -156,8 +156,8 @@ bool OpenXRManager::CreateSession(GraphicsAPI api, void* nativeDevice, void* nat
         XrResult res = xrGetInstanceProcAddr(m_instance, "xrGetD3D11GraphicsRequirementsKHR", 
             (PFN_xrVoidFunction*)&pfnGetD3D11GraphicsRequirementsKHR);
         
+        XrGraphicsRequirementsD3D11KHR graphicsRequirements = {XR_TYPE_GRAPHICS_REQUIREMENTS_D3D11_KHR};
         if (XR_SUCCEEDED(res) && pfnGetD3D11GraphicsRequirementsKHR) {
-            XrGraphicsRequirementsD3D11KHR graphicsRequirements = {XR_TYPE_GRAPHICS_REQUIREMENTS_D3D11_KHR};
             res = pfnGetD3D11GraphicsRequirementsKHR(m_instance, m_systemId, &graphicsRequirements);
             if (XR_FAILED(res)) {
                 LOG_ERROR("Failed to query OpenXR D3D11 graphics requirements (Res: %d)", res);
