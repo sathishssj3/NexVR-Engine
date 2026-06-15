@@ -29,6 +29,8 @@ public:
     OpenXRManager();
     ~OpenXRManager();
 
+    static OpenXRManager* GetInstance();
+
     bool Initialize(GraphicsAPI api, void* nativeDevice, void* nativeContext, uint32_t width, uint32_t height, int64_t gameFormat = 0);
     void Shutdown();
 
@@ -41,6 +43,9 @@ public:
     bool EndFrame(XrFrameState frameState, TextureHandle leftEye, TextureHandle rightEye, TextureHandle depthBuffer = {}, const StereoParams* params = nullptr);
 
     bool GetHeadPose(XrTime time, XrPosef& outPose);
+    const XrPosef& GetLatestHeadPose() const { return m_latestHeadPose; }
+    bool GetEyeFov(int eyeIndex, XrFovf& outFov) const;
+    
     
     // Polling controller states and converting them to XINPUT_STATE
     void PollActions(XrTime displayTime);
@@ -97,6 +102,9 @@ private:
     XrSpaceLocation   m_aimPoseLocation    = { XR_TYPE_SPACE_LOCATION };
     XrQuaternionf     m_currentAimRotation = { 0.0f, 0.0f, 0.0f, 1.0f };
     MotionPredictor   m_aimPredictor;
+
+    XrPosef           m_latestHeadPose     = {{0,0,0,1}, {0,0,0}};
+    XrTime            m_latestPredictedDisplayTime = 0;
 
     struct Swapchain {
         XrSwapchain handle;
