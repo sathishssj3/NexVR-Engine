@@ -1,6 +1,8 @@
 #include "hook_manager.h"
 #include "logger.h"
 #include "engine_detector.h"
+#include "engine_scanners/unreal_scanner.h"
+#include "engine_scanners/unity_scanner.h"
 #include "../hooks/unreal_hook.h"
 #include "../hooks/unity_hook.h"
 #include "../hooks/dx11_hook.h"
@@ -53,11 +55,14 @@ bool HookManager::InitializeHooks() {
         case EngineType::UnrealEngine4:
         case EngineType::UnrealEngine5:
             LOG_INFO("HookManager: Engine detected as Unreal Engine. Applying UE hooks.");
-            // ue::UnrealHook::Get().Initialize(); // DISABLED TO ISOLATE CRASH
+            engine_scanners::UnrealScanner::Get().Initialize();
+            engine_scanners::UnrealScanner::Get().HookCamera();
             break;
 
         case EngineType::Unity:
             LOG_INFO("HookManager: Engine detected as Unity. Applying Unity hooks.");
+            engine_scanners::UnityScanner::Get().Initialize();
+            engine_scanners::UnityScanner::Get().HookCamera();
             unity::UnityHook::Get().Initialize();
             break;
 
