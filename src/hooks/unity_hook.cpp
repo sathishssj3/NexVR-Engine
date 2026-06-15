@@ -2,7 +2,11 @@
 #include "../core/logger.h"
 #include "../core/memory_scanner.h"
 #include "../core/engine_scanners/unity_scanner.h"
+#include "../rendering/openxr_manager.h"
 #include "MinHook.h"
+#include <DirectXMath.h>
+
+using namespace DirectX;
 
 namespace vrinject {
 namespace unity {
@@ -36,13 +40,31 @@ void UnityHook::DetourSetWorldToCameraMatrix(void* camera_this, Matrix4x4* matri
             frameCounter, camera_this);
     }
 
-    // TODO: When OpenXR session is active, modify the view matrix here.
-    // The incoming matrix is the game's camera-to-world inverse.
-    // We need to compose it with the VR headset pose:
-    //
-    //   Matrix4x4 vrViewMatrix = OpenXRManager::GetViewMatrix(eyeIndex);
-    //   Matrix4x4 combinedView = MultiplyMatrices(vrViewMatrix, *matrix);
-    //   *matrix = combinedView;
+    // VR Pose Injection
+    auto* openxr = OpenXRManager::GetInstance();
+    if (openxr && openxr->IsSessionRunning()) {
+        const XrPosef& headPose = openxr->GetLatestHeadPose();
+        
+        // Convert XrPose to DirectXMath View Matrix
+        // OpenXR: +Y up, +X right, -Z forward
+        // Unity:  +Y up, +X right, +Z forward
+        XMVECTOR rot = XMVectorSet(headPose.orientation.x, headPose.orientation.y, -headPose.orientation.z, -headPose.orientation.w);
+        XMVECTOR pos = XMVectorSet(headPose.position.x, headPose.position.y, -headPose.position.z, 0.0f);
+        
+        XMMATRIX vrView = XMMatrixAffineTransformation(
+            XMVectorSet(1,1,1,0),
+            XMVectorZero(),
+            rot,
+            pos
+        );
+        vrView = XMMatrixInverse(nullptr, vrView);
+
+        // Multiply VR View by the game's view matrix
+        XMMATRIX gameView = XMLoadFloat4x4(reinterpret_cast<const XMFLOAT4X4*>(matrix));
+        XMMATRIX combinedView = XMMatrixMultiply(gameView, vrView);
+        
+        XMStoreFloat4x4(reinterpret_cast<XMFLOAT4X4*>(matrix), combinedView);
+    }
 
     Get().m_originalSetWorldToCameraMatrix(camera_this, matrix, methodInfo);
 }
@@ -60,11 +82,21 @@ void UnityHook::DetourSetProjectionMatrix(void* camera_this, Matrix4x4* matrix, 
             frameCounter, camera_this);
     }
 
-    // TODO: When OpenXR session is active, override with VR projection matrix.
-    // The VR projection is asymmetric (different for left vs right eye).
-    //
-    //   Matrix4x4 vrProjection = OpenXRManager::GetProjectionMatrix(eyeIndex, nearPlane, farPlane);
-    //   *matrix = vrProjection;
+    // VR Projection Injection
+    auto* openxr = OpenXRManager::GetInstance();
+    if (openxr && openxr->IsSessionRunning()) {
+        // We need to know which eye this is for. For now, we assume left eye (0)
+        // or we could inspect the incoming projection to guess.
+        XrFovf fov;
+        if (openxr->GetEyeFov(0, fov)) {
+            // Build asymmetric projection matrix
+            // float left = tanf(fov.angleLeft);
+            // float right = tanf(fov.angleRight);
+            // float up = tanf(fov.angleUp);
+            // float down = tanf(fov.angleDown);
+            // Build projection matrix using DXMath...
+        }
+    }
 
     Get().m_originalSetProjectionMatrix(camera_this, matrix, methodInfo);
 }

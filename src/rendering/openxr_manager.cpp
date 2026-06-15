@@ -13,7 +13,15 @@
 
 namespace vrinject {
 
-OpenXRManager::OpenXRManager() {}
+static OpenXRManager* s_instance = nullptr;
+
+OpenXRManager::OpenXRManager() {
+    s_instance = this;
+}
+
+OpenXRManager* OpenXRManager::GetInstance() {
+    return s_instance;
+}
 
 OpenXRManager::~OpenXRManager() {
     Shutdown();
@@ -473,6 +481,14 @@ bool OpenXRManager::BeginFrame(XrFrameState& frameState) {
     XrFrameWaitInfo waitInfo = {XR_TYPE_FRAME_WAIT_INFO};
     if (XR_FAILED(xrWaitFrame(m_session, &waitInfo, &frameState))) return false;
     
+    m_latestPredictedDisplayTime = frameState.predictedDisplayTime;
+    
+    // Cache the head pose for the game engine hooks
+    XrPosef latestPose;
+    if (GetHeadPose(frameState.predictedDisplayTime, latestPose)) {
+        m_latestHeadPose = latestPose;
+    }
+
     // Poll VR controllers to update the XInput emulation layer
     PollActions(frameState.predictedDisplayTime);
 
@@ -653,6 +669,12 @@ bool OpenXRManager::GetHeadPose(XrTime time, XrPosef& outPose) {
     
     outPose = spaceLocation.pose;
     return (spaceLocation.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0;
+}
+
+bool OpenXRManager::GetEyeFov(int eyeIndex, XrFovf& outFov) const {
+    if (eyeIndex < 0 || eyeIndex > 1) return false;
+    outFov = m_viewConfigs[eyeIndex].fov;
+    return true;
 }
 
 bool OpenXRManager::InitializeActions() {

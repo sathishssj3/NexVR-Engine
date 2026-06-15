@@ -2,13 +2,8 @@
 #include "../core/logger.h"
 #include "../core/memory_scanner.h"
 #include "../core/engine_scanners/unreal_scanner.h"
+#include "../rendering/openxr_manager.h"
 #include "MinHook.h"
-
-// OpenXR pose access
-#define XR_USE_PLATFORM_WIN32
-#define XR_USE_GRAPHICS_API_D3D11
-#include "openxr/openxr.h"
-#include "openxr/openxr_platform.h"
 
 #include <cmath>
 
@@ -86,20 +81,28 @@ bool UnrealHook::DetourGetProjectionData(void* pLocalPlayer, void* pViewport, in
             stereoPass);
     }
 
-    // --- VR Pose Injection (placeholder until OpenXR session is fully wired) ---
-    // When the OpenXR session is running, we would do:
-    //
-    //   XrPosef headPose;
-    //   if (openxrManager->GetHeadPose(predictedDisplayTime, headPose)) {
-    //       FVector hmdOffset = XrPosToUE(headPose.position);
-    //       FRotator hmdRotation = QuatToRotator(headPose.orientation);
-    //       
-    //       projData->ViewOrigin = projData->ViewOrigin + hmdOffset;
-    //       projData->ViewRotation = hmdRotation;
-    //       
-    //       // Override projection matrix with asymmetric VR projection
-    //       // projData->ProjectionMatrix = BuildVRProjectionMatrix(eyeFov, nearPlane, farPlane);
-    //   }
+    // --- VR Pose Injection ---
+    auto* openxr = OpenXRManager::GetInstance();
+    if (openxr && openxr->IsSessionRunning()) {
+        const XrPosef& headPose = openxr->GetLatestHeadPose();
+        
+        FVector hmdOffset = XrPosToUE(headPose.position);
+        FRotator hmdRotation = QuatToRotator(headPose.orientation);
+        
+        // Unreal uses absolute camera positioning in world space here.
+        // Usually, games add the camera's local transform to the pawn.
+        // A simple injection is to override the rotation completely, 
+        // and add the positional offset to the origin.
+        // For full 6DOF roomscale, we'd need to rotate the offset by the pawn's yaw.
+        projData->ViewOrigin = projData->ViewOrigin + hmdOffset;
+        projData->ViewRotation = hmdRotation;
+        
+        // We can also override the projection matrix if we have the eye Fov
+        // XrFovf fov;
+        // if (openxr->GetEyeFov(stereoPass, fov)) {
+        //     projData->ProjectionMatrix = BuildVRProjectionMatrix(...);
+        // }
+    }
 
     return result;
 }
@@ -126,7 +129,17 @@ void* UnrealHook::DetourCalcSceneView(void* pLocalPlayer, void* pOutViewInfo, vo
                 viewInfo->FOV);
         }
 
-        // TODO: Same VR pose injection as above
+        // VR Pose Injection
+        auto* openxr = OpenXRManager::GetInstance();
+        if (openxr && openxr->IsSessionRunning()) {
+            const XrPosef& headPose = openxr->GetLatestHeadPose();
+            
+            FVector hmdOffset = XrPosToUE(headPose.position);
+            FRotator hmdRotation = QuatToRotator(headPose.orientation);
+            
+            viewInfo->Location = viewInfo->Location + hmdOffset;
+            viewInfo->Rotation = hmdRotation;
+        }
     }
 
     return result;
