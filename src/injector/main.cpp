@@ -159,6 +159,13 @@ bool InjectDll(DWORD pid, const std::string& dllPath) {
     }
     PrintOK("Process handle acquired: 0x%p", hProcess);
 
+    BOOL isWow64 = FALSE;
+    if (::IsWow64Process(hProcess, &isWow64) && isWow64) {
+        PrintErr("Target process is 32-bit (x86). NexVR Engine only supports 64-bit (x64) games.");
+        ::CloseHandle(hProcess);
+        return false;
+    }
+
     SIZE_T pathLen = dllPath.size() + 1;
     void* remoteMem = ::VirtualAllocEx(hProcess, nullptr, pathLen,
                                        MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
