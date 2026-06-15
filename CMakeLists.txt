@@ -276,6 +276,10 @@ add_library(vrinject SHARED
     src/rendering/openxr_manager.cpp
     src/rendering/cross_adapter_copier.h
     src/rendering/cross_adapter_copier.cpp
+    src/core/engine_scanners/unreal_scanner.h
+    src/core/engine_scanners/unreal_scanner.cpp
+    src/core/engine_scanners/unity_scanner.h
+    src/core/engine_scanners/unity_scanner.cpp
     src/core/motion_predictor.h
     src/core/motion_predictor.cpp
     src/hooks/input_hook.h
