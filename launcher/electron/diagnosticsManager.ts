@@ -24,11 +24,24 @@ ipcMain.handle('vr:status', async (): Promise<VRStatus> => {
     }
     
     try {
+      const xrEnv = process.env.XR_RUNTIME_JSON || '';
       const regOut = child_process.execSync(`reg query "HKLM\\SOFTWARE\\Khronos\\OpenXR\\1" /v "ActiveRuntime"`, { encoding: 'utf-8', stdio: 'pipe' });
-      const match = regOut.match(/ActiveRuntime\s+REG_SZ\s+(.+)/i);
+      const match = regOut.match(/ActiveRuntime\s+REG_(?:EXPAND_)?SZ\s+(.+)/i);
+      
+      let rtPath = '';
       if (match) {
-        const rtPath = match[1].toLowerCase();
-        if (rtPath.includes('oculus')) {
+          rtPath = match[1].toLowerCase();
+      }
+      if (xrEnv) {
+          rtPath = xrEnv.toLowerCase();
+      }
+
+      if (rtPath) {
+        if (rtPath.includes('meta_openxr_simulator') || rtPath.includes('metaxrsimulator')) {
+          runtime = 'Meta XR Simulator';
+          headset = 'Meta Quest (Simulated)';
+          connected = true;
+        } else if (rtPath.includes('oculus')) {
           runtime = 'Oculus';
           headset = 'Meta Quest';
         } else if (rtPath.includes('steamvr')) {
