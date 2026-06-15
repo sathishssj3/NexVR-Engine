@@ -310,9 +310,11 @@ void InputHook::FindTargetWindow() {
     EnumWindows(EnumWindowsProc, (LPARAM)&m_targetHwnd);
     if (m_targetHwnd) {
         LOG_INFO("InputHook: Found target game window HWND: %p", m_targetHwnd);
-        // Initially enable background capture
-        m_captureActive = true;
-        ToggleRawInputSink(true);
+        // Do NOT automatically enable capture. This prevents the cursor from freezing
+        // if the injector fails or if the user is just looking at the menu.
+        // The user can press INSERT to toggle it, or we can enable it programmatically later.
+        m_captureActive = false;
+        ToggleRawInputSink(false);
     }
 }
 
