@@ -9,6 +9,7 @@
 #include "irenderer.h"
 #include <d3d12.h>
 #include "depth_reprojector.h"
+#include "cross_adapter_copier.h"
 #define VK_USE_PLATFORM_WIN32_KHR
 #include "vulkan/vulkan.h"
 
@@ -70,8 +71,11 @@ private:
     GraphicsAPI m_api = GraphicsAPI::UNKNOWN;
 
     DepthReprojector m_depthReprojector;
+    CrossAdapterCopier m_crossAdapterCopiers[2];
     ID3D11Device* m_d3dDevice = nullptr;
     ID3D11DeviceContext* m_d3dContext = nullptr;
+    ID3D11Device* m_proxyDevice = nullptr;
+    ID3D11DeviceContext* m_proxyContext = nullptr;
 
     XrInstance m_instance = XR_NULL_HANDLE;
     XrSystemId m_systemId = XR_NULL_SYSTEM_ID;
