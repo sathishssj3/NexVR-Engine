@@ -46,30 +46,85 @@ bool HookManager::InitializeHooks() {
         LOG_WARN("DX11Hook initialization failed. This is expected for DX12-only games.");
     }
 
+    // ========================================================================
+    // Engine Detection & Native Camera Hooking
+    // ========================================================================
     EngineDetector::Get().Detect();
     EngineType type = EngineDetector::Get().GetEngineType();
 
     LOG_INFO("HookManager: Initializing engine-specific hooks...");
 
+    bool nativeHookActive = false;
+
     switch (type) {
         case EngineType::UnrealEngine4:
-        case EngineType::UnrealEngine5:
+        case EngineType::UnrealEngine5: {
             LOG_INFO("HookManager: Engine detected as Unreal Engine. Applying UE hooks.");
-            engine_scanners::UnrealScanner::Get().Initialize();
-            engine_scanners::UnrealScanner::Get().HookCamera();
+            
+            // Phase 1: Run the memory scanner to find GWorld, GEngine, and camera functions
+            auto& ueScanner = engine_scanners::UnrealScanner::Get();
+            if (ueScanner.Initialize() && ueScanner.IsUnrealEngine()) {
+                // Phase 2: Attempt to hook the camera function
+                if (ueScanner.HookCamera()) {
+                    // Phase 3: Install the MinHook detour
+                    nativeHookActive = ue::UnrealHook::Get().Initialize();
+                    if (nativeHookActive) {
+                        LOG_INFO("HookManager: Native Unreal Engine camera hook is ACTIVE! "
+                                 "Head tracking will use engine-native projection.");
+                    }
+                }
+            }
+            
+            if (!nativeHookActive) {
+                LOG_WARN("HookManager: Unreal Engine native hooks failed. "
+                         "Falling back to Universal Mode (depth reprojection). "
+                         "This may result in less accurate 3D, but VR will still work.");
+            }
             break;
+        }
 
-        case EngineType::Unity:
+        case EngineType::Unity: {
             LOG_INFO("HookManager: Engine detected as Unity. Applying Unity hooks.");
-            engine_scanners::UnityScanner::Get().Initialize();
-            engine_scanners::UnityScanner::Get().HookCamera();
-            unity::UnityHook::Get().Initialize();
+            
+            // Phase 1: Detect backend and resolve scripting APIs
+            auto& unityScanner = engine_scanners::UnityScanner::Get();
+            if (unityScanner.Initialize() && unityScanner.IsUnityEngine()) {
+                // Phase 2: Find Camera class methods
+                if (unityScanner.HookCamera()) {
+                    // Phase 3: Install MinHook detours on the camera methods
+                    nativeHookActive = unity::UnityHook::Get().Initialize();
+                    if (nativeHookActive) {
+                        LOG_INFO("HookManager: Native Unity camera hook is ACTIVE! "
+                                 "Head tracking will use engine-native projection.");
+                    }
+                }
+            }
+
+            if (!nativeHookActive) {
+                LOG_WARN("HookManager: Unity native hooks failed. "
+                         "Falling back to Universal Mode (depth reprojection). "
+                         "This may result in less accurate 3D, but VR will still work.");
+            }
             break;
+        }
 
         case EngineType::Unknown:
         default:
-            LOG_INFO("HookManager: Engine type unknown. Relying solely on Universal Injection (Matrix Classification & Reprojection).");
+            LOG_INFO("HookManager: Engine type unknown. Relying solely on Universal Injection "
+                     "(Matrix Classification & Depth Reprojection).");
             break;
+    }
+
+    // Log the final injection mode
+    if (nativeHookActive) {
+        LOG_INFO("===================================================");
+        LOG_INFO("  NexVR Engine: NATIVE ENGINE HOOK MODE ACTIVE");
+        LOG_INFO("  Engine: %s", EngineDetector::Get().GetEngineVersionString().c_str());
+        LOG_INFO("===================================================");
+    } else {
+        LOG_INFO("===================================================");
+        LOG_INFO("  NexVR Engine: UNIVERSAL MODE (Depth Reprojection)");
+        LOG_INFO("===================================================");
     }
 
     return true;
@@ -78,6 +133,8 @@ bool HookManager::InitializeHooks() {
 void HookManager::ShutdownHooks() {
     ue::UnrealHook::Get().Shutdown();
     unity::UnityHook::Get().Shutdown();
+    engine_scanners::UnrealScanner::Get().Shutdown();
+    engine_scanners::UnityScanner::Get().Shutdown();
     
     LOG_INFO("HookManager: Uninitializing MinHook...");
     MH_Uninitialize();
