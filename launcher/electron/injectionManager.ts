@@ -80,17 +80,7 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     const shadersSource = isDev ? path.join(__dirname, '../../../build/bin/shaders') : path.join(process.resourcesPath, 'shaders');
     const modelsSource = isDev ? path.join(__dirname, '../../../build/bin/models') : path.join(process.resourcesPath, 'models');
     
-    try {
-      if (fs.existsSync(shadersSource)) {
-        fs.cpSync(shadersSource, path.join(installPath, 'shaders'), { recursive: true, force: true });
-      }
-      if (fs.existsSync(modelsSource)) {
-        fs.cpSync(modelsSource, path.join(installPath, 'models'), { recursive: true, force: true });
-      }
-    } catch (e) {
-      console.error('Failed to copy shader/model assets to target directory:', e);
-    }
-    
+    // Removed premature copy    
     if (id.startsWith('custom_') && gameExeMap[id]) {
        child_process.spawn(gameExeMap[id], [], { detached: true, cwd: installPath });
     } else if (/^\d+$/.test(id)) {
@@ -136,6 +126,17 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     if (!targetExeName) {
        fs.unwatchFile(logPath);
        return { success: false, message: 'Could not determine main executable name' };
+    }
+
+    try {
+      if (fs.existsSync(shadersSource)) {
+        fs.cpSync(shadersSource, path.join(targetExeDir, 'shaders'), { recursive: true, force: true });
+      }
+      if (fs.existsSync(modelsSource)) {
+        fs.cpSync(modelsSource, path.join(targetExeDir, 'models'), { recursive: true, force: true });
+      }
+    } catch (e) {
+      console.error('Failed to copy shader/model assets to target directory:', e);
     }
     
     activeTargetExeName = targetExeName;
