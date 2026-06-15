@@ -8,7 +8,7 @@ namespace vrinject {
 
 #define REG_PATH "Software\\Microsoft\\Windows\\CurrentVersion\\VRInjectData"
 #define MAX_PLAYTIME_MINUTES 180
-#define MAX_GAMES 3
+#define MAX_GAMES 10
 
 TrialManager::~TrialManager() {
     Shutdown();
@@ -74,7 +74,7 @@ void TrialManager::WriteRegistryData() {
 
 void TrialManager::TriggerExpiration(const char* reason) {
     LOG_INFO("TrialManager: Expired! Reason: %s", reason);
-    MessageBoxA(NULL, "NexVR Beta Trial Expired.\nYou have reached the 3-hour or 3-game limit.\nPlease purchase the full version to continue.", "NexVR Beta", MB_OK | MB_ICONWARNING);
+    MessageBoxA(NULL, "NexVR Beta Trial Expired.\nYou have reached the 3-hour or 10-game limit.\nPlease purchase the full version to continue.", "NexVR Beta", MB_OK | MB_ICONWARNING);
     ExitProcess(0);
 }
 
@@ -105,7 +105,7 @@ bool TrialManager::CheckAndEnforceTrial() {
 
     if (!isKnownGame) {
         if (m_gameCount >= MAX_GAMES) {
-            TriggerExpiration("Game limit reached (3 unique games)");
+            TriggerExpiration("Game limit reached (10 unique games)");
             return false;
         } else {
             // Register new game
