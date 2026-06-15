@@ -47,6 +47,10 @@ module.exports = {
       to:   'onnxruntime.dll'
     },
     {
+      from: '../build/bin/onnxruntime_providers_shared.dll',
+      to:   'onnxruntime_providers_shared.dll'
+    },
+    {
       from: '../build/bin/openxr_loader.dll',
       to:   'openxr_loader.dll'
     },
