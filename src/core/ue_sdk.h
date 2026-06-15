@@ -1,9 +1,63 @@
 #pragma once
 
 #include <cstdint>
+#include <DirectXMath.h>
 
 namespace vrinject {
 namespace ue {
+
+// ============================================================================
+// Core Unreal Engine SDK types for memory scanning and camera hooking.
+// These structures mirror the in-memory layout of UE4.25-5.4 objects.
+// Offsets may vary slightly between engine versions; the scanner will
+// resolve them dynamically at runtime.
+// ============================================================================
+
+// --- Basic Math Types (matching UE's FVector, FRotator, FMatrix, FQuat) ---
+
+struct FVector {
+    float X, Y, Z;
+
+    FVector() : X(0), Y(0), Z(0) {}
+    FVector(float x, float y, float z) : X(x), Y(y), Z(z) {}
+
+    FVector operator+(const FVector& o) const { return {X + o.X, Y + o.Y, Z + o.Z}; }
+    FVector operator-(const FVector& o) const { return {X - o.X, Y - o.Y, Z - o.Z}; }
+    FVector operator*(float s) const { return {X * s, Y * s, Z * s}; }
+};
+
+struct FVector2D {
+    float X, Y;
+};
+
+struct FRotator {
+    float Pitch;  // Around Y axis (looking up/down)
+    float Yaw;    // Around Z axis (turning left/right)
+    float Roll;   // Around X axis (tilting head)
+
+    FRotator() : Pitch(0), Yaw(0), Roll(0) {}
+    FRotator(float p, float y, float r) : Pitch(p), Yaw(y), Roll(r) {}
+};
+
+struct FQuat {
+    float X, Y, Z, W;
+
+    FQuat() : X(0), Y(0), Z(0), W(1) {}
+    FQuat(float x, float y, float z, float w) : X(x), Y(y), Z(z), W(w) {}
+};
+
+struct FTransform {
+    FQuat   Rotation;
+    FVector Translation;
+    float   Pad0;       // Alignment padding
+    FVector Scale3D;
+    float   Pad1;       // Alignment padding
+};
+
+// UE4/5 FMatrix is row-major 4x4
+struct FMatrix {
+    float M[4][4];
+};
 
 // Simplified FName
 struct FName {
@@ -11,23 +65,51 @@ struct FName {
     int32_t Number;
 };
 
-// Standard Unreal Engine base object
+// --- Minimal View Info (the camera's output) ---
+
+// This is the key structure that GetProjectionData populates.
+// By modifying it in our detour, we control exactly where the camera looks.
+struct FMinimalViewInfo {
+    FVector   Location;          // 0x00
+    FRotator  Rotation;          // 0x0C
+    float     FOV;               // 0x18
+    float     DesiredFOV;        // 0x1C
+    float     OrthoWidth;        // 0x20
+    float     OrthoNearClipPlane;// 0x24
+    float     OrthoFarClipPlane; // 0x28
+    float     AspectRatio;       // 0x2C
+    // Additional fields exist but vary by engine version.
+    // We only need Location, Rotation, and FOV for VR injection.
+};
+
+// --- Projection Data (what GetProjectionData returns) ---
+
+// Simplified version of FSceneViewProjectionData
+struct FSceneViewProjectionData {
+    FVector   ViewOrigin;        // Camera world position
+    FRotator  ViewRotation;      // Camera world rotation
+    FMatrix   ViewRotationMatrix;
+    FMatrix   ProjectionMatrix;  // The projection matrix we'll override for VR
+};
+
+// --- UObject hierarchy (minimal for pointer chasing) ---
+
 class UObject {
 public:
-    void** VTable;
-    int32_t ObjectFlags;
-    int32_t InternalIndex;
-    UObject* ClassPrivate;
-    FName NamePrivate;
-    UObject* OuterPrivate;
+    void**    VTable;
+    int32_t   ObjectFlags;
+    int32_t   InternalIndex;
+    UObject*  ClassPrivate;
+    FName     NamePrivate;
+    UObject*  OuterPrivate;
 };
 
 // Global Object Array Item
 struct FUObjectItem {
-    UObject* Object;
-    int32_t Flags;
-    int32_t ClusterRootIndex;
-    int32_t SerialNumber;
+    UObject*  Object;
+    int32_t   Flags;
+    int32_t   ClusterRootIndex;
+    int32_t   SerialNumber;
 };
 
 // Global Object Array
@@ -35,27 +117,75 @@ class FUObjectArray {
 public:
     FUObjectItem* ObjFirst;
     FUObjectItem* ObjLast;
-    int32_t MaxElements;
-    int32_t NumElements;
-    int32_t MaxChunks;
-    int32_t NumChunks;
-
-    // ... Chunk logic goes here ...
+    int32_t       MaxElements;
+    int32_t       NumElements;
+    int32_t       MaxChunks;
+    int32_t       NumChunks;
 };
 
-// The almighty GEngine
 class UEngine : public UObject {
 public:
-    // This structure varies wildly between UE versions,
-    // we mostly care about padding until we hit GameViewport or LocalPlayer
-    // For now, this is just a placeholder.
+    // The actual layout varies wildly between UE versions.
+    // We use the GEngine pointer mainly to confirm we're in Unreal territory.
 };
 
 // Placeholder for FSceneView which contains the projection matrices
 class FSceneView {
 public:
-    // ...
+    // Populated per-frame by the renderer. Contains ViewMatrices, ProjectionMatrix, etc.
 };
+
+// ============================================================================
+// Known AOB Signatures for different Unreal Engine versions
+// These are the byte patterns we scan for in the game's executable memory.
+// '?' means wildcard (any byte).
+// ============================================================================
+
+namespace Signatures {
+
+    // --- GWorld pointer signatures ---
+    // Pattern: mov rbx, [rip+?] ; test rbx, rbx ; jz short ?  ; mov al, 1
+    // UE 4.25-4.27:
+    inline constexpr const char* GWorld_UE4 = 
+        "48 8B 1D ? ? ? ? 48 85 DB 74 ? 41 B0 01";
+    
+    // UE 5.0-5.1 (slightly different due to compiler changes):
+    inline constexpr const char* GWorld_UE5 = 
+        "48 8B 05 ? ? ? ? 48 8B 88 ? ? ? ? 48 85 C9 74 ? 48 8B 49";
+    
+    // Alternate UE5.1+ pattern sometimes generated by MSVC:
+    inline constexpr const char* GWorld_UE5_Alt = 
+        "48 8B 05 ? ? ? ? 48 3B C3 74 ? 48 8B C8";
+
+    // --- GEngine pointer signatures ---
+    inline constexpr const char* GEngine_UE4 = 
+        "48 8B 0D ? ? ? ? 48 85 C9 74 ? 48 8B 49 ? E8";
+    
+    inline constexpr const char* GEngine_UE5 = 
+        "48 8B 0D ? ? ? ? 48 85 C9 74 ? E8 ? ? ? ? 48 8B D8";
+
+    // --- GetProjectionData / CalcSceneView signatures ---
+    // ULocalPlayer::GetProjectionData (UE4.25-4.27)
+    inline constexpr const char* GetProjectionData_UE4 = 
+        "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B F2 48 8B F9 48 8D";
+    
+    // ULocalPlayer::CalcSceneView (UE5.0+, renamed from GetProjectionData)
+    inline constexpr const char* CalcSceneView_UE5 = 
+        "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 41 54 41 55 41 56 41 57 48 8D AC 24";
+    
+    // Alternate CalcSceneView for UE5.1+ with different prologue:
+    inline constexpr const char* CalcSceneView_UE5_Alt = 
+        "40 55 53 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24";
+
+    // --- APlayerCameraManager::UpdateCamera ---
+    // This is called once per frame to update the camera view target.
+    inline constexpr const char* UpdateCamera_UE4 = 
+        "40 53 48 83 EC ? 48 8B D9 E8 ? ? ? ? 48 8B CB E8 ? ? ? ? 48 8B 4B";
+
+    inline constexpr const char* UpdateCamera_UE5 = 
+        "48 89 5C 24 ? 57 48 83 EC ? 0F 29 74 24 ? 48 8B D9 0F 28 F1";
+
+} // namespace Signatures
 
 } // namespace ue
 } // namespace vrinject
