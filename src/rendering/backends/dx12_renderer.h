@@ -26,9 +26,17 @@ public:
     void DestroyShader(ShaderHandle& handle) override;
 
     void LoadTonemapShader();
+    bool WaitForFence(ID3D12Fence* fence, uint64_t value, HANDLE eventHandle, const char* context);
     TextureHandle CreateIntermediateTexture(uint32_t width, uint32_t height, int64_t overrideFormat = 0, bool allowUav = true);
 
-    void DispatchCompute(ShaderHandle shader, TextureHandle input, TextureHandle output, uint32_t groupsX, uint32_t groupsY) override {}
+    void DispatchCompute(ShaderHandle shader,
+                         const TextureHandle* inputs, uint32_t numInputs,
+                         const TextureHandle* outputs, uint32_t numOutputs,
+                         const void* constantsData, size_t constantsSize,
+                         uint32_t groupsX, uint32_t groupsY) override {}
+
+    void ClearUAVUint(TextureHandle texture, const uint32_t values[4]) override {}
+    void CopyTexture(TextureHandle dst, TextureHandle src) override {}
 
     void ExecuteTonemapToIntermediate(TextureHandle source);
     void CopyToSwapchainVR(void* swapchainTexture, const vrinject::StereoParams* params = nullptr);
@@ -64,12 +72,6 @@ private:
     ID3D12CommandQueue* m_gameCommandQueue = nullptr;
     ID3D12CommandQueue* m_vrCommandQueue = nullptr;
 
-    // D3D11On12 Interop
-    ID3D11Device* m_d3d11Device = nullptr;
-    ID3D11DeviceContext* m_d3d11Context = nullptr;
-    ID3D11On12Device* m_d3d11On12Device = nullptr;
-    vrinject::StereoPipeline m_stereoPipeline;
-
     // Concurrency / Synchronization for worker queue
     ID3D12Fence* m_syncFence = nullptr;
     HANDLE m_syncFenceEvent = nullptr;
@@ -82,6 +84,7 @@ private:
     HANDLE m_vrFenceEvent = nullptr;
     uint64_t m_vrFenceValue = 0;
     uint64_t m_vrReadFenceValues[2] = {0, 0};
+    uint64_t m_vrAllocatorFenceValues[2] = {0, 0};
 
     // Worker queue resources (tonemap)
     ID3D12CommandAllocator* m_cmdAlloc[2] = {nullptr, nullptr};

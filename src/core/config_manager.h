@@ -1,10 +1,13 @@
 #pragma once
 
 #include <string>
+#include <windows.h>
 
 namespace vrinject {
 
 struct VRConfig {
+    VRConfig() = default;
+    
     float ipd = 0.064f; // Meters
     float convergence = 10.0f; // Focal plane distance
     float resolutionScale = 1.0f;
@@ -16,6 +19,11 @@ struct VRConfig {
     bool depthSubmission = false;
     bool rawInputMode = true;
     bool autoInjectOnLaunch = false;
+    float vrScaleFactor = 100.0f; // Game units per meter (e.g., 100 for UE cm scale, 1 for meters)
+    int vrThreadPriority = THREAD_PRIORITY_HIGHEST; // VR render thread priority
+    std::string shaderDir = ""; // Custom shader directory (empty = use moduleDir + "\\shaders")
+    std::string modelDir = "";  // Custom model directory (empty = use moduleDir + "\\models")
+    float depthBufferMaxSizeMultiplier = 16.0f; // Max depth buffer size as multiple of backbuffer (16.0 = 16x supersampling)
 };
 
 class ConfigManager {

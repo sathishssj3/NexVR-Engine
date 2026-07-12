@@ -48,7 +48,7 @@ export function VRStatusBar({ status, selectedGame, injectState, onInject }: any
               fontSize: 11, color: 'var(--ag-text-muted)', fontFamily: 'var(--ag-font-mono)', 
               marginTop: 2, letterSpacing: '0.5px' 
             }}>
-              RUNTIME: {status.runtime} // {status.refreshRate}Hz
+              {status.refreshRate}Hz
             </span>
           </div>
         </div>

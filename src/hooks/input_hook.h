@@ -4,6 +4,8 @@
 #include <xinput.h>
 #include <thread>
 #include <atomic>
+#include <mutex>
+#include <condition_variable>
 
 namespace vrinject {
 
@@ -61,6 +63,9 @@ private:
     std::thread m_captureThread;
     std::atomic<bool> m_captureRunning{false};
     std::atomic<bool> m_captureActive{false}; // Toggled via F12
+    std::atomic<bool> m_captureThreadReady{false};
+    std::mutex m_captureMutex;
+    std::condition_variable m_captureCv;
     HWND m_targetHwnd = nullptr;
     HHOOK m_keyboardHook = nullptr;
     HHOOK m_mouseHook = nullptr;

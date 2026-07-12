@@ -36,6 +36,7 @@ public:
     void** GetGEnginePtr() const { return m_gEnginePtr; }
     void*  GetProjectionDataFunc() const { return m_getProjectionDataFunc; }
     void*  GetUpdateCameraFunc() const { return m_updateCameraFunc; }
+    void*  GetBeginRenderingViewFamilyFunc() const { return m_beginRenderingViewFamilyFunc; }
 
 private:
     UnrealScanner() = default;
@@ -58,6 +59,7 @@ private:
     void** m_gEnginePtr = nullptr;        // Resolved pointer to GEngine*
     void*  m_getProjectionDataFunc = nullptr;  // Address of GetProjectionData/CalcSceneView
     void*  m_updateCameraFunc = nullptr;       // Address of APlayerCameraManager::UpdateCamera
+    void*  m_beginRenderingViewFamilyFunc = nullptr;
 };
 
 } // namespace engine_scanners

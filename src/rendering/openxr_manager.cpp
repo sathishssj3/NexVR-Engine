@@ -2,10 +2,12 @@
 #include "../core/logger.h"
 #include "../core/matrix_classifier.h"
 #include "../core/config_manager.h"
+#include "../core/overlay_manager.h"
 #include "../hooks/dx11_hook.h"
 #include "../hooks/input_hook.h"
 #include <vector>
 #include <cmath>
+#include <windows.h>
 
 #include "../rendering/backends/vulkan_renderer.h"
 #include "stereo_pipeline.h"
@@ -13,22 +15,27 @@
 
 namespace vrinject {
 
-static OpenXRManager* s_instance = nullptr;
+// FIX #11: Use std::atomic with release/acquire semantics so that a
+// GetInstance() call on any thread sees a fully constructed object.
+static std::atomic<OpenXRManager*> s_instance{nullptr};
+static XrFovf s_cachedFov[2] = {};
+XrPosef s_cachedPose[2] = {{{0,0,0,1}, {0,0,0}}, {{0,0,0,1}, {0,0,0}}};
 
 OpenXRManager::OpenXRManager() {
-    s_instance = this;
+    s_instance.store(this, std::memory_order_release);
 }
 
 OpenXRManager* OpenXRManager::GetInstance() {
-    return s_instance;
+    return s_instance.load(std::memory_order_acquire);
 }
 
 OpenXRManager::~OpenXRManager() {
+    // Clear the atomic singleton pointer FIRST to prevent any other thread
+    // from getting a pointer to a partially destroyed object.
+    s_instance.store(nullptr, std::memory_order_release);
     Shutdown();
-    if (m_instance != XR_NULL_HANDLE) {
-        xrDestroyInstance(m_instance);
-        m_instance = XR_NULL_HANDLE;
-    }
+    // Instance is destroyed in Shutdown(), so just ensure it's null
+    m_instance = XR_NULL_HANDLE;
 }
 
 bool OpenXRManager::Initialize(GraphicsAPI api, void* nativeDevice, void* nativeQueue, uint32_t targetWidth, uint32_t targetHeight, int64_t gameFormat) {
@@ -40,8 +47,8 @@ bool OpenXRManager::Initialize(GraphicsAPI api, void* nativeDevice, void* native
     if (!CreateReferenceSpace()) return false;
     if (!InitializeActions()) return false;
     
-    m_vrThreadRunning = true;
-    m_vrThread = std::thread(&OpenXRManager::VRRenderLoop, this);
+    // m_vrThreadRunning = true;
+    // m_vrThread = std::thread(&OpenXRManager::VRRenderLoop, this);
     
     LOG_INFO("OpenXR Initialized successfully.");
     return true;
@@ -91,8 +98,14 @@ void OpenXRManager::Shutdown() {
         xrDestroySession(m_session);
         m_session = XR_NULL_HANDLE;
     }
-    // We intentionally DO NOT destroy m_instance here. OpenXR runtimes will often reject
-    // rapid recreation of an XrInstance within the same process. It will be cleaned up by the destructor.
+    // Destroy OpenXR instance to prevent leaks when Shutdown is called without destructor
+    // Note: Previously we avoided destroying the instance here to allow rapid recreation,
+    // but this caused resource leaks. Applications that need rapid recreation should
+    // manage the OpenXRManager lifetime carefully instead of calling Shutdown() directly.
+    if (m_instance != XR_NULL_HANDLE) {
+        xrDestroyInstance(m_instance);
+        m_instance = XR_NULL_HANDLE;
+    }
 }
 
 bool OpenXRManager::CreateInstance() {
@@ -410,6 +423,37 @@ bool OpenXRManager::CreateSwapchains(uint32_t width, uint32_t height, int64_t ga
         }
     }
 
+    // --- Overlay Swapchain Creation ---
+    {
+        XrSwapchainCreateInfo createInfo = {XR_TYPE_SWAPCHAIN_CREATE_INFO};
+        createInfo.arraySize = 1;
+        createInfo.format = selectedFormat; // Use same format as eye swapchains (must be in runtime's supported list)
+        createInfo.width = width;
+        createInfo.height = height;
+        createInfo.mipCount = 1;
+        createInfo.faceCount = 1;
+        createInfo.sampleCount = 1;
+        createInfo.usageFlags = XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
+
+        if (XR_FAILED(xrCreateSwapchain(m_session, &createInfo, &m_overlaySwapchain.handle))) {
+            LOG_ERROR("Failed to create OpenXR overlay swapchain.");
+        } else {
+            m_overlaySwapchain.width = createInfo.width;
+            m_overlaySwapchain.height = createInfo.height;
+
+            uint32_t imageCount = 0;
+            if (XR_SUCCEEDED(xrEnumerateSwapchainImages(m_overlaySwapchain.handle, 0, &imageCount, nullptr))) {
+                if (m_api == GraphicsAPI::DX12) {
+                    m_overlaySwapchain.imagesD3D12.resize(imageCount, {XR_TYPE_SWAPCHAIN_IMAGE_D3D12_KHR});
+                    xrEnumerateSwapchainImages(m_overlaySwapchain.handle, imageCount, &imageCount, (XrSwapchainImageBaseHeader*)m_overlaySwapchain.imagesD3D12.data());
+                } else {
+                    m_overlaySwapchain.images.resize(imageCount, {XR_TYPE_SWAPCHAIN_IMAGE_D3D11_KHR});
+                    xrEnumerateSwapchainImages(m_overlaySwapchain.handle, imageCount, &imageCount, (XrSwapchainImageBaseHeader*)m_overlaySwapchain.images.data());
+                }
+            }
+        }
+    }
+
     if (m_proxyDevice) {
         for (int i = 0; i < 2; ++i) {
             m_crossAdapterCopiers[i].Initialize(m_d3dDevice, m_proxyDevice, m_swapchains[i].width, m_swapchains[i].height, (DXGI_FORMAT)selectedFormat);
@@ -476,6 +520,8 @@ void OpenXRManager::PollEvents() {
 }
 
 bool OpenXRManager::BeginFrame(XrFrameState& frameState) {
+    PollEvents();
+
     if (!m_sessionRunning) return false;
 
     XrFrameWaitInfo waitInfo = {XR_TYPE_FRAME_WAIT_INFO};
@@ -495,12 +541,66 @@ bool OpenXRManager::BeginFrame(XrFrameState& frameState) {
     XrFrameBeginInfo beginInfo = {XR_TYPE_FRAME_BEGIN_INFO};
     if (XR_FAILED(xrBeginFrame(m_session, &beginInfo))) return false;
 
+    // Acquire Overlay Image
+    if (m_overlaySwapchain.handle != XR_NULL_HANDLE) {
+        XrSwapchainImageAcquireInfo acquireInfo = {XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
+        if (XR_SUCCEEDED(xrAcquireSwapchainImage(m_overlaySwapchain.handle, &acquireInfo, &m_overlayImageIndex))) {
+            XrSwapchainImageWaitInfo waitOverlayInfo = {XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO};
+            waitOverlayInfo.timeout = XR_INFINITE_DURATION;
+            xrWaitSwapchainImage(m_overlaySwapchain.handle, &waitOverlayInfo);
+            m_overlayAcquired = true;
+        }
+    }
+
     // Spec: If xrBeginFrame succeeds, we MUST call xrEndFrame, even if shouldRender is false!
     return true; 
 }
 
+TextureHandle OpenXRManager::GetOverlayTexture() const {
+    TextureHandle th = {};
+    if (!m_overlayAcquired || m_overlaySwapchain.handle == XR_NULL_HANDLE) return th;
+    
+    if (m_api == GraphicsAPI::DX12) {
+        th.nativePtr = m_overlaySwapchain.imagesD3D12[m_overlayImageIndex].texture;
+    } else {
+        th.nativePtr = m_overlaySwapchain.images[m_overlayImageIndex].texture;
+    }
+    return th;
+}
+
+
 bool OpenXRManager::EndFrame(XrFrameState frameState, TextureHandle leftEye, TextureHandle rightEye, TextureHandle depthBuffer, const StereoParams* params) {
+    LOG_INFO("OpenXRManager::EndFrame started");
+    bool acquiredImages[2] = {false, false};
+    auto releaseAcquiredImages = [&]() {
+        for (int i = 0; i < 2; ++i) {
+            if (!acquiredImages[i]) continue;
+            XrSwapchainImageReleaseInfo releaseInfo = {XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};
+            xrReleaseSwapchainImage(m_swapchains[i].handle, &releaseInfo);
+            acquiredImages[i] = false;
+        }
+        if (m_overlayAcquired) {
+            XrSwapchainImageReleaseInfo releaseInfo = {XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};
+            xrReleaseSwapchainImage(m_overlaySwapchain.handle, &releaseInfo);
+            m_overlayAcquired = false;
+        }
+    };
+    auto abortFrame = [&]() {
+        releaseAcquiredImages();
+        XrFrameEndInfo endInfo = {XR_TYPE_FRAME_END_INFO};
+        endInfo.displayTime = frameState.predictedDisplayTime;
+        endInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+        endInfo.layerCount = 0;
+        endInfo.layers = nullptr;
+        const XrResult result = xrEndFrame(m_session, &endInfo);
+        if (m_api == GraphicsAPI::DX12 && m_renderer) {
+            static_cast<DX12Renderer*>(m_renderer)->SkipVRFrame();
+        }
+        return XR_SUCCEEDED(result);
+    };
+
     if (!frameState.shouldRender) {
+        LOG_INFO("EndFrame: shouldRender is false, submitting empty frame");
         // If we shouldn't render, just submit 0 layers
         XrFrameEndInfo endInfo = {XR_TYPE_FRAME_END_INFO};
         endInfo.displayTime = frameState.predictedDisplayTime;
@@ -517,6 +617,7 @@ bool OpenXRManager::EndFrame(XrFrameState frameState, TextureHandle leftEye, Tex
         return XR_SUCCEEDED(endRes);
     }
 
+    LOG_INFO("EndFrame: xrLocateViews");
     XrViewLocateInfo viewLocateInfo = {XR_TYPE_VIEW_LOCATE_INFO};
     viewLocateInfo.viewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
     viewLocateInfo.displayTime = frameState.predictedDisplayTime;
@@ -528,31 +629,50 @@ bool OpenXRManager::EndFrame(XrFrameState frameState, TextureHandle leftEye, Tex
     XrResult locRes = xrLocateViews(m_session, &viewLocateInfo, &viewState, 2, &viewCount, views);
     if (XR_FAILED(locRes)) {
         LOG_ERROR("xrLocateViews failed: %d", locRes);
+        abortFrame();
         return false;
     }
 
+    LOG_INFO("EndFrame: Processing %d views", viewCount);
     XrCompositionLayerProjectionView projectionViews[2] = {};
     TextureHandle eyeTextures[2] = {leftEye, rightEye};
 
     for (int i = 0; i < 2; ++i) {
+        s_cachedFov[i] = views[i].fov;
+        extern XrPosef s_cachedPose[2];
+        s_cachedPose[i] = views[i].pose;
+    }
+
+    for (int i = 0; i < 2; ++i) {
+        LOG_INFO("EndFrame: Acquiring swapchain for eye %d", i);
         uint32_t imageIndex;
         XrSwapchainImageAcquireInfo acquireInfo = {XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};
-        if (XR_FAILED(xrAcquireSwapchainImage(m_swapchains[i].handle, &acquireInfo, &imageIndex))) return false;
+        if (XR_FAILED(xrAcquireSwapchainImage(m_swapchains[i].handle, &acquireInfo, &imageIndex))) {
+            abortFrame();
+            return false;
+        }
+        acquiredImages[i] = true;
 
         XrSwapchainImageWaitInfo waitInfo = {XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO};
         waitInfo.timeout = 100000000; // 100ms
         XrResult waitRes = xrWaitSwapchainImage(m_swapchains[i].handle, &waitInfo);
         if (waitRes == XR_TIMEOUT_EXPIRED) {
             LOG_WARN("Swapchain wait timed out — skipping frame");
-            XrSwapchainImageReleaseInfo releaseInfo = {XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};
-            xrReleaseSwapchainImage(m_swapchains[i].handle, &releaseInfo);
+            abortFrame();
             return false;
         }
-        if (XR_FAILED(waitRes)) return false;
+        if (XR_FAILED(waitRes)) {
+            abortFrame();
+            return false;
+        }
 
-        ID3D11Texture2D* rightEyeSwapchainTex = m_swapchains[i].images[imageIndex].texture;
+        ID3D11Texture2D* rightEyeSwapchainTex = nullptr;
+        ID3D11Texture2D* renderTargetTex = nullptr;
         
-        ID3D11Texture2D* renderTargetTex = m_proxyDevice ? m_crossAdapterCopiers[i].GetGameSharedTexture() : rightEyeSwapchainTex;
+        if (m_api == GraphicsAPI::DX11) {
+            rightEyeSwapchainTex = m_swapchains[i].images[imageIndex].texture;
+            renderTargetTex = m_proxyDevice ? m_crossAdapterCopiers[i].GetGameSharedTexture() : rightEyeSwapchainTex;
+        }
 
         if (i == 1 && !eyeTextures[i].nativePtr && leftEye.nativePtr && depthBuffer.nativePtr && params && m_d3dDevice) {
             Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> colorSRV;
@@ -575,7 +695,13 @@ bool OpenXRManager::EndFrame(XrFrameState frameState, TextureHandle leftEye, Tex
             if (m_api == GraphicsAPI::DX12) {
                 static_cast<DX12Renderer*>(m_renderer)->CopyToSwapchainVR(destTex, params);
             } else if (eyeTextures[i].nativePtr) {
-                m_renderer->CopyToSwapchain(eyeTextures[i], destTex);
+                if (params && params->isNativeStereo) {
+                    uint32_t halfWidth = params->width / 2;
+                    uint32_t srcX = (i == 0) ? 0 : halfWidth;
+                    m_renderer->CopyToSwapchainRect(eyeTextures[i], destTex, srcX, 0, halfWidth, params->height);
+                } else {
+                    m_renderer->CopyToSwapchain(eyeTextures[i], destTex);
+                }
             }
         }
 
@@ -584,7 +710,11 @@ bool OpenXRManager::EndFrame(XrFrameState frameState, TextureHandle leftEye, Tex
         }
 
         XrSwapchainImageReleaseInfo releaseInfo = {XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};
-        if (XR_FAILED(xrReleaseSwapchainImage(m_swapchains[i].handle, &releaseInfo))) return false;
+        if (XR_FAILED(xrReleaseSwapchainImage(m_swapchains[i].handle, &releaseInfo))) {
+            abortFrame();
+            return false;
+        }
+        acquiredImages[i] = false;
 
         projectionViews[i].type = XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW;
         projectionViews[i].pose = views[i].pose;
@@ -602,18 +732,43 @@ bool OpenXRManager::EndFrame(XrFrameState frameState, TextureHandle leftEye, Tex
     layer.viewCount = 2;
     layer.views = projectionViews;
 
-    const XrCompositionLayerBaseHeader* layers[1] = {reinterpret_cast<const XrCompositionLayerBaseHeader*>(&layer)};
+    XrCompositionLayerQuad quadLayer = {XR_TYPE_COMPOSITION_LAYER_QUAD};
+    if (m_overlayAcquired) {
+        XrSwapchainImageReleaseInfo releaseInfo = {XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};
+        xrReleaseSwapchainImage(m_overlaySwapchain.handle, &releaseInfo);
+        m_overlayAcquired = false;
+
+        if (OverlayManager::GetInstance().IsOverlayVisible()) {
+            quadLayer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
+            quadLayer.space = m_headSpace; // Head-locked UI
+            quadLayer.eyeVisibility = XR_EYE_VISIBILITY_BOTH;
+            quadLayer.subImage.swapchain = m_overlaySwapchain.handle;
+            quadLayer.subImage.imageRect.offset = {0, 0};
+            quadLayer.subImage.imageRect.extent = {(int32_t)m_overlaySwapchain.width, (int32_t)m_overlaySwapchain.height};
+            quadLayer.subImage.imageArrayIndex = 0;
+            quadLayer.pose.orientation = {0, 0, 0, 1};
+            quadLayer.pose.position = {0.0f, -0.2f, -1.0f}; // 1m in front, slightly down
+            float aspect = (float)m_overlaySwapchain.height / (float)m_overlaySwapchain.width;
+            quadLayer.size = {1.0f, aspect}; // 1m wide, height based on aspect ratio
+        }
+    }
+
+    const XrCompositionLayerBaseHeader* layers[2];
+    uint32_t layerCount = 0;
+
+    if (viewCount == 2) {
+        layers[layerCount++] = reinterpret_cast<const XrCompositionLayerBaseHeader*>(&layer);
+    }
+    
+    if (quadLayer.subImage.swapchain != XR_NULL_HANDLE) {
+        layers[layerCount++] = reinterpret_cast<const XrCompositionLayerBaseHeader*>(&quadLayer);
+    }
 
     XrFrameEndInfo endInfo = {XR_TYPE_FRAME_END_INFO};
     endInfo.displayTime = frameState.predictedDisplayTime;
     endInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
-    if (viewCount == 2) {
-        endInfo.layerCount = 1;
-        endInfo.layers = layers;
-    } else {
-        endInfo.layerCount = 0;
-        endInfo.layers = nullptr;
-    }
+    endInfo.layerCount = layerCount;
+    endInfo.layers = (layerCount > 0) ? layers : nullptr;
     
     XrResult endRes = xrEndFrame(m_session, &endInfo);
     if (XR_FAILED(endRes)) {
@@ -626,8 +781,9 @@ bool OpenXRManager::EndFrame(XrFrameState frameState, TextureHandle leftEye, Tex
 void OpenXRManager::VRRenderLoop() {
     LOG_INFO("OpenXR VRRenderLoop thread started.");
     
-    // Elevate thread to highest priority to ensure 90Hz+ VR frame pacing
-    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
+    // Elevate thread priority for VR frame pacing (configurable to avoid system instability)
+    int threadPriority = ConfigManager::GetInstance().GetConfig().vrThreadPriority;
+    SetThreadPriority(GetCurrentThread(), threadPriority);
 
     while (m_vrThreadRunning) {
         PollEvents();
@@ -673,7 +829,26 @@ bool OpenXRManager::GetHeadPose(XrTime time, XrPosef& outPose) {
 
 bool OpenXRManager::GetEyeFov(int eyeIndex, XrFovf& outFov) const {
     if (eyeIndex < 0 || eyeIndex > 1) return false;
-    outFov = m_viewConfigs[eyeIndex].fov;
+    
+    // We get FOV from the last rendered frame's views
+    outFov = s_cachedFov[eyeIndex];
+    
+    // If not initialized yet, provide a fallback
+    if (outFov.angleLeft == 0 && outFov.angleRight == 0) {
+        outFov.angleLeft = -0.7f;
+        outFov.angleRight = 0.7f;
+        outFov.angleUp = 0.7f;
+        outFov.angleDown = -0.7f;
+    }
+    return true;
+}
+
+bool OpenXRManager::GetEyePose(int eyeIndex, XrPosef& outPose) const {
+    if (eyeIndex < 0 || eyeIndex > 1) return false;
+    
+    // We get pose from the last rendered frame's views
+    extern XrPosef s_cachedPose[2];
+    outPose = s_cachedPose[eyeIndex];
     return true;
 }
 

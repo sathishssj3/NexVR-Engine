@@ -330,7 +330,7 @@ int main(int argc, char* argv[]) {
         pe.dwSize = sizeof(pe);
         if (::Process32First(hSnap, &pe)) {
             do {
-                if (_stricmp(pe.szExeFile, "HogwartsLegacy.exe") == 0 || pe.th32ProcessID == targetPid) {
+                if (pe.th32ProcessID == targetPid) {
                     HANDLE hTemp = ::OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pe.th32ProcessID);
                     if (hTemp) {
                         PROCESS_MEMORY_COUNTERS pmc;
@@ -348,7 +348,8 @@ int main(int argc, char* argv[]) {
         ::CloseHandle(hSnap);
     }
     
-    if (bestPid != 0 && maxMem > 15 * 1024 * 1024) { // Must be larger than 15MB (launcher is ~6MB)
+    const SIZE_T MIN_MEMORY_THRESHOLD = 15 * 1024 * 1024;
+    if (bestPid != 0 && maxMem > MIN_MEMORY_THRESHOLD) { // Must be larger than 15MB (launcher is ~6MB)
         targetPid = bestPid;
         pidFound = true;
     }

@@ -29,22 +29,24 @@ bool HookManager::InitializeHooks() {
     AudioHook::Initialize();
 
     DXGIFactoryHook::Initialize();
+    // Setup Graphics Pipeline Hooks
+    // DX11 must hook Present FIRST because its ProcessPresent has routing logic
+    // to detect DX12 swapchains and forward them to DX12Hook::OnPresent.
+    // Both DX11 and DX12 share the same IDXGISwapChain::Present vtable entry,
+    // so only one can own the hook — DX11's handler correctly dispatches both.
+    if (!DX11Hook::Initialize()) {
+        LOG_WARN("DX11Hook initialization failed.");
+    }
     DX12Hook::Initialize();
 
     DX12Hook::SetOnFrameCallback([](const DX12Hook::FrameResourcesDX12& res) {
         // Dummy implementation to verify callback is firing
         static int frameCount = 0;
         frameCount++;
-        // We only log once in OnPresent to avoid spam, but we can log every 100 frames here
         if (frameCount % 600 == 0) {
             LOG_INFO("HookManager: VR Runtime Dummy processing frame %d", frameCount);
         }
     });
-
-    // Setup Graphics Pipeline Hook (DXGI + DX11)
-    if (!DX11Hook::Initialize()) {
-        LOG_WARN("DX11Hook initialization failed. This is expected for DX12-only games.");
-    }
 
     // ========================================================================
     // Engine Detection & Native Camera Hooking

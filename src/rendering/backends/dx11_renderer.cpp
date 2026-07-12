@@ -12,7 +12,7 @@ typedef LONG NTSTATUS;
 #pragma comment(lib, "bcrypt.lib")
 
 #ifndef EXPECTED_SHADER_HASH
-#define EXPECTED_SHADER_HASH L""
+#define EXPECTED_SHADER_HASH L"SECURITY_ERROR: PLEASE_SET_EXPECTED_SHADER_HASH_IN_BUILD_CONFIG"
 #endif
 
 namespace {
@@ -57,6 +57,10 @@ bool DX11Renderer::Initialize(void* nativeDevice, void* nativeContext) {
 }
 
 void DX11Renderer::Shutdown() {
+    if (m_dynamicCB) {
+        m_dynamicCB->Release();
+        m_dynamicCB = nullptr;
+    }
     if (m_context) { m_context->Release(); m_context = nullptr; }
     if (m_device) { m_device->Release(); m_device = nullptr; }
 }
@@ -84,13 +88,18 @@ TextureHandle DX11Renderer::CreateTexture(uint32_t width, uint32_t height, uint3
         handle.width = width;
         handle.height = height;
 
+        ID3D11ShaderResourceView* pSRV = nullptr;
+        if (SUCCEEDED(m_device->CreateShaderResourceView(tex, nullptr, &pSRV))) {
+            handle.nativeView = pSRV;
+        }
+
         if (uav) {
             ID3D11UnorderedAccessView* pUAV = nullptr;
             D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
             uavDesc.Format = desc.Format;
             uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
             if (SUCCEEDED(m_device->CreateUnorderedAccessView(tex, &uavDesc, &pUAV))) {
-                handle.nativeView = pUAV;
+                handle.nativeUAV = pUAV;
             }
         }
     }
@@ -98,8 +107,12 @@ TextureHandle DX11Renderer::CreateTexture(uint32_t width, uint32_t height, uint3
 }
 
 void DX11Renderer::DestroyTexture(TextureHandle& handle) {
+    if (handle.nativeUAV) {
+        static_cast<ID3D11UnorderedAccessView*>(handle.nativeUAV)->Release();
+        handle.nativeUAV = nullptr;
+    }
     if (handle.nativeView) {
-        static_cast<ID3D11UnorderedAccessView*>(handle.nativeView)->Release();
+        static_cast<ID3D11ShaderResourceView*>(handle.nativeView)->Release();
         handle.nativeView = nullptr;
     }
     if (handle.nativePtr) {
@@ -122,9 +135,28 @@ ShaderHandle DX11Renderer::LoadComputeShader(const uint8_t* bytecode, size_t byt
 
     // S5.2: Cryptographic Shader Verification
     std::wstring expectedHash = EXPECTED_SHADER_HASH;
+    // Check if the hash is still the default error message
+    if (expectedHash == L"SECURITY_ERROR: PLEASE_SET_EXPECTED_SHADER_HASH_IN_BUILD_CONFIG") {
+        LOG_ERROR("SECURITY ERROR: Shader hash not configured! Set EXPECTED_SHADER_HASH to the SHA-256 of the expected shader.");
+        return handle; // Return invalid handle to prevent loading potentially malicious shader
+    }
+
+#ifndef _DEBUG
+    if (expectedHash.empty()) {
+        LOG_ERROR("SECURITY ERROR: Shader verification is disabled in Release build! EXPECTED_SHADER_HASH must not be empty.");
+        return handle;
+    }
+#endif
+
     if (!expectedHash.empty()) {
         std::wstring actualHash = ComputeShaderHashSHA256(bytecode, bytecodeSize);
-        if (actualHash.empty() || _wcsicmp(actualHash.c_str(), expectedHash.c_str()) != 0) {
+        auto toLower = [](std::wstring s) {
+            for (auto& c : s) {
+                if (c >= L'A' && c <= L'Z') c = c - L'A' + L'a';
+            }
+            return s;
+        };
+        if (actualHash.empty() || toLower(actualHash) != toLower(expectedHash)) {
             LOG_ERROR("Shader bytecode integrity check failed (SHA-256 mismatch). Expected: %S", expectedHash.c_str());
             return handle;
         }
@@ -148,26 +180,91 @@ void DX11Renderer::DestroyShader(ShaderHandle& handle) {
     }
 }
 
-void DX11Renderer::DispatchCompute(ShaderHandle shader, TextureHandle input, TextureHandle output, uint32_t groupsX, uint32_t groupsY) {
+void DX11Renderer::DispatchCompute(ShaderHandle shader,
+                                   const TextureHandle* inputs, uint32_t numInputs,
+                                   const TextureHandle* outputs, uint32_t numOutputs,
+                                   const void* constantsData, size_t constantsSize,
+                                   uint32_t groupsX, uint32_t groupsY) {
     if (!m_context || !shader.pipelineState) return;
 
     ID3D11ComputeShader* cs = static_cast<ID3D11ComputeShader*>(shader.pipelineState);
     m_context->CSSetShader(cs, nullptr, 0);
 
-    if (output.nativeView) {
-        ID3D11UnorderedAccessView* uav = static_cast<ID3D11UnorderedAccessView*>(output.nativeView);
-        m_context->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
+    if (constantsData && constantsSize > 0) {
+        size_t paddedSize = (constantsSize + 15) & ~15;
+        if (!m_dynamicCB || m_dynamicCBSize < paddedSize) {
+            if (m_dynamicCB) m_dynamicCB->Release();
+            D3D11_BUFFER_DESC cbDesc = {};
+            cbDesc.Usage = D3D11_USAGE_DYNAMIC;
+            cbDesc.ByteWidth = static_cast<UINT>(paddedSize);
+            cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+            cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+            m_device->CreateBuffer(&cbDesc, nullptr, &m_dynamicCB);
+            m_dynamicCBSize = paddedSize;
+        }
+
+        if (m_dynamicCB) {
+            D3D11_MAPPED_SUBRESOURCE mapped;
+            if (SUCCEEDED(m_context->Map(m_dynamicCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
+                memcpy(mapped.pData, constantsData, constantsSize);
+                m_context->Unmap(m_dynamicCB, 0);
+            }
+            m_context->CSSetConstantBuffers(0, 1, &m_dynamicCB);
+        }
+    }
+
+    ID3D11ShaderResourceView* srvs[8] = {nullptr};
+    for (uint32_t i = 0; i < numInputs && i < 8; ++i) {
+        srvs[i] = static_cast<ID3D11ShaderResourceView*>(inputs[i].nativeView);
+    }
+    if (numInputs > 0) {
+        m_context->CSSetShaderResources(0, numInputs, srvs);
+    }
+
+    ID3D11UnorderedAccessView* uavs[8] = {nullptr};
+    for (uint32_t i = 0; i < numOutputs && i < 8; ++i) {
+        uavs[i] = static_cast<ID3D11UnorderedAccessView*>(outputs[i].nativeUAV);
+    }
+    if (numOutputs > 0) {
+        m_context->CSSetUnorderedAccessViews(0, numOutputs, uavs, nullptr);
     }
 
     m_context->Dispatch(groupsX, groupsY, 1);
 
-    if (output.nativeView) {
-        ID3D11UnorderedAccessView* nullUAV = nullptr;
-        m_context->CSSetUnorderedAccessViews(0, 1, &nullUAV, nullptr);
+    ID3D11ShaderResourceView* nullSRVs[8] = {nullptr};
+    if (numInputs > 0) {
+        m_context->CSSetShaderResources(0, numInputs, nullSRVs);
     }
+    ID3D11UnorderedAccessView* nullUAVs[8] = {nullptr};
+    if (numOutputs > 0) {
+        m_context->CSSetUnorderedAccessViews(0, numOutputs, nullUAVs, nullptr);
+    }
+}
+
+void DX11Renderer::ClearUAVUint(TextureHandle texture, const uint32_t values[4]) {
+    if (!m_context || !texture.nativeUAV) return;
+    ID3D11UnorderedAccessView* uav = static_cast<ID3D11UnorderedAccessView*>(texture.nativeUAV);
+    m_context->ClearUnorderedAccessViewUint(uav, values);
+}
+
+void DX11Renderer::CopyTexture(TextureHandle dst, TextureHandle src) {
+    if (!m_context || !dst.nativePtr || !src.nativePtr) return;
+    m_context->CopyResource(static_cast<ID3D11Resource*>(dst.nativePtr), static_cast<ID3D11Resource*>(src.nativePtr));
 }
 
 void DX11Renderer::CopyToSwapchain(TextureHandle source, void* swapchainTexture) {
     if (!m_context || !source.nativePtr || !swapchainTexture) return;
     m_context->CopyResource(static_cast<ID3D11Resource*>(swapchainTexture), static_cast<ID3D11Resource*>(source.nativePtr));
+}
+
+void DX11Renderer::CopyToSwapchainRect(TextureHandle source, void* swapchainTexture, uint32_t srcX, uint32_t srcY, uint32_t width, uint32_t height) {
+    if (!m_context || !source.nativePtr || !swapchainTexture) return;
+    D3D11_BOX srcBox;
+    srcBox.left = srcX;
+    srcBox.right = srcX + width;
+    srcBox.top = srcY;
+    srcBox.bottom = srcY + height;
+    srcBox.front = 0;
+    srcBox.back = 1;
+    m_context->CopySubresourceRegion(static_cast<ID3D11Resource*>(swapchainTexture), 0, 0, 0, 0, static_cast<ID3D11Resource*>(source.nativePtr), 0, &srcBox);
 }

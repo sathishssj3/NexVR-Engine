@@ -1,5 +1,6 @@
 #include "engine_detector.h"
 #include "logger.h"
+#include "engine_scanners/universal_scanner.h"
 
 namespace vrinject {
 
@@ -29,30 +30,44 @@ void EngineDetector::Detect() {
         return;
     }
 
-    LOG_WARN("Engine type unknown. Defaulting to generic hooks.");
+    char exeName[MAX_PATH];
+    GetModuleFileNameA(NULL, exeName, MAX_PATH);
+    std::string exeStr = exeName;
+    if (exeStr.find("HogwartsLegacy") != std::string::npos) {
+        LOG_INFO("Detected Hogwarts Legacy - Forcing Unreal Engine mode.");
+        m_engineType = EngineType::UnrealEngine4;
+        ScanForUnrealSignatures();
+        return;
+    }
+
+    LOG_WARN("Engine type unknown. Defaulting to generic hooks and Universal Memory Scanner.");
+    engine_scanners::UniversalScanner::Get().Initialize();
 }
 
 bool EngineDetector::CheckForUnrealWindow() {
     // Only search windows belonging to our process
-    DWORD currentPid = GetCurrentProcessId();
-    bool foundUnreal = false;
+    struct EnumContext {
+        DWORD pid;
+        bool found;
+    } context{GetCurrentProcessId(), false};
     
     EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
+        auto* context = reinterpret_cast<EnumContext*>(lParam);
         DWORD pid = 0;
         GetWindowThreadProcessId(hwnd, &pid);
-        if (pid == *reinterpret_cast<DWORD*>(lParam)) {
+        if (pid == context->pid) {
             char className[256];
             if (GetClassNameA(hwnd, className, sizeof(className))) {
                 if (std::string(className).find("UnrealWindow") != std::string::npos) {
-                    *reinterpret_cast<bool*>(lParam + sizeof(DWORD)) = true;
+                    context->found = true;
                     return FALSE; // Stop enumerating
                 }
             }
         }
         return TRUE;
-    }, reinterpret_cast<LPARAM>(&currentPid));
+    }, reinterpret_cast<LPARAM>(&context));
     
-    return foundUnreal;
+    return context.found;
 }
 
 bool EngineDetector::ScanForUnrealSignatures() {

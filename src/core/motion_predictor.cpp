@@ -1,6 +1,5 @@
 #include "motion_predictor.h"
 #include <cmath>
-#include <cmath>
 #include <algorithm>
 #include <DirectXMath.h>
 

@@ -4,6 +4,7 @@
 #include "../rendering/openxr_manager.h"
 #include "MinHook.h"
 #include <vector>
+#include "../core/overlay_manager.h"
 
 namespace vrinject {
 
@@ -20,6 +21,17 @@ GetRawInputData_t OriginalGetRawInputData = nullptr;
 GetCursorPos_t OriginalGetCursorPos = nullptr;
 SetCursor_t OriginalSetCursor = nullptr;
 
+WNDPROC g_OriginalWndProc = nullptr;
+LRESULT CALLBACK HookedWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    if (OverlayManager::GetInstance().HandleWndProc(hwnd, msg, wParam, lParam)) {
+        return true; // ImGui captured the input
+    }
+    if (g_OriginalWndProc) {
+        return CallWindowProc(g_OriginalWndProc, hwnd, msg, wParam, lParam);
+    }
+    return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
 HWND WINAPI HookedGetForegroundWindow() {
     HWND target = InputHook::GetInstance().GetTargetHwnd();
     if (target && InputHook::GetInstance().IsCaptureActive()) return target;
@@ -34,8 +46,28 @@ HWND WINAPI HookedGetActiveWindow() {
     return nullptr;
 }
 
+// FIX #13: Replace the hardcoded 0xDEADBEEF magic handle with a randomized
+// per-session secret. External code cannot predict this value and call us.
+static UINT_PTR g_rawInputMagicHandle = 0;
+
+static UINT_PTR GetRawInputMagicHandle() {
+    if (g_rawInputMagicHandle == 0) {
+        // Mix a high-entropy value: base address of the DLL XOR a stack address.
+        const UINT_PTR MAGIC_HANDLE_SENTINEL = 0xDEADB00F;
+        const UINT_PTR FALLBACK_MAGIC_HANDLE = 0xCAFE1234;
+        g_rawInputMagicHandle = reinterpret_cast<UINT_PTR>(&g_rawInputMagicHandle) ^
+                                reinterpret_cast<UINT_PTR>(GetModuleHandleA(nullptr)) ^
+                                MAGIC_HANDLE_SENTINEL; // Non-zero sentinel for safety
+        if (g_rawInputMagicHandle == 0) g_rawInputMagicHandle = FALLBACK_MAGIC_HANDLE; // fallback if still 0
+    }
+    return g_rawInputMagicHandle;
+}
+
 UINT WINAPI HookedGetRawInputData(HRAWINPUT hRawInput, UINT uiCommand, LPVOID pData, PUINT pcbSize, UINT cbSizeHeader) {
-    if ((uintptr_t)hRawInput == 0xDEADBEEF) {
+    // FIX #13: Only inject synthetic data for the secret per-session handle,
+    // and only when the VR capture is actually active.
+    if ((uintptr_t)hRawInput == GetRawInputMagicHandle() &&
+        InputHook::GetInstance().IsCaptureActive()) {
         if (uiCommand == RID_INPUT) {
             if (pData == nullptr) {
                 *pcbSize = sizeof(RAWINPUT);
@@ -310,6 +342,10 @@ void InputHook::FindTargetWindow() {
     EnumWindows(EnumWindowsProc, (LPARAM)&m_targetHwnd);
     if (m_targetHwnd) {
         LOG_INFO("InputHook: Found target game window HWND: %p", m_targetHwnd);
+        
+        // Inject WndProc hook for ImGui
+        g_OriginalWndProc = (WNDPROC)SetWindowLongPtr(m_targetHwnd, GWLP_WNDPROC, (LONG_PTR)HookedWndProc);
+        
         // Do NOT automatically enable capture. This prevents the cursor from freezing
         // if the injector fails or if the user is just looking at the menu.
         // The user can press INSERT to toggle it, or we can enable it programmatically later.
@@ -343,15 +379,31 @@ void InputHook::ToggleRawInputSink(bool enable) {
 void InputHook::StartBackgroundCapture() {
     if (m_captureRunning) return;
     m_captureRunning = true;
+    m_captureThreadReady = false;
     m_captureThread = std::thread(&InputHook::CaptureThreadLoop, this);
 }
 
 void InputHook::StopBackgroundCapture() {
-    m_captureRunning = false;
     if (m_captureThread.joinable()) {
-        // Post a dummy message to wake up GetMessage
-        PostThreadMessage(GetThreadId(m_captureThread.native_handle()), WM_QUIT, 0, 0);
+        m_captureRunning = false;
+
+        // Wait until the thread has created its message queue
+        {
+            std::unique_lock<std::mutex> lock(m_captureMutex);
+            m_captureCv.wait(lock, [this] { return m_captureThreadReady.load(); });
+        }
+
+        DWORD threadId = GetThreadId(m_captureThread.native_handle());
+        BOOL posted = FALSE;
+        for (int i = 0; i < 20 && !posted; ++i) {
+            posted = PostThreadMessage(threadId, WM_QUIT, 0, 0);
+            if (!posted) {
+                Sleep(10);
+            }
+        }
+        
         m_captureThread.join();
+        m_captureThreadReady = false;
     }
 }
 
@@ -362,7 +414,17 @@ void InputHook::CaptureThreadLoop() {
     m_keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, LowLevelKeyboardProc, GetModuleHandle(nullptr), 0);
     m_mouseHook = SetWindowsHookEx(WH_MOUSE_LL, LowLevelMouseProc, GetModuleHandle(nullptr), 0);
 
+    // Force creation of the message queue for this thread
     MSG msg;
+    PeekMessage(&msg, nullptr, WM_USER, WM_USER, PM_NOREMOVE);
+
+    // Signal that the thread and its message queue are fully ready
+    {
+        std::lock_guard<std::mutex> lock(m_captureMutex);
+        m_captureThreadReady = true;
+    }
+    m_captureCv.notify_one();
+
     while (m_captureRunning && GetMessage(&msg, nullptr, 0, 0)) {
         if (msg.message == WM_QUIT) break;
         TranslateMessage(&msg);
@@ -432,18 +494,37 @@ LRESULT CALLBACK InputHook::LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM l
                 int dx = ms->pt.x - lastScreenPt.x;
                 int dy = ms->pt.y - lastScreenPt.y;
                 
-                self.m_mouseDeltaX += dx;
-                self.m_mouseDeltaY += dy;
+                self.m_mouseDeltaX.fetch_add(dx, std::memory_order_relaxed);
+                self.m_mouseDeltaY.fetch_add(dy, std::memory_order_relaxed);
                 
-                self.m_virtualCursorX += dx;
-                self.m_virtualCursorY += dy;
-                
-                RECT rc;
-                if (GetClientRect(self.m_targetHwnd, &rc)) {
-                    if (self.m_virtualCursorX < 0) self.m_virtualCursorX = 0;
-                    if (self.m_virtualCursorY < 0) self.m_virtualCursorY = 0;
-                    if (self.m_virtualCursorX > rc.right) self.m_virtualCursorX = rc.right;
-                    if (self.m_virtualCursorY > rc.bottom) self.m_virtualCursorY = rc.bottom;
+                // FIX #10: m_virtualCursorX/Y are std::atomic<int>. Use fetch_add
+                // for the increment, then clamp with a CAS loop for thread-safety.
+                RECT rc = {};
+                GetClientRect(self.m_targetHwnd, &rc);
+                int right  = rc.right;
+                int bottom = rc.bottom;
+
+                // Clamp virtual cursor X - use CAS loop for thread-safety
+                {
+                    int expectedX = self.m_virtualCursorX.load(std::memory_order_relaxed);
+                    int desiredX;
+                    do {
+                        desiredX = expectedX + dx;
+                        if (desiredX < 0) desiredX = 0;
+                        else if (desiredX > right) desiredX = right;
+                    } while (!self.m_virtualCursorX.compare_exchange_weak(expectedX, desiredX, 
+                        std::memory_order_relaxed, std::memory_order_relaxed));
+                }
+                // Clamp virtual cursor Y - use CAS loop for thread-safety
+                {
+                    int expectedY = self.m_virtualCursorY.load(std::memory_order_relaxed);
+                    int desiredY;
+                    do {
+                        desiredY = expectedY + dy;
+                        if (desiredY < 0) desiredY = 0;
+                        else if (desiredY > bottom) desiredY = bottom;
+                    } while (!self.m_virtualCursorY.compare_exchange_weak(expectedY, desiredY,
+                        std::memory_order_relaxed, std::memory_order_relaxed));
                 }
                 
                 int screenWidth = GetSystemMetrics(SM_CXSCREEN);
@@ -456,8 +537,8 @@ LRESULT CALLBACK InputHook::LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM l
                 lastScreenPt.x = centerX;
                 lastScreenPt.y = centerY;
                 
-                // Inject RawInput for 3D Camera Rotation
-                PostMessageA(self.m_targetHwnd, WM_INPUT, RIM_INPUT, (LPARAM)0xDEADBEEF);
+                // FIX #13: Use per-session magic handle instead of 0xDEADBEEF.
+                PostMessageA(self.m_targetHwnd, WM_INPUT, RIM_INPUT, (LPARAM)GetRawInputMagicHandle());
             }
             
             // Inject UI messages so the fake VR cursor can click things in menus

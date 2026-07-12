@@ -9,7 +9,10 @@ import {
   sanitizeAcfString,
   validateSteamPath,
   isIgnoredSoftware,
-  validateGameId
+  validateGameId,
+  assertTrustedIpcSender,
+  canonicalExistingPath,
+  resolveWithinRoot,
 } from './utils';
 
 const isDev = !app.isPackaged;
@@ -43,7 +46,10 @@ function getHiddenIds(): string[] {
   if (cachedHiddenIds !== null) return cachedHiddenIds as string[];
   try {
     const p = path.join(app.getPath('userData'), 'hidden_games.json');
-    if (fs.existsSync(p)) cachedHiddenIds = JSON.parse(fs.readFileSync(p, 'utf-8'));
+    if (fs.existsSync(p)) {
+      const parsed = JSON.parse(fs.readFileSync(p, 'utf-8'));
+      cachedHiddenIds = isStringArray(parsed) ? parsed.map(validateGameId) : [];
+    }
     else cachedHiddenIds = [];
   } catch(e) { cachedHiddenIds = []; }
   return cachedHiddenIds as string[];
@@ -53,7 +59,10 @@ function getIgnoredIds(): string[] {
   if (cachedIgnoredIds !== null) return cachedIgnoredIds as string[];
   try {
     const p = path.join(app.getPath('userData'), 'ignored_games.json');
-    if (fs.existsSync(p)) cachedIgnoredIds = JSON.parse(fs.readFileSync(p, 'utf-8'));
+    if (fs.existsSync(p)) {
+      const parsed = JSON.parse(fs.readFileSync(p, 'utf-8'));
+      cachedIgnoredIds = isStringArray(parsed) ? parsed.map(validateGameId) : [];
+    }
     else cachedIgnoredIds = [];
   } catch(e) { cachedIgnoredIds = []; }
   return cachedIgnoredIds as string[];
@@ -70,7 +79,36 @@ function saveIgnoredIds(ids: string[]) {
 }
 
 
-ipcMain.handle('library:scan', async (): Promise<{ active: GameEntry[], waiting: GameEntry[] }> => {
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every(item => typeof item === 'string');
+}
+
+function validatePersistedGame(value: unknown): GameEntry | null {
+  if (!value || typeof value !== 'object') return null;
+  const game = value as Partial<GameEntry>;
+  try {
+    const id = validateGameId(game.id);
+    if (typeof game.name !== 'string' || game.name.length === 0 || game.name.length > 256) return null;
+    const executablePath = canonicalExistingPath(game.executablePath || '', 'file');
+    if (path.extname(executablePath).toLowerCase() !== '.exe') return null;
+    const installPath = canonicalExistingPath(path.dirname(executablePath), 'directory');
+    return {
+      id,
+      name: game.name,
+      installPath,
+      executablePath,
+      sizeGB: Number.isFinite(game.sizeGB) ? Number(game.sizeGB) : 0,
+      api: game.api === 'DX12' || game.api === 'Vulkan' ? game.api : 'DX11',
+      compat: game.compat || 'unknown',
+      hasInjector: fs.existsSync(resolveWithinRoot(installPath, 'vrinject.dll')),
+    };
+  } catch {
+    return null;
+  }
+}
+
+ipcMain.handle('library:scan', async (event): Promise<{ active: GameEntry[], waiting: GameEntry[] }> => {
+  assertTrustedIpcSender(event);
   const games: GameEntry[] = [];
   const waitingGames: GameEntry[] = [];
   const seenIds = new Set<string>();
@@ -81,7 +119,8 @@ ipcMain.handle('library:scan', async (): Promise<{ active: GameEntry[], waiting:
   try {
     const compatGamesFile = path.join(app.getPath('userData'), 'compat_games.json');
     if (fs.existsSync(compatGamesFile)) {
-      compatList = JSON.parse(fs.readFileSync(compatGamesFile, 'utf-8'));
+      const parsed = JSON.parse(fs.readFileSync(compatGamesFile, 'utf-8'));
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) compatList = parsed;
     }
   } catch(e) {}
 
@@ -96,16 +135,23 @@ ipcMain.handle('library:scan', async (): Promise<{ active: GameEntry[], waiting:
       console.log('[SECURITY] Steam path validation failed');
       return { active: games, waiting: waitingGames };
     }
-    const vdfPath = path.join(steamPath, 'steamapps', 'libraryfolders.vdf');
+    const canonicalSteamPath = canonicalExistingPath(steamPath, 'directory');
+    const vdfPath = resolveWithinRoot(canonicalSteamPath, 'steamapps', 'libraryfolders.vdf');
     
     if (!fs.existsSync(vdfPath)) return { active: games, waiting: waitingGames };
     const vdfContent = fs.readFileSync(vdfPath, 'utf-8');
     
     const paths = Array.from(vdfContent.matchAll(/"path"\s+"([^"]+)"/g)).map(m => m[1].replace(/\\\\/g, '\\'));
-    if (!paths.includes(steamPath)) paths.push(steamPath);
+    if (!paths.includes(canonicalSteamPath)) paths.push(canonicalSteamPath);
     
     for (const libPath of paths) {
-      const appsDir = path.join(libPath, 'steamapps');
+      let canonicalLibrary: string;
+      try {
+        canonicalLibrary = canonicalExistingPath(libPath, 'directory');
+      } catch {
+        continue;
+      }
+      const appsDir = resolveWithinRoot(canonicalLibrary, 'steamapps');
       if (!fs.existsSync(appsDir)) continue;
       
       const files = fs.readdirSync(appsDir);
@@ -127,7 +173,7 @@ ipcMain.handle('library:scan', async (): Promise<{ active: GameEntry[], waiting:
           if (seenIds.has(idStr)) continue;
           seenIds.add(idStr);
           
-          const installPath = path.join(appsDir, 'common', dirStr);
+          const installPath = resolveWithinRoot(appsDir, 'common', dirStr);
           if (!fs.existsSync(installPath)) continue;
           
           let api = detectAPI(installPath);
@@ -160,7 +206,7 @@ ipcMain.handle('library:scan', async (): Promise<{ active: GameEntry[], waiting:
     
     // Epic Games Scan
     try {
-      const manifestsPath = 'C:\\ProgramData\\Epic\\EpicGamesLauncher\\Data\\Manifests';
+      const manifestsPath = path.join(process.env.PROGRAMDATA || 'C:\\ProgramData', 'Epic', 'EpicGamesLauncher', 'Data', 'Manifests');
       if (fs.existsSync(manifestsPath)) {
         const files = fs.readdirSync(manifestsPath);
         for (const file of files) {
@@ -168,14 +214,15 @@ ipcMain.handle('library:scan', async (): Promise<{ active: GameEntry[], waiting:
           try {
             const data = fs.readFileSync(path.join(manifestsPath, file), 'utf-8');
             const parsed = JSON.parse(data);
-            const installPath = parsed.InstallLocation;
-            if (installPath && fs.existsSync(installPath)) {
+            const rawInstallPath = parsed.InstallLocation;
+            if (typeof rawInstallPath === 'string' && fs.existsSync(rawInstallPath)) {
+               const installPath = canonicalExistingPath(rawInstallPath, 'directory');
                let api = detectAPI(installPath);
                if (api === 'Unknown') api = 'DX11';
                
                const hasInjector = fs.existsSync(path.join(installPath, 'vrinject.dll'));
-               const id = parsed.AppName || parsed.CatalogItemId;
-               const dName = parsed.DisplayName;
+               const id = validateGameId(parsed.AppName || parsed.CatalogItemId);
+               const dName = typeof parsed.DisplayName === 'string' ? parsed.DisplayName : id;
                if (isIgnoredSoftware(dName)) continue;
                if (ignoredIds.includes(id)) continue;
                
@@ -183,7 +230,7 @@ ipcMain.handle('library:scan', async (): Promise<{ active: GameEntry[], waiting:
                const exeName = parsed.Executable;
                let epicExePath = '';
                if (exeName) {
-                 epicExePath = path.join(installPath, exeName);
+                 epicExePath = resolveWithinRoot(installPath, exeName);
                  if (fs.existsSync(epicExePath)) {
                    try {
                      const icon = await app.getFileIcon(epicExePath, { size: 'large' });
@@ -223,13 +270,16 @@ ipcMain.handle('library:scan', async (): Promise<{ active: GameEntry[], waiting:
       const customGamesFile = path.join(app.getPath('userData'), 'custom_games.json');
       if (fs.existsSync(customGamesFile)) {
         const customGamesData = fs.readFileSync(customGamesFile, 'utf-8');
-        const customGamesParsed: GameEntry[] = JSON.parse(customGamesData);
-        for (const cg of customGamesParsed) {
+        const rawCustomGames: unknown = JSON.parse(customGamesData);
+        if (!Array.isArray(rawCustomGames)) throw new Error('Invalid custom game list');
+        for (const rawGame of rawCustomGames) {
+          const cg = validatePersistedGame(rawGame);
+          if (!cg) continue;
           if (!seenIds.has(cg.id)) {
             if (ignoredIds.includes(cg.id)) continue;
             seenIds.add(cg.id);
             try {
-               if (fs.existsSync(cg.executablePath) && !cg.name.toLowerCase().includes('sekiro')) {
+               if (fs.existsSync(cg.executablePath)) {
                   const icon = await app.getFileIcon(cg.executablePath, { size: 'large' });
                   cg.iconBase64 = icon.toDataURL();
                }
@@ -252,7 +302,8 @@ ipcMain.handle('library:scan', async (): Promise<{ active: GameEntry[], waiting:
   return { active: games, waiting: waitingGames };
 });
 
-ipcMain.handle('library:addCustom', async (): Promise<{ success: boolean }> => {
+ipcMain.handle('library:addCustom', async (event): Promise<{ success: boolean }> => {
+  assertTrustedIpcSender(event);
   const { canceled, filePaths } = await dialog.showOpenDialog({
     properties: ['openFile'],
     filters: [{ name: 'Executables', extensions: ['exe'] }]
@@ -260,7 +311,7 @@ ipcMain.handle('library:addCustom', async (): Promise<{ success: boolean }> => {
   
   if (canceled || filePaths.length === 0) return { success: false };
   
-  const exePath = filePaths[0];
+  const exePath = canonicalExistingPath(filePaths[0], 'file');
   const installPath = path.dirname(exePath);
   const name = path.basename(exePath, '.exe');
   const id = 'custom_' + Date.now().toString();
@@ -299,9 +350,10 @@ ipcMain.handle('library:addCustom', async (): Promise<{ success: boolean }> => {
   try {
     gameExeMap[id] = exePath;
     const customGamesFile = path.join(app.getPath('userData'), 'custom_games.json');
-    let existing = [];
+    let existing: GameEntry[] = [];
     if (fs.existsSync(customGamesFile)) {
-      existing = JSON.parse(fs.readFileSync(customGamesFile, 'utf-8'));
+      const parsed = JSON.parse(fs.readFileSync(customGamesFile, 'utf-8'));
+      if (Array.isArray(parsed)) existing = parsed.map(validatePersistedGame).filter((x): x is GameEntry => x !== null);
     }
     existing.push(newGame);
     fs.writeFileSync(customGamesFile, JSON.stringify(existing, null, 2));
@@ -313,6 +365,8 @@ ipcMain.handle('library:addCustom', async (): Promise<{ success: boolean }> => {
 
 ipcMain.handle('library:removeGame', async (event, id: string): Promise<{ success: boolean }> => {
   try {
+    assertTrustedIpcSender(event);
+    id = validateGameId(id);
     let hiddenIds = getHiddenIds();
     if (!hiddenIds.includes(id)) {
       hiddenIds.push(id);
@@ -326,6 +380,8 @@ ipcMain.handle('library:removeGame', async (event, id: string): Promise<{ succes
 
 ipcMain.handle('library:restoreGame', async (event, id: string): Promise<{ success: boolean }> => {
   try {
+    assertTrustedIpcSender(event);
+    id = validateGameId(id);
     let hiddenIds = getHiddenIds();
     hiddenIds = hiddenIds.filter(x => x !== id);
     saveHiddenIds(hiddenIds);
@@ -337,6 +393,8 @@ ipcMain.handle('library:restoreGame', async (event, id: string): Promise<{ succe
 
 ipcMain.handle('library:ignoreGame', async (event, id: string): Promise<{ success: boolean }> => {
   try {
+    assertTrustedIpcSender(event);
+    id = validateGameId(id);
     let hiddenIds = getHiddenIds();
     hiddenIds = hiddenIds.filter(x => x !== id);
     saveHiddenIds(hiddenIds);
@@ -352,8 +410,9 @@ ipcMain.handle('library:ignoreGame', async (event, id: string): Promise<{ succes
   }
 });
 
-ipcMain.handle('library:restoreIgnoredGames', async (): Promise<{ success: boolean }> => {
+ipcMain.handle('library:restoreIgnoredGames', async (event): Promise<{ success: boolean }> => {
   try {
+    assertTrustedIpcSender(event);
     let ignoredIds = getIgnoredIds();
     if (ignoredIds.length > 0) {
       let hiddenIds = getHiddenIds();

@@ -45,6 +45,7 @@ public:
     bool GetHeadPose(XrTime time, XrPosef& outPose);
     const XrPosef& GetLatestHeadPose() const { return m_latestHeadPose; }
     bool GetEyeFov(int eyeIndex, XrFovf& outFov) const;
+    bool GetEyePose(int eyeIndex, XrPosef& outPose) const;
     
     
     // Polling controller states and converting them to XINPUT_STATE
@@ -61,6 +62,9 @@ public:
         return m_swapchainFormat == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB || 
                m_swapchainFormat == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
     }
+
+    TextureHandle GetOverlayTexture() const;
+    bool HasOverlaySwapchain() const { return m_overlaySwapchain.handle != XR_NULL_HANDLE; }
 
 
 
@@ -115,6 +119,10 @@ private:
     };
 
     Swapchain m_swapchains[2]; // Left and right eyes
+    Swapchain m_overlaySwapchain; // UI Overlay Quad
+    uint32_t m_overlayImageIndex = 0;
+    bool m_overlayAcquired = false;
+    
     XrViewConfigurationView m_viewConfigs[2]; // Left and right eye view configs
 
     uint32_t m_renderWidth = 0;

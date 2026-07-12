@@ -63,7 +63,8 @@ inline std::string Timestamp() {
     auto now       = system_clock::now();
     auto ms        = duration_cast<milliseconds>(now.time_since_epoch()) % 1000;
     auto timer     = system_clock::to_time_t(now);
-    std::tm bt     = *std::localtime(&timer);
+    std::tm bt{};
+    localtime_s(&bt, &timer);
     char buf[64];
     std::snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d.%03d",
                   bt.tm_year + 1900, bt.tm_mon + 1, bt.tm_mday,
@@ -76,12 +77,14 @@ inline std::string Timestamp() {
 /// Open the log file. Call once at startup.
 inline void Init(const std::string& logPath) {
     std::lock_guard<std::mutex> lock(GetMutex());
-    if (GetLogFile()) return;
+    FILE* logFile = GetLogFile();
+    if (logFile) return;
 
-    GetLogFile() = _fsopen(logPath.c_str(), "a", _SH_DENYNO);
-    if (GetLogFile()) {
-        std::fprintf(GetLogFile(), "=== VRInject Log Started: %s ===\n", Timestamp().c_str());
-        std::fflush(GetLogFile());
+    logFile = _fsopen(logPath.c_str(), "a", _SH_DENYNO);
+    GetLogFile() = logFile;
+    if (logFile) {
+        std::fprintf(logFile, "=== VRInject Log Started: %s ===\n", Timestamp().c_str());
+        std::fflush(logFile);
     }
     OutputDebugStringA("[VRInject] Logger initialised\n");
 }
@@ -89,9 +92,10 @@ inline void Init(const std::string& logPath) {
 /// Flush and close the log file. Call once at shutdown.
 inline void Shutdown() {
     std::lock_guard<std::mutex> lock(GetMutex());
-    if (GetLogFile()) {
-        std::fprintf(GetLogFile(), "=== VRInject Log Ended: %s ===\n", Timestamp().c_str());
-        std::fclose(GetLogFile());
+    FILE* logFile = GetLogFile();
+    if (logFile) {
+        std::fprintf(logFile, "=== VRInject Log Ended: %s ===\n", Timestamp().c_str());
+        std::fclose(logFile);
         GetLogFile() = nullptr;
     }
     OutputDebugStringA("[VRInject] Logger shut down\n");
@@ -106,7 +110,7 @@ inline void Log(Level level, const char* file, int line, const char* fmt, ...) {
     va_end(args);
 
     std::string safeMessage = userBuf;
-    std::regex pathRegex(R"([A-Za-z]:\\[^\s]+\\([^\s\\]+))");
+    static const std::regex pathRegex(R"([A-Za-z]:\\[^\s]+\\([^\s\\]+))");
     safeMessage = std::regex_replace(safeMessage, pathRegex, "$1");
 
     const char* filename = file;
@@ -127,9 +131,10 @@ inline void Log(Level level, const char* file, int line, const char* fmt, ...) {
     OutputDebugStringA(lineBuf);
 
     std::lock_guard<std::mutex> lock(GetMutex());
-    if (GetLogFile()) {
-        std::fprintf(GetLogFile(), "%s", lineBuf);
-        std::fflush(GetLogFile());
+    FILE* logFile = GetLogFile();
+    if (logFile) {
+        std::fprintf(logFile, "%s", lineBuf);
+        std::fflush(logFile);
     }
 }
 
@@ -139,8 +144,12 @@ inline void Log(Level level, const char* file, int line, const char* fmt, ...) {
 // ---- Convenience macros ----------------------------------------------------
 // Usage: LOG_INFO("Hooked Present at %p", addr);
 
+#ifndef NDEBUG
 #define LOG_DEBUG(fmt, ...) \
     vrinject::Logger::Log(vrinject::Logger::Level::Debug, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+#else
+#define LOG_DEBUG(fmt, ...) do {} while(0)
+#endif
 
 #define LOG_INFO(fmt, ...) \
     vrinject::Logger::Log(vrinject::Logger::Level::Info, __FILE__, __LINE__, fmt, ##__VA_ARGS__)

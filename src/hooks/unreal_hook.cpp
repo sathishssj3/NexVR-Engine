@@ -46,13 +46,13 @@ static FRotator QuatToRotator(const XrQuaternionf& q) {
 // Helper: Convert OpenXR position (meters, right-handed) to UE (centimeters, left-handed)
 // ============================================================================
 static FVector XrPosToUE(const XrVector3f& pos) {
-    // OpenXR: X=right, Y=up, Z=back
-    // UE4:    X=forward, Y=right, Z=up
+    // OpenXR: x=right, y=up, z=back
+    // UE4:    x=forward, y=right, z=up
     // Scale: OpenXR uses meters, UE uses centimeters
     return FVector(
-        -pos.Z * 100.0f,   // OpenXR -Z -> UE X (forward)
-         pos.X * 100.0f,   // OpenXR X  -> UE Y (right)
-         pos.Y * 100.0f    // OpenXR Y  -> UE Z (up)
+        -pos.z * 100.0f,   // OpenXR -z -> UE x (forward)
+         pos.x * 100.0f,   // OpenXR x  -> UE y (right)
+         pos.y * 100.0f    // OpenXR y  -> UE z (up)
     );
 }
 
@@ -167,6 +167,51 @@ void UnrealHook::DetourUpdateCamera(void* pCameraManager, float deltaTime) {
 }
 
 // ============================================================================
+// Detour: FRendererModule::BeginRenderingViewFamily
+// ============================================================================
+void UnrealHook::DetourBeginRenderingViewFamily(void* pCanvas, FSceneViewFamily* pViewFamily) {
+    if (!pViewFamily) {
+        Get().m_originalBeginRenderingViewFamily(pCanvas, pViewFamily);
+        return;
+    }
+
+    auto* openxr = OpenXRManager::GetInstance();
+    if (openxr && openxr->IsSessionRunning() && pViewFamily->Views.ArrayNum > 0) {
+        
+        static int frameCounter = 0;
+        frameCounter++;
+        if (frameCounter % 300 == 1) {
+            LOG_INFO("UnrealHook: BeginRenderingViewFamily detour active! Frame %d | Original Views: %d",
+                frameCounter, pViewFamily->Views.ArrayNum);
+        }
+
+        // To achieve Native Stereo Geometry 3D, we must duplicate the view.
+        // The original view is for the flat monitor. We want two views (Left and Right).
+        // For demonstration, if there's only 1 view, we can allocate a new array of 2 views.
+        if (pViewFamily->Views.ArrayNum == 1) {
+            FSceneView* originalView = pViewFamily->Views.Data[0];
+            
+            // Note: In a production UEVR implementation, we must properly construct 
+            // the new FSceneView copies using the game's allocator (FMemory::Malloc), 
+            // because the renderer will try to free them or they'll be out of scope.
+            // For this implementation plan, we outline the logic here.
+            
+            // 1. Create a left eye view based on originalView
+            // 2. Override Left ViewOrigin and ViewRotation
+            // 3. Create a right eye view based on originalView
+            // 4. Override Right ViewOrigin and ViewRotation
+            // 5. Update pViewFamily->Views.Data to point to our new array of 2 pointers.
+            // 6. Update pViewFamily->Views.ArrayNum = 2;
+            
+            // Then let the engine render it!
+        }
+    }
+
+    // Call the original renderer to actually draw the family
+    Get().m_originalBeginRenderingViewFamily(pCanvas, pViewFamily);
+}
+
+// ============================================================================
 // Initialize: Install the appropriate detour based on what the scanner found
 // ============================================================================
 bool UnrealHook::Initialize() {
@@ -234,6 +279,26 @@ bool UnrealHook::Initialize() {
         m_activeHookType = HookType::UpdateCamera;
         m_isHooked = true;
         LOG_INFO("UnrealHook: Successfully hooked UpdateCamera (fallback)!");
+        return true;
+    }
+
+    // Try hooking BeginRenderingViewFamily for full Native Stereo
+    void* beginRenderingFunc = scanner.GetBeginRenderingViewFamilyFunc();
+    if (beginRenderingFunc) {
+        LOG_INFO("UnrealHook: Installing BeginRenderingViewFamily hook at %p", beginRenderingFunc);
+        if (MH_CreateHook(beginRenderingFunc,
+                          reinterpret_cast<LPVOID>(&DetourBeginRenderingViewFamily),
+                          reinterpret_cast<LPVOID*>(&m_originalBeginRenderingViewFamily)) != MH_OK) {
+            LOG_ERROR("UnrealHook: MH_CreateHook failed for BeginRenderingViewFamily.");
+            return false;
+        }
+        if (MH_EnableHook(beginRenderingFunc) != MH_OK) {
+            LOG_ERROR("UnrealHook: MH_EnableHook failed for BeginRenderingViewFamily.");
+            return false;
+        }
+        m_activeHookType = HookType::BeginRenderingViewFamily;
+        m_isHooked = true;
+        LOG_INFO("UnrealHook: Successfully hooked BeginRenderingViewFamily!");
         return true;
     }
 

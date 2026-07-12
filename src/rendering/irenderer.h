@@ -4,7 +4,8 @@
 // Opaque handles — backend fills these in, caller treats them as black boxes
 struct TextureHandle {
     void* nativePtr  = nullptr;   // ID3D11Texture2D*, ID3D12Resource*, VkImage
-    void* nativeView = nullptr;   // UAV / descriptor handle / VkImageView
+    void* nativeView = nullptr;   // SRV / descriptor handle / VkImageView
+    void* nativeUAV  = nullptr;   // UAV (for DX11/DX12)
     uint32_t width   = 0;
     uint32_t height  = 0;
 };
@@ -46,15 +47,26 @@ public:
     // Dispatch
     virtual void DispatchCompute(
         ShaderHandle shader,
-        TextureHandle input,
-        TextureHandle output,
-        uint32_t groupsX,
-        uint32_t groupsY) = 0;
+        const TextureHandle* inputs, uint32_t numInputs,
+        const TextureHandle* outputs, uint32_t numOutputs,
+        const void* constantsData, size_t constantsSize,
+        uint32_t groupsX, uint32_t groupsY) = 0;
+
+    virtual void ClearUAVUint(TextureHandle texture, const uint32_t values[4]) = 0;
+    virtual void CopyTexture(TextureHandle dst, TextureHandle src) = 0;
 
     // Swapchain copy — MUST be in the abstraction to keep OpenXRManager API-agnostic
     virtual void CopyToSwapchain(
         TextureHandle source,
         void* swapchainTexture) = 0;   // XrSwapchainImageD3D11KHR.texture etc.
+
+    virtual void CopyToSwapchainRect(TextureHandle source,
+                         void* swapchainTexture,
+                         uint32_t srcX, uint32_t srcY,
+                         uint32_t width, uint32_t height) {
+        // Default implementation falls back to full copy
+        CopyToSwapchain(source, swapchainTexture);
+    }
 
     virtual GraphicsAPI GetAPI() const = 0;
 };

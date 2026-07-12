@@ -61,6 +61,13 @@ Map_t Original_Map = nullptr;
 UpdateSubresource_t Original_UpdateSubresource = nullptr;
 DrawIndexed_t OriginalDrawIndexed = nullptr;
 
+static void* g_targetPresent = nullptr;
+static void* g_targetPresent1 = nullptr;
+static void* g_targetOMSetRenderTargets = nullptr;
+static void* g_targetDrawIndexed = nullptr;
+static void* g_targetMap = nullptr;
+static void* g_targetUpdateSubresource = nullptr;
+
 FrameResources g_frameResources;
 std::recursive_mutex g_resourceMutex;
 OnFrameCallback g_onFrameCallback = nullptr;
@@ -111,13 +118,38 @@ void InitializeBackend(IDXGISwapChain* pSwapChain) {
 }
 
 
+void VerifyHookIntegrity() {
+    auto verify = [](void* target, const char* name) {
+        if (!target) return;
+        uint8_t* code = reinterpret_cast<uint8_t*>(target);
+        // MinHook detours start with relative JMP (0xE9), short JMP (0xEB), 
+        // absolute JMP (0xFF 0x25 or 0xFF 0x15), or 64-bit absolute JMP (0x48 0xB8 ... 0xFF 0xE0).
+        bool intact = (code[0] == 0xE9 || code[0] == 0xEB || 
+                       (code[0] == 0xFF && (code[1] == 0x25 || code[1] == 0x15)) ||
+                       (code[0] == 0x48 && code[1] == 0xB8 && code[10] == 0xFF && code[11] == 0xE0));
+        if (!intact) {
+            LOG_WARN("DX11Hook: Hook integrity check FAILED for %s! Attempting to re-enable hook.", name);
+            MH_QueueEnableHook(target);
+            MH_ApplyQueued();
+        }
+    };
+    
+    verify(g_targetPresent, "Present");
+    verify(g_targetPresent1, "Present1");
+    verify(g_targetOMSetRenderTargets, "OMSetRenderTargets");
+    verify(g_targetDrawIndexed, "DrawIndexed");
+    verify(g_targetMap, "Map");
+    verify(g_targetUpdateSubresource, "UpdateSubresource");
+}
+
 template<typename T, typename OriginalFunc, typename... Args>
 HRESULT ProcessPresent(T* pSwapChain, OriginalFunc originalFunc, Args... args) {
     std::unique_lock<std::recursive_mutex> lock(g_resourceMutex);
 
     if (g_frameResources.swapChain != pSwapChain) {
-        if (g_frameResources.device) g_frameResources.device->Release();
-        if (g_frameResources.context) g_frameResources.context->Release();
+        if (g_frameResources.swapChain) { g_frameResources.swapChain->Release(); g_frameResources.swapChain = nullptr; }
+        if (g_frameResources.device) { g_frameResources.device->Release(); g_frameResources.device = nullptr; }
+        if (g_frameResources.context) { g_frameResources.context->Release(); g_frameResources.context = nullptr; }
 
         // FATAL CRASH FIX: When the swapchain/device changes (e.g. during a scene transition or exit to main menu),
         // we MUST destroy all captured textures. Otherwise, we will attempt to call CopyResource
@@ -167,6 +199,7 @@ HRESULT ProcessPresent(T* pSwapChain, OriginalFunc originalFunc, Args... args) {
             return originalFunc(pSwapChain, args...);
         }
         g_frameResources.swapChain = pSwapChain;
+        pSwapChain->AddRef();
         
         s_backendInitialized = false; // Force backend reinitialization!
         g_pipelineInitialized = false;
@@ -293,13 +326,21 @@ HRESULT ProcessPresent(T* pSwapChain, OriginalFunc originalFunc, Args... args) {
                 moduleDir = moduleDir.substr(0, moduleDir.find_last_of("\\/"));
                 if (g_frameResources.colorSRV && !g_frameResources.initAttempted) {
                     if (g_frameResources.width > 0 && g_frameResources.height > 0) {
-                        g_pipelineInitialized = g_stereoPipeline.Initialize(
-                            g_frameResources.device, 
-                            g_frameResources.width, 
-                            g_frameResources.height, 
-                            moduleDir
-                        );
-                        g_frameResources.initAttempted = g_pipelineInitialized;
+                        IRenderer* renderer = nullptr;
+                        if (g_currentAPI == GraphicsAPI::DX11) {
+                            renderer = &g_dx11Renderer;
+                        } else if (g_currentAPI == GraphicsAPI::DX12) {
+                            renderer = &g_dx12Renderer;
+                        }
+                        if (renderer) {
+                            g_pipelineInitialized = g_stereoPipeline.Initialize(
+                                renderer, 
+                                g_frameResources.width, 
+                                g_frameResources.height, 
+                                moduleDir
+                            );
+                            g_frameResources.initAttempted = g_pipelineInitialized;
+                        }
                         if (!g_pipelineInitialized) {
                             LOG_ERROR("Failed to initialize VR Stereo Pipeline. Disabling VR for this SwapChain.");
                         }
@@ -349,17 +390,11 @@ HRESULT ProcessPresent(T* pSwapChain, OriginalFunc originalFunc, Args... args) {
             if (deltaTime < 0.0001f) deltaTime = 0.0001f;
             if (deltaTime > 0.1f) deltaTime = 0.0166f; // default to 60fps
             
-            ID3D11DeviceContext* defCtx = g_stereoPipeline.GetDeferredContext();
+            // Generate stereoscopic frames using compute pipeline!
+            TextureHandle colorHandle = { g_frameResources.colorBuffer.Get(), g_frameResources.colorSRV.Get() };
+            TextureHandle depthHandle = { g_frameResources.depthBuffer.Get(), g_frameResources.depthSRV.Get() };
 
-            // Generate stereoscopic frames!
-            g_stereoPipeline.Render(
-                defCtx, 
-                g_frameResources.context, 
-                g_frameResources.colorSRV.Get(), 
-                g_frameResources.depthSRV.Get(), 
-                params, 
-                deltaTime
-            );
+            g_stereoPipeline.RenderComputeOnly(colorHandle, depthHandle, params);
             
             // --- IMGUI RENDERING ---
             if (g_imguiInitialized && ConfigManager::GetInstance().GetConfig().enableImGuiOverlay) {
@@ -395,13 +430,14 @@ HRESULT ProcessPresent(T* pSwapChain, OriginalFunc originalFunc, Args... args) {
                 g_frameResources.context->ClearRenderTargetView(clearRTV.Get(), clearColor);
             }
 
+            // Create a deferred context for command recording (used to preserve game state)
+            Microsoft::WRL::ComPtr<ID3D11DeviceContext> defCtx;
+            g_frameResources.device->CreateDeferredContext(0, &defCtx);
+
             // Execute commands and perfectly restore game's state!
             Microsoft::WRL::ComPtr<ID3D11CommandList> cmdList;
-            if (SUCCEEDED(defCtx->FinishCommandList(FALSE, &cmdList))) {
+            if (defCtx && SUCCEEDED(defCtx->FinishCommandList(FALSE, &cmdList))) {
                 g_frameResources.context->ExecuteCommandList(cmdList.Get(), TRUE); // TRUE = Restore Context State
-                
-                // Profiling is finished. Active and stall-free!
-                g_stereoPipeline.ReadAndLogProfiling(g_frameResources.context);
             }
         }
     }
@@ -411,6 +447,12 @@ HRESULT ProcessPresent(T* pSwapChain, OriginalFunc originalFunc, Args... args) {
     g_largestDSVThisFrame.Reset();
     g_maxDepthPixels = 0;
     g_firstFrame = false;
+
+    // Periodically verify hook integrity to prevent external unhooking (e.g. by anti-cheats or overlays)
+    static int s_frameCount = 0;
+    if (++s_frameCount % 600 == 0) {
+        VerifyHookIntegrity();
+    }
 
     lock.unlock(); // Release lock before blocking in OriginalPresent
 
@@ -442,7 +484,9 @@ void __stdcall hkOMSetRenderTargets(ID3D11DeviceContext* pContext, UINT NumViews
             // If we select a shadow map, we feed a mismatching texture size into ONNX DirectML 
             // inside NeuralInpainter, which instantly causes a hard freeze and driver crash.
             // We must filter out depth buffers that are excessively larger than the backbuffer.
-            UINT maxAllowedPixels = g_frameResources.width * g_frameResources.height * 2; // Allow up to 2x supersampling
+            // Use configurable multiplier to support supersampled games.
+            float maxMultiplier = ConfigManager::GetInstance().GetConfig().depthBufferMaxSizeMultiplier;
+            UINT maxAllowedPixels = static_cast<UINT>(g_frameResources.width * g_frameResources.height * maxMultiplier);
             
             if (pixels > g_maxDepthPixels && pixels <= maxAllowedPixels) {
                 std::lock_guard<std::recursive_mutex> lock(g_resourceMutex);
@@ -469,7 +513,9 @@ void __stdcall hkDrawIndexed(ID3D11DeviceContext* pContext, UINT IndexCount, UIN
                 D3D11_TEXTURE2D_DESC desc;
                 tex->GetDesc(&desc);
                 UINT pixels = desc.Width * desc.Height;
-                UINT maxAllowedPixels = g_frameResources.width * g_frameResources.height * 2;
+                // Use configurable multiplier to support supersampled games
+                float maxMultiplier = ConfigManager::GetInstance().GetConfig().depthBufferMaxSizeMultiplier;
+                UINT maxAllowedPixels = static_cast<UINT>(g_frameResources.width * g_frameResources.height * maxMultiplier);
                 if (pixels > g_maxDepthPixels && pixels <= maxAllowedPixels) {
                     std::lock_guard<std::recursive_mutex> lock(g_resourceMutex);
                     if (pixels > g_maxDepthPixels) {
@@ -571,7 +617,10 @@ bool Initialize() {
     IDXGISwapChain* pSwapChain = nullptr;
     D3D_FEATURE_LEVEL featureLevel;
 
-    HRESULT hr = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_WARP, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &sd, &pSwapChain, &pDevice, &featureLevel, &pContext);
+    HRESULT hr = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &sd, &pSwapChain, &pDevice, &featureLevel, &pContext);
+    if (FAILED(hr)) {
+        hr = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_WARP, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &sd, &pSwapChain, &pDevice, &featureLevel, &pContext);
+    }
     
     if (FAILED(hr)) {
         DestroyWindow(hwnd);
@@ -602,31 +651,84 @@ bool Initialize() {
     DestroyWindow(hwnd);
     UnregisterClassA(wc.lpszClassName, wc.hInstance);
 
+    auto IsValidHookTarget = [](void* addr) -> bool {
+        if (!addr) return false;
+        HMODULE hMod = nullptr;
+        if (!GetModuleHandleExA(
+                GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                reinterpret_cast<LPCSTR>(addr), &hMod) || !hMod) {
+            LOG_WARN("DX11Hook: Hook target %p has no owning module — likely a proxy vtable, skipping.", addr);
+            return false;
+        }
+        char modName[MAX_PATH] = {};
+        GetModuleFileNameA(hMod, modName, MAX_PATH);
+        std::string path(modName);
+        size_t lastSlash = path.find_last_of("\\/");
+        std::string filename = (lastSlash == std::string::npos) ? path : path.substr(lastSlash + 1);
+        auto toLower = [](std::string s) { for (auto& c : s) c = (char)tolower(c); return s; };
+        std::string filenameLower = toLower(filename);
+        std::string pathLower = toLower(path);
+        
+        if (filenameLower != "d3d12.dll" &&
+            filenameLower != "dxgi.dll" &&
+            filenameLower != "d3d11.dll") {
+            LOG_WARN("DX11Hook: Hook target %p is in '%s', not a known D3D/DXGI system DLL — skipping.", addr, modName);
+            return false;
+        }
+
+        char sysDir[MAX_PATH] = {};
+        if (GetSystemDirectoryA(sysDir, MAX_PATH)) {
+            std::string sysPathLower = toLower(sysDir);
+            if (pathLower.rfind(sysPathLower, 0) != 0) {
+                LOG_WARN("DX11Hook: Hook target %p resides in '%s', which is outside Windows system directory '%s' — skipping.", addr, modName, sysDir);
+                return false;
+            }
+        }
+        return true;
+    };
+
+    g_targetPresent = presentAddress;
+    g_targetPresent1 = present1Address;
+    g_targetOMSetRenderTargets = omSetRenderTargetsAddress;
+    g_targetDrawIndexed = drawIndexedAddress;
+    g_targetMap = mapAddress;
+    g_targetUpdateSubresource = updateSubresourceAddress;
+
     // Create and enable hooks
+    if (!IsValidHookTarget(presentAddress)) {
+        LOG_ERROR("DX11Hook: Target Present address is invalid, aborting hooks.");
+        return false;
+    }
     if (MH_CreateHook(presentAddress, (void*)hkPresent, (void**)&OriginalPresent) != MH_OK) {
         LOG_ERROR("MH_CreateHook failed for Present");
         return false;
     }
-    if (present1Address && MH_CreateHook(present1Address, (void*)hkPresent1, (void**)&OriginalPresent1) != MH_OK) {
-        LOG_ERROR("MH_CreateHook failed for Present1");
-        return false;
+    if (present1Address && IsValidHookTarget(present1Address)) {
+        if (MH_CreateHook(present1Address, (void*)hkPresent1, (void**)&OriginalPresent1) != MH_OK) {
+            LOG_ERROR("MH_CreateHook failed for Present1");
+        }
     }
-    if (MH_CreateHook(omSetRenderTargetsAddress, (void*)hkOMSetRenderTargets, (void**)&OriginalOMSetRenderTargets) != MH_OK) {
-        LOG_ERROR("MH_CreateHook failed for OMSetRenderTargets");
-        return false;
+    if (IsValidHookTarget(omSetRenderTargetsAddress)) {
+        if (MH_CreateHook(omSetRenderTargetsAddress, (void*)hkOMSetRenderTargets, (void**)&OriginalOMSetRenderTargets) != MH_OK) {
+            LOG_ERROR("MH_CreateHook failed for OMSetRenderTargets");
+        }
     }
-    if (MH_CreateHook(drawIndexedAddress, (void*)hkDrawIndexed, (void**)&OriginalDrawIndexed) != MH_OK) {
-        LOG_ERROR("MH_CreateHook failed for DrawIndexed");
-        return false;
+    if (IsValidHookTarget(drawIndexedAddress)) {
+        if (MH_CreateHook(drawIndexedAddress, (void*)hkDrawIndexed, (void**)&OriginalDrawIndexed) != MH_OK) {
+            LOG_ERROR("MH_CreateHook failed for DrawIndexed");
+        }
     }
-    if (MH_CreateHook(mapAddress, (void*)Hooked_Map, (void**)&Original_Map) != MH_OK) {
-        LOG_ERROR("MH_CreateHook failed for Map");
-        return false;
+    if (IsValidHookTarget(mapAddress)) {
+        if (MH_CreateHook(mapAddress, (void*)Hooked_Map, (void**)&Original_Map) != MH_OK) {
+            LOG_ERROR("MH_CreateHook failed for Map");
+        }
     }
-    if (MH_CreateHook(updateSubresourceAddress, (void*)Hooked_UpdateSubresource, (void**)&Original_UpdateSubresource) != MH_OK) {
-        LOG_ERROR("MH_CreateHook failed for UpdateSubresource");
-        return false;
+    if (IsValidHookTarget(updateSubresourceAddress)) {
+        if (MH_CreateHook(updateSubresourceAddress, (void*)Hooked_UpdateSubresource, (void**)&Original_UpdateSubresource) != MH_OK) {
+            LOG_ERROR("MH_CreateHook failed for UpdateSubresource");
+        }
     }
+
     if (MH_EnableHook(MH_ALL_HOOKS) != MH_OK) {
         LOG_ERROR("MH_EnableHook failed");
         return false;

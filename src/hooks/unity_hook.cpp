@@ -3,6 +3,7 @@
 #include "../core/memory_scanner.h"
 #include "../core/engine_scanners/unity_scanner.h"
 #include "../rendering/openxr_manager.h"
+#include "../core/config_manager.h"
 #include "MinHook.h"
 #include <DirectXMath.h>
 
@@ -43,27 +44,41 @@ void UnityHook::DetourSetWorldToCameraMatrix(void* camera_this, Matrix4x4* matri
     // VR Pose Injection
     auto* openxr = OpenXRManager::GetInstance();
     if (openxr && openxr->IsSessionRunning()) {
-        const XrPosef& headPose = openxr->GetLatestHeadPose();
-        
-        // Convert XrPose to DirectXMath View Matrix
-        // OpenXR: +Y up, +X right, -Z forward
-        // Unity:  +Y up, +X right, +Z forward
-        XMVECTOR rot = XMVectorSet(headPose.orientation.x, headPose.orientation.y, -headPose.orientation.z, -headPose.orientation.w);
-        XMVECTOR pos = XMVectorSet(headPose.position.x, headPose.position.y, -headPose.position.z, 0.0f);
-        
-        XMMATRIX vrView = XMMatrixAffineTransformation(
-            XMVectorSet(1,1,1,0),
-            XMVectorZero(),
-            rot,
-            pos
-        );
-        vrView = XMMatrixInverse(nullptr, vrView);
+        XrPosef eyePose;
+        if (openxr->GetEyePose(0, eyePose)) {
+            // Convert XrPose to DirectXMath View Matrix
+            // OpenXR: +Y up, +X right, -Z forward
+            // Unity:  +Y up, +X right, -Z forward (Unity camera space is Right-Handed!)
+            // Wait, Unity camera space is RH (-Z forward), but World is LH (+Z forward).
+            // WorldToCamera matrix converts from LH World to RH Camera.
+            // Our VR headset pose is in LH tracking space if we treat it as world? 
+            // Actually, OpenXR is RH. So XrPose is RH (+Y up, +X right, -Z forward).
+            XMVECTOR rot = XMVectorSet(-eyePose.orientation.x, -eyePose.orientation.y, eyePose.orientation.z, eyePose.orientation.w);
+            float scale = ConfigManager::GetInstance().GetConfig().vrScaleFactor;
+            XMVECTOR pos = XMVectorSet(eyePose.position.x * scale, eyePose.position.y * scale, -eyePose.position.z * scale, 0.0f);
+            
+            XMMATRIX vrView = XMMatrixAffineTransformation(
+                XMVectorSet(1,1,1,0),
+                XMVectorZero(),
+                rot,
+                pos
+            );
+            vrView = XMMatrixInverse(nullptr, vrView);
 
-        // Multiply VR View by the game's view matrix
-        XMMATRIX gameView = XMLoadFloat4x4(reinterpret_cast<const XMFLOAT4X4*>(matrix));
-        XMMATRIX combinedView = XMMatrixMultiply(gameView, vrView);
-        
-        XMStoreFloat4x4(reinterpret_cast<XMFLOAT4X4*>(matrix), combinedView);
+            // Unity's Matrix4x4 is column-major in memory.
+            // DirectXMath's XMLoadFloat4x4 expects row-major, so loading column-major data
+            // gives us the transpose. We then transpose to get the correct row-major matrix
+            // for DirectXMath operations.
+            XMMATRIX gameViewRowMajor = XMLoadFloat4x4(reinterpret_cast<const XMFLOAT4X4*>(matrix));
+            // gameViewRowMajor now contains the transpose of Unity's matrix (correct for DirectXMath)
+            
+            // Multiply Game View (World -> Camera) by VR View (Camera -> Eye)
+            // Both are in row-major convention for DirectXMath
+            XMMATRIX combinedView = XMMatrixMultiply(gameViewRowMajor, vrView);
+            
+            // Convert back to column-major for Unity
+            XMStoreFloat4x4(reinterpret_cast<XMFLOAT4X4*>(matrix), XMMatrixTranspose(combinedView));
+        }
     }
 
     Get().m_originalSetWorldToCameraMatrix(camera_this, matrix, methodInfo);
@@ -85,16 +100,25 @@ void UnityHook::DetourSetProjectionMatrix(void* camera_this, Matrix4x4* matrix, 
     // VR Projection Injection
     auto* openxr = OpenXRManager::GetInstance();
     if (openxr && openxr->IsSessionRunning()) {
-        // We need to know which eye this is for. For now, we assume left eye (0)
-        // or we could inspect the incoming projection to guess.
+        // We use left eye (0) for the main camera, and right eye is reprojected later
         XrFovf fov;
         if (openxr->GetEyeFov(0, fov)) {
-            // Build asymmetric projection matrix
-            // float left = tanf(fov.angleLeft);
-            // float right = tanf(fov.angleRight);
-            // float up = tanf(fov.angleUp);
-            // float down = tanf(fov.angleDown);
-            // Build projection matrix using DXMath...
+            // Unity's Matrix4x4 is column-major in memory.
+            XMMATRIX gameProjColMajor = XMLoadFloat4x4(reinterpret_cast<const XMFLOAT4X4*>(matrix));
+            XMMATRIX gameProj = XMMatrixTranspose(gameProjColMajor);
+            XMFLOAT4X4 gProj;
+            XMStoreFloat4x4(&gProj, gameProj);
+
+            // Reconstruct VR projection mapping X and Y correctly, but keeping Z mapping
+            // Note: X and Y scale are at _11 and _22. Asymmetric shifts are at _13 and _23 (row 0/1, col 2)
+            gProj._11 = 2.0f / (tanf(fov.angleRight) - tanf(fov.angleLeft));
+            gProj._22 = 2.0f / (tanf(fov.angleUp) - tanf(fov.angleDown));
+            gProj._13 = -(tanf(fov.angleRight) + tanf(fov.angleLeft)) / (tanf(fov.angleRight) - tanf(fov.angleLeft));
+            gProj._23 = -(tanf(fov.angleUp) + tanf(fov.angleDown)) / (tanf(fov.angleUp) - tanf(fov.angleDown));
+            
+            // Load back to matrix and transpose for Unity
+            XMMATRIX vrProj = XMLoadFloat4x4(&gProj);
+            XMStoreFloat4x4(reinterpret_cast<XMFLOAT4X4*>(matrix), XMMatrixTranspose(vrProj));
         }
     }
 

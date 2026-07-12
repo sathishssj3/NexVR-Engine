@@ -4,12 +4,13 @@ import * as fs from 'fs';
 import * as child_process from 'child_process';
 import * as util from 'util';
 import { VRStatus } from '../src/types';
-import { gamePathsMap } from './utils';
+import { assertTrustedIpcSender, gamePathsMap, safeGamePath, validateGameId } from './utils';
 import { activeGameId } from './injectionManager';
 
-const execAsync = util.promisify(child_process.exec);
+const execFileAsync = util.promisify(child_process.execFile);
 
-ipcMain.handle('vr:status', async (): Promise<VRStatus> => {
+ipcMain.handle('vr:status', async (event): Promise<VRStatus> => {
+  assertTrustedIpcSender(event);
   let connected = false;
   let runtime = 'Unknown';
   let headset = 'Unknown HMD';
@@ -69,7 +70,8 @@ ipcMain.handle('vr:status', async (): Promise<VRStatus> => {
   return { connected, runtime, headset, refreshRate: 90 };
 });
 
-ipcMain.handle('log:export', async (_, lines: unknown) => {
+ipcMain.handle('log:export', async (event, lines: unknown) => {
+  assertTrustedIpcSender(event);
   if (!Array.isArray(lines)) throw new Error('Invalid log lines');
   if (lines.length > 10000) throw new Error('Log too large');
 
@@ -105,15 +107,17 @@ ipcMain.handle('log:export', async (_, lines: unknown) => {
     const installPath = gamePathsMap[activeGameId];
     if (installPath) {
       try {
-        const cfgPath = path.join(installPath, 'vrinject.json');
+        const cfgPath = safeGamePath(installPath, 'vrinject.json');
         if (fs.existsSync(cfgPath)) {
           fs.copyFileSync(cfgPath, path.join(stagingDir, 'vrinject.json'));
         }
         
         const files = fs.readdirSync(installPath);
         for (const file of files) {
-          if (file.toLowerCase().endsWith('.dmp')) {
-            fs.copyFileSync(path.join(installPath, file), path.join(stagingDir, file));
+          const fullPath = safeGamePath(installPath, file);
+          const stat = fs.statSync(fullPath);
+          if (file.toLowerCase().endsWith('.dmp') && stat.isFile() && stat.size <= 100 * 1024 * 1024) {
+            fs.copyFileSync(fullPath, path.join(stagingDir, path.basename(file)));
           }
         }
       } catch(e) {}
@@ -125,8 +129,11 @@ ipcMain.handle('log:export', async (_, lines: unknown) => {
     `NexVR_Diag_Report_${Date.now()}.zip`
   );
 
-  const psCommand = `Compress-Archive -Path "${stagingDir}\\*" -DestinationPath "${zipPath}" -Force`;
-  await execAsync(`powershell -NoProfile -Command "${psCommand}"`);
+  const psCommand = `Compress-Archive -LiteralPath '${stagingDir.replace(/'/g, "''")}\\*' -DestinationPath '${zipPath.replace(/'/g, "''")}' -Force`;
+  await execFileAsync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', psCommand], {
+    windowsHide: true,
+    timeout: 30000,
+  });
 
   try {
     fs.rmSync(stagingDir, { recursive: true, force: true });
@@ -135,22 +142,29 @@ ipcMain.handle('log:export', async (_, lines: unknown) => {
   return { success: true, path: zipPath };
 });
 
-ipcMain.handle('shell:openExternal', async (_, url: string) => {
-  await shell.openExternal(url);
+ipcMain.handle('shell:openExternal', async (event, url: string) => {
+  assertTrustedIpcSender(event);
+  const parsed = new URL(url);
+  if (parsed.protocol !== 'https:' || parsed.hostname !== 'github.com') {
+    throw new Error('External URL is not allowed');
+  }
+  await shell.openExternal(parsed.toString());
 });
 
-ipcMain.handle('utils:openConfig', async (_, id: string) => {
-  const installPath = gamePathsMap[id];
+ipcMain.handle('utils:openConfig', async (event, id: string) => {
+  assertTrustedIpcSender(event);
+  const installPath = gamePathsMap[validateGameId(id)];
   if (installPath) {
-    const cfgPath = path.join(installPath, 'vrinject.json');
+    const cfgPath = safeGamePath(installPath, 'vrinject.json');
     if (fs.existsSync(cfgPath)) shell.openPath(cfgPath);
   }
 });
 
-ipcMain.handle('utils:openLog', async (_, id: string) => {
-  const installPath = gamePathsMap[id];
+ipcMain.handle('utils:openLog', async (event, id: string) => {
+  assertTrustedIpcSender(event);
+  const installPath = gamePathsMap[validateGameId(id)];
   if (installPath) {
-    const logPath = path.join(installPath, 'vrinject.log');
+    const logPath = safeGamePath(installPath, 'vrinject.log');
     if (fs.existsSync(logPath)) shell.openPath(logPath);
   }
 });

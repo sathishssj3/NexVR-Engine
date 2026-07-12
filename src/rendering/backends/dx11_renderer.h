@@ -16,11 +16,21 @@ public:
     void DestroyShader(ShaderHandle& handle) override;
 
     void DispatchCompute(ShaderHandle shader,
-                         TextureHandle input, TextureHandle output,
+                         const TextureHandle* inputs, uint32_t numInputs,
+                         const TextureHandle* outputs, uint32_t numOutputs,
+                         const void* constantsData, size_t constantsSize,
                          uint32_t groupsX, uint32_t groupsY) override;
+
+    void ClearUAVUint(TextureHandle texture, const uint32_t values[4]) override;
+    void CopyTexture(TextureHandle dst, TextureHandle src) override;
 
     void CopyToSwapchain(TextureHandle source,
                          void* swapchainTexture) override;
+                         
+    void CopyToSwapchainRect(TextureHandle source,
+                         void* swapchainTexture,
+                         uint32_t srcX, uint32_t srcY,
+                         uint32_t width, uint32_t height) override;
 
     GraphicsAPI GetAPI() const override { return GraphicsAPI::DX11; }
 
@@ -31,4 +41,6 @@ public:
 private:
     ID3D11Device*        m_device  = nullptr;
     ID3D11DeviceContext* m_context = nullptr;
+    ID3D11Buffer*        m_dynamicCB = nullptr;
+    size_t               m_dynamicCBSize = 0;
 };

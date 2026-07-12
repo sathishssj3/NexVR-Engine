@@ -129,10 +129,29 @@ public:
     // We use the GEngine pointer mainly to confirm we're in Unreal territory.
 };
 
+// Array container used heavily in UE
+template<typename T>
+struct TArray {
+    T* Data;
+    int32_t ArrayNum;
+    int32_t ArrayMax;
+};
+
 // Placeholder for FSceneView which contains the projection matrices
 class FSceneView {
 public:
     // Populated per-frame by the renderer. Contains ViewMatrices, ProjectionMatrix, etc.
+    // Exact layout needs memory scanning or dynamic offsets based on UE version.
+    uint8_t Pad[0x1000]; // Placeholder size
+};
+
+class FSceneViewFamily {
+public:
+    // Memory layout is highly dependent on UE version. 
+    // In UE4.27, Views is typically around offset 0x10 or 0x18
+    // We will find it dynamically by looking for a TArray with ArrayNum == 1
+    uint8_t Pad_0000[0x10]; 
+    TArray<FSceneView*> Views;
 };
 
 // ============================================================================
@@ -184,6 +203,11 @@ namespace Signatures {
 
     inline constexpr const char* UpdateCamera_UE5 = 
         "48 89 5C 24 ? 57 48 83 EC ? 0F 29 74 24 ? 48 8B D9 0F 28 F1";
+
+    // --- FRendererModule::BeginRenderingViewFamily ---
+    // Used to intercept the FSceneViewFamily before it is rendered, allowing us to duplicate the view.
+    inline constexpr const char* BeginRenderingViewFamily_UE4 = 
+        "40 55 53 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24 ? 48 81 EC";
 
 } // namespace Signatures
 

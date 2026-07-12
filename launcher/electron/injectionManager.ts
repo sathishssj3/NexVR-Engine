@@ -4,249 +4,376 @@ import * as fs from 'fs';
 import * as child_process from 'child_process';
 import * as util from 'util';
 import { InjectResult } from '../src/types';
-import { gamePathsMap, gameExeMap, validateGameId, safeGamePath } from './utils';
+import {
+  assertTrustedIpcSender,
+  canonicalExistingPath,
+  gamePathsMap,
+  gameExeMap,
+  resolveWithinRoot,
+  safeGamePath,
+  validateGameId,
+} from './utils';
 
-const execAsync = util.promisify(child_process.exec);
+const execFileAsync = util.promisify(child_process.execFile);
 const isDev = !app.isPackaged;
 
 export let cancelInjectionFlag = false;
 export let activeTargetExeName = '';
 export let activeTargetPid = 0;
 export let activeGameId = '';
-const injectRateLimits: Record<string, number[]> = {};
 
-ipcMain.handle('inject:cancel', async () => {
-   cancelInjectionFlag = true;
-   try {
-      if (activeTargetPid > 0) {
-         await execAsync(`taskkill /PID ${activeTargetPid}`, { timeout: 2000 }).catch(() => {});
-         setTimeout(() => execAsync(`taskkill /PID ${activeTargetPid} /F`, { timeout: 2000 }).catch(() => {}), 2000);
-      } else if (activeTargetExeName) {
-         await execAsync(`taskkill /IM "${activeTargetExeName}"`, { timeout: 2000 }).catch(() => {});
-         setTimeout(() => execAsync(`taskkill /IM "${activeTargetExeName}" /F`, { timeout: 2000 }).catch(() => {}), 2000);
-      }
-      
-      await execAsync(`taskkill /IM "FallGuys_client.exe"`, { timeout: 2000 }).catch(() => {});
-      await execAsync(`taskkill /IM "launcher.exe"`, { timeout: 2000 }).catch(() => {});
-      setTimeout(() => execAsync(`taskkill /IM "FallGuys_client.exe" /F`, { timeout: 2000 }).catch(() => {}), 2000);
-      setTimeout(() => execAsync(`taskkill /IM "launcher.exe" /F`, { timeout: 2000 }).catch(() => {}), 2000);
-      
-      const installPath = gamePathsMap[activeGameId];
-      if (installPath) {
-         const cleanPath = installPath.toLowerCase().replace(/'/g, "''");
-         await execAsync(`powershell -NoProfile -Command "$ErrorActionPreference = 'SilentlyContinue'; Get-Process | Where-Object { $_.Path -ne $null -and $_.Path.ToLower().StartsWith('${cleanPath}') } | Stop-Process -Force"`, { timeout: 3000 }).catch(() => {});
-      }
-   } catch(e) {}
+const injectRateLimits: Record<string, number[]> = {};
+let injectionInProgress = false;
+let activeLogPath = '';
+
+async function terminatePid(pid: number, force = false): Promise<void> {
+  if (!Number.isSafeInteger(pid) || pid <= 0) return;
+  const args = ['/PID', String(pid)];
+  if (force) args.push('/F');
+  await execFileAsync('taskkill.exe', args, {
+    timeout: 3000,
+    windowsHide: true,
+  }).catch(() => {});
+}
+
+async function getProcessPath(pid: number): Promise<string> {
+  if (!Number.isSafeInteger(pid) || pid <= 0) return '';
+  const command = 'param([int]$PidArg) (Get-Process -Id $PidArg -ErrorAction Stop).Path';
+  const { stdout } = await execFileAsync(
+    'powershell.exe',
+    ['-NoProfile', '-NonInteractive', '-Command', command, String(pid)],
+    { encoding: 'utf-8', timeout: 3000, windowsHide: true }
+    
+  );
+  return stdout.trim();
+}
+
+function stopActiveLogWatch(): void {
+  if (activeLogPath) fs.unwatchFile(activeLogPath);
+  activeLogPath = '';
+}
+
+ipcMain.handle('inject:cancel', async (event) => {
+  assertTrustedIpcSender(event);
+  cancelInjectionFlag = true;
+
+  const pid = activeTargetPid;
+  if (pid > 0) {
+    await terminatePid(pid);
+    setTimeout(() => void terminatePid(pid, true), 2000);
+  }
 });
 
 ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult> => {
   try {
+    assertTrustedIpcSender(event);
+    const validId = validateGameId(id);
+
+    if (injectionInProgress) {
+      return { success: false, message: 'Another injection is already in progress.' };
+    }
+    injectionInProgress = true;
+
     const now = Date.now();
     const windowMs = 15 * 60 * 1000;
-    if (!injectRateLimits[id]) injectRateLimits[id] = [];
-    injectRateLimits[id] = injectRateLimits[id].filter(t => now - t < windowMs);
-    if (injectRateLimits[id].length >= 1000) {
+    injectRateLimits[validId] = (injectRateLimits[validId] || []).filter(t => now - t < windowMs);
+    if (injectRateLimits[validId].length >= 5) {
       return { success: false, message: 'Rate limit exceeded.' };
     }
-    injectRateLimits[id].push(now);
+    injectRateLimits[validId].push(now);
 
-    const validId = validateGameId(id);
-    const installPath = gamePathsMap[validId];
-    if (!installPath) return { success: false, message: 'Game path not found' };
-    
+    const registeredInstallPath = gamePathsMap[validId];
+    if (!registeredInstallPath) return { success: false, message: 'Game path not found' };
+    const installPath = canonicalExistingPath(registeredInstallPath, 'directory');
+
+    stopActiveLogWatch();
     const logPath = safeGamePath(installPath, 'vrinject.log');
     fs.writeFileSync(logPath, '');
+    activeLogPath = logPath;
     let lastSize = 0;
 
-    fs.watchFile(logPath, { interval: 500 }, (curr, prev) => {
-       if (curr.size > lastSize) {
-           try {
-             const fd = fs.openSync(logPath, 'r');
-             const buf = Buffer.alloc(curr.size - lastSize);
-             fs.readSync(fd, buf, 0, buf.length, lastSize);
-             fs.closeSync(fd);
-             const lines = buf.toString('utf-8').split('\n');
-             for (const l of lines) {
-                 if (l.trim()) event.sender.send('log:line', l.trim());
-             }
-             lastSize = curr.size;
-           } catch(e) {}
-       }
-     });
+    fs.watchFile(logPath, { interval: 500 }, (curr) => {
+      if (curr.size < lastSize) lastSize = 0;
+      if (curr.size <= lastSize) return;
+
+      try {
+        const fd = fs.openSync(logPath, 'r');
+        try {
+          const length = Math.min(curr.size - lastSize, 1024 * 1024);
+          const buf = Buffer.alloc(length);
+          const bytesRead = fs.readSync(fd, buf, 0, length, lastSize);
+          lastSize += bytesRead;
+          for (const line of buf.subarray(0, bytesRead).toString('utf-8').split('\n')) {
+            if (line.trim()) event.sender.send('log:line', line.trim().slice(0, 2000));
+          }
+        } finally {
+          fs.closeSync(fd);
+        }
+      } catch {
+        // The monitored process may rotate or temporarily lock the log.
+      }
+    });
 
     const binSourceDir = isDev ? path.join(__dirname, '../../../build/bin') : process.resourcesPath;
-    const cliSource = path.join(binSourceDir, 'vr-inject-cli.exe');
-    
-    const shadersSource = isDev ? path.join(__dirname, '../../../build/bin/shaders') : path.join(process.resourcesPath, 'shaders');
-    const modelsSource = isDev ? path.join(__dirname, '../../../build/bin/models') : path.join(process.resourcesPath, 'models');
-    
-    // Removed premature copy    
-    if (id.startsWith('custom_') && gameExeMap[id]) {
-       child_process.spawn(gameExeMap[id], [], { detached: true, cwd: installPath });
-    } else if (/^\d+$/.test(id)) {
-       shell.openExternal('steam://rungameid/' + id);
+    const canonicalBinSourceDir = canonicalExistingPath(binSourceDir, 'directory');
+    const cliSource = canonicalExistingPath(
+      resolveWithinRoot(canonicalBinSourceDir, 'vr-inject-cli.exe'),
+      'file'
+    );
+    const shadersSource = resolveWithinRoot(canonicalBinSourceDir, 'shaders');
+    const modelsSource = resolveWithinRoot(canonicalBinSourceDir, 'models');
+
+    if (validId.startsWith('custom_') && gameExeMap[validId]) {
+      const customExe = canonicalExistingPath(gameExeMap[validId], 'file');
+      if (path.dirname(customExe).toLowerCase() !== installPath.toLowerCase()) {
+        throw new Error('Custom executable is outside its registered install directory');
+      }
+      const child = child_process.spawn(customExe, [], {
+        detached: true,
+        cwd: installPath,
+        stdio: 'ignore',
+      });
+      child.unref();
+    } else if (/^\d+$/.test(validId)) {
+      await shell.openExternal(`steam://rungameid/${validId}`);
     } else {
-       shell.openExternal(`com.epicgames.launcher://apps/${id}?action=launch&silent=true`);
+      await shell.openExternal(
+        `com.epicgames.launcher://apps/${encodeURIComponent(validId)}?action=launch&silent=true`
+      );
     }
-    
+
     let targetExeName = '';
     let targetExeDir = installPath;
-    if (gameExeMap[id]) {
-       targetExeName = path.basename(gameExeMap[id]).toLowerCase();
-       targetExeDir = path.dirname(gameExeMap[id]);
+    const registeredExe = gameExeMap[validId];
+    if (registeredExe) {
+      const customExe = canonicalExistingPath(registeredExe, 'file');
+      targetExeName = path.basename(customExe).toLowerCase();
+      targetExeDir = path.dirname(customExe);
     } else {
-       let largestSize = 0;
-       const scan = (dir: string) => {
-         try {
-           const files = fs.readdirSync(dir);
-           for (const f of files) {
-             const fullPath = path.join(dir, f);
-             try {
-               const stats = fs.statSync(fullPath);
-               if (stats.isDirectory()) {
-                 scan(fullPath);
-               } else if (f.toLowerCase().endsWith('.exe')) {
-                 const lower = f.toLowerCase();
-                 if (lower.includes('launcher') || lower.includes('crashreporter') || lower.includes('crashhandler') || lower.includes('reporter') || lower.includes('anticheat') || lower.includes('eosbootstrapper') || lower.includes('start_protected_game')) {
-                    continue;
-                 }
-                 if (stats.size > largestSize) {
-                    largestSize = stats.size;
-                    targetExeName = f.toLowerCase();
-                    targetExeDir = dir;
-                 }
-               }
-             } catch(e) {}
-           }
-         } catch(e) {}
-       };
-       scan(installPath);
+      let largestSize = 0;
+      let visitedEntries = 0;
+
+      const scan = (dir: string, depth = 0) => {
+        if (depth > 8 || visitedEntries >= 20000) return;
+        try {
+          const entries = fs.readdirSync(dir, { withFileTypes: true });
+          for (const entry of entries) {
+            if (++visitedEntries >= 20000) break;
+            if (entry.isSymbolicLink()) continue;
+
+            const fullPath = resolveWithinRoot(
+              installPath,
+              path.relative(installPath, path.join(dir, entry.name))
+            );
+            try {
+              if (entry.isDirectory()) {
+                scan(fullPath, depth + 1);
+              } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.exe')) {
+                const lower = entry.name.toLowerCase();
+                if (
+                  lower.includes('launcher') ||
+                  lower.includes('crashreporter') ||
+                  lower.includes('crashhandler') ||
+                  lower.includes('reporter') ||
+                  lower.includes('anticheat') ||
+                  lower.includes('eosbootstrapper') ||
+                  lower.includes('start_protected_game')
+                ) {
+                  continue;
+                }
+                const size = fs.statSync(fullPath).size;
+                if (size > largestSize) {
+                  largestSize = size;
+                  targetExeName = lower;
+                  targetExeDir = dir;
+                }
+              }
+            } catch {
+              // Ignore inaccessible game subdirectories.
+            }
+          }
+        } catch {
+          // Ignore inaccessible game subdirectories.
+        }
+      };
+      scan(installPath);
     }
-    
+
     if (!targetExeName) {
-       fs.unwatchFile(logPath);
-       return { success: false, message: 'Could not determine main executable name' };
+      stopActiveLogWatch();
+      return { success: false, message: 'Could not determine main executable name' };
     }
 
     try {
       if (fs.existsSync(shadersSource)) {
-        fs.cpSync(shadersSource, path.join(targetExeDir, 'shaders'), { recursive: true, force: true });
+        fs.cpSync(shadersSource, resolveWithinRoot(targetExeDir, 'shaders'), {
+          recursive: true,
+          force: true,
+          dereference: false,
+        });
       }
       if (fs.existsSync(modelsSource)) {
-        fs.cpSync(modelsSource, path.join(targetExeDir, 'models'), { recursive: true, force: true });
+        fs.cpSync(modelsSource, resolveWithinRoot(targetExeDir, 'models'), {
+          recursive: true,
+          force: true,
+          dereference: false,
+        });
       }
-    } catch (e) {
-      console.error('Failed to copy shader/model assets to target directory:', e);
+    } catch (error) {
+      console.error('Failed to copy shader/model assets to target directory:', error);
     }
-    
+
     activeTargetExeName = targetExeName;
     activeTargetPid = 0;
-    activeGameId = id;
+    activeGameId = validId;
+    cancelInjectionFlag = false;
+
+    event.sender.send('log:line', `[Injector] Waiting up to 120s for: ${targetExeName}`);
 
     let targetPid = 0;
-    let attempts = 0;
-    cancelInjectionFlag = false;
-    
-    event.sender.send('log:line', '[Injector] Waiting up to 120s for: ' + targetExeName);
-    
-    while (attempts < 240) {
+    for (let attempts = 0; attempts < 240; attempts++) {
       if (cancelInjectionFlag) {
-         fs.unwatchFile(logPath);
-         return { success: false, cancelled: true, message: 'Cancelled by user.' };
+        stopActiveLogWatch();
+        return { success: false, cancelled: true, message: 'Cancelled by user.' };
       }
-      
-      await new Promise(r => setTimeout(r, 500));
-      attempts++;
-      
+
+      await new Promise(resolve => setTimeout(resolve, 500));
       try {
-        const { stdout: out } = await execAsync('tasklist /fo csv /nh', { encoding: 'utf-8', timeout: 2000, killSignal: 'SIGKILL' });
-        const lines = out.split('\n');
-        
-        let foundPid = 0;
-        let maxMem = 0;
-        
-        for (const line of lines) {
-           if (!line.trim()) continue;
-           const parts = line.split('","');
-           if (parts.length < 5) continue;
-           
-           const exeName = parts[0].replace(/"/g, '').toLowerCase();
-           const pid = parseInt(parts[1].replace(/"/g, ''), 10);
-           const memStr = parts[4].replace(/"/g, '').replace(/,/g, '').replace(' K', '');
-           const mem = parseInt(memStr, 10);
-           
-           const baseExeName = exeName.endsWith('.exe') ? exeName.slice(0, -4) : exeName;
-           if (exeName === targetExeName || targetExeName.startsWith(baseExeName)) {
-              if (mem > maxMem) {
-                 maxMem = mem;
-                 foundPid = pid;
-              }
-           }
+        const { stdout } = await execFileAsync(
+          'tasklist.exe',
+          ['/fi', `IMAGENAME eq ${targetExeName}`, '/fo', 'csv', '/nh'],
+          { encoding: 'utf-8', timeout: 2000, killSignal: 'SIGKILL', windowsHide: true }
+        );
+
+        const candidates: Array<{ pid: number; memory: number }> = [];
+        for (const line of stdout.split('\n')) {
+          if (!line.trim() || line.startsWith('INFO:')) continue;
+          const parts = line.split('","');
+          if (parts.length < 5) continue;
+          const exeName = parts[0].replace(/"/g, '').toLowerCase();
+          const pid = Number.parseInt(parts[1].replace(/"/g, ''), 10);
+          const memory = Number.parseInt(
+            parts[4].replace(/"/g, '').replace(/,/g, '').replace(/\s*K\s*$/i, ''),
+            10
+          );
+          if (exeName === targetExeName && Number.isSafeInteger(pid)) {
+            candidates.push({ pid, memory: Number.isFinite(memory) ? memory : 0 });
+          }
         }
-        
-        if (foundPid > 0) {
-           await new Promise(r => setTimeout(r, 2000));
-           const { stdout: out2 } = await execAsync(`tasklist /fi "PID eq ${foundPid}" /fo csv /nh`, { encoding: 'utf-8', timeout: 2000, killSignal: 'SIGKILL' });
-           if (out2.includes(String(foundPid))) {
-              targetPid = foundPid;
-              activeTargetPid = targetPid;
-              break;
-           }
+
+        candidates.sort((a, b) => b.memory - a.memory);
+        for (const candidate of candidates) {
+          const processPath = await getProcessPath(candidate.pid).catch(() => '');
+          if (
+            processPath &&
+            path.dirname(processPath).toLowerCase() === path.resolve(targetExeDir).toLowerCase()
+          ) {
+            targetPid = candidate.pid;
+            activeTargetPid = candidate.pid;
+            break;
+          }
         }
-      } catch (e) {}
+        if (targetPid > 0) break;
+      } catch {
+        // Process may not have started yet.
+      }
     }
-    
+
     if (!targetPid) {
-       fs.unwatchFile(logPath);
-       return { success: false, message: 'Game executable not found or closed immediately' };
+      stopActiveLogWatch();
+      return { success: false, message: 'Game executable not found or closed immediately' };
     }
 
-    return new Promise((resolve) => {
-       let isResolved = false;
-       const fallbackTimeout = setTimeout(() => {
-           if (!isResolved) {
-               isResolved = true;
-               fs.unwatchFile(logPath);
-               resolve({ success: false, message: 'Injector timed out or was blocked by Anti-Cheat. (UAC timeout?)' });
-           }
-       }, 60000);
+    const dllTarget = resolveWithinRoot(targetExeDir, 'vrinject.dll');
+    const escapePs = (str: string) => str.replace(/'/g, "''");
+    const innerScript =
+      `$env:NEXVR_AUTH_TOKEN = '${escapePs(process.env.NEXVR_AUTH_TOKEN || '')}'; ` +
+      `& '${escapePs(cliSource)}' --pid ${targetPid} --dll '${escapePs(dllTarget)}' ` +
+      `--copy-src '${escapePs(canonicalBinSourceDir)}' --copy-dst '${escapePs(targetExeDir)}' ` +
+      `*>&1 | Out-File -LiteralPath '${escapePs(logPath)}' -Append -Encoding utf8`;
+    const base64Inner = Buffer.from(innerScript, 'utf16le').toString('base64');
+    const outerScript =
+      `Start-Process powershell -Verb RunAs -Wait -WindowStyle Hidden ` +
+      `-ArgumentList "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", ` +
+      `"-EncodedCommand", "${base64Inner}"`;
+    const base64Outer = Buffer.from(outerScript, 'utf16le').toString('base64');
 
-       const dllTarget = path.join(targetExeDir, 'vrinject.dll');
-       const innerScript = `$env:NEXVR_AUTH_TOKEN="${process.env.NEXVR_AUTH_TOKEN}"; & "${cliSource}" --pid ${targetPid} --dll "${dllTarget}" --copy-src "${binSourceDir}" --copy-dst "${targetExeDir}" >> "${logPath}" 2>&1`;
-       const base64Inner = Buffer.from(innerScript, 'utf16le').toString('base64');
-       const outerScript = `Start-Process powershell -Verb RunAs -Wait -WindowStyle Hidden -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", "${base64Inner}"`;
-       const base64Outer = Buffer.from(outerScript, 'utf16le').toString('base64');
-       const psCmd = `powershell -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${base64Outer}`;
-       
-       child_process.exec(psCmd, { timeout: 60000, killSignal: 'SIGKILL', cwd: installPath }, (err, stdout, stderr) => {
-           if (isResolved) return;
-           isResolved = true;
-           clearTimeout(fallbackTimeout);
+    return await new Promise<InjectResult>((resolve) => {
+      let resolved = false;
+      const finish = (result: InjectResult) => {
+        if (resolved) return;
+        resolved = true;
+        clearTimeout(timeout);
+        if (!result.success) stopActiveLogWatch();
+        resolve(result);
+      };
 
-           if (err) {
-               fs.unwatchFile(logPath);
-               resolve({ success: false, message: `CLI failed: ${err.message}` });
-           } else {
-               resolve({ success: true, message: 'Deployed successfully', pid: targetPid });
-           }
-       });
+      const timeout = setTimeout(() => {
+        finish({
+          success: false,
+          message: 'Injector timed out or was blocked by Anti-Cheat. (UAC timeout?)',
+        });
+      }, 60000);
+
+      child_process.execFile(
+        'powershell.exe',
+        ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', base64Outer],
+        {
+          timeout: 60000,
+          killSignal: 'SIGKILL',
+          cwd: installPath,
+          windowsHide: true,
+          env: {
+            ...process.env,
+            NEXVR_AUTH_TOKEN: process.env.NEXVR_AUTH_TOKEN || '',
+            NEXVR_CLI: cliSource,
+            NEXVR_PID: String(targetPid),
+            NEXVR_DLL: dllTarget,
+            NEXVR_COPY_SRC: canonicalBinSourceDir,
+            NEXVR_COPY_DST: targetExeDir,
+            NEXVR_LOG: logPath,
+          },
+        },
+        (error) => {
+          if (error) {
+            finish({ success: false, message: `CLI failed: ${error.message}` });
+          } else {
+            finish({ success: true, message: 'Deployed successfully', pid: targetPid });
+          }
+        }
+      );
     });
-
-  } catch(e: any) {
-    return { success: false, message: e.message };
+  } catch (error: any) {
+    stopActiveLogWatch();
+    return { success: false, message: error?.message || String(error) };
+  } finally {
+    injectionInProgress = false;
   }
 });
 
-ipcMain.handle('inject:monitor', async (_, pid: number) => {
-    while (true) {
-        try {
-            const { stdout } = await execAsync(`tasklist /fi "PID eq ${pid}" /fo csv /nh`, { encoding: 'utf-8', timeout: 2000, killSignal: 'SIGKILL' });
-            if (!stdout.includes(String(pid))) {
-                break;
-            }
-        } catch (e) {
-            break;
-        }
-        await new Promise(resolve => setTimeout(resolve, 2000));
+ipcMain.handle('inject:monitor', async (event, pid: number) => {
+  assertTrustedIpcSender(event);
+  if (!Number.isSafeInteger(pid) || pid <= 0 || pid !== activeTargetPid) {
+    throw new Error('Invalid process monitor request');
+  }
+
+  // Max 43200 iterations (approx 24 hours at 2s per check)
+  for (let i = 0; i < 43200; i++) {
+    try {
+      const { stdout } = await execFileAsync(
+        'tasklist.exe',
+        ['/fi', `PID eq ${pid}`, '/fo', 'csv', '/nh'],
+        { encoding: 'utf-8', timeout: 2000, killSignal: 'SIGKILL', windowsHide: true }
+      );
+      if (!stdout.includes(`"${pid}"`)) break;
+    } catch {
+      break;
     }
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  }
+
+  stopActiveLogWatch();
+  activeTargetPid = 0;
+  activeTargetExeName = '';
+  activeGameId = '';
 });
