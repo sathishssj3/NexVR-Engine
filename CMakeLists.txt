@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.25)
 project(VRInject VERSION 0.1.0 LANGUAGES C CXX)
 
+set(CMAKE_POLICY_DEFAULT_CMP0169 OLD)
+set(CMAKE_POLICY_DEFAULT_CMP0148 OLD)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ---------------------------------------------------------------------------
@@ -9,6 +12,15 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Security & Hardening compile/link options
+if(MSVC)
+    add_compile_options(/GS /guard:cf)
+    add_link_options(/DYNAMICBASE /NXCOMPAT /GUARD:CF)
+else()
+    add_compile_options(-fstack-protector-strong -D_FORTIFY_SOURCE=2)
+    add_link_options(-Wl,-z,now -Wl,-z,relro)
+endif()
 
 # Force all build artifacts into a single bin/ directory so the injector
 # can locate vrinject.dll next to itself at runtime.
@@ -52,14 +64,14 @@ set(MINHOOK_SOURCES
 # ---------------------------------------------------------------------------
 # We download the pre-compiled ONNX Runtime DirectML release for Windows x64.
 # (URL is a placeholder for the actual GitHub release zip)
-FetchContent_Declare(
-    onnxruntime
-    URL https://github.com/microsoft/onnxruntime/releases/download/v1.16.3/onnxruntime-win-x64-1.16.3.zip
-)
-FetchContent_GetProperties(onnxruntime)
-if(NOT onnxruntime_POPULATED)
-    FetchContent_Populate(onnxruntime)
-endif()
+# FetchContent_Declare(
+#     onnxruntime
+#     URL https://github.com/microsoft/onnxruntime/releases/download/v1.16.3/onnxruntime-win-x64-1.16.3.zip
+# )
+# FetchContent_GetProperties(onnxruntime)
+# if(NOT onnxruntime_POPULATED)
+#     FetchContent_Populate(onnxruntime)
+# endif()
 set(ONNXRUNTIME_INCLUDE_DIR ${onnxruntime_SOURCE_DIR}/include)
 set(ONNXRUNTIME_LIB_DIR ${onnxruntime_SOURCE_DIR}/lib)
 
@@ -118,6 +130,8 @@ set(IMGUI_SOURCES
     ${imgui_SOURCE_DIR}/imgui_widgets.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_dx11.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
 )
 
 
@@ -140,7 +154,15 @@ if(NOT FXC_EXECUTABLE)
                     "Install the Windows SDK or set FXC_EXECUTABLE manually.")
 endif()
 
-find_program(DXC_EXECUTABLE dxc)
+find_program(DXC_EXECUTABLE dxc
+    HINTS
+        "$ENV{WindowsSdkDir}/bin/$ENV{WindowsSDKVersion}/x64"
+        "$ENV{WindowsSdkDir}/bin/x64"
+        "C:/Program Files (x86)/Windows Kits/10/bin/10.0.26100.0/x64"
+        "C:/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x64"
+        "C:/Program Files (x86)/Windows Kits/10/bin/10.0.22000.0/x64"
+        "C:/Program Files (x86)/Windows Kits/10/bin/10.0.19041.0/x64"
+)
 if(NOT DXC_EXECUTABLE)
     message(WARNING "dxc.exe not found. DX12 shaders will not be recompiled.")
 endif()
@@ -209,26 +231,26 @@ if(FXC_EXECUTABLE)
                 VERBATIM
             )
 
-            # set(SHADER_HDR_VK ${SHADER_OUTPUT_DIR}/${SHADER_NAME}_cs_vk.h)
-            # list(APPEND SHADER_OUTPUTS ${SHADER_HDR_VK})
+            # Vulkan SPIR-V shader compilation using glslc (from Vulkan SDK)
+            if (Vulkan_GLSLC_EXECUTABLE)
+                set(SHADER_HDR_VK ${SHADER_OUTPUT_DIR}/${SHADER_NAME}_cs_vk.h)
+                list(APPEND SHADER_OUTPUTS ${SHADER_HDR_VK})
 
-            # Vulkan SPIR-V shader compilation disabled because default Windows Kits dxc doesn't support it
-            # and we only need D3D11 for Stumble Guys.
-            # add_custom_command(
-            #     OUTPUT  ${SHADER_HDR_VK}
-            #     COMMAND ${DXC_EXECUTABLE}
-            #             -spirv
-            #             -T cs_6_0
-            #             -E CSMain
-            #             -O3
-            #             -fspv-target-env=vulkan1.1
-            #             -Fh ${SHADER_HDR_VK}
-            #             -Vn g_${SHADER_NAME}_VK
-            #             ${SHADER_SRC}
-            #     DEPENDS ${SHADER_SRC}
-            #     COMMENT "Compiling HLSL compute shader to SPIR-V: ${SHADER_NAME}.hlsl -> ${SHADER_NAME}_cs_vk.h"
-            #     VERBATIM
-            # )
+                add_custom_command(
+                    OUTPUT  ${SHADER_HDR_VK}
+                    COMMAND ${Vulkan_GLSLC_EXECUTABLE}
+                            -fshader-stage=compute
+                            -x hlsl
+                            -fentry-point=CSMain
+                            -O
+                            -mfmt=c
+                            -o ${SHADER_HDR_VK}
+                            ${SHADER_SRC}
+                    DEPENDS ${SHADER_SRC}
+                    COMMENT "Compiling HLSL compute shader to SPIR-V: ${SHADER_NAME}.hlsl -> ${SHADER_NAME}_cs_vk.h"
+                    VERBATIM
+                )
+            endif()
         endif()
     endforeach()
 endif()
@@ -291,6 +313,12 @@ add_library(vrinject SHARED
     src/core/matrix_classifier.cpp
     src/core/config_manager.h
     src/core/config_manager.cpp
+    src/core/overlay_manager.h
+    src/core/overlay_manager.cpp
+    src/rendering/imgui_dx12_integration.h
+    src/rendering/imgui_dx12_integration.cpp
+    src/core/engine_scanners/universal_scanner.h
+    src/core/engine_scanners/universal_scanner.cpp
     ${MINHOOK_SOURCES}
     ${IMGUI_SOURCES}
 )
@@ -319,14 +347,14 @@ endif()
 target_include_directories(vrinject PRIVATE 
     ${CMAKE_SOURCE_DIR}/src
     ${MINHOOK_INCLUDE_DIR}
-    ${ONNXRUNTIME_INCLUDE_DIR}
+    # ${ONNXRUNTIME_INCLUDE_DIR}
     ${OPENXR_INCLUDE_DIR}
     ${JSON_INCLUDE_DIR}
     ${IMGUI_INCLUDE_DIR}
     ${SHADER_OUTPUT_DIR}
 )
 
-target_link_directories(vrinject PRIVATE ${ONNXRUNTIME_LIB_DIR})
+# target_link_directories(vrinject PRIVATE ${ONNXRUNTIME_LIB_DIR})
 
 target_link_libraries(vrinject PRIVATE
     d3d11
@@ -334,18 +362,20 @@ target_link_libraries(vrinject PRIVATE
     dxgi
     d3dcompiler
     dxguid
-    onnxruntime
+    # onnxruntime
     openxr_loader
     xinput
     Vulkan::Vulkan
+    bcrypt
+    shell32
 )
 
 # Post-build step to copy onnxruntime.dll to output bin dir
-add_custom_command(TARGET vrinject POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    "${onnxruntime_SOURCE_DIR}/lib/onnxruntime.dll"
-    $<TARGET_FILE_DIR:vrinject>
-)
+# add_custom_command(TARGET vrinject POST_BUILD
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#     "${onnxruntime_SOURCE_DIR}/lib/onnxruntime.dll"
+#     $<TARGET_FILE_DIR:vrinject>
+# )
 
 # S1.1: Code-sign vrinject.dll
 if (DEFINED ENV{SIGN_CERT_PATH})
@@ -377,27 +407,7 @@ add_custom_command(TARGET vrinject POST_BUILD
 # Make sure shaders are compiled before the DLL is built.
 add_dependencies(vrinject compile_shaders)
 
-# ---------------------------------------------------------------------------
-# injector – standalone process injector tool
-# ---------------------------------------------------------------------------
-add_executable(injector tools/injector.cpp)
-set_target_properties(injector PROPERTIES LINK_FLAGS "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\"")
-target_link_libraries(injector PRIVATE
-    # No extra libs needed – the Win32 APIs we use are in kernel32 which is
-    # linked implicitly.
-)
 
-# S1.1: Code-sign injector.exe
-if (DEFINED ENV{SIGN_CERT_PATH})
-    add_custom_command(TARGET injector POST_BUILD
-      COMMAND signtool.exe sign
-        /f "$ENV{SIGN_CERT_PATH}"
-        /p "$ENV{SIGN_CERT_PASS}"
-        /tr http://timestamp.digicert.com
-        /td sha256 /fd sha256
-        "$<TARGET_FILE:injector>"
-      COMMENT "Signing injector.exe")
-endif()
 
 # ---------------------------------------------------------------------------
 # dummy_app - target app for testing injection
@@ -413,6 +423,7 @@ add_custom_target(generate_expected_hash DEPENDS "${CMAKE_BINARY_DIR}/expected_h
 add_dependencies(vr-inject-cli generate_expected_hash)
 set_target_properties(vr-inject-cli PROPERTIES LINK_FLAGS "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\" /SUBSYSTEM:CONSOLE")
 target_include_directories(vr-inject-cli PRIVATE ${CMAKE_BINARY_DIR})
+target_link_libraries(vr-inject-cli PRIVATE shlwapi bcrypt psapi)
 add_dependencies(vr-inject-cli vrinject)
 
 # S1.1: Code-sign vr-inject-cli.exe
@@ -441,3 +452,9 @@ target_link_libraries(test_app PRIVATE d3d11 dxgi user32)
 add_executable(test_xr src/test_xr.cpp)
 target_include_directories(test_xr PRIVATE ${OPENXR_INCLUDE_DIR})
 target_link_libraries(test_xr PRIVATE openxr_loader)
+
+# ---------------------------------------------------------------------------
+# vk_test_app - target app for testing Vulkan injection
+# ---------------------------------------------------------------------------
+add_executable(vk_test_app src/test_apps/vk_test_app.cpp)
+target_link_libraries(vk_test_app PRIVATE Vulkan::Vulkan)

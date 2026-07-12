@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron';
 import * as fs from 'fs';
 import { VRConfig } from '../src/types';
-import { gamePathsMap, validateGameId, validateConfig, safeGamePath } from './utils';
+import { assertTrustedIpcSender, gamePathsMap, validateGameId, validateConfig, safeGamePath } from './utils';
 
 const defaultVRConfig: VRConfig = {
   motionAimSensitivity: 1.0,
@@ -12,8 +12,9 @@ const defaultVRConfig: VRConfig = {
   autoInjectOnLaunch: true,
 };
 
-ipcMain.handle('config:read', async (_, id: string): Promise<VRConfig> => {
+ipcMain.handle('config:read', async (event, id: string): Promise<VRConfig> => {
   try {
+    assertTrustedIpcSender(event);
     const validId = validateGameId(id);
     const installPath = gamePathsMap[validId];
     if (!installPath) return defaultVRConfig;
@@ -21,7 +22,7 @@ ipcMain.handle('config:read', async (_, id: string): Promise<VRConfig> => {
     if (fs.existsSync(cfgPath)) {
       const content = fs.readFileSync(cfgPath, 'utf-8');
       const parsed = JSON.parse(content);
-      return { ...defaultVRConfig, ...parsed };
+      return validateConfig({ ...defaultVRConfig, ...parsed });
     }
     return defaultVRConfig;
   } catch (e) {
@@ -30,8 +31,9 @@ ipcMain.handle('config:read', async (_, id: string): Promise<VRConfig> => {
   }
 });
 
-ipcMain.handle('config:write', async (_, id: string, cfg: unknown) => {
+ipcMain.handle('config:write', async (event, id: string, cfg: unknown) => {
   try {
+    assertTrustedIpcSender(event);
     const cfgString = JSON.stringify(cfg);
     if (cfgString.length > 10240) throw new Error('Payload too large (max 10KB)');
     
@@ -40,7 +42,9 @@ ipcMain.handle('config:write', async (_, id: string, cfg: unknown) => {
     const installPath = gamePathsMap[validId];
     if (!installPath) return { success: false, error: 'Game path not found' };
     const cfgPath = safeGamePath(installPath, 'vrinject.json');
-    fs.writeFileSync(cfgPath, JSON.stringify(validCfg, null, 2));
+    const tempPath = safeGamePath(installPath, `vrinject.${process.pid}.tmp`);
+    fs.writeFileSync(tempPath, JSON.stringify(validCfg, null, 2), { flag: 'wx' });
+    fs.renameSync(tempPath, cfgPath);
     fs.chmodSync(cfgPath, 0o600); // S6.3: Owner rw only
     return { success: true };
   } catch (e: any) {

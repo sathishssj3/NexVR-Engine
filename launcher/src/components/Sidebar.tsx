@@ -55,7 +55,7 @@ export function Sidebar({ games, waitingGames = [], selectedId, onSelect, onResc
             fontSize: 10, fontFamily: 'var(--ag-font-mono)', color: 'var(--ag-text-muted)', 
             letterSpacing: '1px', opacity: 0.6 
           }}>
-            {search ? `${filtered.length} FOUND` : `${games.length} GAMES`}
+            {search ? `${filtered.length} FOUND` : ''}
           </span>
           {search && (
             <button 

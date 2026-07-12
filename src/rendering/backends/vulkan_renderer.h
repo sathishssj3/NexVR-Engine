@@ -23,8 +23,13 @@ public:
     void DestroyShader(ShaderHandle& handle) override;
 
     void DispatchCompute(ShaderHandle shader,
-                         TextureHandle input, TextureHandle output,
+                         const TextureHandle* inputs, uint32_t numInputs,
+                         const TextureHandle* outputs, uint32_t numOutputs,
+                         const void* constantsData, size_t constantsSize,
                          uint32_t groupsX, uint32_t groupsY) override;
+
+    void ClearUAVUint(TextureHandle texture, const uint32_t values[4]) override;
+    void CopyTexture(TextureHandle dst, TextureHandle src) override;
 
     void CopyToSwapchain(TextureHandle source,
                          void* swapchainTexture) override;
@@ -39,18 +44,23 @@ public:
     void SetVulkanContext(VkInstance instance, VkPhysicalDevice physDevice) {
         m_instance = instance;
         m_physicalDevice = physDevice;
+        vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &m_memoryProperties);
     }
 
 private:
-    VkInstance       m_instance       = VK_NULL_HANDLE;
-    VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
-    VkDevice         m_device         = VK_NULL_HANDLE;
-    VkQueue          m_queue          = VK_NULL_HANDLE;
-    uint32_t         m_queueFamilyIndex = 0;
+    VkInstance                    m_instance       = VK_NULL_HANDLE;
+    VkPhysicalDevice              m_physicalDevice = VK_NULL_HANDLE;
+    VkDevice                      m_device         = VK_NULL_HANDLE;
+    VkQueue                       m_queue          = VK_NULL_HANDLE;
+    uint32_t                      m_queueFamilyIndex = 0;
+    VkPhysicalDeviceMemoryProperties m_memoryProperties = {};
 
     VkCommandPool    m_cmdPool        = VK_NULL_HANDLE;
     VkCommandBuffer  m_cmdBuffer      = VK_NULL_HANDLE;
     VkDescriptorPool m_descPool       = VK_NULL_HANDLE;
+
+    // Helper to find a suitable memory type index
+    uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
 };
 
 } // namespace vrinject

@@ -9,470 +9,187 @@
 
 namespace vrinject {
 
-bool StereoPipeline::Initialize(ID3D11Device* device, UINT width, UINT height, const std::string& moduleDir) {
+// Include DX11 Shaders
+#include "stereo_warp_cs_dx11.h"
+#include "stereo_resolve_cs_dx11.h"
+#include "disocclusion_fill_cs_dx11.h"
+#include "bilateral_blur_cs_dx11.h"
+#include "bilateral_blend_cs_dx11.h"
+
+// Include DX12 Shaders
+#include "stereo_warp_cs_dx12.h"
+#include "stereo_resolve_cs_dx12.h"
+#include "disocclusion_fill_cs_dx12.h"
+#include "bilateral_blur_cs_dx12.h"
+#include "bilateral_blend_cs_dx12.h"
+
+// Include Vulkan SPIR-V Shaders
+const uint32_t g_stereo_warp_VK[] = 
+#include "stereo_warp_cs_vk.h"
+;
+const uint32_t g_stereo_resolve_VK[] = 
+#include "stereo_resolve_cs_vk.h"
+;
+const uint32_t g_disocclusion_fill_VK[] = 
+#include "disocclusion_fill_cs_vk.h"
+;
+const uint32_t g_bilateral_blur_VK[] = 
+#include "bilateral_blur_cs_vk.h"
+;
+const uint32_t g_bilateral_blend_VK[] = 
+#include "bilateral_blend_cs_vk.h"
+;
+
+bool StereoPipeline::Initialize(IRenderer* renderer, UINT width, UINT height, const std::string& moduleDir) {
+    m_renderer = renderer;
     m_width = width;
     m_height = height;
 
-    std::string shaderDir = moduleDir + "\\shaders";
-    std::string modelDir = moduleDir + "\\models";
 
-    if (!LoadShader(device, shaderDir + "\\stereo_warp.hlsl", &m_warpCS)) return false;
-    if (!LoadShader(device, shaderDir + "\\stereo_resolve.hlsl", &m_resolveCS)) return false;
-    if (!LoadShader(device, shaderDir + "\\disocclusion_fill.hlsl", &m_fillCS)) return false;
-    if (!LoadShader(device, shaderDir + "\\bilateral_blur.hlsl", &m_blurCS)) return false;
-    if (!LoadShader(device, shaderDir + "\\bilateral_blend.hlsl", &m_blendCS)) return false;
 
-    if (FAILED(device->CreateDeferredContext(0, &m_deferredContext))) {
-        LOG_ERROR("Failed to create deferred context");
-        return false;
-    }
+    if (!LoadShader("stereo_warp", m_warpCS)) return false;
+    if (!LoadShader("stereo_resolve", m_resolveCS)) return false;
+    if (!LoadShader("disocclusion_fill", m_fillCS)) return false;
+    if (!LoadShader("bilateral_blur", m_blurCS)) return false;
+    if (!LoadShader("bilateral_blend", m_blendCS)) return false;
 
-    if (!CreateResources(device, width, height)) return false;
+    if (!CreateResources(width, height)) return false;
 
-    if (!m_openxrManager.Initialize(GraphicsAPI::DX11, device, nullptr, width, height)) {
-        LOG_WARN("Failed to initialize OpenXRManager (No VR headset?). Falling back to 2D Side-By-Side monitor display.");
-    }
+    // TODO: OpenXRManager needs to know the native device to initialize properly.
+    // For now we will defer OpenXR init to the hook caller (e.g. DX11Hook) OR
+    // we can pass native device/context into OpenXRManager via the hooks directly.
+    // Since this is decoupled, we just let the hook initialize OpenXRManager and set renderer!
 
-    // Compile side-by-side VS/PS at runtime
-    const char* vsCode = R"(
-        struct VSOut { float4 pos : SV_Position; float2 tex : TEXCOORD0; };
-        VSOut main(uint id : SV_VertexID) {
-            VSOut output;
-            output.tex = float2((id << 1) & 2, id & 2);
-            output.pos = float4(output.tex * float2(2, -2) + float2(-1, 1), 0, 1);
-            return output;
-        }
-    )";
-    const char* psCode = R"(
-        Texture2D LeftTex : register(t0);
-        Texture2D RightTex : register(t1);
-        SamplerState smp : register(s0);
-        float4 main(float4 pos : SV_Position, float2 tex : TEXCOORD0) : SV_Target {
-            if (tex.x < 0.5) return LeftTex.Sample(smp, float2(tex.x * 2.0, tex.y));
-            else return RightTex.Sample(smp, float2((tex.x - 0.5) * 2.0, tex.y));
-        }
-    )";
+    // We no longer compile side-by-side PS/VS here. It will be handled 
+    // by the platform hooks if they need legacy side-by-side rendering.
 
-    Microsoft::WRL::ComPtr<ID3DBlob> vsBlob, psBlob, errBlob;
-    HRESULT hrVS = D3DCompile(vsCode, strlen(vsCode), nullptr, nullptr, nullptr, "main", "vs_5_0", 0, 0, &vsBlob, &errBlob);
-    if (FAILED(hrVS) || !vsBlob) {
-        LOG_ERROR("VS Compile Failed: %s", errBlob ? (char*)errBlob->GetBufferPointer() : "Unknown error");
-        return false;
-    }
-    
-    HRESULT hrPS = D3DCompile(psCode, strlen(psCode), nullptr, nullptr, nullptr, "main", "ps_5_0", 0, 0, &psBlob, &errBlob);
-    if (FAILED(hrPS) || !psBlob) {
-        LOG_ERROR("PS Compile Failed: %s", errBlob ? (char*)errBlob->GetBufferPointer() : "Unknown error");
-        return false;
-    }
-
-    device->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &m_fullscreenVS);
-    device->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &m_fullscreenPS);
-
-    if (!m_comfortGuard.Initialize(device, shaderDir)) {
-        LOG_ERROR("Failed to initialize ComfortGuard");
-        return false;
-    }
-
-    // Initialize Neural Inpainter with explicit model path
-    if (!m_neuralInpainter.Initialize(device, modelDir + "\\inpainter_fp16.onnx", width, height)) {
-        LOG_ERROR("Failed to initialize NeuralInpainter");
-        // We don't return false here to allow the game to still run with fallback shaders if ORT fails
-    }
+    // We no longer initialize ComfortGuard/NeuralInpainter in StereoPipeline directly
+    // since they still depend on D3D11. They will be integrated universally in a future task.
 
     return true;
 }
 
-bool StereoPipeline::LoadShader(ID3D11Device* device, const std::string& path, ID3D11ComputeShader** outCS) {
-    std::wstring wPath(path.begin(), path.end());
-    Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob, errBlob;
-    
-    // Check if it's a precompiled .cso file
-    if (path.find(".cso") != std::string::npos) {
-        FILE* file = nullptr;
-        fopen_s(&file, path.c_str(), "rb");
-        if (!file) return false;
-        fseek(file, 0, SEEK_END);
-        size_t size = ftell(file);
-        fseek(file, 0, SEEK_SET);
-        std::vector<char> buffer(size);
-        fread(buffer.data(), 1, size, file);
-        fclose(file);
-        return SUCCEEDED(device->CreateComputeShader(buffer.data(), size, nullptr, outCS));
+bool StereoPipeline::LoadShader(const std::string& name, ShaderHandle& outHandle) {
+    if (!m_renderer) return false;
+
+    const uint8_t* bytecode = nullptr;
+    size_t size = 0;
+
+    if (m_renderer->GetAPI() == GraphicsAPI::DX11) {
+        if (name == "stereo_warp") { bytecode = g_stereo_warp_DX11; size = sizeof(g_stereo_warp_DX11); }
+        else if (name == "stereo_resolve") { bytecode = g_stereo_resolve_DX11; size = sizeof(g_stereo_resolve_DX11); }
+        else if (name == "disocclusion_fill") { bytecode = g_disocclusion_fill_DX11; size = sizeof(g_disocclusion_fill_DX11); }
+        else if (name == "bilateral_blur") { bytecode = g_bilateral_blur_DX11; size = sizeof(g_bilateral_blur_DX11); }
+        else if (name == "bilateral_blend") { bytecode = g_bilateral_blend_DX11; size = sizeof(g_bilateral_blend_DX11); }
+    } else if (m_renderer->GetAPI() == GraphicsAPI::DX12) {
+        if (name == "stereo_warp") { bytecode = g_stereo_warp_DX12; size = sizeof(g_stereo_warp_DX12); }
+        else if (name == "stereo_resolve") { bytecode = g_stereo_resolve_DX12; size = sizeof(g_stereo_resolve_DX12); }
+        else if (name == "disocclusion_fill") { bytecode = g_disocclusion_fill_DX12; size = sizeof(g_disocclusion_fill_DX12); }
+        else if (name == "bilateral_blur") { bytecode = g_bilateral_blur_DX12; size = sizeof(g_bilateral_blur_DX12); }
+        else if (name == "bilateral_blend") { bytecode = g_bilateral_blend_DX12; size = sizeof(g_bilateral_blend_DX12); }
+    } else if (m_renderer->GetAPI() == GraphicsAPI::VULKAN) {
+        if (name == "stereo_warp") { bytecode = (const uint8_t*)g_stereo_warp_VK; size = sizeof(g_stereo_warp_VK); }
+        else if (name == "stereo_resolve") { bytecode = (const uint8_t*)g_stereo_resolve_VK; size = sizeof(g_stereo_resolve_VK); }
+        else if (name == "disocclusion_fill") { bytecode = (const uint8_t*)g_disocclusion_fill_VK; size = sizeof(g_disocclusion_fill_VK); }
+        else if (name == "bilateral_blur") { bytecode = (const uint8_t*)g_bilateral_blur_VK; size = sizeof(g_bilateral_blur_VK); }
+        else if (name == "bilateral_blend") { bytecode = (const uint8_t*)g_bilateral_blend_VK; size = sizeof(g_bilateral_blend_VK); }
     }
 
-    // Compile from .hlsl source at runtime
-    HRESULT hr = D3DCompileFromFile(wPath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "CSMain", "cs_5_0", D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &shaderBlob, &errBlob);
-    if (FAILED(hr) || !shaderBlob) {
-        LOG_ERROR("Failed to compile shader %s: %s", path.c_str(), errBlob ? (char*)errBlob->GetBufferPointer() : "Unknown error");
+    if (bytecode == nullptr || size == 0) {
+        LOG_ERROR("Shader %s not found for current API", name.c_str());
         return false;
     }
-    return SUCCEEDED(device->CreateComputeShader(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), nullptr, outCS));
+
+    outHandle = m_renderer->LoadComputeShader(bytecode, size);
+    return (outHandle.shaderBytecode != nullptr || outHandle.pipelineState != nullptr);
 }
+// LoadShader handles compilation to IRenderer
 
-bool StereoPipeline::CreateResources(ID3D11Device* device, UINT width, UINT height) {
-    D3D11_TEXTURE2D_DESC texDesc = {};
-    texDesc.Width = width;
-    texDesc.Height = height;
-    texDesc.MipLevels = 1;
-    texDesc.ArraySize = 1;
-    texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    texDesc.SampleDesc.Count = 1;
-    texDesc.Usage = D3D11_USAGE_DEFAULT;
-    texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+bool StereoPipeline::CreateResources(UINT width, UINT height) {
+    if (!m_renderer) return false;
 
-    if (FAILED(device->CreateTexture2D(&texDesc, nullptr, &m_rightEyeTex))) return false;
-    device->CreateShaderResourceView(m_rightEyeTex.Get(), nullptr, &m_rightEyeSRV);
-    device->CreateUnorderedAccessView(m_rightEyeTex.Get(), nullptr, &m_rightEyeUAV);
+    // We assume the game format is an 8-bit or 10-bit UNORM (e.g. DXGI_FORMAT_R8G8B8A8_UNORM / VK_FORMAT_R8G8B8A8_UNORM)
+    // IRenderer maps this parameter directly to the native format integer.
+    // For universal injection, we pass 28 which maps to DXGI_FORMAT_R8G8B8A8_UNORM 
+    // and VK_FORMAT_R8G8B8A8_UNORM (actually Vulkan's is 37, but the renderer wrappers can map it).
+    // For now we'll pass 28.
+    uint32_t colorFmt = 28; // DXGI_FORMAT_R8G8B8A8_UNORM
+    if (m_renderer->GetAPI() == GraphicsAPI::VULKAN) {
+        colorFmt = 37; // VK_FORMAT_R8G8B8A8_UNORM
+    }
 
-    if (FAILED(device->CreateTexture2D(&texDesc, nullptr, &m_blurTempTex))) return false;
-    device->CreateShaderResourceView(m_blurTempTex.Get(), nullptr, &m_blurTempSRV);
-    device->CreateUnorderedAccessView(m_blurTempTex.Get(), nullptr, &m_blurTempUAV);
+    m_rightEyeTex = m_renderer->CreateTexture(width, height, colorFmt, true);
+    if (!m_rightEyeTex.nativePtr) return false;
 
-    texDesc.Format = DXGI_FORMAT_R32_UINT;
-    if (FAILED(device->CreateTexture2D(&texDesc, nullptr, &m_warpBufferTex))) return false;
-    device->CreateShaderResourceView(m_warpBufferTex.Get(), nullptr, &m_warpBufferSRV);
-    device->CreateUnorderedAccessView(m_warpBufferTex.Get(), nullptr, &m_warpBufferUAV);
+    m_blurTempTex = m_renderer->CreateTexture(width, height, colorFmt, true);
+    if (!m_blurTempTex.nativePtr) return false;
 
-    D3D11_BUFFER_DESC cbDesc = {};
-    cbDesc.ByteWidth = (sizeof(StereoParams) + 255) & ~255; // Aligned to 256 for DX12 compatibility
-    cbDesc.Usage = D3D11_USAGE_DYNAMIC;
-    cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    if (FAILED(device->CreateBuffer(&cbDesc, nullptr, &m_paramsCB))) return false;
+    m_leftEyeTex = m_renderer->CreateTexture(width, height, colorFmt, true);
+    if (!m_leftEyeTex.nativePtr) return false;
 
-    D3D11_SAMPLER_DESC sampDesc = {};
-    sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-    sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-    sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-    sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-    sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-    sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-    if (FAILED(device->CreateSamplerState(&sampDesc, &m_sampler))) return false;
+    uint32_t depthFmt = 43; // DXGI_FORMAT_R32_UINT
+    if (m_renderer->GetAPI() == GraphicsAPI::VULKAN) {
+        depthFmt = 98; // VK_FORMAT_R32_UINT
+    }
 
-    D3D11_QUERY_DESC queryDesc = {};
-    queryDesc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
-    if (FAILED(device->CreateQuery(&queryDesc, &m_disjointQuery))) return false;
+    m_warpBufferTex = m_renderer->CreateTexture(width, height, depthFmt, true);
+    if (!m_warpBufferTex.nativePtr) return false;
 
-    queryDesc.Query = D3D11_QUERY_TIMESTAMP;
-    if (FAILED(device->CreateQuery(&queryDesc, &m_startQuery))) return false;
-    if (FAILED(device->CreateQuery(&queryDesc, &m_warpEndQuery))) return false;
-    if (FAILED(device->CreateQuery(&queryDesc, &m_resolveEndQuery))) return false;
-    if (FAILED(device->CreateQuery(&queryDesc, &m_fillEndQuery))) return false;
-    if (FAILED(device->CreateQuery(&queryDesc, &m_blurEndQuery))) return false;
+    // Profiling queries and samplers are omitted in the universal framework MVP
+    // They will be re-added via IRenderer extension later if needed.
 
     return true;
 }
 
-void StereoPipeline::Render(ID3D11DeviceContext* deferredCtx, ID3D11DeviceContext* immediateCtx, ID3D11ShaderResourceView* colorSRV, ID3D11ShaderResourceView* depthSRV, StereoParams& params, float deltaTime) {
-    m_leftEyeSRV = colorSRV;
+void StereoPipeline::RenderComputeOnly(TextureHandle colorSRV, TextureHandle depthSRV, const StereoParams& params) {
+    if (!m_renderer) return;
 
-    XrFrameState frameState = {XR_TYPE_FRAME_STATE};
-    bool openxrActive = m_openxrManager.BeginFrame(frameState);
+    m_leftEyeTex = colorSRV;
 
-    auto& cfg = ConfigManager::GetInstance().GetConfig();
-    params.ipd = cfg.ipd;
-    params.convergence = cfg.convergence;
+    uint32_t clearValue[4] = {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
+    LOG_INFO("RenderComputeOnly: ClearUAVUint");
+    m_renderer->ClearUAVUint(m_warpBufferTex, clearValue);
 
-    // ComfortGuard Dynamic Convergence & Depth Control
-    if (depthSRV) {
-        m_comfortGuard.SetBaseParams(params.convergence, params.depthStrength);
-        
-        float dynamicConvergence = params.convergence;
-        float dynamicDepthStrength = params.depthStrength;
-        m_comfortGuard.UpdateParameters(immediateCtx, deltaTime, dynamicConvergence, dynamicDepthStrength);
-        
-        params.convergence = dynamicConvergence;
-        params.depthStrength = dynamicDepthStrength;
-    }
+    LOG_INFO("RenderComputeOnly: Warp Pass");
+    TextureHandle warpInputs[] = { colorSRV, depthSRV };
+    TextureHandle warpOutputs[] = { m_warpBufferTex };
+    m_renderer->DispatchCompute(m_warpCS, warpInputs, 2, warpOutputs, 1, &params, sizeof(StereoParams), (m_width + 7) / 8, (m_height + 7) / 8);
 
-    D3D11_MAPPED_SUBRESOURCE mapped;
-    if (m_paramsCB && SUCCEEDED(deferredCtx->Map(m_paramsCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
-        memcpy(mapped.pData, &params, sizeof(StereoParams));
-        deferredCtx->Unmap(m_paramsCB.Get(), 0);
-    }
+    LOG_INFO("RenderComputeOnly: Resolve Pass");
+    TextureHandle resolveInputs[] = { colorSRV, m_warpBufferTex };
+    TextureHandle resolveOutputs[] = { m_rightEyeTex };
+    m_renderer->DispatchCompute(m_resolveCS, resolveInputs, 2, resolveOutputs, 1, &params, sizeof(StereoParams), (m_width + 7) / 8, (m_height + 7) / 8);
 
-    // Schedule next frame's asynchronous depth analysis on the GPU
-    if (depthSRV) {
-        m_comfortGuard.AnalyzeDepth(deferredCtx, depthSRV, m_paramsCB.Get(), m_width, m_height);
-    }
+    LOG_INFO("RenderComputeOnly: Fill Pass");
+    TextureHandle fillOutputs[] = { m_rightEyeTex };
+    m_renderer->DispatchCompute(m_fillCS, nullptr, 0, fillOutputs, 1, &params, sizeof(StereoParams), (m_width + 15) / 16, (m_height + 15) / 16);
 
-    UINT clearValue[4] = {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
-    deferredCtx->ClearUnorderedAccessViewUint(m_warpBufferUAV.Get(), clearValue);
+    LOG_INFO("RenderComputeOnly: Blur Pass");
+    TextureHandle blurInputs[] = { m_rightEyeTex };
+    TextureHandle blurOutputs[] = { m_blurTempTex };
+    m_renderer->DispatchCompute(m_blurCS, blurInputs, 1, blurOutputs, 1, &params, sizeof(StereoParams), (m_width + 15) / 16, (m_height + 15) / 16);
 
-    ID3D11Buffer* cbs[] = { m_paramsCB.Get() };
-    deferredCtx->CSSetConstantBuffers(0, 1, cbs);
-
-    if (m_disjointQuery) deferredCtx->Begin(m_disjointQuery.Get());
-    if (m_startQuery) deferredCtx->End(m_startQuery.Get());
-
-    // Warp Pass
-    ID3D11ShaderResourceView* srvs[] = { colorSRV, depthSRV };
-    deferredCtx->CSSetShaderResources(0, 2, srvs);
-    ID3D11UnorderedAccessView* uavs[] = { m_warpBufferUAV.Get() };
-    deferredCtx->CSSetUnorderedAccessViews(0, 1, uavs, nullptr);
-    deferredCtx->CSSetShader(m_warpCS.Get(), nullptr, 0);
-    deferredCtx->Dispatch((m_width + 7) / 8, (m_height + 7) / 8, 1);
-
-    if (m_warpEndQuery) deferredCtx->End(m_warpEndQuery.Get());
-
-    // Unbind resources
-    ID3D11ShaderResourceView* nullSRVs[2] = { nullptr, nullptr };
-    deferredCtx->CSSetShaderResources(0, 2, nullSRVs);
-    ID3D11UnorderedAccessView* nullUAVs[1] = { nullptr };
-    deferredCtx->CSSetUnorderedAccessViews(0, 1, nullUAVs, nullptr);
-
-    // Resolve Pass
-    srvs[0] = colorSRV;
-    srvs[1] = m_warpBufferSRV.Get();
-    deferredCtx->CSSetShaderResources(0, 2, srvs);
-    uavs[0] = m_rightEyeUAV.Get();
-    deferredCtx->CSSetUnorderedAccessViews(0, 1, uavs, nullptr);
-    deferredCtx->CSSetShader(m_resolveCS.Get(), nullptr, 0);
-    deferredCtx->Dispatch((m_width + 7) / 8, (m_height + 7) / 8, 1);
-
-    if (m_resolveEndQuery) deferredCtx->End(m_resolveEndQuery.Get());
-
-    deferredCtx->CSSetShaderResources(0, 2, nullSRVs);
-    deferredCtx->CSSetUnorderedAccessViews(0, 1, nullUAVs, nullptr);
-
-    // Neural Inpainting Pass (FP16 ONNX DirectML)
-    ID3D11ShaderResourceView* lowResInpaintSRV = nullptr;
-    if (cfg.enableNeuralInpainter) {
-        lowResInpaintSRV = m_neuralInpainter.Inpaint(deferredCtx, m_rightEyeSRV.Get(), depthSRV);
-    }
-
-    if (lowResInpaintSRV && m_blendCS) {
-        // Bilateral Blend Pass
-        ID3D11ShaderResourceView* blendSRVs[] = { m_rightEyeSRV.Get(), lowResInpaintSRV };
-        deferredCtx->CSSetShaderResources(0, 2, blendSRVs);
-        
-        uavs[0] = m_blurTempUAV.Get();
-        deferredCtx->CSSetUnorderedAccessViews(0, 1, uavs, nullptr);
-        
-        deferredCtx->CSSetShader(m_blendCS.Get(), nullptr, 0);
-        deferredCtx->Dispatch((m_width + 15) / 16, (m_height + 15) / 16, 1);
-        
-        deferredCtx->CSSetShaderResources(0, 2, nullSRVs);
-        deferredCtx->CSSetUnorderedAccessViews(0, 1, nullUAVs, nullptr);
-        deferredCtx->CopyResource(m_rightEyeTex.Get(), m_blurTempTex.Get());
-        
-        if (m_blurEndQuery) deferredCtx->End(m_blurEndQuery.Get());
-    } else {
-        // Fallback to Legacy Shaders
-        uavs[0] = m_rightEyeUAV.Get();
-        deferredCtx->CSSetUnorderedAccessViews(0, 1, uavs, nullptr);
-        deferredCtx->CSSetShader(m_fillCS.Get(), nullptr, 0);
-        deferredCtx->Dispatch((m_width + 15) / 16, (m_height + 15) / 16, 1);
-
-        if (m_fillEndQuery) deferredCtx->End(m_fillEndQuery.Get());
-        deferredCtx->CSSetUnorderedAccessViews(0, 1, nullUAVs, nullptr);
-        
-        srvs[0] = m_rightEyeSRV.Get();
-        deferredCtx->CSSetShaderResources(0, 1, srvs);
-        uavs[0] = m_blurTempUAV.Get();
-        deferredCtx->CSSetUnorderedAccessViews(0, 1, uavs, nullptr);
-        deferredCtx->CSSetShader(m_blurCS.Get(), nullptr, 0);
-        deferredCtx->Dispatch((m_width + 15) / 16, (m_height + 15) / 16, 1);
-        
-        deferredCtx->CSSetShaderResources(0, 2, nullSRVs);
-        deferredCtx->CSSetUnorderedAccessViews(0, 1, nullUAVs, nullptr);
-        deferredCtx->CopyResource(m_rightEyeTex.Get(), m_blurTempTex.Get());
-        
-        if (m_blurEndQuery) deferredCtx->End(m_blurEndQuery.Get());
-    }
-
-    if (m_disjointQuery) deferredCtx->End(m_disjointQuery.Get());
-
-    // Execute commands and perfectly restore game's state!
-    Microsoft::WRL::ComPtr<ID3D11CommandList> cmdList;
-    if (SUCCEEDED(deferredCtx->FinishCommandList(FALSE, &cmdList))) {
-        immediateCtx->ExecuteCommandList(cmdList.Get(), TRUE); // TRUE = Restore Context State
-        
-        // --- DRAW FAKE VR CURSOR ---
-        if (InputHook::GetInstance().IsCaptureActive()) {
-            int cx = InputHook::GetInstance().GetVirtualCursorX();
-            int cy = InputHook::GetInstance().GetVirtualCursorY();
-            
-            D3D11_BOX box;
-            box.left = (std::max)(0, cx - 3);
-            box.right = (std::min)((int)m_width, cx + 3);
-            box.top = (std::max)(0, cy - 3);
-            box.bottom = (std::min)((int)m_height, cy + 3);
-            box.front = 0;
-            box.back = 1;
-            
-            if (box.right > box.left && box.bottom > box.top) {
-                // RGBA8 red (depends on DXGI format, usually R8G8B8A8 so 0xFF0000FF = A:255, B:0, G:0, R:255)
-                uint32_t cursorPixels[8 * 8];
-                for (int i=0; i<64; i++) cursorPixels[i] = 0xFF0000FF; 
-                
-                // Draw cursor directly onto both eyes so it appears in stereo VR!
-                immediateCtx->UpdateSubresource(m_leftEyeTex.Get(), 0, &box, cursorPixels, (box.right - box.left) * 4, 0);
-                immediateCtx->UpdateSubresource(m_rightEyeTex.Get(), 0, &box, cursorPixels, (box.right - box.left) * 4, 0);
-            }
-        }
-        // ---------------------------
-        
-        // Profiling is finished. Active and stall-free!
-        ReadAndLogProfiling(immediateCtx);
-    }
-
-    if (openxrActive) {
-        Microsoft::WRL::ComPtr<ID3D11Resource> leftEyeRes;
-        if (m_leftEyeSRV) m_leftEyeSRV->GetResource(&leftEyeRes);
-        
-        Microsoft::WRL::ComPtr<ID3D11Texture2D> leftEyeTex;
-        if (leftEyeRes) leftEyeRes.As(&leftEyeTex);
-
-        TextureHandle leftHandle = {};
-        leftHandle.nativePtr = leftEyeTex.Get();
-        TextureHandle rightHandle = {};
-        rightHandle.nativePtr = m_rightEyeTex.Get();
-
-        TextureHandle depthHandle = {};
-        Microsoft::WRL::ComPtr<ID3D11Resource> depthRes;
-        if (depthSRV) {
-            depthSRV->GetResource(&depthRes);
-            depthHandle.nativePtr = depthRes.Get();
-        }
-
-        m_openxrManager.EndFrame(frameState, leftHandle, rightHandle, depthHandle, &params);
-    }
+    LOG_INFO("RenderComputeOnly: CopyTexture");
+    m_renderer->CopyTexture(m_rightEyeTex, m_blurTempTex);
+    LOG_INFO("RenderComputeOnly: Done");
 }
-
-void StereoPipeline::RenderComputeOnly(ID3D11DeviceContext* ctx, ID3D11ShaderResourceView* colorSRV, ID3D11ShaderResourceView* depthSRV, const StereoParams& params) {
-    m_leftEyeSRV = colorSRV;
-
-    D3D11_MAPPED_SUBRESOURCE mapped;
-    if (m_paramsCB && SUCCEEDED(ctx->Map(m_paramsCB.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
-        memcpy(mapped.pData, &params, sizeof(StereoParams));
-        ctx->Unmap(m_paramsCB.Get(), 0);
-    }
-
-    UINT clearValue[4] = {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
-    ctx->ClearUnorderedAccessViewUint(m_warpBufferUAV.Get(), clearValue);
-
-    ID3D11Buffer* cbs[] = { m_paramsCB.Get() };
-    ctx->CSSetConstantBuffers(0, 1, cbs);
-
-    // Warp Pass
-    ID3D11ShaderResourceView* srvs[] = { colorSRV, depthSRV };
-    ctx->CSSetShaderResources(0, 2, srvs);
-    ID3D11UnorderedAccessView* uavs[] = { m_warpBufferUAV.Get() };
-    ctx->CSSetUnorderedAccessViews(0, 1, uavs, nullptr);
-    ctx->CSSetShader(m_warpCS.Get(), nullptr, 0);
-    ctx->Dispatch((m_width + 7) / 8, (m_height + 7) / 8, 1);
-
-    ID3D11ShaderResourceView* nullSRVs[2] = { nullptr, nullptr };
-    ctx->CSSetShaderResources(0, 2, nullSRVs);
-    ID3D11UnorderedAccessView* nullUAVs[1] = { nullptr };
-    ctx->CSSetUnorderedAccessViews(0, 1, nullUAVs, nullptr);
-
-    // Resolve Pass
-    srvs[0] = colorSRV;
-    srvs[1] = m_warpBufferSRV.Get();
-    ctx->CSSetShaderResources(0, 2, srvs);
-    uavs[0] = m_rightEyeUAV.Get();
-    ctx->CSSetUnorderedAccessViews(0, 1, uavs, nullptr);
-    ctx->CSSetShader(m_resolveCS.Get(), nullptr, 0);
-    ctx->Dispatch((m_width + 7) / 8, (m_height + 7) / 8, 1);
-
-    ctx->CSSetShaderResources(0, 2, nullSRVs);
-    ctx->CSSetUnorderedAccessViews(0, 1, nullUAVs, nullptr);
-
-    // Fallback to Legacy Fill Shader (Skipping Neural Inpainter for pure compute)
-    uavs[0] = m_rightEyeUAV.Get();
-    ctx->CSSetUnorderedAccessViews(0, 1, uavs, nullptr);
-    ctx->CSSetShader(m_fillCS.Get(), nullptr, 0);
-    ctx->Dispatch((m_width + 15) / 16, (m_height + 15) / 16, 1);
-
-    ctx->CSSetUnorderedAccessViews(0, 1, nullUAVs, nullptr);
-    
-    // Blur Pass
-    srvs[0] = m_rightEyeSRV.Get();
-    ctx->CSSetShaderResources(0, 1, srvs);
-    uavs[0] = m_blurTempUAV.Get();
-    ctx->CSSetUnorderedAccessViews(0, 1, uavs, nullptr);
-    ctx->CSSetShader(m_blurCS.Get(), nullptr, 0);
-    ctx->Dispatch((m_width + 15) / 16, (m_height + 15) / 16, 1);
-    
-    ctx->CSSetShaderResources(0, 2, nullSRVs);
-    ctx->CSSetUnorderedAccessViews(0, 1, nullUAVs, nullptr);
-    ctx->CopyResource(m_rightEyeTex.Get(), m_blurTempTex.Get());
-}
-
-void StereoPipeline::RenderSideBySide(ID3D11DeviceContext* ctx, ID3D11RenderTargetView* backbufferRTV) {
-    ctx->OMSetRenderTargets(1, &backbufferRTV, nullptr);
-
-    D3D11_VIEWPORT vp;
-    vp.Width = (FLOAT)m_width; vp.Height = (FLOAT)m_height;
-    vp.MinDepth = 0.0f; vp.MaxDepth = 1.0f;
-    vp.TopLeftX = 0; vp.TopLeftY = 0;
-    ctx->RSSetViewports(1, &vp);
-
-    ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    ctx->IASetInputLayout(nullptr);
-    
-    ctx->VSSetShader(m_fullscreenVS.Get(), nullptr, 0);
-    ctx->PSSetShader(m_fullscreenPS.Get(), nullptr, 0);
-
-    ID3D11ShaderResourceView* srvs[] = { m_leftEyeSRV.Get(), m_rightEyeSRV.Get() };
-    ctx->PSSetShaderResources(0, 2, srvs);
-
-    ID3D11SamplerState* samplers[] = { m_sampler.Get() };
-    ctx->PSSetSamplers(0, 1, samplers);
-
-    ctx->Draw(3, 0);
-
-    ID3D11ShaderResourceView* nullSRVs[2] = { nullptr, nullptr };
-    ctx->PSSetShaderResources(0, 2, nullSRVs);
-}
+// Legacy logic removed
 
 void StereoPipeline::Shutdown() {
-    m_warpCS.Reset(); m_resolveCS.Reset(); m_fillCS.Reset(); m_blurCS.Reset(); m_blendCS.Reset();
-    m_rightEyeTex.Reset(); m_rightEyeUAV.Reset(); m_rightEyeSRV.Reset();
-    m_blurTempTex.Reset(); m_blurTempUAV.Reset(); m_blurTempSRV.Reset();
-    m_warpBufferTex.Reset(); m_warpBufferUAV.Reset(); m_warpBufferSRV.Reset();
-    m_paramsCB.Reset(); m_fullscreenVS.Reset(); m_fullscreenPS.Reset();
-    m_sampler.Reset(); m_deferredContext.Reset();
+    if (!m_renderer) return;
 
-    m_disjointQuery.Reset(); m_startQuery.Reset(); m_warpEndQuery.Reset(); 
-    m_resolveEndQuery.Reset(); m_fillEndQuery.Reset(); m_blurEndQuery.Reset();
+    if (m_warpCS.shaderBytecode || m_warpCS.pipelineState) m_renderer->DestroyShader(m_warpCS);
+    if (m_resolveCS.shaderBytecode || m_resolveCS.pipelineState) m_renderer->DestroyShader(m_resolveCS);
+    if (m_fillCS.shaderBytecode || m_fillCS.pipelineState) m_renderer->DestroyShader(m_fillCS);
+    if (m_blurCS.shaderBytecode || m_blurCS.pipelineState) m_renderer->DestroyShader(m_blurCS);
+    if (m_blendCS.shaderBytecode || m_blendCS.pipelineState) m_renderer->DestroyShader(m_blendCS);
 
-    m_comfortGuard.Shutdown();
-    m_neuralInpainter.Shutdown();
+    if (m_rightEyeTex.nativePtr) m_renderer->DestroyTexture(m_rightEyeTex);
+    if (m_blurTempTex.nativePtr) m_renderer->DestroyTexture(m_blurTempTex);
+    if (m_warpBufferTex.nativePtr) m_renderer->DestroyTexture(m_warpBufferTex);
+    // m_leftEyeTex is an external texture (swapchain) assigned dynamically, do not destroy it here.
+
     m_openxrManager.Shutdown();
-}
-
-void StereoPipeline::ReadAndLogProfiling(ID3D11DeviceContext* immediateCtx) {
-    if (!m_disjointQuery || !m_startQuery) return;
-
-    D3D11_QUERY_DATA_TIMESTAMP_DISJOINT disjointData;
-    // Asynchronous check using D3D11_ASYNC_GETDATA_DONOTFLUSH to avoid stalling the CPU thread
-    if (immediateCtx->GetData(m_disjointQuery.Get(), &disjointData, sizeof(disjointData), D3D11_ASYNC_GETDATA_DONOTFLUSH) == S_FALSE) return;
-
-    if (disjointData.Disjoint) return;
-
-    UINT64 tsStart, tsWarp, tsResolve, tsFill, tsBlur;
-    if (immediateCtx->GetData(m_startQuery.Get(), &tsStart, sizeof(tsStart), D3D11_ASYNC_GETDATA_DONOTFLUSH) == S_FALSE) return;
-    if (immediateCtx->GetData(m_warpEndQuery.Get(), &tsWarp, sizeof(tsWarp), D3D11_ASYNC_GETDATA_DONOTFLUSH) == S_FALSE) return;
-    if (immediateCtx->GetData(m_resolveEndQuery.Get(), &tsResolve, sizeof(tsResolve), D3D11_ASYNC_GETDATA_DONOTFLUSH) == S_FALSE) return;
-    if (immediateCtx->GetData(m_fillEndQuery.Get(), &tsFill, sizeof(tsFill), D3D11_ASYNC_GETDATA_DONOTFLUSH) == S_FALSE) return;
-    if (immediateCtx->GetData(m_blurEndQuery.Get(), &tsBlur, sizeof(tsBlur), D3D11_ASYNC_GETDATA_DONOTFLUSH) == S_FALSE) return;
-
-    static int frameCounter = 0;
-    if (++frameCounter % 60 == 0) {
-        double freq = static_cast<double>(disjointData.Frequency);
-        double warpTime = (tsWarp - tsStart) / freq * 1000.0;
-        double resolveTime = (tsResolve - tsWarp) / freq * 1000.0;
-        double fillTime = (tsFill - tsResolve) / freq * 1000.0;
-        double blurTime = (tsBlur - tsFill) / freq * 1000.0;
-        double totalTime = (tsBlur - tsStart) / freq * 1000.0;
-
-        LOG_INFO("GPU Profile (ms) | Total: %.3f | Warp: %.3f | Resolve: %.3f | Fill: %.3f | Blur: %.3f | ComfortGuard: %.2fm, %.2fx", 
-            totalTime, warpTime, resolveTime, fillTime, blurTime, m_comfortGuard.GetCurrentConvergence(), m_comfortGuard.GetCurrentDepthStrength());
-    }
 }
 
 } // namespace vrinject

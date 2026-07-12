@@ -37,9 +37,14 @@ public:
     // Lock in the confirmed camera matrix address
     void LockCameraMatrix(void* address);
 
+    // Get locked camera matrix address under lock
+    void* GetLockedAddress() const;
+
     // Overwrite the game's camera matrix with VR pose
     bool OverwriteCameraMatrix(
-        const DirectX::XMFLOAT4X4& vrMatrix);
+        const DirectX::XMFLOAT4X4& vrMatrix,
+        void* currentBufferAddress,
+        size_t currentByteSize);
 
     void Reset();
 

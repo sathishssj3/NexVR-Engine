@@ -107,37 +107,32 @@ uint8_t* MemoryScanner::ScanSignature(const std::string& pattern, const std::str
 
 uint8_t* MemoryScanner::ResolveRIP(uint8_t* instructionAddress, uint32_t instructionSize, uint32_t offsetPosition) {
     if (!instructionAddress) return nullptr;
-    // In x64, a RIP-relative address is usually an int32 added to the address of the NEXT instruction.
-    int32_t offset = *reinterpret_cast<int32_t*>(instructionAddress + offsetPosition);
+
+    // FIX #20: Validate that the 4-byte RIP offset field is fully within a
+    // committed, readable page before dereferencing. A false-positive signature
+    // match at the end of a page would otherwise cause an access violation.
+    uint8_t* readPtr = instructionAddress + offsetPosition;
+    MEMORY_BASIC_INFORMATION mbi = {};
+    if (VirtualQuery(readPtr, &mbi, sizeof(mbi)) == 0 ||
+        mbi.State != MEM_COMMIT ||
+        (mbi.Protect & (PAGE_READONLY | PAGE_READWRITE | PAGE_EXECUTE_READ |
+                        PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY)) == 0 ||
+        (mbi.Protect & PAGE_GUARD) != 0) {
+        LOG_WARN("MemoryScanner::ResolveRIP: address %p is not in a readable page, skipping.", readPtr);
+        return nullptr;
+    }
+    // Ensure all 4 bytes of the int32 are within the same committed region.
+    uintptr_t regionEnd = reinterpret_cast<uintptr_t>(mbi.BaseAddress) + mbi.RegionSize;
+    if (reinterpret_cast<uintptr_t>(readPtr) + sizeof(int32_t) > regionEnd) {
+        LOG_WARN("MemoryScanner::ResolveRIP: int32 at %p spans a page boundary, skipping.", readPtr);
+        return nullptr;
+    }
+
+    // In x64, a RIP-relative address is an int32 added to the address of the NEXT instruction.
+    int32_t offset = *reinterpret_cast<int32_t*>(readPtr);
     return instructionAddress + instructionSize + offset;
 }
 
-void MemoryScanner::StartBackgroundMatrixScan() {
-    if (!m_isScanning) {
-        m_isScanning = true;
-        m_scanThread = std::thread(&MemoryScanner::ScanLoop, this);
-        LOG_INFO("MemoryScanner: Background heuristic scan started.");
-    }
-}
 
-void MemoryScanner::StopBackgroundMatrixScan() {
-    if (m_isScanning) {
-        m_isScanning = false;
-        if (m_scanThread.joinable()) {
-            m_scanThread.join();
-        }
-        LOG_INFO("MemoryScanner: Background heuristic scan stopped.");
-    }
-}
-
-void MemoryScanner::ScanLoop() {
-    // Basic implementation of PAGE_READWRITE scanning for matrices
-    // In a real scenario, this would incrementally scan heaps.
-    // For now, we will wait, as true deep memory scanning is highly engine-dependent and computationally expensive.
-    // The core heuristic logic relies on the OnConstantBufferUpdate hook to feed candidates.
-    while (m_isScanning) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
-}
 
 } // namespace vrinject

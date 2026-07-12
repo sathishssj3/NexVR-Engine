@@ -53,7 +53,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     UpdateWindow(hwnd);
 
     // Load VRInject DLL
-    HMODULE hDLL = LoadLibrary("..\\build\\bin\\vrinject.dll");
+    HMODULE hDLL = LoadLibrary("vrinject.dll");
     if (!hDLL) {
         MessageBoxA(NULL, "Failed to load vrinject.dll", "Error", MB_OK);
     } else {

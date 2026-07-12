@@ -4,8 +4,75 @@
 #include <windows.h>
 #include <algorithm>
 #include <d3dcompiler.h>
+#include "../../core/logger.h"
+#include <bcrypt.h>
+#ifdef _MSC_VER
+#pragma comment(lib, "bcrypt.lib")
+#endif
+
+#ifndef EXPECTED_SHADER_HASH
+#define EXPECTED_SHADER_HASH L"SECURITY_ERROR: PLEASE_SET_EXPECTED_SHADER_HASH_IN_BUILD_CONFIG"
+#endif
+
+// FIX #23: Use the module handle stored at DLL attach time instead of
+// searching by name, so path resolution works when the DLL is renamed
+// (e.g. dxgi.dll proxy mode or any other deployment name).
+extern HMODULE g_hModule;
+
+namespace {
+std::wstring ComputeShaderHashSHA256(const uint8_t* data, size_t size) {
+    BCRYPT_ALG_HANDLE hAlg = NULL;
+    BCRYPT_HASH_HANDLE hHash = NULL;
+    std::wstring hashResult = L"";
+    if (BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_SHA256_ALGORITHM, NULL, 0) != 0) return L"";
+
+    DWORD cbData = 0, cbHashObject = 0;
+    if (BCryptGetProperty(hAlg, BCRYPT_OBJECT_LENGTH, (PBYTE)&cbHashObject, sizeof(DWORD), &cbData, 0) == 0) {
+        std::vector<BYTE> pbHashObject(cbHashObject);
+        DWORD cbHash = 0;
+        if (BCryptGetProperty(hAlg, BCRYPT_HASH_LENGTH, (PBYTE)&cbHash, sizeof(DWORD), &cbData, 0) == 0) {
+            std::vector<BYTE> pbHash(cbHash);
+            if (BCryptCreateHash(hAlg, &hHash, pbHashObject.data(), cbHashObject, NULL, 0, 0) == 0) {
+                BCryptHashData(hHash, (PUCHAR)data, (ULONG)size, 0);
+                BCryptFinishHash(hHash, pbHash.data(), cbHash, 0);
+                
+                wchar_t hexChar[3];
+                for (DWORD i = 0; i < cbHash; ++i) {
+                    swprintf_s(hexChar, L"%02x", pbHash[i]);
+                    hashResult += hexChar;
+                }
+            }
+        }
+    }
+    if (hHash) BCryptDestroyHash(hHash);
+    if (hAlg) BCryptCloseAlgorithmProvider(hAlg, 0);
+    return hashResult;
+}
+}
 
 
+
+bool DX12Renderer::WaitForFence(ID3D12Fence* fence, uint64_t value, HANDLE eventHandle, const char* context) {
+    if (!fence || !eventHandle || value == 0 || fence->GetCompletedValue() >= value) return true;
+
+    const HRESULT hr = fence->SetEventOnCompletion(value, eventHandle);
+    if (FAILED(hr)) {
+        LOG_ERROR("DX12Renderer: SetEventOnCompletion failed in %s (HR=0x%08X)", context, hr);
+        return false;
+    }
+
+    const DWORD waitResult = WaitForSingleObject(eventHandle, 2000);
+    if (waitResult != WAIT_OBJECT_0) {
+        const HRESULT removedReason = m_device ? m_device->GetDeviceRemovedReason() : E_FAIL;
+        LOG_ERROR(
+            "DX12Renderer: fence wait failed/timed out in %s (wait=%lu, removed=0x%08X)",
+            context,
+            waitResult,
+            removedReason);
+        return false;
+    }
+    return true;
+}
 
 bool DX12Renderer::Initialize(void* nativeDevice, void* nativeContext) {
     if (!nativeDevice || !nativeContext) return false;
@@ -20,32 +87,50 @@ bool DX12Renderer::Initialize(void* nativeDevice, void* nativeContext) {
     D3D12_COMMAND_QUEUE_DESC queueDesc = {};
     queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
     if (FAILED(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_vrCommandQueue)))) {
-        return false;
-    }
-
-    // Initialize D3D11On12
-    UINT d3d11DeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-    IUnknown* commandQueues[] = { m_vrCommandQueue };
-    if (SUCCEEDED(D3D11On12CreateDevice(m_device, d3d11DeviceFlags, nullptr, 0, commandQueues, 1, 0, &m_d3d11Device, &m_d3d11Context, nullptr))) {
-        m_d3d11Device->QueryInterface(IID_PPV_ARGS(&m_d3d11On12Device));
-    } else {
+        Shutdown();
         return false;
     }
 
     // Worker fence — used to synchronize our worker queue's command allocator reuse
-    if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_syncFence)))) return false;
-    if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_vrFence)))) return false;
+    if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_syncFence)))) {
+        Shutdown();
+        return false;
+    }
+    if (FAILED(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_vrFence)))) {
+        Shutdown();
+        return false;
+    }
     m_syncFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (!m_syncFenceEvent) {
+        Shutdown();
+        return false;
+    }
     m_vrFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (!m_vrFenceEvent) {
+        Shutdown();
+        return false;
+    }
 
     // Command allocators and list for our worker queue
     for (int i = 0; i < 2; ++i) {
-        if (FAILED(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_cmdAlloc[i])))) return false;
-        if (FAILED(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_vrCmdAlloc[i])))) return false;
+        if (FAILED(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_cmdAlloc[i])))) {
+            Shutdown();
+            return false;
+        }
+        if (FAILED(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_vrCmdAlloc[i])))) {
+            Shutdown();
+            return false;
+        }
     }
     
-    if (FAILED(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_cmdAlloc[0], nullptr, IID_PPV_ARGS(&m_cmdList)))) return false;
-    if (FAILED(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_vrCmdAlloc[0], nullptr, IID_PPV_ARGS(&m_vrCmdList)))) return false;
+    if (FAILED(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_cmdAlloc[0], nullptr, IID_PPV_ARGS(&m_cmdList)))) {
+        Shutdown();
+        return false;
+    }
+    if (FAILED(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_vrCmdAlloc[0], nullptr, IID_PPV_ARGS(&m_vrCmdList)))) {
+        Shutdown();
+        return false;
+    }
     m_cmdList->Close();
     m_vrCmdList->Close();
 
@@ -55,6 +140,7 @@ bool DX12Renderer::Initialize(void* nativeDevice, void* nativeContext) {
     heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     if (FAILED(m_device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_srvUavHeap)))) {
+        Shutdown();
         return false;
     }
     m_srvUavDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -100,10 +186,7 @@ void DX12Renderer::Shutdown() {
     if (m_vrFenceEvent) { CloseHandle(m_vrFenceEvent); m_vrFenceEvent = nullptr; }
     if (m_gameCommandQueue) { m_gameCommandQueue->Release(); m_gameCommandQueue = nullptr; }
     if (m_vrCommandQueue) { m_vrCommandQueue->Release(); m_vrCommandQueue = nullptr; }
-    if (m_d3d11On12Device) { m_d3d11On12Device->Release(); m_d3d11On12Device = nullptr; }
-    if (m_d3d11Context) { m_d3d11Context->Release(); m_d3d11Context = nullptr; }
-    if (m_d3d11Device) { m_d3d11Device->Release(); m_d3d11Device = nullptr; }
-    m_stereoPipeline.Shutdown();
+    // D3D11On12 removed
 
     if (m_device) { m_device->Release(); m_device = nullptr; }
 }
@@ -113,15 +196,9 @@ void DX12Renderer::SetVRResolutionAndFormat(uint32_t width, uint32_t height, int
     m_vrHeight = height;
     m_vrFormat = format;
     
-    if (m_d3d11Device && width > 0 && height > 0) {
-        char modulePath[MAX_PATH];
-        GetModuleFileNameA(reinterpret_cast<HMODULE>(GetModuleHandleA("vrinject.dll")), modulePath, MAX_PATH);
-        std::string moduleDir = modulePath;
-        size_t pos = moduleDir.find_last_of("\\/");
-        if (pos != std::string::npos) moduleDir = moduleDir.substr(0, pos);
-        
-        m_stereoPipeline.Initialize(m_d3d11Device, width, height, moduleDir);
-    }
+    m_vrWidth = width;
+    m_vrHeight = height;
+    m_vrFormat = format;
 }
 
 void DX12Renderer::AllocateDescriptor(D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle) {
@@ -207,18 +284,12 @@ void DX12Renderer::Flush() {
     
     if (m_syncFence) {
         uint64_t maxSync = m_fenceValues[0] > m_fenceValues[1] ? m_fenceValues[0] : m_fenceValues[1];
-        if (maxSync > 0 && m_syncFence->GetCompletedValue() < maxSync) {
-            m_syncFence->SetEventOnCompletion(maxSync, m_syncFenceEvent);
-            WaitForSingleObject(m_syncFenceEvent, INFINITE);
-        }
+        if (!WaitForFence(m_syncFence, maxSync, m_syncFenceEvent, "Flush(sync)")) return;
     }
     
     if (m_vrFence) {
         uint64_t maxVr = m_vrReadFenceValues[0] > m_vrReadFenceValues[1] ? m_vrReadFenceValues[0] : m_vrReadFenceValues[1];
-        if (maxVr > 0 && m_vrFence->GetCompletedValue() < maxVr) {
-            m_vrFence->SetEventOnCompletion(maxVr, m_vrFenceEvent);
-            WaitForSingleObject(m_vrFenceEvent, INFINITE);
-        }
+        if (!WaitForFence(m_vrFence, maxVr, m_vrFenceEvent, "Flush(vr)")) return;
     }
 }
 
@@ -227,6 +298,33 @@ void DX12Renderer::Flush() {
 ShaderHandle DX12Renderer::LoadComputeShader(const uint8_t* bytecode, size_t bytecodeSize) {
     ShaderHandle handle = {};
     if (!m_device || !bytecode || bytecodeSize == 0) return handle;
+
+    std::wstring expectedHash = EXPECTED_SHADER_HASH;
+    if (expectedHash == L"SECURITY_ERROR: PLEASE_SET_EXPECTED_SHADER_HASH_IN_BUILD_CONFIG") {
+        LOG_ERROR("SECURITY ERROR: Shader hash not configured! Set EXPECTED_SHADER_HASH to the SHA-256 of the expected shader.");
+        return handle;
+    }
+
+#ifndef _DEBUG
+    if (expectedHash.empty()) {
+        LOG_ERROR("SECURITY ERROR: DX12 shader verification is disabled in Release build! EXPECTED_SHADER_HASH must not be empty.");
+        return handle;
+    }
+#endif
+
+    if (!expectedHash.empty()) {
+        std::wstring actualHash = ComputeShaderHashSHA256(bytecode, bytecodeSize);
+        auto toLower = [](std::wstring s) {
+            for (auto& c : s) {
+                if (c >= L'A' && c <= L'Z') c = c - L'A' + L'a';
+            }
+            return s;
+        };
+        if (actualHash.empty() || toLower(actualHash) != toLower(expectedHash)) {
+            LOG_ERROR("DX12 Shader bytecode integrity check failed (SHA-256 mismatch)");
+            return handle;
+        }
+    }
 
     D3D12_DESCRIPTOR_RANGE ranges[2] = {};
     ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
@@ -259,8 +357,10 @@ ShaderHandle DX12Renderer::LoadComputeShader(const uint8_t* bytecode, size_t byt
 
     ID3DBlob* signatureBlob = nullptr;
     ID3DBlob* errorBlob = nullptr;
-    if (FAILED(D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signatureBlob, &errorBlob))) {
-        if (errorBlob) errorBlob->Release();
+    HRESULT serializeHR = D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signatureBlob, &errorBlob);
+    // FIX #15: Always release errorBlob — it can be non-null even on success (warnings).
+    if (errorBlob) { errorBlob->Release(); errorBlob = nullptr; }
+    if (FAILED(serializeHR)) {
         return handle;
     }
 
@@ -303,10 +403,7 @@ void DX12Renderer::ExecuteTonemapToIntermediate(TextureHandle source) {
     // Wait for our worker queue's command allocator to be idle before reusing
     m_frameIndex = (m_frameIndex + 1) % 2;
     uint64_t fenceToWaitFor = m_allocatorFenceValues[m_frameIndex];
-    if (fenceToWaitFor > 0 && m_syncFence->GetCompletedValue() < fenceToWaitFor) {
-        m_syncFence->SetEventOnCompletion(fenceToWaitFor, m_syncFenceEvent);
-        WaitForSingleObject(m_syncFenceEvent, INFINITE);
-    }
+    if (!WaitForFence(m_syncFence, fenceToWaitFor, m_syncFenceEvent, "ExecuteTonemap allocator")) return;
     m_cmdAlloc[m_frameIndex]->Reset();
     
     int writeIdx;
@@ -466,6 +563,11 @@ void DX12Renderer::ExecuteTonemapToIntermediate(TextureHandle source) {
 }
 
 void DX12Renderer::SkipVRFrame() {
+    // FIX #2: Acquire m_vrQueueMutex BEFORE calling WaitForFence to ensure
+    // SkipVRFrame and CopyToSwapchainVR never race to Signal the vrFence,
+    // which would break monotonic fence value ordering and cause a TDR.
+    std::lock_guard<std::mutex> vrLock(m_vrQueueMutex);
+
     int readIdx;
     uint64_t newFenceValue;
     {
@@ -477,15 +579,10 @@ void DX12Renderer::SkipVRFrame() {
     
     if (!m_device || !m_vrCommandQueue) return;
 
-    if (m_vrFence->GetCompletedValue() < newFenceValue - 1) {
-        m_vrFence->SetEventOnCompletion(newFenceValue - 1, m_vrFenceEvent);
-        WaitForSingleObject(m_vrFenceEvent, INFINITE);
-    }
+    // Wait for the previous signal to complete before issuing the next one.
+    if (!WaitForFence(m_vrFence, newFenceValue - 1, m_vrFenceEvent, "SkipVRFrame ordering")) return;
 
-    {
-        std::lock_guard<std::mutex> vrLock(m_vrQueueMutex);
-        m_vrCommandQueue->Signal(m_vrFence, newFenceValue);
-    }
+    m_vrCommandQueue->Signal(m_vrFence, newFenceValue);
     
     {
         std::lock_guard<std::mutex> lock(m_indexMutex);
@@ -512,14 +609,13 @@ void DX12Renderer::CopyToSwapchainVR(void* swapchainTexture, const vrinject::Ste
         return;
     }
 
-    if (m_vrFence->GetCompletedValue() < newFenceValue - 1) {
-        m_vrFence->SetEventOnCompletion(newFenceValue - 1, m_vrFenceEvent);
-        WaitForSingleObject(m_vrFenceEvent, INFINITE);
-    }
+    if (!WaitForFence(m_vrFence, newFenceValue - 1, m_vrFenceEvent, "CopyToSwapchain ordering")) return;
 
     std::lock_guard<std::mutex> vrLock(m_vrQueueMutex);
 
     m_vrFrameIndex = (m_vrFrameIndex + 1) % 2;
+    uint64_t vrFenceToWaitFor = m_vrAllocatorFenceValues[m_vrFrameIndex];
+    if (!WaitForFence(m_vrFence, vrFenceToWaitFor, m_vrFenceEvent, "CopyToSwapchain allocator")) return;
     m_vrCmdAlloc[m_vrFrameIndex]->Reset();
     m_vrCmdList->Reset(m_vrCmdAlloc[m_vrFrameIndex], nullptr);
     
@@ -542,7 +638,7 @@ void DX12Renderer::CopyToSwapchainVR(void* swapchainTexture, const vrinject::Ste
     barriers[1].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barriers[1].Transition.pResource = dstRes;
     barriers[1].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+    barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
     barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
 
     m_vrCmdList->ResourceBarrier(2, barriers);
@@ -550,111 +646,39 @@ void DX12Renderer::CopyToSwapchainVR(void* swapchainTexture, const vrinject::Ste
     D3D12_RESOURCE_DESC srcDesc = midRes->GetDesc();
     D3D12_RESOURCE_DESC dstDesc = dstRes->GetDesc();
 
-    if (m_d3d11On12Device && params && params->focalLength > 0.0f) {
-        // Run stereo reprojection via D3D11On12
-        // We first transition the resources to D3D11On12 compatible states
-        barriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
-        barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-        barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-        barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-        m_vrCmdList->ResourceBarrier(2, barriers);
+    // Fallback flat 2D copy
+    D3D12_TEXTURE_COPY_LOCATION dstLoc = {};
+    dstLoc.pResource = dstRes;
+    dstLoc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+    dstLoc.SubresourceIndex = 0;
 
-        // Execute DX12 command list to apply transitions before giving to D3D11On12
-        m_vrCmdList->Close();
-        ID3D12CommandList* lists[] = { m_vrCmdList };
-        m_vrCommandQueue->ExecuteCommandLists(1, lists);
-        
-        // Setup D3D11On12 wrapped resources
-        D3D11_RESOURCE_FLAGS d3d11FlagsSrc = { D3D11_BIND_SHADER_RESOURCE };
-        D3D11_RESOURCE_FLAGS d3d11FlagsDst = { D3D11_BIND_RENDER_TARGET };
-        ID3D11Resource* wrappedMidRes = nullptr;
-        ID3D11Resource* wrappedDstRes = nullptr;
-        
-        m_d3d11On12Device->CreateWrappedResource(midRes, &d3d11FlagsSrc, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, IID_PPV_ARGS(&wrappedMidRes));
-        m_d3d11On12Device->CreateWrappedResource(dstRes, &d3d11FlagsDst, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_RENDER_TARGET, IID_PPV_ARGS(&wrappedDstRes));
+    D3D12_TEXTURE_COPY_LOCATION srcLoc = {};
+    srcLoc.pResource = midRes;
+    srcLoc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+    srcLoc.SubresourceIndex = 0;
 
-        if (wrappedMidRes && wrappedDstRes) {
-            m_d3d11On12Device->AcquireWrappedResources(&wrappedMidRes, 1);
-            m_d3d11On12Device->AcquireWrappedResources(&wrappedDstRes, 1);
+    D3D12_BOX srcBox = {};
+    srcBox.left = 0;
+    srcBox.top = 0;
+    srcBox.front = 0;
+    srcBox.right = (std::min)(static_cast<UINT>(srcDesc.Width), static_cast<UINT>(dstDesc.Width));
+    srcBox.bottom = (std::min)(srcDesc.Height, dstDesc.Height);
+    srcBox.back = 1;
 
-            ID3D11ShaderResourceView* midSRV = nullptr;
-            D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-            srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // Fallback default
-            
-            D3D12_RESOURCE_DESC mDesc = midRes->GetDesc();
-            if (mDesc.Format == DXGI_FORMAT_R8G8B8A8_TYPELESS || mDesc.Format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB) srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-            else if (mDesc.Format == DXGI_FORMAT_B8G8R8A8_TYPELESS || mDesc.Format == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB) srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-            else srvDesc.Format = mDesc.Format;
+    m_vrCmdList->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, &srcBox);
 
-            srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-            srvDesc.Texture2D.MipLevels = 1;
-            srvDesc.Texture2D.MostDetailedMip = 0;
+    barriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
+    barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
+    barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+    barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
-            m_d3d11Device->CreateShaderResourceView(wrappedMidRes, &srvDesc, &midSRV);
-            
-            // Dummy depth for now
-            m_stereoPipeline.RenderComputeOnly(m_d3d11Context, midSRV, nullptr, *params);
-            
-            // Copy right eye to destination swapchain
-            ID3D11Resource* rightEyeRes = nullptr;
-            if (m_stereoPipeline.GetRightEyeSRV()) {
-                m_stereoPipeline.GetRightEyeSRV()->GetResource(&rightEyeRes);
-                m_d3d11Context->CopyResource(wrappedDstRes, rightEyeRes);
-                rightEyeRes->Release();
-            }
-
-            if (midSRV) midSRV->Release();
-
-            m_d3d11On12Device->ReleaseWrappedResources(&wrappedMidRes, 1);
-            m_d3d11On12Device->ReleaseWrappedResources(&wrappedDstRes, 1);
-            m_d3d11Context->Flush();
-        }
-        
-        if (wrappedMidRes) wrappedMidRes->Release();
-        if (wrappedDstRes) wrappedDstRes->Release();
-
-        // Reopen cmd list to transition midRes back to COMMON.
-        // OpenXR expects dstRes (swapchain texture) to be left in D3D12_RESOURCE_STATE_RENDER_TARGET state!
-        m_vrCmdAlloc[m_vrFrameIndex]->Reset();
-        m_vrCmdList->Reset(m_vrCmdAlloc[m_vrFrameIndex], nullptr);
-        
-        barriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-        barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
-        m_vrCmdList->ResourceBarrier(1, barriers);
-    } else {
-        // Fallback flat 2D copy
-        D3D12_TEXTURE_COPY_LOCATION dstLoc = {};
-        dstLoc.pResource = dstRes;
-        dstLoc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-        dstLoc.SubresourceIndex = 0;
-
-        D3D12_TEXTURE_COPY_LOCATION srcLoc = {};
-        srcLoc.pResource = midRes;
-        srcLoc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-        srcLoc.SubresourceIndex = 0;
-
-        D3D12_BOX srcBox = {};
-        srcBox.left = 0;
-        srcBox.top = 0;
-        srcBox.front = 0;
-        srcBox.right = (std::min)(static_cast<UINT>(srcDesc.Width), static_cast<UINT>(dstDesc.Width));
-        srcBox.bottom = (std::min)(srcDesc.Height, dstDesc.Height);
-        srcBox.back = 1;
-
-        m_vrCmdList->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, &srcBox);
-
-        barriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
-        barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
-        barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-        barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-
-        m_vrCmdList->ResourceBarrier(2, barriers);
-    }
+    m_vrCmdList->ResourceBarrier(2, barriers);
 
     m_vrCmdList->Close();
     ID3D12CommandList* lists[] = { m_vrCmdList };
     m_vrCommandQueue->ExecuteCommandLists(1, lists);
     m_vrCommandQueue->Signal(m_vrFence, newFenceValue);
+    m_vrAllocatorFenceValues[m_vrFrameIndex] = newFenceValue;
 
     {
         std::lock_guard<std::mutex> lock(m_indexMutex);

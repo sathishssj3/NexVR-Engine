@@ -37,16 +37,11 @@ const electron_1 = require("electron");
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
 const crypto = __importStar(require("crypto"));
+const utils_1 = require("./utils");
 // Initialize core authorization token for DLL injector validation
 const NEXVR_AUTH_TOKEN = crypto.randomUUID();
 process.env.NEXVR_AUTH_TOKEN = NEXVR_AUTH_TOKEN;
-process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 const isDev = !electron_1.app.isPackaged;
-// Set GPU switches for rendering stability under Windows sandbox environments
-electron_1.app.commandLine.appendSwitch('in-process-gpu');
-electron_1.app.commandLine.appendSwitch('disable-gpu-sandbox');
-electron_1.app.commandLine.appendSwitch('disable-software-rasterizer');
-electron_1.app.disableHardwareAcceleration();
 // Register the custom app scheme for sandboxed context assets loading
 electron_1.protocol.registerSchemesAsPrivileged([{
         scheme: 'nexvr',
@@ -93,7 +88,7 @@ function createWindow() {
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
-            sandbox: false,
+            sandbox: true,
             webSecurity: true,
             allowRunningInsecureContent: false,
             preload: path.join(__dirname, 'preload.js'),
@@ -111,7 +106,7 @@ function createWindow() {
         });
     }
     mainWindow.webContents.on('will-navigate', (event, url) => {
-        if (!isDev && !url.startsWith('nexvr://') && !url.startsWith('file://')) {
+        if (!isDev && !url.startsWith('nexvr://app/')) {
             event.preventDefault();
             console.log(`[SECURITY] Blocked navigation to: ${url}`);
         }
@@ -124,13 +119,16 @@ electron_1.app.whenReady().then(() => {
     const frontendDir = path.join(__dirname, '..', '..', 'frontend-dist');
     electron_1.protocol.handle('nexvr', (request) => {
         const url = new URL(request.url);
+        if (url.hostname !== 'app' || request.method !== 'GET') {
+            return new Response('Forbidden', { status: 403 });
+        }
         let filePath = decodeURIComponent(url.pathname);
         if (filePath.startsWith('/'))
             filePath = filePath.substring(1);
         if (!filePath || filePath === '' || filePath === '/')
             filePath = 'index.html';
-        const fullPath = path.join(frontendDir, filePath);
         try {
+            const fullPath = (0, utils_1.resolveWithinRoot)(frontendDir, filePath);
             const nodeBuffer = fs.readFileSync(fullPath);
             const uint8 = new Uint8Array(nodeBuffer.buffer, nodeBuffer.byteOffset, nodeBuffer.byteLength);
             const ext = path.extname(filePath).toLowerCase();
@@ -141,8 +139,8 @@ electron_1.app.whenReady().then(() => {
             });
         }
         catch (err) {
-            console.error(`[nexvr://] Failed to serve: ${fullPath}`, err.message);
-            return new Response(`Not Found: ${filePath}`, { status: 404, headers: { 'Content-Type': 'text/plain' } });
+            console.error('[nexvr://] Failed to serve requested asset', err.message);
+            return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain' } });
         }
     });
     createWindow();
@@ -161,11 +159,13 @@ require("./configManager");
 require("./injectionManager");
 require("./diagnosticsManager");
 // Native Window Controls Handler
-electron_1.ipcMain.on('window:minimize', () => {
+electron_1.ipcMain.on('window:minimize', (event) => {
+    (0, utils_1.assertTrustedIpcSender)(event);
     if (mainWindow)
         mainWindow.minimize();
 });
-electron_1.ipcMain.on('window:maximize', () => {
+electron_1.ipcMain.on('window:maximize', (event) => {
+    (0, utils_1.assertTrustedIpcSender)(event);
     if (mainWindow) {
         if (mainWindow.isMaximized())
             mainWindow.unmaximize();
@@ -173,7 +173,8 @@ electron_1.ipcMain.on('window:maximize', () => {
             mainWindow.maximize();
     }
 });
-electron_1.ipcMain.on('window:close', () => {
+electron_1.ipcMain.on('window:close', (event) => {
+    (0, utils_1.assertTrustedIpcSender)(event);
     if (mainWindow)
         mainWindow.close();
 });

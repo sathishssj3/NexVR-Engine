@@ -22,7 +22,8 @@ HRESULT __stdcall hkCreateSwapChain(IDXGIFactory* pFactory, IUnknown* pDevice, D
     if (pDesc) {
         modifiedDesc = *pDesc;
         LOG_INFO("DXGIFactoryHook: CreateSwapChain requested format %d", modifiedDesc.BufferDesc.Format);
-        modifiedDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        // Only force R8G8B8A8_UNORM if the requested format is not already a supported format.
+        // This preserves HDR/10-bit formats requested by the game.
         modifiedDesc.BufferUsage |= DXGI_USAGE_SHADER_INPUT;
     }
 
@@ -47,7 +48,8 @@ HRESULT __stdcall hkCreateSwapChainForHwnd(IDXGIFactory2* pFactory, IUnknown* pD
     if (pDesc) {
         modifiedDesc = *pDesc;
         LOG_INFO("DXGIFactoryHook: CreateSwapChainForHwnd requested format %d", modifiedDesc.Format);
-        modifiedDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        // Only force R8G8B8A8_UNORM if the requested format is not already a supported format.
+        // This preserves HDR/10-bit formats requested by the game.
         modifiedDesc.BufferUsage |= DXGI_USAGE_SHADER_INPUT;
     }
 

@@ -46,9 +46,9 @@ void UnrealScanner::Shutdown() {
     m_isUnreal = false;
     m_version = UEVersion::Unknown;
     m_gWorldPtr = nullptr;
-    m_gEnginePtr = nullptr;
     m_getProjectionDataFunc = nullptr;
     m_updateCameraFunc = nullptr;
+    m_beginRenderingViewFamilyFunc = nullptr;
 }
 
 bool UnrealScanner::ScanForGWorld() {
@@ -181,6 +181,16 @@ bool UnrealScanner::ScanForProjectionFunction() {
 
     LOG_WARN("UnrealScanner: Could not find any camera function to hook. "
              "Will rely on Universal Mode (depth reprojection).");
+
+    // Also scan for BeginRenderingViewFamily
+    LOG_INFO("UnrealScanner: Scanning for BeginRenderingViewFamily (UE4)...");
+    result = scanner.ScanSignature(ue::Signatures::BeginRenderingViewFamily_UE4);
+    if (result) {
+        m_beginRenderingViewFamilyFunc = result;
+        LOG_INFO("UnrealScanner: Found BeginRenderingViewFamily at %p", result);
+        return true;
+    }
+
     return false;
 }
 

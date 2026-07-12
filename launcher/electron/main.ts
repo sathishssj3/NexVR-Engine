@@ -2,20 +2,13 @@ import { app, BrowserWindow, ipcMain, protocol, dialog } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as crypto from 'crypto';
+import { assertTrustedIpcSender, resolveWithinRoot } from './utils';
 
 // Initialize core authorization token for DLL injector validation
 const NEXVR_AUTH_TOKEN = crypto.randomUUID();
 process.env.NEXVR_AUTH_TOKEN = NEXVR_AUTH_TOKEN;
 
-process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
-
 const isDev = !app.isPackaged;
-
-// Set GPU switches for rendering stability under Windows sandbox environments
-app.commandLine.appendSwitch('in-process-gpu');
-app.commandLine.appendSwitch('disable-gpu-sandbox');
-app.commandLine.appendSwitch('disable-software-rasterizer');
-app.disableHardwareAcceleration();
 
 // Register the custom app scheme for sandboxed context assets loading
 protocol.registerSchemesAsPrivileged([{
@@ -67,7 +60,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: false,
+      sandbox: true,
       webSecurity: true,
       allowRunningInsecureContent: false,
       preload: path.join(__dirname, 'preload.js'),
@@ -86,7 +79,7 @@ function createWindow() {
   }
 
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    if (!isDev && !url.startsWith('nexvr://') && !url.startsWith('file://')) {
+    if (!isDev && !url.startsWith('nexvr://app/')) {
       event.preventDefault();
       console.log(`[SECURITY] Blocked navigation to: ${url}`);
     }
@@ -102,13 +95,15 @@ app.whenReady().then(() => {
 
   protocol.handle('nexvr', (request) => {
     const url = new URL(request.url);
+    if (url.hostname !== 'app' || request.method !== 'GET') {
+      return new Response('Forbidden', { status: 403 });
+    }
     let filePath = decodeURIComponent(url.pathname);
     if (filePath.startsWith('/')) filePath = filePath.substring(1);
     if (!filePath || filePath === '' || filePath === '/') filePath = 'index.html';
 
-    const fullPath = path.join(frontendDir, filePath);
-
     try {
+      const fullPath = resolveWithinRoot(frontendDir, filePath);
       const nodeBuffer = fs.readFileSync(fullPath);
       const uint8 = new Uint8Array(nodeBuffer.buffer, nodeBuffer.byteOffset, nodeBuffer.byteLength);
       const ext = path.extname(filePath).toLowerCase();
@@ -118,8 +113,8 @@ app.whenReady().then(() => {
         headers: { 'Content-Type': mimeType },
       });
     } catch (err: any) {
-      console.error(`[nexvr://] Failed to serve: ${fullPath}`, err.message);
-      return new Response(`Not Found: ${filePath}`, { status: 404, headers: { 'Content-Type': 'text/plain' } });
+      console.error('[nexvr://] Failed to serve requested asset', err.message);
+      return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain' } });
     }
   });
 
@@ -128,6 +123,8 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+
+
 });
 
 app.on('window-all-closed', () => {
@@ -141,17 +138,20 @@ import './injectionManager';
 import './diagnosticsManager';
 
 // Native Window Controls Handler
-ipcMain.on('window:minimize', () => {
+ipcMain.on('window:minimize', (event) => {
+  assertTrustedIpcSender(event);
   if (mainWindow) mainWindow.minimize();
 });
 
-ipcMain.on('window:maximize', () => {
+ipcMain.on('window:maximize', (event) => {
+  assertTrustedIpcSender(event);
   if (mainWindow) {
     if (mainWindow.isMaximized()) mainWindow.unmaximize();
     else mainWindow.maximize();
   }
 });
 
-ipcMain.on('window:close', () => {
+ipcMain.on('window:close', (event) => {
+  assertTrustedIpcSender(event);
   if (mainWindow) mainWindow.close();
 });

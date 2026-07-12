@@ -10,7 +10,7 @@ typedef LONG NTSTATUS;
 #pragma comment(lib, "bcrypt.lib")
 
 #ifndef EXPECTED_SHADER_HASH
-#define EXPECTED_SHADER_HASH L""
+#define EXPECTED_SHADER_HASH L"SECURITY_ERROR: PLEASE_SET_EXPECTED_SHADER_HASH_IN_BUILD_CONFIG"
 #endif
 
 namespace {
@@ -52,6 +52,10 @@ bool VulkanRenderer::Initialize(void* nativeDevice, void* nativeContext) {
     // For Vulkan, nativeDevice is VkDevice, nativeContext is VkQueue
     m_device = static_cast<VkDevice>(nativeDevice);
     m_queue = static_cast<VkQueue>(nativeContext);
+
+    if (m_physicalDevice != VK_NULL_HANDLE) {
+        vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &m_memoryProperties);
+    }
 
     // Create a command pool for our rendering operations
     // Note: In a real implementation we need the queue family index
@@ -129,7 +133,7 @@ TextureHandle VulkanRenderer::CreateTexture(uint32_t width, uint32_t height, uin
         VkMemoryAllocateInfo allocInfo = {};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = 0; // Stub: Requires VkPhysicalDeviceMemoryProperties
+        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         
         VkDeviceMemory memory;
         if (vkAllocateMemory(m_device, &allocInfo, nullptr, &memory) == VK_SUCCESS) {
@@ -178,9 +182,28 @@ ShaderHandle VulkanRenderer::LoadComputeShader(const uint8_t* bytecode, size_t b
 
     // S5.2: Cryptographic Shader Verification
     std::wstring expectedHash = EXPECTED_SHADER_HASH;
+    // Check if the hash is still the default error message
+    if (expectedHash == L"SECURITY_ERROR: PLEASE_SET_EXPECTED_SHADER_HASH_IN_BUILD_CONFIG") {
+        LOG_ERROR("SECURITY ERROR: Shader hash not configured! Set EXPECTED_SHADER_HASH to the SHA-256 of the expected shader.");
+        return handle; // Return invalid handle to prevent loading potentially malicious shader
+    }
+
+#ifndef _DEBUG
+    if (expectedHash.empty()) {
+        LOG_ERROR("SECURITY ERROR: Vulkan shader verification is disabled in Release build! EXPECTED_SHADER_HASH must not be empty.");
+        return handle;
+    }
+#endif
+
     if (!expectedHash.empty()) {
         std::wstring actualHash = ComputeShaderHashSHA256(bytecode, bytecodeSize);
-        if (actualHash.empty() || _wcsicmp(actualHash.c_str(), expectedHash.c_str()) != 0) {
+        auto toLower = [](std::wstring s) {
+            for (auto& c : s) {
+                if (c >= L'A' && c <= L'Z') c = c - L'A' + L'a';
+            }
+            return s;
+        };
+        if (actualHash.empty() || toLower(actualHash) != toLower(expectedHash)) {
             LOG_ERROR("Vulkan Shader bytecode integrity check failed (SHA-256 mismatch)");
             return handle;
         }
@@ -235,12 +258,24 @@ void VulkanRenderer::DestroyShader(ShaderHandle& handle) {
     }
 }
 
-void VulkanRenderer::DispatchCompute(ShaderHandle shader, TextureHandle input, TextureHandle output, uint32_t groupsX, uint32_t groupsY) {
+void VulkanRenderer::DispatchCompute(ShaderHandle shader,
+                                     const TextureHandle* inputs, uint32_t numInputs,
+                                     const TextureHandle* outputs, uint32_t numOutputs,
+                                     const void* constantsData, size_t constantsSize,
+                                     uint32_t groupsX, uint32_t groupsY) {
     if (!m_cmdBuffer || !shader.pipelineState) return;
     
     vkCmdBindPipeline(m_cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, static_cast<VkPipeline>(shader.pipelineState));
     // Note: VkDescriptorSet binding omitted for prototype
     vkCmdDispatch(m_cmdBuffer, groupsX, groupsY, 1);
+}
+
+void VulkanRenderer::ClearUAVUint(TextureHandle texture, const uint32_t values[4]) {
+    // Stub for MVP prototype
+}
+
+void VulkanRenderer::CopyTexture(TextureHandle dst, TextureHandle src) {
+    // Stub for MVP prototype
 }
 
 void VulkanRenderer::CopyToSwapchain(TextureHandle source, void* swapchainTexture) {
@@ -308,6 +343,17 @@ void VulkanRenderer::CopyToSwapchain(TextureHandle source, void* swapchainTextur
 
     vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(m_queue); // Naive sync for prototype
+}
+
+uint32_t VulkanRenderer::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const {
+    for (uint32_t i = 0; i < m_memoryProperties.memoryTypeCount; ++i) {
+        if ((typeFilter & (1 << i)) && 
+            (m_memoryProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+            return i;
+        }
+    }
+    LOG_ERROR("VulkanRenderer: Failed to find suitable memory type!");
+    return 0;
 }
 
 } // namespace vrinject

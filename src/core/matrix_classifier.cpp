@@ -61,7 +61,8 @@ void MatrixClassifier::OnConstantBufferUpdate(const void* pData, size_t byteSize
 
     // Auto-lock logic
     if (!m_candidates.empty() && !m_lockedAddress) {
-        if (m_candidates[0].confidence >= 0.85f) {
+        const float AUTO_LOCK_CONFIDENCE_THRESHOLD = 0.85f;
+        if (m_candidates[0].confidence >= AUTO_LOCK_CONFIDENCE_THRESHOLD) {
             m_lockedFrames++;
             if (m_lockedFrames >= 10) {
                 LockCameraMatrix(m_candidates[0].bufferAddress);
@@ -84,6 +85,7 @@ bool MatrixClassifier::GetCameraMatrix(DirectX::XMFLOAT4X4& outMatrix) const {
 }
 
 void MatrixClassifier::LockCameraMatrix(void* address) {
+    std::lock_guard<std::mutex> lock(m_mutex);
     if (m_lockedAddress != address) {
         m_lockedAddress = address;
         LOG_INFO("Camera Matrix auto-locked at address: %p", address);
@@ -96,13 +98,30 @@ void MatrixClassifier::LockCameraMatrix(void* address) {
     }
 }
 
-bool MatrixClassifier::OverwriteCameraMatrix(const DirectX::XMFLOAT4X4& vrMatrix) {
+void* MatrixClassifier::GetLockedAddress() const {
     std::lock_guard<std::mutex> lock(m_mutex);
-    if (!m_lockedAddress) return false;
+    return m_lockedAddress;
+}
+
+bool MatrixClassifier::OverwriteCameraMatrix(
+    const DirectX::XMFLOAT4X4& vrMatrix,
+    void* currentBufferAddress,
+    size_t currentByteSize) {
     
-    // In a real DX11 hook, you'd write this directly to the mapped pointer
-    std::memcpy(m_lockedAddress, &vrMatrix, sizeof(DirectX::XMFLOAT4X4));
-    return true;
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (!m_lockedAddress || !currentBufferAddress) return false;
+    
+    uintptr_t lockedPtr = reinterpret_cast<uintptr_t>(m_lockedAddress);
+    uintptr_t bufferStart = reinterpret_cast<uintptr_t>(currentBufferAddress);
+    uintptr_t bufferEnd = bufferStart + currentByteSize;
+    
+    // Validate the locked address is within the currently mapped buffer
+    if (lockedPtr >= bufferStart && (lockedPtr + sizeof(DirectX::XMFLOAT4X4)) <= bufferEnd) {
+        std::memcpy(m_lockedAddress, &vrMatrix, sizeof(DirectX::XMFLOAT4X4));
+        return true;
+    }
+    
+    return false;
 }
 
 void MatrixClassifier::Reset() {

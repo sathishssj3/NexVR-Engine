@@ -42,10 +42,16 @@ private:
     UpdateCamera_t m_originalUpdateCamera = nullptr;
     static void DetourUpdateCamera(void* pCameraManager, float deltaTime);
 
+    // --- BeginRenderingViewFamily detour ---
+    // Signature: void FRendererModule::BeginRenderingViewFamily(FCanvas*, FSceneViewFamily*)
+    typedef void (*BeginRenderingViewFamily_t)(void* pCanvas, FSceneViewFamily* pViewFamily);
+    BeginRenderingViewFamily_t m_originalBeginRenderingViewFamily = nullptr;
+    static void DetourBeginRenderingViewFamily(void* pCanvas, FSceneViewFamily* pViewFamily);
+
     bool m_isHooked = false;
 
     // Track which hook type is active
-    enum class HookType { None, GetProjectionData, CalcSceneView, UpdateCamera };
+    enum class HookType { None, GetProjectionData, CalcSceneView, UpdateCamera, BeginRenderingViewFamily };
     HookType m_activeHookType = HookType::None;
 };
 

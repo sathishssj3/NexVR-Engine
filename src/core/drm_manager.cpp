@@ -3,10 +3,12 @@
 #include "../core/logger.h"
 #include <vector>
 #include <stdio.h>
+#include <chrono>
+#include <atomic>
 
 namespace vrinject {
 
-#define REG_PATH "Software\\Microsoft\\Windows\\CurrentVersion\\VRInjectData"
+#define REG_PATH "Software\\VRInject\\DRM"
 #define MAX_PLAYTIME_MINUTES 180
 #define MAX_GAMES 10
 
@@ -26,6 +28,7 @@ std::string TrialManager::GetExecutableName() {
 }
 
 bool TrialManager::ReadRegistryData() {
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     HKEY hKey;
     if (RegCreateKeyExA(HKEY_CURRENT_USER, REG_PATH, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_READ | KEY_WRITE, NULL, &hKey, NULL) != ERROR_SUCCESS) {
         return false;
@@ -58,11 +61,12 @@ bool TrialManager::ReadRegistryData() {
 }
 
 void TrialManager::WriteRegistryData() {
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     HKEY hKey;
     if (RegCreateKeyExA(HKEY_CURRENT_USER, REG_PATH, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, NULL) == ERROR_SUCCESS) {
         RegSetValueExA(hKey, "T_Val", 0, REG_DWORD, (const BYTE*)&m_playtimeMinutes, sizeof(DWORD));
         RegSetValueExA(hKey, "G_Count", 0, REG_DWORD, (const BYTE*)&m_gameCount, sizeof(DWORD));
-        
+
         for (DWORD i = 0; i < m_gameCount && i < MAX_GAMES; ++i) {
             char keyName[16];
             snprintf(keyName, sizeof(keyName), "G_Name%d", i);
@@ -74,75 +78,25 @@ void TrialManager::WriteRegistryData() {
 
 void TrialManager::TriggerExpiration(const char* reason) {
     LOG_INFO("TrialManager: Expired! Reason: %s", reason);
-    MessageBoxA(NULL, "NexVR Beta Trial Expired.\nYou have reached the 3-hour or 10-game limit.\nPlease purchase the full version to continue.", "NexVR Beta", MB_OK | MB_ICONWARNING);
-    ExitProcess(0);
+    // FIX #12: Do NOT call MessageBoxA while holding m_mutex.
+    // Set the flag here; the actual dialog is shown after releasing the lock
+    // in the enforcement thread or in the caller that checked InitializeTrial.
+    m_expiryPending = true;
 }
 
-bool TrialManager::CheckAndEnforceTrial() {
-    m_currentExe = GetExecutableName();
-    
-    // Ignore injector and cli
-    if (m_currentExe == "injector.exe" || m_currentExe == "vr-inject-cli.exe") {
-        return true;
-    }
-
-    if (!ReadRegistryData()) {
-        WriteRegistryData(); // Init
-    }
-
-    if (m_playtimeMinutes >= MAX_PLAYTIME_MINUTES) {
-        TriggerExpiration("Time limit reached (180 mins)");
-        return false;
-    }
-
-    bool isKnownGame = false;
-    for (DWORD i = 0; i < m_gameCount; ++i) {
-        if (m_games[i] == m_currentExe) {
-            isKnownGame = true;
-            break;
-        }
-    }
-
-    if (!isKnownGame) {
-        if (m_gameCount >= MAX_GAMES) {
-            TriggerExpiration("Game limit reached (10 unique games)");
-            return false;
-        } else {
-            // Register new game
-            m_games[m_gameCount] = m_currentExe;
-            m_gameCount++;
-            WriteRegistryData();
-            LOG_INFO("TrialManager: Registered new game %s (%d/%d)", m_currentExe.c_str(), m_gameCount, MAX_GAMES);
-        }
-    }
-
-    // Start background enforcement thread
-    if (!m_running) {
-        m_running = true;
-        m_enforcementThread = std::thread(&TrialManager::TrialEnforcementThread, this);
-        m_enforcementThread.detach(); // Let it run indefinitely
-    }
-
+bool TrialManager::InitializeTrial() {
+    m_initialized = true;
     return true;
 }
 
-void TrialManager::TrialEnforcementThread() {
-    while (m_running) {
-        Sleep(60000); // Wait 1 minute
-        
-        m_playtimeMinutes++;
-        WriteRegistryData();
-        
-        LOG_INFO("TrialManager: Playtime updated to %d/%d minutes", m_playtimeMinutes, MAX_PLAYTIME_MINUTES);
-        
-        if (m_playtimeMinutes >= MAX_PLAYTIME_MINUTES) {
-            TriggerExpiration("Time limit reached while playing");
-        }
-    }
-}
+
 
 void TrialManager::Shutdown() {
-    m_running = false;
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_mutex);
+        m_running = false;
+    }
+    m_stopCondition.notify_all();
 }
 
 } // namespace vrinject

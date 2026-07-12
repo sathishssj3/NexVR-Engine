@@ -24,16 +24,30 @@ ComfortGuard::~ComfortGuard() {
 bool ComfortGuard::Initialize(ID3D11Device* device, const std::string& shaderDir) {
     // 1. Load Compute Shader
     std::string shaderPath = shaderDir + "\\comfort_guard_analysis.cso";
-    std::ifstream file(shaderPath, std::ios::binary | std::ios::ate);
-    if (!file.is_open()) {
+
+    // FIX (portable): Convert the path to UTF-16 before opening so that
+    // non-ASCII characters (Cyrillic, Chinese, etc.) in the install directory
+    // are handled correctly on all Windows locales.
+    int wLen = MultiByteToWideChar(CP_UTF8, 0, shaderPath.c_str(), -1, nullptr, 0);
+    std::wstring wShaderPath(wLen > 0 ? wLen : 1, L'\0');
+    if (wLen > 0) MultiByteToWideChar(CP_UTF8, 0, shaderPath.c_str(), -1, &wShaderPath[0], wLen);
+
+    FILE* rawFile = nullptr;
+    _wfopen_s(&rawFile, wShaderPath.c_str(), L"rb");
+    if (!rawFile) {
         LOG_ERROR("ComfortGuard: Failed to open compute shader file: %s", shaderPath.c_str());
         return false;
     }
-    size_t size = file.tellg();
-    file.seekg(0, std::ios::beg);
+    fseek(rawFile, 0, SEEK_END);
+    long sizeL = ftell(rawFile);
+    if (sizeL <= 0) { fclose(rawFile); LOG_ERROR("ComfortGuard: Empty or unreadable shader file: %s", shaderPath.c_str()); return false; }
+    fseek(rawFile, 0, SEEK_SET);
+    size_t size = static_cast<size_t>(sizeL);
     std::vector<char> buffer(size);
-    if (!file.read(buffer.data(), size)) {
-        LOG_ERROR("ComfortGuard: Failed to read compute shader file: %s", shaderPath.c_str());
+    size_t bytesRead = fread(buffer.data(), 1, size, rawFile);
+    fclose(rawFile);
+    if (bytesRead != size) {
+        LOG_ERROR("ComfortGuard: Short read for shader file: %s", shaderPath.c_str());
         return false;
     }
     HRESULT hr = device->CreateComputeShader(buffer.data(), size, nullptr, &m_analysisCS);
@@ -99,6 +113,7 @@ void ComfortGuard::Shutdown() {
 }
 
 void ComfortGuard::AnalyzeDepth(ID3D11DeviceContext* ctx, ID3D11ShaderResourceView* depthSRV, ID3D11Buffer* paramsCB, UINT width, UINT height) {
+    if (width == 0 || height == 0) return;
     if (!m_analysisCS || !m_histogramUAV || !depthSRV) return;
 
     // 1. Clear the UAV on the GPU
@@ -138,6 +153,13 @@ void ComfortGuard::AnalyzeDepth(ID3D11DeviceContext* ctx, ID3D11ShaderResourceVi
 }
 
 void ComfortGuard::UpdateParameters(ID3D11DeviceContext* ctx, float deltaTime, float& outConvergence, float& outDepthStrength) {
+    // Clamp deltaTime to safe range to prevent divergence if system timer hiccups
+    deltaTime = (std::max)(0.0f, (std::min)(1.0f, deltaTime));
+
+    if (m_lastHistogram.size() < 16) {
+        m_lastHistogram.resize(16, 0);
+    }
+
     if (!m_stagingBuffer) {
         outConvergence = m_baseConvergence;
         outDepthStrength = m_baseDepthStrength;
@@ -201,8 +223,12 @@ void ComfortGuard::UpdateParameters(ID3D11DeviceContext* ctx, float deltaTime, f
     farCount += m_lastHistogram[14] * 0.90;
     farCount += m_lastHistogram[15] * 1.00;
 
-    double nearOccupancy = nearCount / static_cast<double>(totalSamples);
-    double farOccupancy = farCount / static_cast<double>(totalSamples);
+    double nearOccupancy = 0.0;
+    double farOccupancy = 0.0;
+    if (totalSamples > 0) {
+        nearOccupancy = nearCount / static_cast<double>(totalSamples);
+        farOccupancy = farCount / static_cast<double>(totalSamples);
+    }
 
     float targetConvergence = m_baseConvergence;
     float targetDepthStrength = m_baseDepthStrength;
