@@ -561,7 +561,7 @@ LRESULT CALLBACK InputHook::LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM l
             }
             
             // Inject RawInput for 3D Camera Rotation AND Clicks
-            PostMessageA(self.m_targetHwnd, WM_INPUT, RIM_INPUT, (LPARAM)0xDEADBEEF);
+            PostMessageA(self.m_targetHwnd, WM_INPUT, RIM_INPUT, (LPARAM)GetRawInputMagicHandle());
             
             // Swallow all physical input so the user doesn't click outside the game
             return 1; 

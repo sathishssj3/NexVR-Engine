@@ -50,7 +50,8 @@ jobs:
             Write-Host "No certificate secret found. Skipping decoding."
             exit 0
         }
-        $bytes = [Convert]::FromBase64String($env:CERT_BASE64)
+        $cleanBase64 = $env:CERT_BASE64 -replace '\s',''
+        $bytes = [Convert]::FromBase64String($cleanBase64)
         [IO.File]::WriteAllBytes("${{ github.workspace }}\cert.pfx", $bytes)
         echo "SIGN_CERT_PATH=${{ github.workspace }}\cert.pfx" >> $env:GITHUB_ENV
         echo "SIGN_CERT_PASS=${{ secrets.SIGN_CERT_PASS }}" >> $env:GITHUB_ENV
