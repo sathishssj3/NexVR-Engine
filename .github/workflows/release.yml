@@ -42,11 +42,14 @@ jobs:
         echo "C:\VulkanSDK\Bin" >> $env:GITHUB_PATH
 
     - name: Decode Code Signing Certificate
-      if: "${{ secrets.SIGN_CERT_PATH != '' }}"
       shell: pwsh
       env:
         CERT_BASE64: ${{ secrets.SIGN_CERT_PATH }}
       run: |
+        if ([string]::IsNullOrWhiteSpace($env:CERT_BASE64)) {
+            Write-Host "No certificate secret found. Skipping decoding."
+            exit 0
+        }
         $bytes = [Convert]::FromBase64String($env:CERT_BASE64)
         [IO.File]::WriteAllBytes("${{ github.workspace }}\cert.pfx", $bytes)
         echo "SIGN_CERT_PATH=${{ github.workspace }}\cert.pfx" >> $env:GITHUB_ENV
