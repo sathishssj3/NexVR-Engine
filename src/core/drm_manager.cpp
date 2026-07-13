@@ -27,6 +27,16 @@ std::string TrialManager::GetExecutableName() {
     return fullPath;
 }
 
+constexpr DWORD OBFUSCATION_KEY = 0x9E3779B9;
+
+std::string ObfuscateString(const std::string& input) {
+    std::string output = input;
+    for (size_t i = 0; i < output.length(); ++i) {
+        output[i] ^= (OBFUSCATION_KEY >> ((i % 4) * 8)) & 0xFF;
+    }
+    return output;
+}
+
 bool TrialManager::ReadRegistryData() {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
     HKEY hKey;
@@ -36,14 +46,20 @@ bool TrialManager::ReadRegistryData() {
 
     DWORD type = REG_DWORD;
     DWORD size = sizeof(DWORD);
-    if (RegQueryValueExA(hKey, "T_Val", NULL, &type, (LPBYTE)&m_playtimeMinutes, &size) != ERROR_SUCCESS) {
+    DWORD obfuscatedPlaytime = 0;
+    if (RegQueryValueExA(hKey, "T_Val", NULL, &type, (LPBYTE)&obfuscatedPlaytime, &size) != ERROR_SUCCESS) {
         m_playtimeMinutes = 0;
+    } else {
+        m_playtimeMinutes = obfuscatedPlaytime ^ OBFUSCATION_KEY;
     }
 
     type = REG_DWORD;
     size = sizeof(DWORD);
-    if (RegQueryValueExA(hKey, "G_Count", NULL, &type, (LPBYTE)&m_gameCount, &size) != ERROR_SUCCESS) {
+    DWORD obfuscatedGameCount = 0;
+    if (RegQueryValueExA(hKey, "G_Count", NULL, &type, (LPBYTE)&obfuscatedGameCount, &size) != ERROR_SUCCESS) {
         m_gameCount = 0;
+    } else {
+        m_gameCount = obfuscatedGameCount ^ OBFUSCATION_KEY;
     }
 
     for (DWORD i = 0; i < m_gameCount && i < MAX_GAMES; ++i) {
@@ -52,7 +68,7 @@ bool TrialManager::ReadRegistryData() {
         char buffer[MAX_PATH];
         DWORD bufSize = sizeof(buffer);
         if (RegQueryValueExA(hKey, keyName, NULL, NULL, (LPBYTE)buffer, &bufSize) == ERROR_SUCCESS) {
-            m_games[i] = buffer;
+            m_games[i] = ObfuscateString(std::string(buffer, bufSize - 1)); // -1 to ignore null terminator during un-obfuscation
         }
     }
 
@@ -64,13 +80,17 @@ void TrialManager::WriteRegistryData() {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
     HKEY hKey;
     if (RegCreateKeyExA(HKEY_CURRENT_USER, REG_PATH, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, NULL) == ERROR_SUCCESS) {
-        RegSetValueExA(hKey, "T_Val", 0, REG_DWORD, (const BYTE*)&m_playtimeMinutes, sizeof(DWORD));
-        RegSetValueExA(hKey, "G_Count", 0, REG_DWORD, (const BYTE*)&m_gameCount, sizeof(DWORD));
+        DWORD obfuscatedPlaytime = m_playtimeMinutes ^ OBFUSCATION_KEY;
+        RegSetValueExA(hKey, "T_Val", 0, REG_DWORD, (const BYTE*)&obfuscatedPlaytime, sizeof(DWORD));
+        
+        DWORD obfuscatedGameCount = m_gameCount ^ OBFUSCATION_KEY;
+        RegSetValueExA(hKey, "G_Count", 0, REG_DWORD, (const BYTE*)&obfuscatedGameCount, sizeof(DWORD));
 
         for (DWORD i = 0; i < m_gameCount && i < MAX_GAMES; ++i) {
             char keyName[16];
             snprintf(keyName, sizeof(keyName), "G_Name%d", i);
-            RegSetValueExA(hKey, keyName, 0, REG_SZ, (const BYTE*)m_games[i].c_str(), m_games[i].length() + 1);
+            std::string obfName = ObfuscateString(m_games[i]);
+            RegSetValueExA(hKey, keyName, 0, REG_SZ, (const BYTE*)obfName.c_str(), obfName.length() + 1);
         }
         RegCloseKey(hKey);
     }
