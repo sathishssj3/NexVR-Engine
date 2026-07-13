@@ -41,6 +41,17 @@ jobs:
         echo "VULKAN_SDK=C:\VulkanSDK" >> $env:GITHUB_ENV
         echo "C:\VulkanSDK\Bin" >> $env:GITHUB_PATH
 
+    - name: Decode Code Signing Certificate
+      if: "${{ secrets.SIGN_CERT_PATH != '' }}"
+      shell: pwsh
+      env:
+        CERT_BASE64: ${{ secrets.SIGN_CERT_PATH }}
+      run: |
+        $bytes = [Convert]::FromBase64String($env:CERT_BASE64)
+        [IO.File]::WriteAllBytes("${{ github.workspace }}\cert.pfx", $bytes)
+        echo "SIGN_CERT_PATH=${{ github.workspace }}\cert.pfx" >> $env:GITHUB_ENV
+        echo "SIGN_CERT_PASS=${{ secrets.SIGN_CERT_PASS }}" >> $env:GITHUB_ENV
+
     - name: Configure CMake
       run: cmake -B build -S . -A x64 -DDXC_EXECUTABLE="${{ github.workspace }}/dxc/bin/x64/dxc.exe"
 
