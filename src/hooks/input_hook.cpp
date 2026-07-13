@@ -48,18 +48,18 @@ HWND WINAPI HookedGetActiveWindow() {
 
 // FIX #13: Replace the hardcoded 0xDEADBEEF magic handle with a randomized
 // per-session secret. External code cannot predict this value and call us.
-static UINT_PTR g_rawInputMagicHandle = 0;
-
+// Using function-local static for thread-safe initialization (C++11).
 static UINT_PTR GetRawInputMagicHandle() {
-    if (g_rawInputMagicHandle == 0) {
+    static UINT_PTR g_rawInputMagicHandle = []() {
         // Mix a high-entropy value: base address of the DLL XOR a stack address.
         const UINT_PTR MAGIC_HANDLE_SENTINEL = 0xDEADB00F;
         const UINT_PTR FALLBACK_MAGIC_HANDLE = 0xCAFE1234;
-        g_rawInputMagicHandle = reinterpret_cast<UINT_PTR>(&g_rawInputMagicHandle) ^
-                                reinterpret_cast<UINT_PTR>(GetModuleHandleA(nullptr)) ^
-                                MAGIC_HANDLE_SENTINEL; // Non-zero sentinel for safety
-        if (g_rawInputMagicHandle == 0) g_rawInputMagicHandle = FALLBACK_MAGIC_HANDLE; // fallback if still 0
-    }
+        UINT_PTR handle = reinterpret_cast<UINT_PTR>(&handle) ^
+                          reinterpret_cast<UINT_PTR>(GetModuleHandleA(nullptr)) ^
+                          MAGIC_HANDLE_SENTINEL; // Non-zero sentinel for safety
+        if (handle == 0) handle = FALLBACK_MAGIC_HANDLE; // fallback if still 0
+        return handle;
+    }();
     return g_rawInputMagicHandle;
 }
 

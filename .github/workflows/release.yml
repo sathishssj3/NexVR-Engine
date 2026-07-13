@@ -50,11 +50,27 @@ jobs:
             Write-Host "No certificate secret found. Skipping decoding."
             exit 0
         }
-        $cleanBase64 = $env:CERT_BASE64 -replace '\s',''
-        $bytes = [Convert]::FromBase64String($cleanBase64)
-        [IO.File]::WriteAllBytes("${{ github.workspace }}\cert.pfx", $bytes)
-        echo "SIGN_CERT_PATH=${{ github.workspace }}\cert.pfx" >> $env:GITHUB_ENV
-        echo "SIGN_CERT_PASS=${{ secrets.SIGN_CERT_PASS }}" >> $env:GITHUB_ENV
+        
+        # Remove absolutely everything that is not a valid Base64 character
+        $cleanBase64 = $env:CERT_BASE64 -replace '[^A-Za-z0-9+/=]', ''
+        
+        # Ensure the string length is a multiple of 4 (add missing padding)
+        $pad = $cleanBase64.Length % 4
+        if ($pad -gt 0) {
+            Write-Host "Warning: Missing padding detected. Attempting to auto-fix..."
+            $cleanBase64 += "=" * (4 - $pad)
+        }
+        
+        try {
+            $bytes = [Convert]::FromBase64String($cleanBase64)
+            [IO.File]::WriteAllBytes("${{ github.workspace }}\cert.pfx", $bytes)
+            echo "SIGN_CERT_PATH=${{ github.workspace }}\cert.pfx" >> $env:GITHUB_ENV
+            echo "SIGN_CERT_PASS=${{ secrets.SIGN_CERT_PASS }}" >> $env:GITHUB_ENV
+            Write-Host "Successfully decoded certificate."
+        } catch {
+            Write-Host "ERROR: The Base64 string is still completely invalid. You must re-copy it perfectly."
+            exit 1
+        }
 
     - name: Configure CMake
       run: cmake -B build -S . -A x64 -DDXC_EXECUTABLE="${{ github.workspace }}/dxc/bin/x64/dxc.exe"
