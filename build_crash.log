@@ -1,0 +1,196 @@
+MSBuild version 18.7.8+1ac568fee for .NET Framework
+
+  1>Checking Build System
+  Compiling HLSL compute shader: asw_shader.hlsl -> asw_shader_cs_dx11.h
+  Microsoft (R) Direct3D Shader Compiler 10.1
+  Copyright (C) 2013 Microsoft. All rights reserved.
+  
+  compilation header save succeeded; see D:\a\NexVR-Engine\NexVR-Engine\build\bin\shaders\asw_shader_cs_dx11.h
+  Compiling HLSL compute shader to DXIL: asw_shader.hlsl -> asw_shader_cs_dx12.h
+  Compiling HLSL compute shader to SPIR-V: asw_shader.hlsl -> asw_shader_cs_vk.h
+  Compiling HLSL compute shader: bilateral_blend.hlsl -> bilateral_blend_cs_dx11.h
+  Microsoft (R) Direct3D Shader Compiler 10.1
+  Copyright (C) 2013 Microsoft. All rights reserved.
+  
+  compilation header save succeeded; see D:\a\NexVR-Engine\NexVR-Engine\build\bin\shaders\bilateral_blend_cs_dx11.h
+  Compiling HLSL compute shader to DXIL: bilateral_blend.hlsl -> bilateral_blend_cs_dx12.h
+  Compiling HLSL compute shader to SPIR-V: bilateral_blend.hlsl -> bilateral_blend_cs_vk.h
+  Compiling HLSL compute shader: bilateral_blur.hlsl -> bilateral_blur_cs_dx11.h
+  Microsoft (R) Direct3D Shader Compiler 10.1
+  Copyright (C) 2013 Microsoft. All rights reserved.
+  
+  compilation header save succeeded; see D:\a\NexVR-Engine\NexVR-Engine\build\bin\shaders\bilateral_blur_cs_dx11.h
+  Compiling HLSL compute shader to DXIL: bilateral_blur.hlsl -> bilateral_blur_cs_dx12.h
+  Compiling HLSL compute shader to SPIR-V: bilateral_blur.hlsl -> bilateral_blur_cs_vk.h
+  Compiling HLSL compute shader: comfort_guard_analysis.hlsl -> comfort_guard_analysis_cs_dx11.h
+  Microsoft (R) Direct3D Shader Compiler 10.1
+  Copyright (C) 2013 Microsoft. All rights reserved.
+  
+  compilation header save succeeded; see D:\a\NexVR-Engine\NexVR-Engine\build\bin\shaders\comfort_guard_analysis_cs_dx11.h
+  Compiling HLSL compute shader to DXIL: comfort_guard_analysis.hlsl -> comfort_guard_analysis_cs_dx12.h
+  Compiling HLSL compute shader to SPIR-V: comfort_guard_analysis.hlsl -> comfort_guard_analysis_cs_vk.h
+  Compiling HLSL compute shader: depth_reprojection.hlsl -> depth_reprojection_cs_dx11.h
+  Microsoft (R) Direct3D Shader Compiler 10.1
+  Copyright (C) 2013 Microsoft. All rights reserved.
+  
+  compilation header save succeeded; see D:\a\NexVR-Engine\NexVR-Engine\build\bin\shaders\depth_reprojection_cs_dx11.h
+  Compiling HLSL compute shader to DXIL: depth_reprojection.hlsl -> depth_reprojection_cs_dx12.h
+  Compiling HLSL compute shader to SPIR-V: depth_reprojection.hlsl -> depth_reprojection_cs_vk.h
+  Compiling HLSL compute shader: disocclusion_fill.hlsl -> disocclusion_fill_cs_dx11.h
+  Microsoft (R) Direct3D Shader Compiler 10.1
+  Copyright (C) 2013 Microsoft. All rights reserved.
+  
+  compilation header save succeeded; see D:\a\NexVR-Engine\NexVR-Engine\build\bin\shaders\disocclusion_fill_cs_dx11.h
+  Compiling HLSL compute shader to DXIL: disocclusion_fill.hlsl -> disocclusion_fill_cs_dx12.h
+  Compiling HLSL compute shader to SPIR-V: disocclusion_fill.hlsl -> disocclusion_fill_cs_vk.h
+  Compiling HLSL compute shader: stereo_resolve.hlsl -> stereo_resolve_cs_dx11.h
+  Microsoft (R) Direct3D Shader Compiler 10.1
+  Copyright (C) 2013 Microsoft. All rights reserved.
+  
+  compilation header save succeeded; see D:\a\NexVR-Engine\NexVR-Engine\build\bin\shaders\stereo_resolve_cs_dx11.h
+  Compiling HLSL compute shader to DXIL: stereo_resolve.hlsl -> stereo_resolve_cs_dx12.h
+  Compiling HLSL compute shader to SPIR-V: stereo_resolve.hlsl -> stereo_resolve_cs_vk.h
+  Compiling HLSL compute shader: stereo_warp.hlsl -> stereo_warp_cs_dx11.h
+  Microsoft (R) Direct3D Shader Compiler 10.1
+  Copyright (C) 2013 Microsoft. All rights reserved.
+  
+  compilation header save succeeded; see D:\a\NexVR-Engine\NexVR-Engine\build\bin\shaders\stereo_warp_cs_dx11.h
+  Compiling HLSL compute shader to DXIL: stereo_warp.hlsl -> stereo_warp_cs_dx12.h
+  Compiling HLSL compute shader to SPIR-V: stereo_warp.hlsl -> stereo_warp_cs_vk.h
+  Compiling HLSL compute shader: tonemap.hlsl -> tonemap_cs_dx11.h
+  Microsoft (R) Direct3D Shader Compiler 10.1
+  Copyright (C) 2013 Microsoft. All rights reserved.
+  
+  compilation header save succeeded; see D:\a\NexVR-Engine\NexVR-Engine\build\bin\shaders\tonemap_cs_dx11.h
+  Compiling HLSL compute shader to DXIL: tonemap.hlsl -> tonemap_cs_dx12.h
+  Compiling HLSL compute shader to SPIR-V: tonemap.hlsl -> tonemap_cs_vk.h
+  Building Custom Rule D:/a/NexVR-Engine/NexVR-Engine/CMakeLists.txt
+  Building Custom Rule D:/a/NexVR-Engine/NexVR-Engine/CMakeLists.txt
+  dummy_d3d11_app.cpp
+  dummy_app.vcxproj -> D:\a\NexVR-Engine\NexVR-Engine\build\bin\dummy_app.exe
+  Building Custom Rule D:/a/NexVR-Engine/NexVR-Engine/CMakeLists.txt
+  dxgi_proxy.cpp
+     Creating library D:/a/NexVR-Engine/NexVR-Engine/build/bin/dxgi.lib and object D:/a/NexVR-Engine/NexVR-Engine/build/bin/dxgi.exp
+  dxgi_proxy.vcxproj -> D:\a\NexVR-Engine\NexVR-Engine\build\bin\dxgi.dll
+  Signing dxgi.dll
+EXEC : SignTool error : An error occurred while attempting to load the signing [D:\a\NexVR-Engine\NexVR-Engine\build\dxgi_proxy.vcxproj]
+  
+  	certificate from: D:\a\NexVR-Engine\NexVR-Engine\cert.pfx
+  
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: The command "setlocal [D:\a\NexVR-Engine\NexVR-Engine\build\dxgi_proxy.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: signtool.exe sign /f D:\a\NexVR-Engine\NexVR-Engine\cert.pfx /p " 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" /tr http://timestamp.digicert.com /td sha256 /fd sha256 D:/a/NexVR-Engine/NexVR-Engine/build/bin/dxgi.dll [D:\a\NexVR-Engine\NexVR-Engine\build\dxgi_proxy.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: if %errorlevel% neq 0 goto :cmEnd [D:\a\NexVR-Engine\NexVR-Engine\build\dxgi_proxy.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: :cmEnd [D:\a\NexVR-Engine\NexVR-Engine\build\dxgi_proxy.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone [D:\a\NexVR-Engine\NexVR-Engine\build\dxgi_proxy.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: :cmErrorLevel [D:\a\NexVR-Engine\NexVR-Engine\build\dxgi_proxy.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: exit /b %1 [D:\a\NexVR-Engine\NexVR-Engine\build\dxgi_proxy.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: :cmDone [D:\a\NexVR-Engine\NexVR-Engine\build\dxgi_proxy.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: if %errorlevel% neq 0 goto :VCEnd [D:\a\NexVR-Engine\NexVR-Engine\build\dxgi_proxy.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: :VCEnd" exited with code 1. [D:\a\NexVR-Engine\NexVR-Engine\build\dxgi_proxy.vcxproj]
+  Building Custom Rule D:/a/NexVR-Engine/NexVR-Engine/CMakeLists.txt
+  test_app.cpp
+  test_app.vcxproj -> D:\a\NexVR-Engine\NexVR-Engine\build\bin\test_app.exe
+  Building Custom Rule D:/a/NexVR-Engine/NexVR-Engine/build/_deps/openxr-src/include/openxr/CMakeLists.txt
+  Building Custom Rule D:/a/NexVR-Engine/NexVR-Engine/build/_deps/openxr-src/src/CMakeLists.txt
+  Building Custom Rule D:/a/NexVR-Engine/NexVR-Engine/build/_deps/openxr-src/src/loader/CMakeLists.txt
+  android_utilities.cpp
+  api_layer_interface.cpp
+  loader_core.cpp
+  loader_init_data.cpp
+  loader_instance.cpp
+  loader_logger.cpp
+  loader_logger_recorders.cpp
+  manifest_file.cpp
+  runtime_interface.cpp
+  object_info.cpp
+  xr_generated_loader.cpp
+  filesystem_utils.cpp
+  json_reader.cpp
+  json_value.cpp
+  json_writer.cpp
+  Generating Code...
+  xr_generated_dispatch_table_core.c
+  openxr_loader.vcxproj -> D:\a\NexVR-Engine\NexVR-Engine\build\bin\openxr_loader.lib
+  Building Custom Rule D:/a/NexVR-Engine/NexVR-Engine/CMakeLists.txt
+  test_xr.cpp
+  test_xr.vcxproj -> D:\a\NexVR-Engine\NexVR-Engine\build\bin\test_xr.exe
+  Building Custom Rule D:/a/NexVR-Engine/NexVR-Engine/CMakeLists.txt
+  vk_test_app.cpp
+  vk_test_app.vcxproj -> D:\a\NexVR-Engine\NexVR-Engine\build\bin\vk_test_app.exe
+  Building Custom Rule D:/a/NexVR-Engine/NexVR-Engine/CMakeLists.txt
+  Building Custom Rule D:/a/NexVR-Engine/NexVR-Engine/CMakeLists.txt
+  dllmain.cpp
+  engine_detector.cpp
+  drm_manager.cpp
+  hook_manager.cpp
+  unreal_hook.cpp
+  unity_hook.cpp
+  memory_scanner.cpp
+  dx11_renderer.cpp
+  dx12_renderer.cpp
+  vulkan_renderer.cpp
+  dx11_hook.cpp
+  dx12_hook.cpp
+  dxgi_factory_hook.cpp
+  vulkan_layer.cpp
+  stereo_pipeline.cpp
+  comfort_guard.cpp
+  depth_reprojector.cpp
+  neural_inpainter.cpp
+  openxr_manager.cpp
+  cross_adapter_copier.cpp
+  Generating Code...
+  Compiling...
+  unreal_scanner.cpp
+  unity_scanner.cpp
+  motion_predictor.cpp
+  input_hook.cpp
+  input_manager.cpp
+  audio_hook.cpp
+  matrix_classifier.cpp
+  config_manager.cpp
+  overlay_manager.cpp
+  imgui_dx12_integration.cpp
+  universal_scanner.cpp
+  imgui.cpp
+  imgui_draw.cpp
+  imgui_tables.cpp
+  imgui_widgets.cpp
+  imgui_impl_win32.cpp
+  imgui_impl_dx11.cpp
+  imgui_impl_dx12.cpp
+  imgui_impl_vulkan.cpp
+  Generating Code...
+  buffer.c
+  hook.c
+  trampoline.c
+  hde32.c
+  hde64.c
+  Generating Code...
+     Creating library D:/a/NexVR-Engine/NexVR-Engine/build/bin/vrinject.lib and object D:/a/NexVR-Engine/NexVR-Engine/build/bin/vrinject.exp
+  vrinject.vcxproj -> D:\a\NexVR-Engine\NexVR-Engine\build\bin\vrinject.dll
+  Signing vrinject.dll	Generating DLL hash header
+EXEC : SignTool error : An error occurred while attempting to load the signing [D:\a\NexVR-Engine\NexVR-Engine\build\vrinject.vcxproj]
+  
+  	certificate from: D:\a\NexVR-Engine\NexVR-Engine\cert.pfx
+  
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: The command "setlocal [D:\a\NexVR-Engine\NexVR-Engine\build\vrinject.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: signtool.exe sign /f D:\a\NexVR-Engine\NexVR-Engine\cert.pfx /p " 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" /tr http://timestamp.digicert.com /td sha256 /fd sha256 D:/a/NexVR-Engine/NexVR-Engine/build/bin/vrinject.dll [D:\a\NexVR-Engine\NexVR-Engine\build\vrinject.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: if %errorlevel% neq 0 goto :cmEnd [D:\a\NexVR-Engine\NexVR-Engine\build\vrinject.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: :cmEnd [D:\a\NexVR-Engine\NexVR-Engine\build\vrinject.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone [D:\a\NexVR-Engine\NexVR-Engine\build\vrinject.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: :cmErrorLevel [D:\a\NexVR-Engine\NexVR-Engine\build\vrinject.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: exit /b %1 [D:\a\NexVR-Engine\NexVR-Engine\build\vrinject.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: :cmDone [D:\a\NexVR-Engine\NexVR-Engine\build\vrinject.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: if %errorlevel% neq 0 goto :VCEnd [D:\a\NexVR-Engine\NexVR-Engine\build\vrinject.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: setlocal [D:\a\NexVR-Engine\NexVR-Engine\build\vrinject.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: powershell -NonInteractive -NoProfile -ExecutionPolicy Bypass -File D:/a/NexVR-Engine/NexVR-Engine/build/generate_hash.ps1 D:/a/NexVR-Engine/NexVR-Engine/build/bin/vrinject.dll D:/a/NexVR-Engine/NexVR-Engine/build/expected_hash.h [D:\a\NexVR-Engine\NexVR-Engine\build\vrinject.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: if %errorlevel% neq 0 goto :cmEnd [D:\a\NexVR-Engine\NexVR-Engine\build\vrinject.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: :cmEnd [D:\a\NexVR-Engine\NexVR-Engine\build\vrinject.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone [D:\a\NexVR-Engine\NexVR-Engine\build\vrinject.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: :cmErrorLevel [D:\a\NexVR-Engine\NexVR-Engine\build\vrinject.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: exit /b %1 [D:\a\NexVR-Engine\NexVR-Engine\build\vrinject.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: :cmDone [D:\a\NexVR-Engine\NexVR-Engine\build\vrinject.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: if %errorlevel% neq 0 goto :VCEnd [D:\a\NexVR-Engine\NexVR-Engine\build\vrinject.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VC\v180\Microsoft.CppCommon.targets(166,5): error MSB3073: :VCEnd" exited with code 1. [D:\a\NexVR-Engine\NexVR-Engine\build\vrinject.vcxproj]
+
