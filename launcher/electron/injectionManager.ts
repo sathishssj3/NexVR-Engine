@@ -38,12 +38,11 @@ async function terminatePid(pid: number, force = false): Promise<void> {
 
 async function getProcessPath(pid: number): Promise<string> {
   if (!Number.isSafeInteger(pid) || pid <= 0) return '';
-  const command = 'param([int]$PidArg) (Get-Process -Id $PidArg -ErrorAction Stop).Path';
+  const command = `(Get-Process -Id ${pid} -ErrorAction Stop).Path`;
   const { stdout } = await execFileAsync(
     'powershell.exe',
-    ['-NoProfile', '-NonInteractive', '-Command', command, String(pid)],
+    ['-NoProfile', '-NonInteractive', '-Command', command],
     { encoding: 'utf-8', timeout: 3000, windowsHide: true }
-    
   );
   return stdout.trim();
 }
