@@ -159,6 +159,7 @@ void OnPresent(IDXGISwapChain* pSwapChain) {
         if (g_frameResources.swapChain != pSwapChain) {
             LOG_INFO("DX12Hook: Swapchain changed/recreated. Resetting renderer and captured resources.");
             g_dx12Renderer.Shutdown();
+            g_openxrManager.Shutdown();
             g_openxrInitialized = false;
             if (g_frameResources.swapChain) {
                 g_frameResources.swapChain->Release();
