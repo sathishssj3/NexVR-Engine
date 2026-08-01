@@ -312,13 +312,13 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
           success: false,
           message: 'Injector timed out or was blocked by Anti-Cheat. (UAC timeout?)',
         });
-      }, 60000);
+      }, 180000);
 
       child_process.execFile(
         'powershell.exe',
         ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', base64Outer],
         {
-          timeout: 60000,
+          timeout: 180000,
           killSignal: 'SIGKILL',
           cwd: installPath,
           windowsHide: true,

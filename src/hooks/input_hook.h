@@ -9,7 +9,9 @@
 
 namespace vrinject {
 
-class OpenXRManager;
+namespace openxr {
+class OpenXRRuntimeManager;
+}
 
 class InputHook {
 public:
@@ -27,7 +29,7 @@ public:
 
     // Used by OpenXRManager to inject 1:1 motion aiming
     void InjectAimDelta(float pitchDeg, float yawDeg);
-    void SetOpenXRManager(OpenXRManager* mgr) { m_openxrManager = mgr; }
+    // void SetOpenXRManager(OpenXRManager* mgr) { m_openxrManager = mgr; }
 
     // Start background input capture for Null Driver users
     void StartBackgroundCapture();
@@ -46,7 +48,7 @@ private:
     bool m_initialized = false;
     bool m_usesRawInput = false;
     bool m_vrControllersActive = false;
-    OpenXRManager* m_openxrManager = nullptr;
+    // OpenXRManager* m_openxrManager = nullptr;
 
     // Hook definitions
     static DWORD WINAPI HookedXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pState);

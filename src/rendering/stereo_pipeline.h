@@ -4,7 +4,7 @@
 #include <cstdint>
 #include "comfort_guard.h"
 #include "neural_inpainter.h"
-#include "openxr_manager.h"
+#include "../openxr/openxr_runtime_manager.h"
 
 namespace vrinject {
 
@@ -24,23 +24,22 @@ struct StereoParams {
 
 class StereoPipeline {
 public:
-    bool Initialize(IRenderer* renderer, UINT width, UINT height, 
-                    const std::string& moduleDir);
+    bool Initialize(::IRenderer* renderer, UINT width, UINT height, 
+                    const std::string& moduleDir, uint32_t colorFormat = 28);
     void RenderComputeOnly(TextureHandle colorSRV,
                            TextureHandle depthSRV,
                            const StereoParams& params);
     void Shutdown();
 
-    TextureHandle GetLeftEyeTexture()  const { return m_leftEyeTex; }
-    TextureHandle GetRightEyeTexture() const { return m_rightEyeTex; }
+    TextureHandle GetLeftEyeTexture()  const { return m_finalLeftEye.nativePtr ? m_finalLeftEye : m_leftEyeTex; }
+    TextureHandle GetRightEyeTexture() const { return m_finalRightEye.nativePtr ? m_finalRightEye : m_rightEyeTex; }
     const ComfortGuard& GetComfortGuard() const { return m_comfortGuard; }
-    OpenXRManager* GetOpenXRManager() { return &m_openxrManager; }
 
 private:
     bool LoadShader(const std::string& path, ShaderHandle& outHandle);
-    bool CreateResources(UINT width, UINT height);
+    bool CreateResources(UINT width, UINT height, uint32_t colorFormat);
 
-    IRenderer* m_renderer = nullptr;
+    ::IRenderer* m_renderer = nullptr;
     UINT m_width = 0;
     UINT m_height = 0;
 
@@ -59,13 +58,16 @@ private:
     
     // Left eye reference (copy of original)
     TextureHandle m_leftEyeTex;
+    
+    ShaderHandle m_tonemapCS;
+    TextureHandle m_finalLeftEye;
+    TextureHandle m_finalRightEye;
 
     // Atomic depth-index buffer for warp pass (uint per pixel)
     TextureHandle m_warpBufferTex;
 
     ComfortGuard m_comfortGuard;
     NeuralInpainter m_neuralInpainter;
-    OpenXRManager m_openxrManager;
 };
 
 } // namespace vrinject

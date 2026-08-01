@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Solution>
+	<Configurations>
+		<BuildType Name="Debug"/>
+		<BuildType Name="Release"/>
+		<BuildType Name="MinSizeRel"/>
+		<BuildType Name="RelWithDebInfo"/>
+		<Platform Name="x64"/>
+	</Configurations>
+	<Folder Name="/CMake predefined targets/">
+		<Project Path="ALL_BUILD.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="4dd77dea-902b-3a43-bbbc-997e71e40bf8" DefaultStartup="true">
+			<BuildDependency Project="C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build/ZERO_CHECK.vcxproj"/>
+			<BuildDependency Project="src/loader/openxr_loader.vcxproj"/>
+		</Project>
+		<Project Path="INSTALL.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="5a15719f-0e0b-3d3d-8fee-ee58cbd5874b">
+			<BuildDependency Project="ALL_BUILD.vcxproj"/>
+			<BuildDependency Project="C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build/ZERO_CHECK.vcxproj"/>
+			<Build Solution="Debug|*" Project="false"/>
+			<Build Solution="Release|*" Project="false"/>
+			<Build Solution="MinSizeRel|*" Project="false"/>
+			<Build Solution="RelWithDebInfo|*" Project="false"/>
+		</Project>
+		<Project Path="C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build/ZERO_CHECK.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="a38f231d-5af4-30d8-b2e9-50ec9928dce7"/>
+	</Folder>
+	<Folder Name="/CTestDashboardTargets/">
+		<Project Path="Continuous.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="2b667fc3-43f1-3901-afb5-e85b395feb17">
+			<BuildDependency Project="C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build/ZERO_CHECK.vcxproj"/>
+			<Build Solution="Debug|*" Project="false"/>
+			<Build Solution="Release|*" Project="false"/>
+			<Build Solution="MinSizeRel|*" Project="false"/>
+			<Build Solution="RelWithDebInfo|*" Project="false"/>
+		</Project>
+		<Project Path="Experimental.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="ba0a1237-4fc8-34bf-9a1d-7bb9d07b2afc">
+			<BuildDependency Project="C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build/ZERO_CHECK.vcxproj"/>
+			<Build Solution="Debug|*" Project="false"/>
+			<Build Solution="Release|*" Project="false"/>
+			<Build Solution="MinSizeRel|*" Project="false"/>
+			<Build Solution="RelWithDebInfo|*" Project="false"/>
+		</Project>
+		<Project Path="Nightly.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="4620f4b9-5f0c-3463-9bde-c701e211b02c">
+			<BuildDependency Project="C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build/ZERO_CHECK.vcxproj"/>
+			<Build Solution="Debug|*" Project="false"/>
+			<Build Solution="Release|*" Project="false"/>
+			<Build Solution="MinSizeRel|*" Project="false"/>
+			<Build Solution="RelWithDebInfo|*" Project="false"/>
+		</Project>
+		<Project Path="NightlyMemoryCheck.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="f0615c26-5d1b-3621-a007-25f28ee8d804">
+			<BuildDependency Project="C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build/ZERO_CHECK.vcxproj"/>
+			<Build Solution="Debug|*" Project="false"/>
+			<Build Solution="Release|*" Project="false"/>
+			<Build Solution="MinSizeRel|*" Project="false"/>
+			<Build Solution="RelWithDebInfo|*" Project="false"/>
+		</Project>
+	</Folder>
+	<Folder Name="/Generated/">
+		<Project Path="include/openxr/generate_openxr_header.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="dd08bcce-2406-36dd-8447-ee215b785ce1">
+			<BuildDependency Project="C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build/ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="src/xr_common_generated_files.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="fb9d8116-d4aa-3322-b1cb-69f6e7cfa466">
+			<BuildDependency Project="C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build/ZERO_CHECK.vcxproj"/>
+			<Build Solution="Debug|*" Project="false"/>
+			<Build Solution="Release|*" Project="false"/>
+			<Build Solution="MinSizeRel|*" Project="false"/>
+			<Build Solution="RelWithDebInfo|*" Project="false"/>
+		</Project>
+		<Project Path="src/xr_global_generated_files.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="5883c4e3-fbfc-3d3e-94ff-0be1db71bfa9">
+			<BuildDependency Project="C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build/ZERO_CHECK.vcxproj"/>
+		</Project>
+	</Folder>
+	<Folder Name="/Helpers/">
+		<Project Path="uninstall.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="4f257025-49bc-3555-a0c4-311a3d646666">
+			<BuildDependency Project="C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build/ZERO_CHECK.vcxproj"/>
+			<Build Solution="Debug|*" Project="false"/>
+			<Build Solution="Release|*" Project="false"/>
+			<Build Solution="MinSizeRel|*" Project="false"/>
+			<Build Solution="RelWithDebInfo|*" Project="false"/>
+		</Project>
+	</Folder>
+	<Folder Name="/Loader/">
+		<Project Path="src/loader/openxr_loader.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="5b1f5acf-a96b-3024-ad76-e5fcf2336512">
+			<BuildDependency Project="C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build/ZERO_CHECK.vcxproj"/>
+			<BuildDependency Project="include/openxr/generate_openxr_header.vcxproj"/>
+			<BuildDependency Project="src/xr_global_generated_files.vcxproj"/>
+		</Project>
+	</Folder>
+</Solution>

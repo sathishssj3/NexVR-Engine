@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\onnxruntime-subbuild\CMakeFiles\94f5d08a6b803dc692c36a21b3f35359\onnxruntime-populate-mkdir.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\onnxruntime-subbuild\CMakeFiles\94f5d08a6b803dc692c36a21b3f35359\onnxruntime-populate-download.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\onnxruntime-subbuild\CMakeFiles\94f5d08a6b803dc692c36a21b3f35359\onnxruntime-populate-update.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\onnxruntime-subbuild\CMakeFiles\94f5d08a6b803dc692c36a21b3f35359\onnxruntime-populate-patch.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\onnxruntime-subbuild\CMakeFiles\94f5d08a6b803dc692c36a21b3f35359\onnxruntime-populate-configure.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\onnxruntime-subbuild\CMakeFiles\94f5d08a6b803dc692c36a21b3f35359\onnxruntime-populate-build.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\onnxruntime-subbuild\CMakeFiles\94f5d08a6b803dc692c36a21b3f35359\onnxruntime-populate-install.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\onnxruntime-subbuild\CMakeFiles\94f5d08a6b803dc692c36a21b3f35359\onnxruntime-populate-test.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\onnxruntime-subbuild\CMakeFiles\b25e92fd5a2be7d8be82ade7c17ccb12\onnxruntime-populate-complete.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\onnxruntime-subbuild\CMakeFiles\d2a353caba8434cc606dcee602a35846\onnxruntime-populate.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\onnxruntime-subbuild\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\onnxruntime-subbuild\CMakeFiles\onnxruntime-populate" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{AD5A9F34-A7CC-37AB-A8D7-879B6D989663}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

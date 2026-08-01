@@ -59,6 +59,8 @@ private:
     uint32_t m_frameCount     = 0;
     uint32_t m_lockedFrames   = 0;
 
+    void LockCameraMatrixInternal(void* address);
+
     // Heuristic scoring
     float ScoreMatrix(const DirectX::XMFLOAT4X4& m) const;
     bool  LooksLikeProjectionMatrix(

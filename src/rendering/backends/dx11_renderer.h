@@ -2,7 +2,7 @@
 #include "../irenderer.h"
 #include <d3d11.h>
 
-class DX11Renderer : public IRenderer {
+class DX11Renderer : public ::IRenderer {
 public:
     bool Initialize(void* nativeDevice, void* nativeContext) override;
     void Shutdown() override;

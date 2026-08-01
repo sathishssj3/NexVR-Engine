@@ -9,7 +9,7 @@
 
 namespace vrinject {
     namespace DX11Hook {
-        extern StereoPipeline g_stereoPipeline;
+        // extern StereoPipeline g_stereoPipeline; // REMOVED FOR SPRINT 3.1
     }
 }
 vrinject::VulkanRenderer g_vkRenderer;
@@ -153,7 +153,7 @@ VKAPI_ATTR VkResult VKAPI_CALL VRInject_QueuePresentKHR(VkQueue queue, const VkP
         }
         g_vkRenderer.SetVulkanContext(g_vulkanInstance, physicalDevice);
         g_vkRenderer.Initialize(device, queue);
-        vrinject::DX11Hook::g_stereoPipeline.GetOpenXRManager()->SetRenderer(&g_vkRenderer);
+        // vrinject::DX11Hook::g_stereoPipeline.GetOpenXRManager()->SetRenderer(&g_vkRenderer); // REMOVED FOR SPRINT 3.1
         LOG_INFO("Vulkan backend initialized via IRenderer (Implicit Layer)");
     });
 

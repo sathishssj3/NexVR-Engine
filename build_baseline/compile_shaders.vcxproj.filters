@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\asw_shader_cs_dx11.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\asw_shader_cs_dx12.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\asw_shader_cs_vk.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\bilateral_blend_cs_dx11.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\bilateral_blend_cs_dx12.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\bilateral_blend_cs_vk.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\bilateral_blur_cs_dx11.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\bilateral_blur_cs_dx12.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\bilateral_blur_cs_vk.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\comfort_guard_analysis_cs_dx11.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\comfort_guard_analysis_cs_dx12.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\comfort_guard_analysis_cs_vk.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\depth_reprojection_cs_dx11.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\depth_reprojection_cs_dx12.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\depth_reprojection_cs_vk.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\disocclusion_fill_cs_dx11.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\disocclusion_fill_cs_dx12.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\disocclusion_fill_cs_vk.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\stereo_resolve_cs_dx11.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\stereo_resolve_cs_dx12.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\stereo_resolve_cs_vk.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\stereo_warp_cs_dx11.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\stereo_warp_cs_dx12.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\stereo_warp_cs_vk.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\tonemap_cs_dx11.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\tonemap_cs_dx12.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\4de9daf51f99d502404b5cd7387a77dd\tonemap_cs_vk.h.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\1dfca106f00c7959147b2fcd4542873a\compile_shaders.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\CMakeFiles\compile_shaders" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{377369AA-E131-37DE-AE0D-DA2BC9CDBFED}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

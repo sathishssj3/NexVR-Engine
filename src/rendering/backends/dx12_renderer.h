@@ -8,7 +8,7 @@
 #include <d3d11on12.h>
 #include "../stereo_pipeline.h"
 
-class DX12Renderer : public IRenderer {
+class DX12Renderer : public ::IRenderer {
 public:
     bool Initialize(void* nativeDevice, void* nativeContext) override;
     void Shutdown() override;

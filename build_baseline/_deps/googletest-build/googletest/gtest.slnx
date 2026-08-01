@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Solution>
+	<Configurations>
+		<BuildType Name="Debug"/>
+		<BuildType Name="Release"/>
+		<BuildType Name="MinSizeRel"/>
+		<BuildType Name="RelWithDebInfo"/>
+		<Platform Name="x64"/>
+	</Configurations>
+	<Project Path="gtest.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="9ff2c917-2335-38e3-8821-3b032e5b5598">
+		<BuildDependency Project="C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build/ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="gtest_main.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="6e28bb86-05a5-33fe-a7c9-b545d3371603">
+		<BuildDependency Project="C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build/ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="gtest.vcxproj"/>
+	</Project>
+	<Folder Name="/CMake predefined targets/">
+		<Project Path="ALL_BUILD.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="4dd77dea-902b-3a43-bbbc-997e71e40bf8" DefaultStartup="true">
+			<BuildDependency Project="C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build/ZERO_CHECK.vcxproj"/>
+			<BuildDependency Project="gtest.vcxproj"/>
+			<BuildDependency Project="gtest_main.vcxproj"/>
+		</Project>
+		<Project Path="INSTALL.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="5a15719f-0e0b-3d3d-8fee-ee58cbd5874b">
+			<BuildDependency Project="ALL_BUILD.vcxproj"/>
+			<BuildDependency Project="C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build/ZERO_CHECK.vcxproj"/>
+			<Build Solution="Debug|*" Project="false"/>
+			<Build Solution="Release|*" Project="false"/>
+			<Build Solution="MinSizeRel|*" Project="false"/>
+			<Build Solution="RelWithDebInfo|*" Project="false"/>
+		</Project>
+		<Project Path="RUN_TESTS.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="0e368e12-d3b9-387a-b9d7-f12c9afbb37c">
+			<BuildDependency Project="C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build/ZERO_CHECK.vcxproj"/>
+			<Build Solution="Debug|*" Project="false"/>
+			<Build Solution="Release|*" Project="false"/>
+			<Build Solution="MinSizeRel|*" Project="false"/>
+			<Build Solution="RelWithDebInfo|*" Project="false"/>
+		</Project>
+		<Project Path="C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build/ZERO_CHECK.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="a38f231d-5af4-30d8-b2e9-50ec9928dce7"/>
+	</Folder>
+</Solution>

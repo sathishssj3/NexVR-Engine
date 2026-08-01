@@ -77,8 +77,8 @@ body {
 /* ======================================== */
 .glass-panel {
   background: var(--ag-bg-surface);
-  backdrop-filter: blur(24px) saturate(140%);
   -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(140%);
   border: 1px solid var(--ag-border);
   box-shadow: 
     0 15px 50px rgba(0, 0, 0, 0.5),
@@ -87,8 +87,8 @@ body {
 
 .glass-card {
   background: var(--ag-bg-card);
-  backdrop-filter: blur(16px) saturate(120%);
   -webkit-backdrop-filter: blur(16px) saturate(120%);
+  backdrop-filter: blur(16px) saturate(120%);
   border: 1px solid var(--ag-border);
   border-radius: var(--ag-radius-md);
   box-shadow: 

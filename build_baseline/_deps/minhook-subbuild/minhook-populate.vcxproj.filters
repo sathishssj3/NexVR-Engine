@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\minhook-subbuild\CMakeFiles\7cf90ccd3d2b3c73d70addc4869ab94e\minhook-populate-mkdir.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\minhook-subbuild\CMakeFiles\7cf90ccd3d2b3c73d70addc4869ab94e\minhook-populate-download.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\minhook-subbuild\CMakeFiles\7cf90ccd3d2b3c73d70addc4869ab94e\minhook-populate-update.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\minhook-subbuild\CMakeFiles\7cf90ccd3d2b3c73d70addc4869ab94e\minhook-populate-patch.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\minhook-subbuild\CMakeFiles\7cf90ccd3d2b3c73d70addc4869ab94e\minhook-populate-configure.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\minhook-subbuild\CMakeFiles\7cf90ccd3d2b3c73d70addc4869ab94e\minhook-populate-build.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\minhook-subbuild\CMakeFiles\7cf90ccd3d2b3c73d70addc4869ab94e\minhook-populate-install.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\minhook-subbuild\CMakeFiles\7cf90ccd3d2b3c73d70addc4869ab94e\minhook-populate-test.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\minhook-subbuild\CMakeFiles\f5a1200ba9d2bbc0cb97b29bbc1bf7bc\minhook-populate-complete.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\minhook-subbuild\CMakeFiles\253252194424ef0100787ec7ab58c1a3\minhook-populate.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\minhook-subbuild\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\minhook-subbuild\CMakeFiles\minhook-populate" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{0038CB0D-EB9F-35FB-8D85-C3560E35FF38}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/googletest-subbuild/CMakeFiles/googletest-populate"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/googletest-subbuild/CMakeFiles/797f3340ee2aa109aa4bc3b54d59d121/googletest-populate.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/googletest-subbuild/CMakeFiles/c5245dd984d4c507f94aba52a91789ce/googletest-populate-complete.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/googletest-subbuild/CMakeFiles/91ddee1650e92105e6996b980630efbe/googletest-populate-build.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/googletest-subbuild/CMakeFiles/91ddee1650e92105e6996b980630efbe/googletest-populate-configure.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/googletest-subbuild/CMakeFiles/91ddee1650e92105e6996b980630efbe/googletest-populate-download.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/googletest-subbuild/CMakeFiles/91ddee1650e92105e6996b980630efbe/googletest-populate-install.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/googletest-subbuild/CMakeFiles/91ddee1650e92105e6996b980630efbe/googletest-populate-mkdir.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/googletest-subbuild/CMakeFiles/91ddee1650e92105e6996b980630efbe/googletest-populate-patch.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/googletest-subbuild/CMakeFiles/91ddee1650e92105e6996b980630efbe/googletest-populate-test.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/googletest-subbuild/CMakeFiles/91ddee1650e92105e6996b980630efbe/googletest-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"googletest-populate"
+		],
+		"name" : "googletest-populate"
+	}
+}

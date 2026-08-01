@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/minhook-subbuild/CMakeFiles/minhook-populate"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/minhook-subbuild/CMakeFiles/253252194424ef0100787ec7ab58c1a3/minhook-populate.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/minhook-subbuild/CMakeFiles/f5a1200ba9d2bbc0cb97b29bbc1bf7bc/minhook-populate-complete.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/minhook-subbuild/CMakeFiles/7cf90ccd3d2b3c73d70addc4869ab94e/minhook-populate-build.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/minhook-subbuild/CMakeFiles/7cf90ccd3d2b3c73d70addc4869ab94e/minhook-populate-configure.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/minhook-subbuild/CMakeFiles/7cf90ccd3d2b3c73d70addc4869ab94e/minhook-populate-download.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/minhook-subbuild/CMakeFiles/7cf90ccd3d2b3c73d70addc4869ab94e/minhook-populate-install.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/minhook-subbuild/CMakeFiles/7cf90ccd3d2b3c73d70addc4869ab94e/minhook-populate-mkdir.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/minhook-subbuild/CMakeFiles/7cf90ccd3d2b3c73d70addc4869ab94e/minhook-populate-patch.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/minhook-subbuild/CMakeFiles/7cf90ccd3d2b3c73d70addc4869ab94e/minhook-populate-test.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/minhook-subbuild/CMakeFiles/7cf90ccd3d2b3c73d70addc4869ab94e/minhook-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"minhook-populate"
+		],
+		"name" : "minhook-populate"
+	}
+}

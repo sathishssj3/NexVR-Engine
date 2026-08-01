@@ -1,16 +1,119 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-name: Build NexVR Engine
+name: CI - Build, Test, and Analyze
+
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-  release:
-    types: [ "published" ]
 
 jobs:
-  build:
+  build-and-test:
     runs-on: windows-latest
+    permissions:
+      contents: read
+      # Needed for the GitHub CodeQL action
+      security-events: write
+
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup MSVC & CMake
+      uses: ilammy/msvc-dev-cmd@v1.13.0
+
+    - name: Download Official DXC (for SPIR-V support)
+      shell: cmd
+      run: |
+        curl.exe -L https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.7.2308/dxc_2023_08_14.zip -o dxc.zip
+        7z.exe x dxc.zip -odxc -y
+
+    - name: Setup Vulkan SDK
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        $VulkanURL = "https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-sdk.exe"
+        Write-Host "Downloading Vulkan SDK..."
+        Invoke-WebRequest -Uri $VulkanURL -OutFile VulkanSDK.exe
+        Write-Host "Installing Vulkan SDK..."
+        Start-Process -FilePath ".\VulkanSDK.exe" -ArgumentList "--root", "C:\VulkanSDK", "--accept-licenses", "--default-answer", "--confirm-command", "install" -Wait -NoNewWindow
+        Write-Host "Configuring Environment..."
+        echo "VULKAN_SDK=C:\VulkanSDK" >> $env:GITHUB_ENV
+        echo "C:\VulkanSDK\Bin" >> $env:GITHUB_PATH
+
+    - name: Configure CMake
+      run: cmake -B build -S . -A x64 -DDXC_EXECUTABLE="${{ github.workspace }}/dxc/bin/x64/dxc.exe" -DBUILD_TESTS=ON
+
+    - name: Build
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        cmake --build build --config ${{ matrix.configuration }} -- /maxcpucount
+        if ($LASTEXITCODE -ne 0) {
+          Write-Error "Build failed!"
+          exit 1
+        }
+
+    - name: Run Unit Tests
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        # Enable testing and run tests
+        ctest --test-dir build --output-on-failure -C ${{ matrix.configuration }}
+        if ($LASTEXITCODE -ne 0) {
+          Write-Error "Tests failed!"
+          exit 1
+        }
+
+    - name: Run Cppcheck Static Analysis
+      uses: cppcheck-action/github-action@v1.2.1
+      with:
+        directory: src
+        fail-build: true
+        addon: cert
+
+    # - name: Run Clang-Tidy
+    #   uses: owner-needed/clang-tidy-action@v1
+    #   with:
+    #     clang-tidy-bin: clang-tidy
+    #     path: build
+    #     clang-tidy-warnings-as-errors: '*'
+    #     header-filter: '.*'
+    #     format-style: file
+
+    - name: Run CodeQL Analysis
+      uses: github/codeql-action/init@v2
+      with:
+        languages: cpp
+
+    - name: CodeQL Autobuild
+      uses: github/codeql-action/autobuild@v2
+
+    - name: CodeQL Perform Analysis
+      uses: github/codeql-action/analyze@v2
+      with:
+        category: "/language:cpp"
+
+    - name: Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ matrix.configuration }}
+        path: |
+          **/TestResult*.xml
+          **/test_results*.xml
+          **/TEST-*.xml
+        retention-days: 7
+
+  # Keep the original release job for when releases are published
+  release:
+    needs: build-and-test
+    runs-on: windows-latest
+    if: github.event_name == 'release'
     permissions:
       contents: write
       issues: write
@@ -47,29 +150,29 @@ jobs:
         CERT_BASE64: ${{ secrets.SIGN_CERT_PATH }}
       run: |
         if ([string]::IsNullOrWhiteSpace($env:CERT_BASE64)) {
-            Write-Host "No certificate secret found. Skipping decoding."
-            exit 0
+          Write-Host "No certificate secret found. Skipping decoding."
+          exit 0
         }
-        
+
         # Remove absolutely everything that is not a valid Base64 character
         $cleanBase64 = $env:CERT_BASE64 -replace '[^A-Za-z0-9+/=]', ''
-        
+
         # Ensure the string length is a multiple of 4 (add missing padding)
         $pad = $cleanBase64.Length % 4
         if ($pad -gt 0) {
-            Write-Host "Warning: Missing padding detected. Attempting to auto-fix..."
-            $cleanBase64 += "=" * (4 - $pad)
+          Write-Host "Warning: Missing padding detected. Attempting to auto-fix..."
+          $cleanBase64 += "=" * (4 - $pad)
         }
-        
+
         try {
-            $bytes = [Convert]::FromBase64String($cleanBase64)
-            [IO.File]::WriteAllBytes("${{ github.workspace }}\cert.pfx", $bytes)
-            echo "SIGN_CERT_PATH=${{ github.workspace }}\cert.pfx" >> $env:GITHUB_ENV
-            echo "SIGN_CERT_PASS=${{ secrets.SIGN_CERT_PASS }}" >> $env:GITHUB_ENV
-            Write-Host "Successfully decoded certificate."
+          $bytes = [Convert]::FromBase64String($cleanBase64)
+          [IO.File]::WriteAllBytes("${{ github.workspace }}\cert.pfx", $bytes)
+          echo "SIGN_CERT_PATH=${{ github.workspace }}\cert.pfx" >> $env:GITHUB_ENV
+          echo "SIGN_CERT_PASS=${{ secrets.SIGN_CERT_PASS }}" >> $env:GITHUB_ENV
+          Write-Host "Successfully decoded certificate."
         } catch {
-            Write-Host "ERROR: The Base64 string is still completely invalid. You must re-copy it perfectly."
-            exit 1
+          Write-Host "ERROR: The Base64 string is still completely invalid. You must re-copy it perfectly."
+          exit 1
         }
 
     - name: Configure CMake
@@ -81,19 +184,19 @@ jobs:
         $ErrorActionPreference = 'SilentlyContinue'
         cmake --build build --config Release > build.log 2>&1
         if ($LASTEXITCODE -ne 0) {
-            Write-Host "Build failed! Pushing log to repo..."
-            $LogTail = Get-Content build.log -Tail 300 | Out-String
-            Write-Host "=== ERROR PREVIEW ==="
-            Write-Host $LogTail
-            Write-Host "====================="
-            Set-Content -Path build_crash.log -Value $LogTail
-            git config --global user.name 'github-actions[bot]'
-            git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-            git add build_crash.log
-            git commit -m "[bot] Upload build crash log for analysis" || true
-            git pull --rebase origin main || true
-            git push origin HEAD:main || true
-            exit 1
+          Write-Host "Build failed! Pushing log to repo..."
+          $LogTail = Get-Content build.log -Tail 300 | Out-String
+          Write-Host "=== ERROR PREVIEW ==="
+          Write-Host $LogTail
+          Write-Host "====================="
+          Set-Content -Path build_crash.log -Value $LogTail
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add build_crash.log
+          git commit -m "[bot] Upload build crash log for analysis" || true
+          git pull --rebase origin main || true
+          git push origin HEAD:main || true
+          exit 1
         }
 
     - name: Setup Node.js
@@ -117,7 +220,6 @@ jobs:
         path: launcher/dist-electron/NexVR Engine Setup*.exe
 
     - name: Upload to Release
-      if: github.event_name == 'release'
       uses: softprops/action-gh-release@v1
       with:
         files: launcher/dist-electron/NexVR Engine Setup*.exe

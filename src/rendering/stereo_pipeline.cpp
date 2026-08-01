@@ -15,6 +15,7 @@ namespace vrinject {
 #include "disocclusion_fill_cs_dx11.h"
 #include "bilateral_blur_cs_dx11.h"
 #include "bilateral_blend_cs_dx11.h"
+#include "tonemap_cs_dx11.h"
 
 // Include DX12 Shaders
 #include "stereo_warp_cs_dx12.h"
@@ -22,6 +23,7 @@ namespace vrinject {
 #include "disocclusion_fill_cs_dx12.h"
 #include "bilateral_blur_cs_dx12.h"
 #include "bilateral_blend_cs_dx12.h"
+#include "tonemap_cs_dx12.h"
 
 // Include Vulkan SPIR-V Shaders
 const uint32_t g_stereo_warp_VK[] = 
@@ -39,8 +41,11 @@ const uint32_t g_bilateral_blur_VK[] =
 const uint32_t g_bilateral_blend_VK[] = 
 #include "bilateral_blend_cs_vk.h"
 ;
+const uint32_t g_tonemap_VK[] = 
+#include "tonemap_cs_vk.h"
+;
 
-bool StereoPipeline::Initialize(IRenderer* renderer, UINT width, UINT height, const std::string& moduleDir) {
+bool StereoPipeline::Initialize(::IRenderer* renderer, UINT width, UINT height, const std::string& moduleDir, uint32_t colorFormat) {
     m_renderer = renderer;
     m_width = width;
     m_height = height;
@@ -52,8 +57,9 @@ bool StereoPipeline::Initialize(IRenderer* renderer, UINT width, UINT height, co
     if (!LoadShader("disocclusion_fill", m_fillCS)) return false;
     if (!LoadShader("bilateral_blur", m_blurCS)) return false;
     if (!LoadShader("bilateral_blend", m_blendCS)) return false;
+    if (!LoadShader("tonemap", m_tonemapCS)) return false;
 
-    if (!CreateResources(width, height)) return false;
+    if (!CreateResources(width, height, colorFormat)) return false;
 
     // TODO: OpenXRManager needs to know the native device to initialize properly.
     // For now we will defer OpenXR init to the hook caller (e.g. DX11Hook) OR
@@ -81,18 +87,21 @@ bool StereoPipeline::LoadShader(const std::string& name, ShaderHandle& outHandle
         else if (name == "disocclusion_fill") { bytecode = g_disocclusion_fill_DX11; size = sizeof(g_disocclusion_fill_DX11); }
         else if (name == "bilateral_blur") { bytecode = g_bilateral_blur_DX11; size = sizeof(g_bilateral_blur_DX11); }
         else if (name == "bilateral_blend") { bytecode = g_bilateral_blend_DX11; size = sizeof(g_bilateral_blend_DX11); }
+        else if (name == "tonemap") { bytecode = g_tonemap_DX11; size = sizeof(g_tonemap_DX11); }
     } else if (m_renderer->GetAPI() == GraphicsAPI::DX12) {
         if (name == "stereo_warp") { bytecode = g_stereo_warp_DX12; size = sizeof(g_stereo_warp_DX12); }
         else if (name == "stereo_resolve") { bytecode = g_stereo_resolve_DX12; size = sizeof(g_stereo_resolve_DX12); }
         else if (name == "disocclusion_fill") { bytecode = g_disocclusion_fill_DX12; size = sizeof(g_disocclusion_fill_DX12); }
         else if (name == "bilateral_blur") { bytecode = g_bilateral_blur_DX12; size = sizeof(g_bilateral_blur_DX12); }
         else if (name == "bilateral_blend") { bytecode = g_bilateral_blend_DX12; size = sizeof(g_bilateral_blend_DX12); }
+        else if (name == "tonemap") { bytecode = g_tonemap_DX12; size = sizeof(g_tonemap_DX12); }
     } else if (m_renderer->GetAPI() == GraphicsAPI::VULKAN) {
         if (name == "stereo_warp") { bytecode = (const uint8_t*)g_stereo_warp_VK; size = sizeof(g_stereo_warp_VK); }
         else if (name == "stereo_resolve") { bytecode = (const uint8_t*)g_stereo_resolve_VK; size = sizeof(g_stereo_resolve_VK); }
         else if (name == "disocclusion_fill") { bytecode = (const uint8_t*)g_disocclusion_fill_VK; size = sizeof(g_disocclusion_fill_VK); }
         else if (name == "bilateral_blur") { bytecode = (const uint8_t*)g_bilateral_blur_VK; size = sizeof(g_bilateral_blur_VK); }
         else if (name == "bilateral_blend") { bytecode = (const uint8_t*)g_bilateral_blend_VK; size = sizeof(g_bilateral_blend_VK); }
+        else if (name == "tonemap") { bytecode = (const uint8_t*)g_tonemap_VK; size = sizeof(g_tonemap_VK); }
     }
 
     if (bytecode == nullptr || size == 0) {
@@ -105,17 +114,13 @@ bool StereoPipeline::LoadShader(const std::string& name, ShaderHandle& outHandle
 }
 // LoadShader handles compilation to IRenderer
 
-bool StereoPipeline::CreateResources(UINT width, UINT height) {
+bool StereoPipeline::CreateResources(UINT width, UINT height, uint32_t colorFormat) {
     if (!m_renderer) return false;
 
-    // We assume the game format is an 8-bit or 10-bit UNORM (e.g. DXGI_FORMAT_R8G8B8A8_UNORM / VK_FORMAT_R8G8B8A8_UNORM)
-    // IRenderer maps this parameter directly to the native format integer.
-    // For universal injection, we pass 28 which maps to DXGI_FORMAT_R8G8B8A8_UNORM 
-    // and VK_FORMAT_R8G8B8A8_UNORM (actually Vulkan's is 37, but the renderer wrappers can map it).
-    // For now we'll pass 28.
-    uint32_t colorFmt = 28; // DXGI_FORMAT_R8G8B8A8_UNORM
+    uint32_t colorFmt = colorFormat;
     if (m_renderer->GetAPI() == GraphicsAPI::VULKAN) {
-        colorFmt = 37; // VK_FORMAT_R8G8B8A8_UNORM
+        if (colorFmt == 28) colorFmt = 37; // VK_FORMAT_R8G8B8A8_UNORM
+        else if (colorFmt == 87) colorFmt = 44; // VK_FORMAT_B8G8R8A8_UNORM
     }
 
     m_rightEyeTex = m_renderer->CreateTexture(width, height, colorFmt, true);
@@ -134,6 +139,12 @@ bool StereoPipeline::CreateResources(UINT width, UINT height) {
 
     m_warpBufferTex = m_renderer->CreateTexture(width, height, depthFmt, true);
     if (!m_warpBufferTex.nativePtr) return false;
+    
+    m_finalLeftEye = m_renderer->CreateTexture(width, height, colorFmt, true);
+    if (!m_finalLeftEye.nativePtr) return false;
+    
+    m_finalRightEye = m_renderer->CreateTexture(width, height, colorFmt, true);
+    if (!m_finalRightEye.nativePtr) return false;
 
     // Profiling queries and samplers are omitted in the universal framework MVP
     // They will be re-added via IRenderer extension later if needed.
@@ -171,6 +182,16 @@ void StereoPipeline::RenderComputeOnly(TextureHandle colorSRV, TextureHandle dep
 
     LOG_INFO("RenderComputeOnly: CopyTexture");
     m_renderer->CopyTexture(m_rightEyeTex, m_blurTempTex);
+    
+    LOG_INFO("RenderComputeOnly: Final Tonemap / Alpha Fix");
+    TextureHandle tonemapLeftInputs[] = { colorSRV };
+    TextureHandle tonemapLeftOutputs[] = { m_finalLeftEye };
+    m_renderer->DispatchCompute(m_tonemapCS, tonemapLeftInputs, 1, tonemapLeftOutputs, 1, nullptr, 0, (m_width + 7) / 8, (m_height + 7) / 8);
+
+    TextureHandle tonemapRightInputs[] = { m_rightEyeTex };
+    TextureHandle tonemapRightOutputs[] = { m_finalRightEye };
+    m_renderer->DispatchCompute(m_tonemapCS, tonemapRightInputs, 1, tonemapRightOutputs, 1, nullptr, 0, (m_width + 7) / 8, (m_height + 7) / 8);
+
     LOG_INFO("RenderComputeOnly: Done");
 }
 // Legacy logic removed
@@ -183,13 +204,16 @@ void StereoPipeline::Shutdown() {
     if (m_fillCS.shaderBytecode || m_fillCS.pipelineState) m_renderer->DestroyShader(m_fillCS);
     if (m_blurCS.shaderBytecode || m_blurCS.pipelineState) m_renderer->DestroyShader(m_blurCS);
     if (m_blendCS.shaderBytecode || m_blendCS.pipelineState) m_renderer->DestroyShader(m_blendCS);
+    if (m_tonemapCS.shaderBytecode || m_tonemapCS.pipelineState) m_renderer->DestroyShader(m_tonemapCS);
 
     if (m_rightEyeTex.nativePtr) m_renderer->DestroyTexture(m_rightEyeTex);
     if (m_blurTempTex.nativePtr) m_renderer->DestroyTexture(m_blurTempTex);
     if (m_warpBufferTex.nativePtr) m_renderer->DestroyTexture(m_warpBufferTex);
     // m_leftEyeTex is an external texture (swapchain) assigned dynamically, do not destroy it here.
+    if (m_finalLeftEye.nativePtr) m_renderer->DestroyTexture(m_finalLeftEye);
+    if (m_finalRightEye.nativePtr) m_renderer->DestroyTexture(m_finalRightEye);
 
-    m_openxrManager.Shutdown();
+    // removed m_openxrManager.Shutdown()
 }
 
 } // namespace vrinject

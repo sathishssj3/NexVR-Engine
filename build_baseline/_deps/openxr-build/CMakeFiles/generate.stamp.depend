@@ -1,0 +1,12 @@
+# CMake generation dependency list for this directory.
+C:/Program Files/CMake/share/cmake-4.3/Modules/CTest.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CTestTargets.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CTestUseLaunchers.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/DartConfiguration.tcl.in
+C:/Program Files/CMake/share/cmake-4.3/Modules/FindPackageHandleStandardArgs.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/FindPackageMessage.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/FindPythonInterp.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/GNUInstallDirs.cmake
+C:/Program Files/CMake/share/cmake-4.3/Templates/CTestScript.cmake.in
+C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/openxr-src/CMakeLists.txt
+C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/openxr-src/src/cmake/cmake_uninstall.cmake.in

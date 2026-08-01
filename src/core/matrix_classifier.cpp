@@ -65,7 +65,7 @@ void MatrixClassifier::OnConstantBufferUpdate(const void* pData, size_t byteSize
         if (m_candidates[0].confidence >= AUTO_LOCK_CONFIDENCE_THRESHOLD) {
             m_lockedFrames++;
             if (m_lockedFrames >= 10) {
-                LockCameraMatrix(m_candidates[0].bufferAddress);
+                LockCameraMatrixInternal(m_candidates[0].bufferAddress);
             }
         } else {
             m_lockedFrames = 0;
@@ -86,6 +86,10 @@ bool MatrixClassifier::GetCameraMatrix(DirectX::XMFLOAT4X4& outMatrix) const {
 
 void MatrixClassifier::LockCameraMatrix(void* address) {
     std::lock_guard<std::mutex> lock(m_mutex);
+    LockCameraMatrixInternal(address);
+}
+
+void MatrixClassifier::LockCameraMatrixInternal(void* address) {
     if (m_lockedAddress != address) {
         m_lockedAddress = address;
         LOG_INFO("Camera Matrix auto-locked at address: %p", address);

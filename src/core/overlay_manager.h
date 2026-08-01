@@ -28,7 +28,7 @@ private:
     ~OverlayManager() = default;
 
     bool m_initialized = false;
-    bool m_isVisible = true; // Default to true so the user sees it when launching
+    bool m_isVisible = false; // Hide by default so we don't render the uninitialized quad
     HWND m_hwnd = nullptr;
     std::mutex m_mutex;
 };

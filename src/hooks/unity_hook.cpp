@@ -2,7 +2,7 @@
 #include "../core/logger.h"
 #include "../core/memory_scanner.h"
 #include "../core/engine_scanners/unity_scanner.h"
-#include "../rendering/openxr_manager.h"
+// removed openxr_manager.h
 #include "../core/config_manager.h"
 #include "MinHook.h"
 #include <DirectXMath.h>
@@ -41,7 +41,8 @@ void UnityHook::DetourSetWorldToCameraMatrix(void* camera_this, Matrix4x4* matri
             frameCounter, camera_this);
     }
 
-    // VR Pose Injection
+    // VR Pose Injection (temporarily disabled, moving to StereoCameraGenerator)
+    /*
     auto* openxr = OpenXRManager::GetInstance();
     if (openxr && openxr->IsSessionRunning()) {
         XrPosef eyePose;
@@ -80,6 +81,7 @@ void UnityHook::DetourSetWorldToCameraMatrix(void* camera_this, Matrix4x4* matri
             XMStoreFloat4x4(reinterpret_cast<XMFLOAT4X4*>(matrix), XMMatrixTranspose(combinedView));
         }
     }
+    */
 
     Get().m_originalSetWorldToCameraMatrix(camera_this, matrix, methodInfo);
 }
@@ -97,7 +99,8 @@ void UnityHook::DetourSetProjectionMatrix(void* camera_this, Matrix4x4* matrix, 
             frameCounter, camera_this);
     }
 
-    // VR Projection Injection
+    // VR Projection Injection (temporarily disabled, moving to StereoCameraGenerator)
+    /*
     auto* openxr = OpenXRManager::GetInstance();
     if (openxr && openxr->IsSessionRunning()) {
         // We use left eye (0) for the main camera, and right eye is reprojected later
@@ -121,6 +124,7 @@ void UnityHook::DetourSetProjectionMatrix(void* camera_this, Matrix4x4* matrix, 
             XMStoreFloat4x4(reinterpret_cast<XMFLOAT4X4*>(matrix), XMMatrixTranspose(vrProj));
         }
     }
+    */
 
     Get().m_originalSetProjectionMatrix(camera_this, matrix, methodInfo);
 }

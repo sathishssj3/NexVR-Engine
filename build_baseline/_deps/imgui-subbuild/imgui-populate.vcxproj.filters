@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\imgui-subbuild\CMakeFiles\9d4bdcf077b2a043b5552bc399711332\imgui-populate-mkdir.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\imgui-subbuild\CMakeFiles\9d4bdcf077b2a043b5552bc399711332\imgui-populate-download.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\imgui-subbuild\CMakeFiles\9d4bdcf077b2a043b5552bc399711332\imgui-populate-update.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\imgui-subbuild\CMakeFiles\9d4bdcf077b2a043b5552bc399711332\imgui-populate-patch.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\imgui-subbuild\CMakeFiles\9d4bdcf077b2a043b5552bc399711332\imgui-populate-configure.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\imgui-subbuild\CMakeFiles\9d4bdcf077b2a043b5552bc399711332\imgui-populate-build.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\imgui-subbuild\CMakeFiles\9d4bdcf077b2a043b5552bc399711332\imgui-populate-install.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\imgui-subbuild\CMakeFiles\9d4bdcf077b2a043b5552bc399711332\imgui-populate-test.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\imgui-subbuild\CMakeFiles\69ac5c060af1d11cb05e425298877461\imgui-populate-complete.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\imgui-subbuild\CMakeFiles\802e73cd71589dd1f3edad905217b532\imgui-populate.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\imgui-subbuild\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\imgui-subbuild\CMakeFiles\imgui-populate" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{255FEA5E-37F4-3A8B-9AAF-7EDAE0C6346B}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
