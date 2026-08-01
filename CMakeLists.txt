@@ -112,6 +112,20 @@ endif()
 set(JSON_INCLUDE_DIR ${nlohmann_json_SOURCE_DIR}/include)
 
 # ---------------------------------------------------------------------------
+# Dependencies - GoogleTest
+# ---------------------------------------------------------------------------
+FetchContent_Declare(
+    googletest
+    URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_GetProperties(googletest)
+if(NOT googletest_POPULATED)
+    FetchContent_Populate(googletest)
+    add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
+
+# ---------------------------------------------------------------------------
 # Dependencies – Dear ImGui
 # ---------------------------------------------------------------------------
 FetchContent_Declare(
@@ -432,3 +446,32 @@ target_link_libraries(NexVRCore PRIVATE Vulkan::Vulkan openxr_loader d3d11 d3d12
 add_executable(test_openxr_vulkan_swapchain tests/test_openxr_vulkan_swapchain.cpp)
 target_include_directories(test_openxr_vulkan_swapchain PRIVATE ${PROJECT_SOURCE_DIR} ${GTEST_INCLUDE_DIRS} ${OPENXR_INCLUDE_DIR})
 target_link_libraries(test_openxr_vulkan_swapchain PRIVATE NexVRCore Vulkan::Vulkan openxr_loader)
+
+enable_testing()
+
+add_executable(test_compatibility_scorer tests/test_compatibility_scorer.cpp)
+target_include_directories(test_compatibility_scorer PRIVATE ${PROJECT_SOURCE_DIR})
+target_link_libraries(test_compatibility_scorer PRIVATE NexVRCore gtest_main)
+add_test(NAME CompatibilityScorerTest COMMAND test_compatibility_scorer)
+
+add_executable(test_engine_detector tests/test_engine_detector.cpp)
+target_include_directories(test_engine_detector PRIVATE ${PROJECT_SOURCE_DIR})
+target_link_libraries(test_engine_detector PRIVATE NexVRCore gtest_main)
+add_test(NAME EngineDetectorTest COMMAND test_engine_detector)
+
+function(add_nexvr_gtest target source)
+    add_executable(${target} ${source})
+    target_include_directories(${target} PRIVATE ${PROJECT_SOURCE_DIR} ${Vulkan_INCLUDE_DIRS})
+    target_link_libraries(${target} PRIVATE NexVRCore gtest_main Vulkan::Vulkan)
+    add_test(NAME ${target} COMMAND ${target})
+endfunction()
+
+add_nexvr_gtest(test_frame_timing_manager tests/test_frame_timing_manager.cpp)
+add_nexvr_gtest(test_adaptive_quality tests/test_adaptive_quality.cpp)
+add_nexvr_gtest(test_vulkan_gpu_profiler tests/test_vulkan_gpu_profiler.cpp)
+add_nexvr_gtest(test_vulkan_async_scheduler tests/test_vulkan_async_scheduler.cpp)
+add_nexvr_gtest(test_vulkan_barrier_optimizer tests/test_vulkan_barrier_optimizer.cpp)
+add_nexvr_gtest(test_vulkan_memory_budget tests/test_vulkan_memory_budget.cpp)
+add_nexvr_gtest(test_frame_graph_profiler tests/test_frame_graph_profiler.cpp)
+add_nexvr_gtest(test_vulkan_performance_snapshot tests/test_vulkan_performance_snapshot.cpp)
+add_nexvr_gtest(test_vulkan_timeline_semaphore tests/test_vulkan_timeline_semaphore.cpp)

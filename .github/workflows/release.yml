@@ -70,11 +70,20 @@ jobs:
         }
 
     - name: Run Cppcheck Static Analysis
-      uses: cppcheck-action/github-action@v1.2.1
-      with:
-        directory: src
-        fail-build: true
-        addon: cert
+      shell: pwsh
+      run: |
+        # Install cppcheck if not present (windows-latest runners may not have it)
+        if (-not (Get-Command cppcheck -ErrorAction SilentlyContinue)) {
+          choco install cppcheck -y --no-progress | Out-Null
+          refreshenv
+        }
+        cppcheck --error-exitcode=1 --enable=warning,style,performance `
+          --suppress=missingIncludeSystem `
+          --suppress=unmatchedSuppression `
+          --inline-suppr `
+          -I src `
+          src/ 2>&1
+        if ($LASTEXITCODE -ne 0) { exit 1 }
 
     # - name: Run Clang-Tidy
     #   uses: owner-needed/clang-tidy-action@v1
@@ -86,15 +95,15 @@ jobs:
     #     format-style: file
 
     - name: Run CodeQL Analysis
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@v3
       with:
         languages: cpp
 
     - name: CodeQL Autobuild
-      uses: github/codeql-action/autobuild@v2
+      uses: github/codeql-action/autobuild@v3
 
     - name: CodeQL Perform Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v3
       with:
         category: "/language:cpp"
 

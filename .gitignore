@@ -1,5 +1,6 @@
 # CMake and Build Artifacts
 build/
+build_baseline/
 out/
 bin/
 *.dll
@@ -46,6 +47,8 @@ yarn-error.log*
 # Logs and Scratch
 *.log
 scratch/
+scratch.cpp
+vulkaninfo.html
 
 # Downloaded tools (fetched in CI)
 dxc/
@@ -76,3 +79,10 @@ build_auto/
 *.py
 test_extract/
 *.txt
+
+# ML model binaries (large; track via Git LFS or external store if needed)
+models/
+*.onnx
+
+# Vendor headers fetched at build time
+openvr_capi.h

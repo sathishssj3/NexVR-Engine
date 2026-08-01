@@ -37,11 +37,17 @@ bool VulkanStereoRenderer::Render(const CameraSnapshot& camera,
     }
 
     // 1. Sync — wait for any previous GPU work on this queue
-    // Note: Use QueueWaitIdle instead of fence-based sync to avoid
-    // XR Simulator device-lost errors on fence signalling in headless mode.
-    VkResult waitRes = dt->QueueWaitIdle(m_queue);
-    if (waitRes != VK_SUCCESS) {
-        std::cerr << "Render early return: QueueWaitIdle failed with " << waitRes << "\n";
+    if (!syncManager.WaitForFrame(m_frameIndex)) {
+        std::cerr << "Render early return: WaitForFrame failed for frame " << m_frameIndex << "\n";
+        return false;
+    }
+    if (!syncManager.ResetFrame(m_frameIndex)) {
+        std::cerr << "Render early return: ResetFrame failed for frame " << m_frameIndex << "\n";
+        return false;
+    }
+    VkFence frameFence = syncManager.GetFence(m_frameIndex);
+    if (frameFence == VK_NULL_HANDLE) {
+        std::cerr << "Render early return: frame fence is null for frame " << m_frameIndex << "\n";
         return false;
     }
 
@@ -198,7 +204,7 @@ bool VulkanStereoRenderer::Render(const CameraSnapshot& camera,
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &cmd;
 
-    VkResult submitRes = dt->QueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE);
+    VkResult submitRes = dt->QueueSubmit(m_queue, 1, &submitInfo, frameFence);
     if (submitRes != VK_SUCCESS) {
         std::cerr << "Render early return: QueueSubmit failed with " << submitRes << "\n";
         return false;

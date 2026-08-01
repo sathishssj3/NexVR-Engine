@@ -21,6 +21,8 @@ void VulkanDescriptorManager::DestroyPool() {
         m_descriptorPool = VK_NULL_HANDLE;
     }
     m_descriptorSets.clear();
+    m_recycled.clear();
+    m_stats = {};
 }
 
 bool VulkanDescriptorManager::AllocateSets(uint32_t count) {
@@ -33,6 +35,7 @@ bool VulkanDescriptorManager::AllocateSets(uint32_t count) {
         dt->DestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
         m_descriptorPool = VK_NULL_HANDLE;
         m_descriptorSets.clear();
+        m_recycled.clear();
     }
 
     VkDescriptorPoolSize poolSizes[3]{};
@@ -59,7 +62,39 @@ bool VulkanDescriptorManager::AllocateSets(uint32_t count) {
     allocInfo.pSetLayouts = layouts.data();
 
     m_descriptorSets.resize(count);
-    return dt->AllocateDescriptorSets(m_device, &allocInfo, m_descriptorSets.data()) == VK_SUCCESS;
+    if (dt->AllocateDescriptorSets(m_device, &allocInfo, m_descriptorSets.data()) != VK_SUCCESS) {
+        return false;
+    }
+
+    m_recycled.assign(count, false);
+    m_stats.allocatedSets = count;
+    m_stats.fragmentationRatio = 0.0f;
+    return true;
+}
+
+bool VulkanDescriptorManager::EnsureCapacity(uint32_t count) {
+    if (count <= m_descriptorSets.size()) {
+        return true;
+    }
+    m_stats.poolGrowthCount++;
+    return AllocateSets(count);
+}
+
+void VulkanDescriptorManager::RecycleDescriptorSet(uint32_t frameIndex) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (frameIndex >= m_recycled.size()) return;
+    if (!m_recycled[frameIndex]) {
+        m_recycled[frameIndex] = true;
+        m_stats.recycledSets++;
+    }
+
+    uint32_t recycled = 0;
+    for (bool value : m_recycled) {
+        if (value) recycled++;
+    }
+    m_stats.fragmentationRatio = m_recycled.empty()
+        ? 0.0f
+        : static_cast<float>(recycled) / static_cast<float>(m_recycled.size());
 }
 
 VkDescriptorSet VulkanDescriptorManager::GetDescriptorSet(uint32_t frameIndex) const {
@@ -84,6 +119,9 @@ void VulkanDescriptorManager::UpdateDescriptorSets(uint32_t frameIndex,
     if (!dt) return;
 
     VkDescriptorSet set = m_descriptorSets[frameIndex];
+    if (frameIndex < m_recycled.size()) {
+        m_recycled[frameIndex] = false;
+    }
     VkWriteDescriptorSet writes[4]{};
 
     // Binding 0: Camera Buffer

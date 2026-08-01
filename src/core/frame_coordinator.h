@@ -12,6 +12,7 @@
 #include "performance_profiler.h"
 #include "gpu_profiler.h"
 #include "runtime_dashboard.h"
+#include "compatibility_scorer.h"
 namespace vrinject {
 
 class FrameCoordinator {
@@ -44,6 +45,8 @@ private:
     PerformanceProfiler m_cpuProfiler;
     GpuProfiler m_gpuProfiler;
     RuntimeDashboard m_dashboard;
+    CompatibilityScore m_lastCompatibility;
+    bool m_engineDetected = false;
     
     uint64_t m_globalFrameCounter = 0;
 };

@@ -12,6 +12,7 @@ VulkanPipelineCache::VulkanPipelineCache(VkDevice device) : m_device(device) {
 VulkanPipelineCache::~VulkanPipelineCache() {
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(m_device);
     if (dt) {
+        SavePersistentCache();
         if (m_stereoPipeline) dt->DestroyPipeline(m_device, m_stereoPipeline, nullptr);
         if (m_pipelineLayout) dt->DestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
         if (m_descriptorSetLayout) dt->DestroyDescriptorSetLayout(m_device, m_descriptorSetLayout, nullptr);
@@ -27,8 +28,12 @@ bool VulkanPipelineCache::Initialize() {
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(m_device);
     if (!dt) return false;
 
+    std::vector<char> cacheData = LoadPersistentCacheData();
+
     VkPipelineCacheCreateInfo cacheInfo{};
     cacheInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+    cacheInfo.initialDataSize = cacheData.size();
+    cacheInfo.pInitialData = cacheData.empty() ? nullptr : cacheData.data();
     dt->CreatePipelineCache(m_device, &cacheInfo, nullptr, &m_pipelineCache);
 
     if (!CreateDescriptorSetLayout()) return false;
@@ -43,6 +48,46 @@ bool VulkanPipelineCache::Initialize() {
 
 void VulkanPipelineCache::EndInitializationPhase() {
     m_safeCreationPhase = false;
+}
+
+std::vector<char> VulkanPipelineCache::LoadPersistentCacheData() {
+    m_cacheBytesLoaded = 0;
+    std::ifstream file(m_cachePath, std::ios::binary | std::ios::ate);
+    if (!file.is_open()) return {};
+
+    const std::streamsize size = file.tellg();
+    if (size <= 0) return {};
+
+    std::vector<char> data(static_cast<size_t>(size));
+    file.seekg(0);
+    file.read(data.data(), size);
+    if (!file) return {};
+
+    m_cacheBytesLoaded = static_cast<uint64_t>(data.size());
+    return data;
+}
+
+bool VulkanPipelineCache::SavePersistentCache() {
+    if (!m_pipelineCache) return false;
+
+    size_t size = 0;
+    if (vkGetPipelineCacheData(m_device, m_pipelineCache, &size, nullptr) != VK_SUCCESS || size == 0) {
+        return false;
+    }
+
+    std::vector<char> data(size);
+    if (vkGetPipelineCacheData(m_device, m_pipelineCache, &size, data.data()) != VK_SUCCESS) {
+        return false;
+    }
+
+    std::ofstream file(m_cachePath, std::ios::binary | std::ios::trunc);
+    if (!file.is_open()) return false;
+
+    file.write(data.data(), static_cast<std::streamsize>(size));
+    if (!file) return false;
+
+    m_cacheBytesSaved = static_cast<uint64_t>(size);
+    return true;
 }
 
 bool VulkanPipelineCache::CreateDescriptorSetLayout() {

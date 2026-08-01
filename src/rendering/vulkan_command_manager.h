@@ -8,6 +8,12 @@
 namespace vrinject {
 namespace vulkan {
 
+struct VulkanCommandRecycleStats {
+    uint32_t allocatedCommandBuffers = 0;
+    uint64_t resetCount = 0;
+    uint64_t reuseCount = 0;
+};
+
 class VulkanCommandManager {
 public:
     VulkanCommandManager(VkDevice device, uint32_t queueFamilyIndex);
@@ -20,6 +26,7 @@ public:
     bool EndFrame(uint32_t frameIndex);
 
     VkCommandBuffer GetCommandBuffer(uint32_t frameIndex) const;
+    VulkanCommandRecycleStats GetRecycleStats() const { return m_stats; }
 
 private:
     VkDevice m_device = VK_NULL_HANDLE;
@@ -28,6 +35,7 @@ private:
 
     std::vector<VkCommandPool> m_commandPools;
     std::vector<VkCommandBuffer> m_commandBuffers;
+    VulkanCommandRecycleStats m_stats{};
 };
 
 } // namespace vulkan

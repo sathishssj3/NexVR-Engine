@@ -19,6 +19,7 @@ bool VulkanCommandManager::Initialize() {
 
     m_commandPools.resize(MAX_FRAMES_IN_FLIGHT, VK_NULL_HANDLE);
     m_commandBuffers.resize(MAX_FRAMES_IN_FLIGHT, VK_NULL_HANDLE);
+    m_stats = {};
 
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -39,6 +40,7 @@ bool VulkanCommandManager::Initialize() {
         if (dt->AllocateCommandBuffers(m_device, &allocInfo, &m_commandBuffers[i]) != VK_SUCCESS) {
             return false;
         }
+        m_stats.allocatedCommandBuffers++;
     }
 
     return true;
@@ -56,6 +58,7 @@ void VulkanCommandManager::Destroy() {
     }
     m_commandPools.clear();
     m_commandBuffers.clear();
+    m_stats = {};
 }
 
 VkCommandBuffer VulkanCommandManager::BeginFrame(uint32_t frameIndex) {
@@ -64,6 +67,8 @@ VkCommandBuffer VulkanCommandManager::BeginFrame(uint32_t frameIndex) {
 
     // Reset the pool (safe because we assume the SyncManager already waited for this frame's fence)
     dt->ResetCommandPool(m_device, m_commandPools[frameIndex], 0);
+    m_stats.resetCount++;
+    m_stats.reuseCount++;
 
     VkCommandBuffer cmd = m_commandBuffers[frameIndex];
     VkCommandBufferBeginInfo beginInfo{};

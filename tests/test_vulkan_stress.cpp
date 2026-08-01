@@ -304,9 +304,9 @@ TEST_F(VulkanStressTest, Render10kFramesFullRenderCopyPath) {
     EXPECT_EQ(g_validationErrorCount.load(), 0u) << "Validation layer errors detected";
     EXPECT_EQ(g_validationWarningCount.load(), 0u) << "Validation layer warnings detected";
 
-    // Drain the queue before freeing memory: the last QueueSubmit is in-flight
-    // without a fence (QueueWaitIdle-based sync), so we must wait here before
-    // destroying the images or the validation layer fires VUID-vkFreeMemory-memory-00677.
+    // Drain the queue before freeing memory. The production render path now
+    // submits with per-frame fences, but up to MAX_FRAMES_IN_FLIGHT frames may
+    // still be in flight after the loop exits.
     dt->QueueWaitIdle(queue);
 
     // Cleanup
