@@ -2,9 +2,33 @@
 // ============================================================================
 // vrinject::Logger – Lightweight, header-only, thread-safe logger
 //
-// Writes timestamped lines to both a log file and the Windows debug output
-// (viewable in Visual Studio Output or DbgView). Designed to be usable from
-// inside an injected DLL where we cannot rely on stdout.
+/// @file logger.h
+/// @brief Thread-safe logging utility for VRInject
+///
+/// This logger provides printf-style formatting with automatic timestamps,
+/// thread safety via mutex, and output to both file and Windows debug output.
+/// It's designed to be usable from within an injected DLL where we cannot
+/// rely on standard output streams.
+///
+/// @details
+/// Features:
+/// - Thread-safe with std::mutex
+/// - Timestamped log entries in [YYYY-MM-DD HH:MM:SS.mmm] format
+/// - Configurable log levels (Debug, Info, Warn, Error)
+/// - Automatic path stripping from file names in log output
+/// - Output to both file and Visual Studio Debug output (via OutputDebugStringA)
+///
+/// @thread_safety
+/// All public methods are thread-safe. Multiple threads can call Log() simultaneously.
+///
+/// @example
+/// @code
+/// LOG_INFO("Initialized module %s with version %d", moduleName, version);
+/// LOG_WARN("Configuration file not found, using defaults");
+/// LOG_ERROR("Failed to initialize DirectX device: 0x%08x", hr);
+/// @endcode
+///
+/// @ingroup core
 // ============================================================================
 
 #ifndef VRINJECT_LOGGER_H
@@ -28,25 +52,33 @@ namespace Logger {
 
 // ---- Internal state (using static locals to stay header-only in C++11) -----
 
+/// @brief Get reference to the log file handle
+/// @return Reference to static FILE pointer for the log file
 inline FILE*& GetLogFile() {
     static FILE* s_logFile = nullptr;
     return s_logFile;
 }
 
+/// @brief Get reference to the mutex for thread safety
+/// @return Reference to static mutex used for synchronizing log access
 inline std::mutex& GetMutex() {
     static std::mutex s_mutex;
     return s_mutex;
 }
 
+/// @brief Log levels supported by the logger
 enum class Level {
-    Debug,
-    Info,
-    Warn,
-    Error
+    Debug,   ///< Debug-level messages (typically disabled in release builds)
+    Info,    ///< Informational messages about program flow
+    Warn,    ///< Warning messages about potentially problematic situations
+    Error    ///< Error messages indicating failures
 };
 
 // ---- Helpers ---------------------------------------------------------------
 
+/// @brief Convert LogLevel enum to string representation
+/// @param level The log level to convert
+/// @return C-string representation of the level (e.g., "INFO ", "ERROR")
 inline const char* LevelToString(Level level) {
     switch (level) {
         case Level::Debug: return "DEBUG";
@@ -57,7 +89,9 @@ inline const char* LevelToString(Level level) {
     }
 }
 
-/// Returns a timestamp string in "YYYY-MM-DD HH:MM:SS.mmm" format.
+/// @brief Get current timestamp formatted for logging
+/// @return Timestamp string in "YYYY-MM-DD HH:MM:SS.mmm" format
+/// @note Uses system clock and local time conversion
 inline std::string Timestamp() {
     using namespace std::chrono;
     auto now       = system_clock::now();
@@ -74,11 +108,15 @@ inline std::string Timestamp() {
 
 // ---- Public API ------------------------------------------------------------
 
-/// Open the log file. Call once at startup.
+/// @brief Initialize the logger with a log file path
+/// @param logPath Full path to the log file to create/append to
+/// @note Should be called once during DLL initialization
+/// @thread_safety Thread-safe
+/// @sa Shutdown()
 inline void Init(const std::string& logPath) {
     std::lock_guard<std::mutex> lock(GetMutex());
     FILE* logFile = GetLogFile();
-    if (logFile) return;
+    if (logFile) return;  // Already initialized
 
     logFile = _fsopen(logPath.c_str(), "a", _SH_DENYNO);
     GetLogFile() = logFile;
@@ -89,7 +127,10 @@ inline void Init(const std::string& logPath) {
     OutputDebugStringA("[VRInject] Logger initialised\n");
 }
 
-/// Flush and close the log file. Call once at shutdown.
+/// @brief Shutdown the logger and close the log file
+/// @note Should be called once during DLL cleanup
+/// @thread_safety Thread-safe
+/// @sa Init()
 inline void Shutdown() {
     std::lock_guard<std::mutex> lock(GetMutex());
     FILE* logFile = GetLogFile();
@@ -101,7 +142,19 @@ inline void Shutdown() {
     OutputDebugStringA("[VRInject] Logger shut down\n");
 }
 
-/// Core logging function – thread-safe, supports printf-style formatting.
+/// @brief Core logging function - thread-safe with printf-style formatting
+/// @param level The importance/severity level of the message
+/// @param file  Source file name where the log call originated (typically __FILE__)
+/// @param line  Line number in source file where the log call originated (typically __LINE__)
+/// @param fmt   Format string (printf-style)
+/// @param ...   Variable arguments matching the format specifiers in fmt
+/// @note Automatically strips full paths from file parameter, leaving only the filename
+/// @thread_safety Thread-safe - uses internal mutex to protect file access
+///
+/// @example
+/// @code
+/// Log(Level::Info, __FILE__, __LINE__, "Initialized %s successfully", moduleName);
+/// @endcode
 inline void Log(Level level, const char* file, int line, const char* fmt, ...) {
     char userBuf[1024];
     va_list args;
@@ -110,8 +163,38 @@ inline void Log(Level level, const char* file, int line, const char* fmt, ...) {
     va_end(args);
 
     std::string safeMessage = userBuf;
-    static const std::regex pathRegex(R"([A-Za-z]:\\[^\s]+\\([^\s\\]+))");
-    safeMessage = std::regex_replace(safeMessage, pathRegex, "$1");
+
+    // Safely remove paths (e.g. C:\... \filename.ext -> filename.ext)
+    size_t pos = 0;
+    while ((pos = safeMessage.find(":\\", pos)) != std::string::npos) {
+        if (pos > 0 && isalpha(safeMessage[pos - 1])) {
+            size_t pathStart = pos - 1;
+            size_t pathEnd = pathStart;
+            size_t lastSlash = pathStart;
+
+            // Advance until we hit a character that usually terminates a path
+            while (pathEnd < safeMessage.length()) {
+                char c = safeMessage[pathEnd];
+                if (c == ' ' || c == '\'' || c == '\"' || c == '\n' || c == '\r' || c == '\t') {
+                    break;
+                }
+                if (c == '\\' || c == '/') {
+                    lastSlash = pathEnd;
+                }
+                pathEnd++;
+            }
+
+            if (lastSlash > pathStart && lastSlash < pathEnd) {
+                // Erase from start of path up to and including the last slash
+                safeMessage.erase(pathStart, lastSlash - pathStart + 1);
+                pos = pathStart; // Resume search from the new start
+            } else {
+                pos += 2;
+            }
+        } else {
+            pos += 2;
+        }
+    }
 
     const char* filename = file;
     if (const char* slash = std::strrchr(file, '\\'))

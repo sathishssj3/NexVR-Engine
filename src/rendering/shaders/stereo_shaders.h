@@ -12,3 +12,4 @@
 #include "bilateral_blur_cs_dx11.h"
 #include "bilateral_blend_cs_dx11.h"
 #include "depth_reprojection_cs_dx11.h"
+#include "tonemap_cs_dx11.h"

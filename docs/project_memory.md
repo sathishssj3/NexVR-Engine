@@ -80,3 +80,14 @@ Execution blueprint:
 - Prefer clear diagnostics and reversible settings for experimental features.
 - Avoid hardcoded per-game behavior unless it is isolated behind profiles or compatibility data.
 - When editing launcher and C++ config surfaces, update both sides together to prevent profile drift.
+
+## 7. Anti-Cheat & AV Posture Tier List
+
+Because NexVR relies on `CreateRemoteThread` and `LoadLibrary` to inject into arbitrary game processes, its behavior is fundamentally indistinguishable from techniques flagged by Anti-Virus (AV) heuristics and Anti-Cheat (AC) software. This is the standard approach for universal VR injectors and cannot be fundamentally changed. The following tier list defines our official compatibility and support posture:
+
+- **Tier 1: Single-Player / No Anti-Cheat (Fully Supported)**
+  Games without active anti-cheat solutions. NexVR operates freely. Users may occasionally need to whitelist `vrinject.dll` and `vr-inject-cli.exe` in Windows Defender or third-party AVs due to heuristic flagging.
+- **Tier 2: Light Anti-Cheat / Mod-Friendly (Supported Offline)**
+  Games with passive protections or official offline modes (e.g., Elden Ring with EAC disabled). Users MUST explicitly disable the anti-cheat or launch in offline mode before injecting. NexVR will not attempt to hide from active scans.
+- **Tier 3: Strict Anti-Cheat (Unsupported / Blacklisted)**
+  Competitive multiplayer titles using kernel-level or strict user-mode anti-cheat (e.g., Vanguard, BattlEye, active EAC, Ricochet). NexVR will NOT attempt to bypass these systems. Injection will fail, and attempting to force it may result in permanent account bans. NexVR should never be marketed for or used with these titles.

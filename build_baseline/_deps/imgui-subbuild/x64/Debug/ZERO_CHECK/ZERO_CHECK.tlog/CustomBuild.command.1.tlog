@@ -1,0 +1,10 @@
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\_DEPS\IMGUI-SUBBUILD\CMAKEFILES\802E73CD71589DD1F3EDAD905217B532\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/imgui-subbuild -BC:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/imgui-subbuild --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/imgui-subbuild/imgui-populate.slnx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

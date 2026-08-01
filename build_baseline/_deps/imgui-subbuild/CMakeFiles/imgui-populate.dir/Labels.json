@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/imgui-subbuild/CMakeFiles/imgui-populate"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/imgui-subbuild/CMakeFiles/802e73cd71589dd1f3edad905217b532/imgui-populate.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/imgui-subbuild/CMakeFiles/69ac5c060af1d11cb05e425298877461/imgui-populate-complete.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/imgui-subbuild/CMakeFiles/9d4bdcf077b2a043b5552bc399711332/imgui-populate-build.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/imgui-subbuild/CMakeFiles/9d4bdcf077b2a043b5552bc399711332/imgui-populate-configure.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/imgui-subbuild/CMakeFiles/9d4bdcf077b2a043b5552bc399711332/imgui-populate-download.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/imgui-subbuild/CMakeFiles/9d4bdcf077b2a043b5552bc399711332/imgui-populate-install.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/imgui-subbuild/CMakeFiles/9d4bdcf077b2a043b5552bc399711332/imgui-populate-mkdir.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/imgui-subbuild/CMakeFiles/9d4bdcf077b2a043b5552bc399711332/imgui-populate-patch.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/imgui-subbuild/CMakeFiles/9d4bdcf077b2a043b5552bc399711332/imgui-populate-test.rule"
+		},
+		{
+			"file" : "C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/imgui-subbuild/CMakeFiles/9d4bdcf077b2a043b5552bc399711332/imgui-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"imgui-populate"
+		],
+		"name" : "imgui-populate"
+	}
+}

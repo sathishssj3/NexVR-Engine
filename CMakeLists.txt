@@ -261,64 +261,17 @@ add_custom_target(compile_shaders ALL DEPENDS ${SHADER_OUTPUTS})
 # ---------------------------------------------------------------------------
 # vrinject – the injected DLL
 # ---------------------------------------------------------------------------
+file(GLOB VRINJECT_CORE_SRCS src/core/*.cpp src/core/engine_scanners/*.cpp)
+file(GLOB VRINJECT_RENDERING_SRCS src/rendering/*.cpp src/rendering/backends/*.cpp)
+file(GLOB VRINJECT_OPENXR_SRCS src/openxr/*.cpp)
+file(GLOB VRINJECT_HOOKS_SRCS src/hooks/*.cpp)
+
 add_library(vrinject SHARED
+    ${VRINJECT_CORE_SRCS}
+    ${VRINJECT_RENDERING_SRCS}
+    ${VRINJECT_OPENXR_SRCS}
+    ${VRINJECT_HOOKS_SRCS}
     src/dllmain.cpp
-    src/core/logger.h
-    src/core/engine_detector.h
-    src/core/engine_detector.cpp
-    src/core/drm_manager.h
-    src/core/drm_manager.cpp
-    src/core/hook_manager.cpp
-    src/hooks/unreal_hook.cpp
-    src/hooks/unity_hook.cpp
-    src/core/memory_scanner.h
-    src/core/memory_scanner.cpp
-    src/core/ue_sdk.h
-    src/rendering/irenderer.h
-    src/rendering/backends/dx11_renderer.h
-    src/rendering/backends/dx11_renderer.cpp
-    src/rendering/backends/dx12_renderer.h
-    src/rendering/backends/dx12_renderer.cpp
-    src/rendering/backends/vulkan_renderer.h
-    src/rendering/backends/vulkan_renderer.cpp
-    src/hooks/dx11_hook.cpp
-    src/hooks/dx12_hook.h
-    src/hooks/dx12_hook.cpp
-    src/hooks/dxgi_factory_hook.h
-    src/hooks/dxgi_factory_hook.cpp
-    src/hooks/vulkan_layer.cpp
-    src/rendering/stereo_pipeline.h
-    src/rendering/stereo_pipeline.cpp
-    src/rendering/comfort_guard.h
-    src/rendering/comfort_guard.cpp
-    src/rendering/depth_reprojector.cpp
-    src/rendering/neural_inpainter.h
-    src/rendering/neural_inpainter.cpp
-    src/rendering/openxr_manager.h
-    src/rendering/openxr_manager.cpp
-    src/rendering/cross_adapter_copier.h
-    src/rendering/cross_adapter_copier.cpp
-    src/core/engine_scanners/unreal_scanner.h
-    src/core/engine_scanners/unreal_scanner.cpp
-    src/core/engine_scanners/unity_scanner.h
-    src/core/engine_scanners/unity_scanner.cpp
-    src/core/motion_predictor.h
-    src/core/motion_predictor.cpp
-    src/hooks/input_hook.h
-    src/hooks/input_hook.cpp
-    src/hooks/input_manager.h
-    src/hooks/input_manager.cpp
-    src/hooks/audio_hook.cpp
-    src/core/matrix_classifier.h
-    src/core/matrix_classifier.cpp
-    src/core/config_manager.h
-    src/core/config_manager.cpp
-    src/core/overlay_manager.h
-    src/core/overlay_manager.cpp
-    src/rendering/imgui_dx12_integration.h
-    src/rendering/imgui_dx12_integration.cpp
-    src/core/engine_scanners/universal_scanner.h
-    src/core/engine_scanners/universal_scanner.cpp
     ${MINHOOK_SOURCES}
     ${IMGUI_SOURCES}
 )
@@ -458,3 +411,24 @@ target_link_libraries(test_xr PRIVATE openxr_loader)
 # ---------------------------------------------------------------------------
 add_executable(vk_test_app src/test_apps/vk_test_app.cpp)
 target_link_libraries(vk_test_app PRIVATE Vulkan::Vulkan)
+
+add_library(NexVRCore STATIC
+    ${VRINJECT_CORE_SRCS}
+    ${VRINJECT_RENDERING_SRCS}
+    ${VRINJECT_OPENXR_SRCS}
+    ${VRINJECT_HOOKS_SRCS}
+    ${MINHOOK_SOURCES}
+)
+target_include_directories(NexVRCore PRIVATE 
+    ${CMAKE_SOURCE_DIR}/src
+    ${MINHOOK_INCLUDE_DIR}
+    ${OPENXR_INCLUDE_DIR}
+    ${JSON_INCLUDE_DIR}
+    ${IMGUI_INCLUDE_DIR}
+    ${SHADER_OUTPUT_DIR}
+)
+target_link_libraries(NexVRCore PRIVATE Vulkan::Vulkan openxr_loader d3d11 d3d12 dxgi)
+
+add_executable(test_openxr_vulkan_swapchain tests/test_openxr_vulkan_swapchain.cpp)
+target_include_directories(test_openxr_vulkan_swapchain PRIVATE ${PROJECT_SOURCE_DIR} ${GTEST_INCLUDE_DIRS} ${OPENXR_INCLUDE_DIR})
+target_link_libraries(test_openxr_vulkan_swapchain PRIVATE NexVRCore Vulkan::Vulkan openxr_loader)

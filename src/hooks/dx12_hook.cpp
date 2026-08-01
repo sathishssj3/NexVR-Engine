@@ -1,19 +1,30 @@
 #include "dx12_hook.h"
 #include "dxgi_factory_hook.h"
 #include "../core/logger.h"
+#include "../core/seh_shield.h"
 #include "MinHook.h"
-#include "../rendering/openxr_manager.h"
+// removed openxr_manager.h
 #include "../rendering/backends/dx12_renderer.h"
 #include "../core/config_manager.h"
 #include "../hooks/input_hook.h"
 #include "../core/overlay_manager.h"
 #include "../rendering/imgui_dx12_integration.h"
+#include "../rendering/comfort_guard.h"
+#include "../core/depth_candidate_collector.h"
+#include "../core/dx12_descriptor_tracker.h"
 #include <mutex>
+#include <shared_mutex>
+#include "../core/dx12_lifecycle_manager.h"
+#include "../core/frame_coordinator.h"
+
 #include <wrl/client.h>
 #include <unordered_map>
+#include <d3d12.h>
+#include <dxgi1_4.h>
 #include "../core/engine_scanners/universal_scanner.h"
+#include <chrono>
 
-
+extern HMODULE g_hModule;
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -27,12 +38,15 @@ typedef HRESULT(__stdcall* Present1_t)(IDXGISwapChain1*, UINT, UINT, const DXGI_
 typedef void(__stdcall* DrawIndexedInstanced_t)(ID3D12GraphicsCommandList*, UINT, UINT, UINT, INT, UINT);
 typedef HRESULT(__stdcall* Map_t)(ID3D12Resource*, UINT, const D3D12_RANGE*, void**);
 typedef void(__stdcall* Unmap_t)(ID3D12Resource*, UINT, const D3D12_RANGE*);
+typedef void(__stdcall* OMSetRenderTargets_t)(ID3D12GraphicsCommandList*, UINT, const D3D12_CPU_DESCRIPTOR_HANDLE*, BOOL, const D3D12_CPU_DESCRIPTOR_HANDLE*);
+typedef void(__stdcall* ClearDepthStencilView_t)(ID3D12GraphicsCommandList*, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_CLEAR_FLAGS, FLOAT, UINT8, UINT, const D3D12_RECT*);
 
 Map_t OriginalMap = nullptr;
 Unmap_t OriginalUnmap = nullptr;
-
-std::unordered_map<ID3D12Resource*, void*> g_dx12MappedResources;
-std::recursive_mutex g_dx12MapMutex;
+DrawIndexedInstanced_t OriginalDrawIndexedInstanced = nullptr;
+ExecuteCommandLists_t OriginalExecuteCommandLists = nullptr;
+OMSetRenderTargets_t OriginalOMSetRenderTargets = nullptr;
+ClearDepthStencilView_t OriginalClearDepthStencilView = nullptr;
 
 Present_t OriginalPresentDX12 = nullptr;
 Present1_t OriginalPresent1DX12 = nullptr;
@@ -43,11 +57,23 @@ ResizeBuffers_t OriginalResizeBuffers = nullptr;
 typedef HRESULT(__stdcall* ResizeBuffers1_t)(IDXGISwapChain3*, UINT, UINT, UINT, DXGI_FORMAT, UINT, const UINT*, IUnknown* const*);
 ResizeBuffers1_t OriginalResizeBuffers1 = nullptr;
 
-ExecuteCommandLists_t OriginalExecuteCommandLists = nullptr;
-DrawIndexedInstanced_t OriginalDrawIndexedInstanced = nullptr;
+typedef void(__stdcall* CreateDepthStencilView_t)(ID3D12Device*, ID3D12Resource*, const D3D12_DEPTH_STENCIL_VIEW_DESC*, D3D12_CPU_DESCRIPTOR_HANDLE);
+CreateDepthStencilView_t OriginalCreateDepthStencilView = nullptr;
+static void* g_targetCreateDepthStencilView = nullptr;
+
+typedef void(__stdcall* CopyDescriptors_t)(ID3D12Device*, UINT, const D3D12_CPU_DESCRIPTOR_HANDLE*, const UINT*, UINT, const D3D12_CPU_DESCRIPTOR_HANDLE*, const UINT*, D3D12_DESCRIPTOR_HEAP_TYPE);
+CopyDescriptors_t OriginalCopyDescriptors = nullptr;
+static void* g_targetCopyDescriptors = nullptr;
+
+typedef void(__stdcall* CopyDescriptorsSimple_t)(ID3D12Device*, UINT, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_DESCRIPTOR_HEAP_TYPE);
+CopyDescriptorsSimple_t OriginalCopyDescriptorsSimple = nullptr;
+static void* g_targetCopyDescriptorsSimple = nullptr;
+
 
 static void* g_targetExecuteCommandLists = nullptr;
 static void* g_targetDrawIndexedInstanced = nullptr;
+static void* g_targetOMSetRenderTargets = nullptr;
+static void* g_targetClearDepthStencilView = nullptr;
 static void* g_targetPresentDX12 = nullptr;
 static void* g_targetPresent1DX12 = nullptr;
 static void* g_targetResizeBuffers = nullptr;
@@ -55,71 +81,65 @@ static void* g_targetResizeBuffers1 = nullptr;
 static void* g_targetMapDX12 = nullptr;
 static void* g_targetUnmapDX12 = nullptr;
 
-extern OpenXRManager g_openxrManager;
+std::unordered_map<ID3D12Resource*, void*> g_dx12MappedResources;
+std::recursive_mutex g_dx12MapMutex;
+
+// extern OpenXRManager g_openxrManager;
 extern bool g_openxrInitialized;
 void OnPresent(IDXGISwapChain* pSwapChain);
 
 HRESULT __stdcall hkMap(ID3D12Resource* pResource, UINT Subresource, const D3D12_RANGE* pReadRange, void** ppData) {
-    HRESULT hr = OriginalMap(pResource, Subresource, pReadRange, ppData);
-    if (SUCCEEDED(hr) && ppData && *ppData) {
+    HRESULT hr = OriginalMap ? OriginalMap(pResource, Subresource, pReadRange, ppData) : E_FAIL;
+    if (SUCCEEDED(hr) && ppData && *ppData && vrinject::seh::IsValidMemoryPointer(pResource)) {
         std::lock_guard<std::recursive_mutex> lock(g_dx12MapMutex);
         g_dx12MappedResources[pResource] = *ppData;
     }
     return hr;
 }
 
+static void* PopMappedResourcePtr(ID3D12Resource* pResource) {
+    std::lock_guard<std::recursive_mutex> lock(g_dx12MapMutex);
+    auto it = g_dx12MappedResources.find(pResource);
+    if (it != g_dx12MappedResources.end()) {
+        void* ptr = it->second;
+        g_dx12MappedResources.erase(it);
+        return ptr;
+    }
+    return nullptr;
+}
+
 void __stdcall hkUnmap(ID3D12Resource* pResource, UINT Subresource, const D3D12_RANGE* pWrittenRange) {
-    {
-        std::lock_guard<std::recursive_mutex> lock(g_dx12MapMutex);
-        auto it = g_dx12MappedResources.find(pResource);
-        if (it != g_dx12MappedResources.end()) {
-            // CPU has finished writing. Feed it to the Universal Scanner!
-            D3D12_RESOURCE_DESC desc = pResource->GetDesc();
-            if (desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER) {
-                engine_scanners::UniversalScanner::Get().ProcessConstantBuffer(it->second, static_cast<size_t>(desc.Width));
-            }
-            g_dx12MappedResources.erase(it);
+    if (vrinject::seh::IsValidMemoryPointer(pResource)) {
+        void* pData = PopMappedResourcePtr(pResource);
+        if (pData) {
+            __try {
+                D3D12_RESOURCE_DESC desc = pResource->GetDesc();
+                if (desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER) {
+                    engine_scanners::UniversalScanner::Get().ProcessConstantBuffer(pData, static_cast<size_t>(desc.Width));
+                }
+            } __except (EXCEPTION_EXECUTE_HANDLER) {}
         }
     }
-    OriginalUnmap(pResource, Subresource, pWrittenRange);
+    if (OriginalUnmap) {
+        OriginalUnmap(pResource, Subresource, pWrittenRange);
+    }
 }
-
-HRESULT __stdcall hkPresentDX12(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
-    OnPresent(pSwapChain);
-    // Note: We cannot skip OriginalPresent without starving the game's input message pump.
-    return OriginalPresentDX12(pSwapChain, SyncInterval, Flags);
-}
-
-HRESULT __stdcall hkPresent1DX12(IDXGISwapChain1* pSwapChain, UINT SyncInterval, UINT PresentFlags, const DXGI_PRESENT_PARAMETERS* pPresentParameters) {
-    OnPresent(pSwapChain);
-    // Note: We cannot skip OriginalPresent without starving the game's input message pump.
-    return OriginalPresent1DX12(pSwapChain, SyncInterval, PresentFlags, pPresentParameters);
-}
-
-HRESULT __stdcall hkResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags) {
-    LOG_INFO("DX12Hook: hkResizeBuffers requested format %d", NewFormat);
-    return OriginalResizeBuffers(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
-}
-
-HRESULT __stdcall hkResizeBuffers1(IDXGISwapChain3* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags, const UINT* pCreationNodeMask, IUnknown* const* ppPresentQueue) {
-    LOG_INFO("DX12Hook: hkResizeBuffers1 requested format %d", NewFormat);
-    return OriginalResizeBuffers1(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags, pCreationNodeMask, ppPresentQueue);
-}
-
-FrameResourcesDX12 g_frameResources;
-std::recursive_mutex g_resourceMutex;
-OnFrameCallbackDX12 g_onFrameCallback = nullptr;
-
-DX12Renderer g_dx12Renderer;
-OpenXRManager g_openxrManager;
-
-bool g_openxrInitialized = false;
+extern bool g_openxrInitialized;
 IDXGISwapChain* g_mainSwapChain = nullptr;
 
 void VerifyHookIntegrityDX12() {
     auto verify = [](void* target, const char* name) {
         if (!target) return;
+        
+        MEMORY_BASIC_INFORMATION mbi;
+        if (VirtualQuery(target, &mbi, sizeof(mbi)) == 0 || 
+            !(mbi.Protect & (PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_READONLY | PAGE_READWRITE))) {
+            return; // Not readable memory
+        }
+
         uint8_t* code = reinterpret_cast<uint8_t*>(target);
+        // MinHook detours start with relative JMP (0xE9), short JMP (0xEB), 
+        // absolute JMP (0xFF 0x25 or 0xFF 0x15), or 64-bit absolute JMP (0x48 0xB8 ... 0xFF 0xE0).
         bool intact = (code[0] == 0xE9 || code[0] == 0xEB || 
                        (code[0] == 0xFF && (code[1] == 0x25 || code[1] == 0x15)) ||
                        (code[0] == 0x48 && code[1] == 0xB8 && code[10] == 0xFF && code[11] == 0xE0));
@@ -132,248 +152,179 @@ void VerifyHookIntegrityDX12() {
     
     verify(g_targetExecuteCommandLists, "ExecuteCommandLists");
     verify(g_targetDrawIndexedInstanced, "DrawIndexedInstanced");
+    verify(g_targetOMSetRenderTargets, "OMSetRenderTargets");
+    verify(g_targetClearDepthStencilView, "ClearDepthStencilView");
     verify(g_targetPresentDX12, "PresentDX12");
     verify(g_targetPresent1DX12, "Present1DX12");
     verify(g_targetResizeBuffers, "ResizeBuffers");
     verify(g_targetResizeBuffers1, "ResizeBuffers1");
     verify(g_targetMapDX12, "Map");
     verify(g_targetUnmapDX12, "Unmap");
+    verify(g_targetCreateDepthStencilView, "CreateDepthStencilView");
+    verify(g_targetCopyDescriptors, "CopyDescriptors");
+    verify(g_targetCopyDescriptorsSimple, "CopyDescriptorsSimple");
 }
 
-void OnPresent(IDXGISwapChain* pSwapChain) {
-    if (g_mainSwapChain != nullptr && pSwapChain != g_mainSwapChain) {
-        return; // Ignore secondary swapchains (UI, Overlays, CEF)
+template<typename SwapChainType, typename OriginalFunc, typename... Args>
+HRESULT ProcessPresentDX12(SwapChainType* pSwapChain, OriginalFunc originalFunc, Args... args) {
+    if (!vrinject::seh::IsValidMemoryPointer(pSwapChain) || !originalFunc) {
+        return originalFunc ? originalFunc(pSwapChain, args...) : DXGI_ERROR_INVALID_CALL;
     }
 
-    static int s_frameCount = 0;
-    if (++s_frameCount % 600 == 0) {
-        VerifyHookIntegrityDX12();
-    }
-
-    std::lock_guard<std::recursive_mutex> lock(g_resourceMutex);
-
-    // Capture device and queue from swapchain if not already valid, or if swapchain changed
-    bool needCapture = !g_frameResources.valid || g_frameResources.swapChain != pSwapChain;
-    
-    if (needCapture) {
-        if (g_frameResources.swapChain != pSwapChain) {
-            LOG_INFO("DX12Hook: Swapchain changed/recreated. Resetting renderer and captured resources.");
-            g_dx12Renderer.Shutdown();
-            g_openxrManager.Shutdown();
-            g_openxrInitialized = false;
-            if (g_frameResources.swapChain) {
-                g_frameResources.swapChain->Release();
-                g_frameResources.swapChain = nullptr;
-            }
-        }
-
+    HRESULT hr = S_OK;
+    try {
+        // In DX12, we need the command queue to provide to the lifecycle manager.
+        // Get it from the swapchain.
         Microsoft::WRL::ComPtr<ID3D12CommandQueue> localQueue;
-        
-        // Try to get command queue from swapchain first (standard DX12 path)
+        ID3D12CommandQueue* pQueue = nullptr;
         if (SUCCEEDED(pSwapChain->GetDevice(__uuidof(ID3D12CommandQueue), (void**)&localQueue))) {
-            // In DX12, IDXGISwapChain::GetDevice returns the ID3D12CommandQueue used for presentation!
-            // Release existing commandQueue before overwriting it.
-            if (g_frameResources.commandQueue) {
-                g_frameResources.commandQueue->Release();
-                g_frameResources.commandQueue = nullptr;
-            }
-            g_frameResources.commandQueue = localQueue.Detach();
-            
-            Microsoft::WRL::ComPtr<ID3D12Device> localDevice;
-            if (SUCCEEDED(g_frameResources.commandQueue->GetDevice(__uuidof(ID3D12Device), (void**)&localDevice))) {
-                if (g_frameResources.device) {
-                    g_frameResources.device->Release();
-                }
-                g_frameResources.device = localDevice.Detach();
-                g_frameResources.valid = true;
-            }
+            pQueue = localQueue.Get();
         } else {
-            // Fallback: some weird wrapper might return the Device directly
+            // Fallback for some wrappers that return ID3D12Device directly (technically invalid for swapchains, but happens)
             Microsoft::WRL::ComPtr<ID3D12Device> localDevice;
             if (SUCCEEDED(pSwapChain->GetDevice(__uuidof(ID3D12Device), (void**)&localDevice))) {
-                if (g_frameResources.device) {
-                    g_frameResources.device->Release();
-                }
-                g_frameResources.device = localDevice.Detach();
-                g_frameResources.valid = true;
-            } else {
-                LOG_ERROR("DX12Hook: SwapChain->GetDevice failed to return CommandQueue OR Device");
+                LOG_WARN("DX12Hook: SwapChain->GetDevice returned Device instead of CommandQueue! We need a queue.");
             }
         }
         
-        // Update swapchain reference and dimensions
-        g_frameResources.swapChain = pSwapChain;
-        pSwapChain->AddRef();
         if (g_mainSwapChain == nullptr) {
             g_mainSwapChain = pSwapChain;
         }
-        
-        DXGI_SWAP_CHAIN_DESC desc;
-        pSwapChain->GetDesc(&desc);
-        g_frameResources.width = desc.BufferDesc.Width;
-        g_frameResources.height = desc.BufferDesc.Height;
-        
-        static bool s_formatLogged = false;
-        if (!s_formatLogged) {
-            LOG_INFO("DX12Hook: SwapChain Format = %d, Resolution = %dx%d", desc.BufferDesc.Format, desc.BufferDesc.Width, desc.BufferDesc.Height);
-            s_formatLogged = true;
+
+        // Execute original present first
+        hr = originalFunc(pSwapChain, args...);
+
+        // Advance lifecycle state machine and get immutable snapshot
+        RenderFrameSnapshot snapshot = Dx12LifecycleManager::Get().ProcessPresent(pSwapChain, pQueue, hr);
+
+        // Exception-safe RAII frame lifecycle
+        ScopedFrame frame(FrameCoordinator::Get(), snapshot);
+
+        static int s_frameCount = 0;
+        if (++s_frameCount % 600 == 0) {
+            VerifyHookIntegrityDX12();
         }
+
+    } catch (const std::exception& e) {
+        LOG_ERROR("DX12Hook: ProcessPresent exception caught: %s", e.what());
+    } catch (...) {
+        LOG_ERROR("DX12Hook: ProcessPresent unknown exception caught");
     }
 
-    g_frameResources.valid = (g_frameResources.device != nullptr && g_frameResources.commandQueue != nullptr);
+    return hr;
+}
 
-    if (g_frameResources.valid && g_openxrInitialized) {
-        g_dx12Renderer.UpdateGameCommandQueue(g_frameResources.commandQueue);
-    }
+HRESULT __stdcall hkPresentDX12(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
+    return ProcessPresentDX12(pSwapChain, OriginalPresentDX12, SyncInterval, Flags);
+}
 
-    if (!g_frameResources.commandQueue) {
-        g_frameResources.commandQueue = DXGIFactoryHook::GetCapturedCommandQueue();
-        g_frameResources.valid = (g_frameResources.device != nullptr && g_frameResources.commandQueue != nullptr);
-    }
+HRESULT __stdcall hkPresent1DX12(IDXGISwapChain1* pSwapChain, UINT SyncInterval, UINT PresentFlags, const DXGI_PRESENT_PARAMETERS* pPresentParameters) {
+    return ProcessPresentDX12(pSwapChain, OriginalPresent1DX12, SyncInterval, PresentFlags, pPresentParameters);
+}
 
-    if (g_frameResources.valid && !g_openxrInitialized) {
-        Microsoft::WRL::ComPtr<ID3D12Resource> backBuffer;
-        uint32_t width = 0;
-        uint32_t height = 0;
-        
-        UINT backBufferIndex = 0;
-        Microsoft::WRL::ComPtr<IDXGISwapChain3> swapChain3;
-        if (SUCCEEDED(pSwapChain->QueryInterface(__uuidof(IDXGISwapChain3), (void**)&swapChain3))) {
-            backBufferIndex = swapChain3->GetCurrentBackBufferIndex();
-        }
+HRESULT __stdcall hkResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags) {
+    LOG_INFO("DX12Hook: hkResizeBuffers requested format %d", NewFormat);
+    return OriginalResizeBuffers ? OriginalResizeBuffers(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags) : DXGI_ERROR_INVALID_CALL;
+}
 
-        if (SUCCEEDED(pSwapChain->GetBuffer(backBufferIndex, __uuidof(ID3D12Resource), (void**)&backBuffer))) {
-            D3D12_RESOURCE_DESC resDesc = backBuffer->GetDesc();
-            width = static_cast<uint32_t>(resDesc.Width);
-            height = resDesc.Height;
-        } else {
-            // Fallback: try to get from swapchain desc
-            DXGI_SWAP_CHAIN_DESC desc;
-            if (SUCCEEDED(pSwapChain->GetDesc(&desc))) {
-                width = desc.BufferDesc.Width;
-                height = desc.BufferDesc.Height;
-            }
-        }
+HRESULT __stdcall hkResizeBuffers1(IDXGISwapChain3* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags, const UINT* pCreationNodeMask, IUnknown* const* ppPresentQueue) {
+    LOG_INFO("DX12Hook: hkResizeBuffers1 requested format %d", NewFormat);
+    return OriginalResizeBuffers1 ? OriginalResizeBuffers1(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags, pCreationNodeMask, ppPresentQueue) : DXGI_ERROR_INVALID_CALL;
+}
 
-        // Fallback to 1080p if both buffer and swapchain desc failed
-        if (width == 0 || height == 0) {
-            LOG_WARN("DX12Hook: Failed to determine swapchain dimensions. Defaulting to 1920x1080 fallback.");
-            width = 1920;
-            height = 1080;
-        }
-
-        g_dx12Renderer.Initialize(g_frameResources.device, g_frameResources.commandQueue);
-        g_openxrManager.SetRenderer(&g_dx12Renderer);
-        
-        DXGI_SWAP_CHAIN_DESC desc;
-        pSwapChain->GetDesc(&desc);
-        
-        if (g_openxrManager.Initialize(GraphicsAPI::DX12, g_frameResources.device, g_frameResources.commandQueue, width, height, desc.BufferDesc.Format)) {
-            InputHook::GetInstance().SetOpenXRManager(&g_openxrManager);
-            g_openxrInitialized = true;
-            LOG_INFO("DX12Hook: OpenXR initialized successfully for DX12 (Size: %ux%u, Format: %d)", width, height, desc.BufferDesc.Format);
-        } else {
-            LOG_ERROR("DX12Hook: Failed to initialize OpenXR");
-        }
-        if (ConfigManager::GetInstance().GetConfig().enableImGuiOverlay) {
-            HWND hwnd = InputHook::GetInstance().GetTargetHwnd();
-            if (hwnd) {
-                OverlayManager::GetInstance().Initialize(hwnd);
-                ImGuiDX12Integration::GetInstance().Initialize(g_frameResources.device, desc.BufferDesc.Format);
-            }
-        }
-    }
-
-    if (g_openxrInitialized) {
-        XrFrameState frameState = {XR_TYPE_FRAME_STATE};
-        bool openxrActive = g_openxrManager.BeginFrame(frameState);
-
-        if (openxrActive) {
-            Microsoft::WRL::ComPtr<ID3D12Resource> backBuffer;
-            UINT backBufferIndex = 0;
-            Microsoft::WRL::ComPtr<IDXGISwapChain3> swapChain3;
-            if (SUCCEEDED(pSwapChain->QueryInterface(__uuidof(IDXGISwapChain3), (void**)&swapChain3))) {
-                backBufferIndex = swapChain3->GetCurrentBackBufferIndex();
-            }
-
-            if (SUCCEEDED(pSwapChain->GetBuffer(backBufferIndex, __uuidof(ID3D12Resource), (void**)&backBuffer))) {
-                TextureHandle tex;
-                tex.nativePtr = backBuffer.Get();
-                
-                D3D12_RESOURCE_DESC resDesc = backBuffer->GetDesc();
-                tex.width = static_cast<uint32_t>(resDesc.Width);
-                tex.height = resDesc.Height;
-
-                g_dx12Renderer.ExecuteTonemapToIntermediate(tex);
-                
-                if (ConfigManager::GetInstance().GetConfig().enableImGuiOverlay) {
-                    ImGuiDX12Integration::GetInstance().Render(g_frameResources.device, g_frameResources.commandQueue, backBuffer.Get());
-                }
-            }
-
-            vrinject::StereoParams params = {};
-            auto& cfg = ConfigManager::GetInstance().GetConfig();
-            params.ipd = cfg.ipd;
-            params.convergence = cfg.convergence;
-            params.isNativeStereo = false; // Will be set by native hooks if active
-
-            TextureHandle dummy = {};
-            g_openxrManager.EndFrame(frameState, dummy, dummy, dummy, &params);
-        }
-    }
-
-    // FIX #9: g_onFrameCallback is read here under g_resourceMutex (already held)
-    // so we shadow-copy it to ensure consistent read with the lock already taken.
-    OnFrameCallbackDX12 localCallback = g_onFrameCallback;
-    if (localCallback && g_frameResources.valid) {
-        // Just once, print that we are rendering
-        static bool s_printed = false;
-        if (!s_printed) {
-            LOG_INFO("DX12Hook: Firing OnFrameCallback! VR should be active now.");
-            s_printed = true;
-        }
-        localCallback(g_frameResources);
-    } else {
-        static int s_failCount = 0;
-        if (s_failCount++ < 10) {
-            LOG_ERROR("DX12Hook: OnPresent failed to fire callback! callback_valid=%d, resources_valid=%d, device=%p, queue=%p", 
-                (bool)g_onFrameCallback, g_frameResources.valid, (void*)g_frameResources.device, (void*)g_frameResources.commandQueue);
-        }
+void __stdcall hkCreateDepthStencilView(ID3D12Device* pDevice, ID3D12Resource* pResource, const D3D12_DEPTH_STENCIL_VIEW_DESC* pDesc, D3D12_CPU_DESCRIPTOR_HANDLE DestDescriptor) {
+    Dx12DescriptorTracker::Get().RegisterDescriptor(DestDescriptor, pResource, pDesc);
+    if (OriginalCreateDepthStencilView) {
+        OriginalCreateDepthStencilView(pDevice, pResource, pDesc, DestDescriptor);
     }
 }
 
-void __stdcall hkExecuteCommandLists(ID3D12CommandQueue* pCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists) {
-    {
-        std::lock_guard<std::recursive_mutex> lock(g_resourceMutex);
-        
-        // Only capture if we don't have a definitive presentation queue yet
-        if (!g_frameResources.commandQueue && pCommandQueue->GetDesc().Type == D3D12_COMMAND_LIST_TYPE_DIRECT) {
-            g_frameResources.commandQueue = pCommandQueue;
-            // Don't AddRef here because it's a weak pointer in this context,
-            // and OnPresent will permanently lock the exact presentation queue shortly.
-        }
+void __stdcall hkCopyDescriptors(ID3D12Device* pDevice, UINT NumDestDescriptorRanges, const D3D12_CPU_DESCRIPTOR_HANDLE* pDestDescriptorRangeStarts, const UINT* pDestDescriptorRangeSizes, UINT NumSrcDescriptorRanges, const D3D12_CPU_DESCRIPTOR_HANDLE* pSrcDescriptorRangeStarts, const UINT* pSrcDescriptorRangeSizes, D3D12_DESCRIPTOR_HEAP_TYPE DescriptorHeapsType) {
+    // Advanced tracker: for now we only support Simple copy well or 1:1, full implementation would loop over ranges.
+    // In practice, many engines use CopyDescriptorsSimple or 1:1 arrays
+    if (OriginalCopyDescriptors) {
+        OriginalCopyDescriptors(pDevice, NumDestDescriptorRanges, pDestDescriptorRangeStarts, pDestDescriptorRangeSizes, NumSrcDescriptorRanges, pSrcDescriptorRangeStarts, pSrcDescriptorRangeSizes, DescriptorHeapsType);
     }
+}
 
-    // Scan persistently mapped buffers before command lists are executed by the GPU
-    {
-        std::lock_guard<std::recursive_mutex> mapLock(g_dx12MapMutex);
-        for (auto const& [pResource, pData] : g_dx12MappedResources) {
-            if (pResource && pData) {
-                D3D12_RESOURCE_DESC desc = pResource->GetDesc();
-                if (desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER) {
-                    engine_scanners::UniversalScanner::Get().ProcessConstantBuffer(pData, static_cast<size_t>(desc.Width));
+void __stdcall hkCopyDescriptorsSimple(ID3D12Device* pDevice, UINT NumDescriptors, D3D12_CPU_DESCRIPTOR_HANDLE DestDescriptorRangeStart, D3D12_CPU_DESCRIPTOR_HANDLE SrcDescriptorRangeStart, D3D12_DESCRIPTOR_HEAP_TYPE DescriptorHeapsType) {
+    SIZE_T increment = pDevice->GetDescriptorHandleIncrementSize(DescriptorHeapsType);
+    for (UINT i = 0; i < NumDescriptors; ++i) {
+        D3D12_CPU_DESCRIPTOR_HANDLE dst = DestDescriptorRangeStart;
+        dst.ptr += i * increment;
+        D3D12_CPU_DESCRIPTOR_HANDLE src = SrcDescriptorRangeStart;
+        src.ptr += i * increment;
+        Dx12DescriptorTracker::Get().CopyDescriptor(dst, src);
+    }
+    if (OriginalCopyDescriptorsSimple) {
+        OriginalCopyDescriptorsSimple(pDevice, NumDescriptors, DestDescriptorRangeStart, SrcDescriptorRangeStart, DescriptorHeapsType);
+    }
+}
+
+
+
+
+
+
+
+void __stdcall hkExecuteCommandLists(ID3D12CommandQueue* pCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists) {
+    try {
+
+        // Scan persistently mapped buffers before command lists are executed by the GPU
+        {
+            std::lock_guard<std::recursive_mutex> mapLock(g_dx12MapMutex);
+            for (auto const& [pResource, pData] : g_dx12MappedResources) {
+                if (pResource && pData) {
+                    D3D12_RESOURCE_DESC desc = pResource->GetDesc();
+                    if (desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER) {
+                        engine_scanners::UniversalScanner::Get().ProcessConstantBuffer(pData, static_cast<size_t>(desc.Width));
+                    }
                 }
             }
         }
-    }
 
-    OriginalExecuteCommandLists(pCommandQueue, NumCommandLists, ppCommandLists);
+        if (OriginalExecuteCommandLists) {
+            OriginalExecuteCommandLists(pCommandQueue, NumCommandLists, ppCommandLists);
+        }
+    } catch (const std::exception& e) {
+        LOG_ERROR("DX12Hook: hkExecuteCommandLists exception caught: %s", e.what());
+        if (OriginalExecuteCommandLists) OriginalExecuteCommandLists(pCommandQueue, NumCommandLists, ppCommandLists);
+    } catch (...) {
+        LOG_ERROR("DX12Hook: hkExecuteCommandLists unknown exception caught");
+        if (OriginalExecuteCommandLists) OriginalExecuteCommandLists(pCommandQueue, NumCommandLists, ppCommandLists);
+    }
 }
 
 void __stdcall hkDrawIndexedInstanced(ID3D12GraphicsCommandList* pCommandList, UINT IndexCountPerInstance, UINT InstanceCount, UINT StartIndexLocation, INT BaseVertexLocation, UINT StartInstanceLocation) {
-    OriginalDrawIndexedInstanced(pCommandList, IndexCountPerInstance, InstanceCount, StartIndexLocation, BaseVertexLocation, StartInstanceLocation);
+    if (OriginalDrawIndexedInstanced) {
+        OriginalDrawIndexedInstanced(pCommandList, IndexCountPerInstance, InstanceCount, StartIndexLocation, BaseVertexLocation, StartInstanceLocation);
+    }
 }
 
+void __stdcall hkOMSetRenderTargets(ID3D12GraphicsCommandList* pCommandList, UINT NumRenderTargetDescriptors, const D3D12_CPU_DESCRIPTOR_HANDLE* pRenderTargetDescriptors, BOOL RTsSingleHandleToDescriptorRange, const D3D12_CPU_DESCRIPTOR_HANDLE* pDepthStencilDescriptor) {
+    if (pDepthStencilDescriptor && pDepthStencilDescriptor->ptr != 0) {
+        GraphicsResourceIdentity identity;
+        if (Dx12DescriptorTracker::Get().ResolveDescriptor(*pDepthStencilDescriptor, identity)) {
+            // Forward identity to collector.
+            DepthCandidateCollector::Get().OnOMSetRenderTargets(identity);
+        }
+    }
+    if (OriginalOMSetRenderTargets) {
+        OriginalOMSetRenderTargets(pCommandList, NumRenderTargetDescriptors, pRenderTargetDescriptors, RTsSingleHandleToDescriptorRange, pDepthStencilDescriptor);
+    }
+}
+
+void __stdcall hkClearDepthStencilView(ID3D12GraphicsCommandList* pCommandList, D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView, D3D12_CLEAR_FLAGS ClearFlags, FLOAT Depth, UINT8 Stencil, UINT NumRects, const D3D12_RECT* pRects) {
+    if (DepthStencilView.ptr != 0) {
+        GraphicsResourceIdentity identity;
+        if (Dx12DescriptorTracker::Get().ResolveDescriptor(DepthStencilView, identity)) {
+            DepthCandidateCollector::Get().OnClearDepthStencilView(identity, Depth);
+        }
+    }
+    if (OriginalClearDepthStencilView) {
+        OriginalClearDepthStencilView(pCommandList, DepthStencilView, ClearFlags, Depth, Stencil, NumRects, pRects);
+    }
+}
 
 
 bool Initialize() {
@@ -518,16 +469,25 @@ bool Initialize() {
 
     // Extract Command List VTable for DrawIndexedInstanced
     void* drawIndexedInstancedAddress = nullptr;
+    void* omSetRenderTargetsAddress = nullptr;
+    void* clearDepthStencilViewAddress = nullptr;
     ID3D12CommandAllocator* pAllocator = nullptr;
     if (SUCCEEDED(pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, __uuidof(ID3D12CommandAllocator), (void**)&pAllocator))) {
         ID3D12GraphicsCommandList* pCommandList = nullptr;
         if (SUCCEEDED(pDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, pAllocator, nullptr, __uuidof(ID3D12GraphicsCommandList), (void**)&pCommandList))) {
             void** pCommandListVtable = *reinterpret_cast<void***>(pCommandList);
             drawIndexedInstancedAddress = pCommandListVtable[13]; // DrawIndexedInstanced
+            omSetRenderTargetsAddress = pCommandListVtable[46];   // OMSetRenderTargets
+            clearDepthStencilViewAddress = pCommandListVtable[47];// ClearDepthStencilView
             pCommandList->Release();
         }
         pAllocator->Release();
     }
+
+    void** pDeviceVtable = *reinterpret_cast<void***>(pDevice);
+    void* createDepthStencilViewAddress = pDeviceVtable[21];
+    void* copyDescriptorsAddress = pDeviceVtable[23];
+    void* copyDescriptorsSimpleAddress = pDeviceVtable[24];
 
     pCommandQueue->Release();
     pDevice->Release();
@@ -561,6 +521,7 @@ bool Initialize() {
         
         // Exact matches for known system DLLs (case-insensitive)
         if (filenameLower != "d3d12.dll" &&
+            filenameLower != "d3d12core.dll" &&
             filenameLower != "dxgi.dll" &&
             filenameLower != "d3d11.dll") {
             LOG_WARN("DX12Hook: Hook target %p is in '%s', not a known D3D/DXGI system DLL — skipping.", addr, modName);
@@ -579,31 +540,57 @@ bool Initialize() {
         return true;
     };
 
-    g_targetExecuteCommandLists = executeCommandListsAddress;
-    g_targetDrawIndexedInstanced = drawIndexedInstancedAddress;
-    g_targetPresentDX12 = present0Address;
-    g_targetPresent1DX12 = present1ExAddress;
-    g_targetResizeBuffers = resizeBuffersAddress;
-    g_targetResizeBuffers1 = resizeBuffers1Address;
-    g_targetMapDX12 = mapAddress;
-    g_targetUnmapDX12 = unmapAddress;
-
     if (IsValidHookTarget(executeCommandListsAddress) &&
-        MH_CreateHook(executeCommandListsAddress, (void*)hkExecuteCommandLists, (void**)&OriginalExecuteCommandLists) != MH_OK) {
+        MH_CreateHook(executeCommandListsAddress, (void*)hkExecuteCommandLists, (void**)&OriginalExecuteCommandLists) == MH_OK) {
+        g_targetExecuteCommandLists = executeCommandListsAddress;
+        MH_EnableHook(executeCommandListsAddress);
+    } else {
         LOG_ERROR("MH_CreateHook failed for DX12 ExecuteCommandLists");
-        // ignore error for cmd list since it might fail if already hooked or agile sdk
     }
-    if (OriginalExecuteCommandLists) MH_EnableHook(executeCommandListsAddress);
+
+    if (IsValidHookTarget(createDepthStencilViewAddress) &&
+        MH_CreateHook(createDepthStencilViewAddress, (void*)hkCreateDepthStencilView, (void**)&OriginalCreateDepthStencilView) == MH_OK) {
+        g_targetCreateDepthStencilView = createDepthStencilViewAddress;
+        MH_EnableHook(createDepthStencilViewAddress);
+    }
+    if (IsValidHookTarget(copyDescriptorsAddress) &&
+        MH_CreateHook(copyDescriptorsAddress, (void*)hkCopyDescriptors, (void**)&OriginalCopyDescriptors) == MH_OK) {
+        g_targetCopyDescriptors = copyDescriptorsAddress;
+        MH_EnableHook(copyDescriptorsAddress);
+    }
+    if (IsValidHookTarget(copyDescriptorsSimpleAddress) &&
+        MH_CreateHook(copyDescriptorsSimpleAddress, (void*)hkCopyDescriptorsSimple, (void**)&OriginalCopyDescriptorsSimple) == MH_OK) {
+        g_targetCopyDescriptorsSimple = copyDescriptorsSimpleAddress;
+        MH_EnableHook(copyDescriptorsSimpleAddress);
+    }
 
     if (IsValidHookTarget(drawIndexedInstancedAddress) &&
         MH_CreateHook(drawIndexedInstancedAddress, (void*)hkDrawIndexedInstanced, (void**)&OriginalDrawIndexedInstanced) == MH_OK) {
+        g_targetDrawIndexedInstanced = drawIndexedInstancedAddress;
         MH_EnableHook(drawIndexedInstancedAddress);
     } else {
         LOG_ERROR("DX12Hook: MH_CreateHook failed for DrawIndexedInstanced");
     }
 
+    if (IsValidHookTarget(omSetRenderTargetsAddress) &&
+        MH_CreateHook(omSetRenderTargetsAddress, (void*)hkOMSetRenderTargets, (void**)&OriginalOMSetRenderTargets) == MH_OK) {
+        g_targetOMSetRenderTargets = omSetRenderTargetsAddress;
+        MH_EnableHook(omSetRenderTargetsAddress);
+    } else {
+        LOG_ERROR("DX12Hook: MH_CreateHook failed for OMSetRenderTargets");
+    }
+
+    if (IsValidHookTarget(clearDepthStencilViewAddress) &&
+        MH_CreateHook(clearDepthStencilViewAddress, (void*)hkClearDepthStencilView, (void**)&OriginalClearDepthStencilView) == MH_OK) {
+        g_targetClearDepthStencilView = clearDepthStencilViewAddress;
+        MH_EnableHook(clearDepthStencilViewAddress);
+    } else {
+        LOG_ERROR("DX12Hook: MH_CreateHook failed for ClearDepthStencilView");
+    }
+
     if (IsValidHookTarget(present0Address) &&
         MH_CreateHook(present0Address, (void*)hkPresentDX12, (void**)&OriginalPresentDX12) == MH_OK) {
+        g_targetPresentDX12 = present0Address;
         MH_EnableHook(present0Address);
     } else {
         // DX11 hook already owns Present — it will forward DX12 swapchains to OnPresent()
@@ -612,6 +599,7 @@ bool Initialize() {
 
     if (IsValidHookTarget(present1ExAddress) &&
         MH_CreateHook(present1ExAddress, (void*)hkPresent1DX12, (void**)&OriginalPresent1DX12) == MH_OK) {
+        g_targetPresent1DX12 = present1ExAddress;
         MH_EnableHook(present1ExAddress);
     } else {
         LOG_INFO("DX12Hook: Present1 already hooked (DX11 hook owns it).");
@@ -619,6 +607,7 @@ bool Initialize() {
 
     if (IsValidHookTarget(resizeBuffersAddress) &&
         MH_CreateHook(resizeBuffersAddress, (void*)hkResizeBuffers, (void**)&OriginalResizeBuffers) == MH_OK) {
+        g_targetResizeBuffers = resizeBuffersAddress;
         MH_EnableHook(resizeBuffersAddress);
     } else {
         LOG_ERROR("DX12Hook: MH_CreateHook failed for ResizeBuffers");
@@ -626,11 +615,13 @@ bool Initialize() {
 
     if (IsValidHookTarget(resizeBuffers1Address) &&
         MH_CreateHook(resizeBuffers1Address, (void*)hkResizeBuffers1, (void**)&OriginalResizeBuffers1) == MH_OK) {
+        g_targetResizeBuffers1 = resizeBuffers1Address;
         MH_EnableHook(resizeBuffers1Address);
     }
 
     if (IsValidHookTarget(mapAddress) &&
         MH_CreateHook(mapAddress, (void*)hkMap, (void**)&OriginalMap) == MH_OK) {
+        g_targetMapDX12 = mapAddress;
         MH_EnableHook(mapAddress);
     } else {
         LOG_ERROR("DX12Hook: MH_CreateHook failed for Map");
@@ -638,6 +629,7 @@ bool Initialize() {
 
     if (IsValidHookTarget(unmapAddress) &&
         MH_CreateHook(unmapAddress, (void*)hkUnmap, (void**)&OriginalUnmap) == MH_OK) {
+        g_targetUnmapDX12 = unmapAddress;
         MH_EnableHook(unmapAddress);
     } else {
         LOG_ERROR("DX12Hook: MH_CreateHook failed for Unmap");
@@ -650,30 +642,22 @@ bool Initialize() {
 void Shutdown() {
     MH_DisableHook(MH_ALL_HOOKS);
     ImGuiDX12Integration::GetInstance().Shutdown();
-    std::lock_guard<std::recursive_mutex> lock(g_resourceMutex);
-    if (g_frameResources.device) {
-        g_frameResources.device->Release();
-    }
-    if (g_frameResources.commandQueue) {
-        g_frameResources.commandQueue->Release();
-    }
-    if (g_frameResources.swapChain) {
-        g_frameResources.swapChain->Release();
-    }
-    g_frameResources = FrameResourcesDX12();
+    Dx12LifecycleManager::Get().Shutdown();
 }
 
 FrameResourcesDX12 GetCurrentFrame() {
-    std::lock_guard<std::recursive_mutex> lock(g_resourceMutex);
-    return g_frameResources;
+    FrameResourcesDX12 fr;
+    RenderState state = Dx12LifecycleManager::Get().GetState();
+    if (state == RenderState::RUNNING) {
+        fr.valid = true;
+    }
+    return fr;
 }
 
 void SetOnFrameCallback(OnFrameCallbackDX12 callback) {
-    // FIX #9: Guard with g_resourceMutex so writes from any thread are
-    // visible to OnPresent which reads under the same lock.
-    std::lock_guard<std::recursive_mutex> lock(g_resourceMutex);
-    g_onFrameCallback = callback;
+    // Deprecated: FrameCoordinator manages callbacks now
 }
 
 } // namespace DX12Hook
 } // namespace vrinject
+

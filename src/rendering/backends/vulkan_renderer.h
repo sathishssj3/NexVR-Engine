@@ -9,7 +9,7 @@
 
 namespace vrinject {
 
-class VulkanRenderer : public IRenderer {
+class VulkanRenderer : public ::IRenderer {
 public:
     bool Initialize(void* nativeDevice, void* nativeContext) override;
     void Shutdown() override;

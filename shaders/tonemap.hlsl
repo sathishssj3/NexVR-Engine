@@ -5,5 +5,12 @@ RWTexture2D<float4> OutputTex : register(u0);
 void CSMain(uint3 DTid : SV_DispatchThreadID)
 {
     float4 color = InputTex.Load(int3(DTid.xy, 0));
-    OutputTex[DTid.xy] = color;
+    float3 c = color.rgb;
+    if (isnan(c.r) || isnan(c.g) || isnan(c.b) || isinf(c.r) || isinf(c.g) || isinf(c.b)) {
+        c = float3(0.0, 0.0, 0.0);
+    }
+    c = clamp(c, 0.0f, 1.0f);
+    // Convert from sRGB to Linear space to cancel out the VR headset display's gamma curve
+    c = pow(c, 2.2f);
+    OutputTex[DTid.xy] = float4(c, 1.0f);
 }

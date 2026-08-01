@@ -1,0 +1,15 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/cmake_install.cmake",
+		"C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/openxr-build/cmake_install.cmake",
+		"C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/openxr-build/include/cmake_install.cmake",
+		"C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/openxr-build/include/openxr/cmake_install.cmake",
+		"C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/openxr-build/src/cmake_install.cmake",
+		"C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/openxr-build/src/loader/cmake_install.cmake",
+		"C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/googletest-build/cmake_install.cmake",
+		"C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/googletest-build/googlemock/cmake_install.cmake",
+		"C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/googletest-build/googletest/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

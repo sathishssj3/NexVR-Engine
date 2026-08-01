@@ -24,9 +24,6 @@ void OverlayManager::Initialize(HWND hwnd) {
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     
-    // Force ImGui to draw its own software mouse cursor, since we can't see the hardware cursor in VR
-    io.MouseDrawCursor = true;
-    
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
     
@@ -67,13 +64,21 @@ bool OverlayManager::HandleWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 }
 
 void OverlayManager::Render() {
-    if (!m_initialized || !m_isVisible) return;
-
-    auto& cfgManager = ConfigManager::GetInstance();
-    auto& cfg = cfgManager.GetConfigMutable();
+    if (!m_initialized) return;
 
     // Start the Dear ImGui frame (backend new frames are called in dx11/dx12 hooks)
     ImGui::NewFrame();
+    
+    ImGuiIO& io = ImGui::GetIO();
+    io.MouseDrawCursor = m_isVisible; // Only draw ImGui cursor when menu is visible!
+
+    if (!m_isVisible) {
+        ImGui::EndFrame();
+        return;
+    }
+
+    auto& cfgManager = ConfigManager::GetInstance();
+    auto& cfg = cfgManager.GetConfigMutable();
 
     ImGui::SetNextWindowSize(ImVec2(500, 350), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);

@@ -6,6 +6,7 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <Windows.h>
+#include <shellapi.h>
 #include <TlHelp32.h>
 #include <Shlwapi.h>
 #include <Psapi.h>
@@ -270,8 +271,15 @@ int main(int argc, char* argv[]) {
             std::string src = copySrc + "\\" + f;
             std::string dst = copyDst + "\\" + f;
             if (::GetFileAttributesA(src.c_str()) != INVALID_FILE_ATTRIBUTES) {
+                // Rename existing file to .old to bypass file lock if it's loaded in the target process
+                if (::GetFileAttributesA(dst.c_str()) != INVALID_FILE_ATTRIBUTES) {
+                    std::string dstOld = dst + ".old";
+                    ::DeleteFileA(dstOld.c_str()); // Remove previous .old if it exists
+                    ::MoveFileA(dst.c_str(), dstOld.c_str());
+                }
+                
                 if (!::CopyFileA(src.c_str(), dst.c_str(), FALSE)) {
-                    PrintWarn("Failed to copy %s", f);
+                    PrintWarn("Failed to copy %s (Error: %lu)", f, ::GetLastError());
                 }
             }
         }
@@ -405,6 +413,12 @@ int main(int argc, char* argv[]) {
     std::printf("\n");
     if (ok) {
         PrintOK("Injection complete. Check vrinject.log for hook status.");
+        
+        // Hide SteamVR dashboard automatically
+        PrintInfo("Toggling SteamVR dashboard...");
+        // Delay to allow OpenXR to initialize in the target process
+        ::Sleep(3000); 
+        ::ShellExecuteA(NULL, "open", "vrmonitor://debugcommands/system_dashboard_toggle", NULL, NULL, SW_SHOWNORMAL);
     } else {
         PrintErr("Injection failed. See messages above for details.");
     }

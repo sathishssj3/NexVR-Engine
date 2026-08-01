@@ -2,7 +2,8 @@
 #include "../core/logger.h"
 #include "../core/memory_scanner.h"
 #include "../core/engine_scanners/unreal_scanner.h"
-#include "../rendering/openxr_manager.h"
+#include "../openxr/openxr_types.h"
+#include "../openxr/openxr_runtime_manager.h"
 #include "MinHook.h"
 
 #include <cmath>
@@ -17,6 +18,7 @@ namespace ue {
 // ============================================================================
 // Helper: Convert an OpenXR quaternion to Unreal Engine FRotator (degrees)
 // ============================================================================
+/*
 static FRotator QuatToRotator(const XrQuaternionf& q) {
     // Convert quaternion to Euler angles
     // UE uses a Z-up, left-handed coordinate system
@@ -41,10 +43,12 @@ static FRotator QuatToRotator(const XrQuaternionf& q) {
 
     return rot;
 }
+*/
 
 // ============================================================================
 // Helper: Convert OpenXR position (meters, right-handed) to UE (centimeters, left-handed)
 // ============================================================================
+/*
 static FVector XrPosToUE(const XrVector3f& pos) {
     // OpenXR: x=right, y=up, z=back
     // UE4:    x=forward, y=right, z=up
@@ -55,6 +59,7 @@ static FVector XrPosToUE(const XrVector3f& pos) {
          pos.y * 100.0f    // OpenXR y  -> UE z (up)
     );
 }
+*/
 
 // ============================================================================
 // Detour: ULocalPlayer::GetProjectionData (UE4)
@@ -81,7 +86,8 @@ bool UnrealHook::DetourGetProjectionData(void* pLocalPlayer, void* pViewport, in
             stereoPass);
     }
 
-    // --- VR Pose Injection ---
+    // --- VR Pose Injection (temporarily disabled) ---
+    /*
     auto* openxr = OpenXRManager::GetInstance();
     if (openxr && openxr->IsSessionRunning()) {
         const XrPosef& headPose = openxr->GetLatestHeadPose();
@@ -103,6 +109,7 @@ bool UnrealHook::DetourGetProjectionData(void* pLocalPlayer, void* pViewport, in
         //     projData->ProjectionMatrix = BuildVRProjectionMatrix(...);
         // }
     }
+    */
 
     return result;
 }
@@ -129,7 +136,8 @@ void* UnrealHook::DetourCalcSceneView(void* pLocalPlayer, void* pOutViewInfo, vo
                 viewInfo->FOV);
         }
 
-        // VR Pose Injection
+        // VR Pose Injection (temporarily disabled)
+        /*
         auto* openxr = OpenXRManager::GetInstance();
         if (openxr && openxr->IsSessionRunning()) {
             const XrPosef& headPose = openxr->GetLatestHeadPose();
@@ -140,6 +148,7 @@ void* UnrealHook::DetourCalcSceneView(void* pLocalPlayer, void* pOutViewInfo, vo
             viewInfo->Location = viewInfo->Location + hmdOffset;
             viewInfo->Rotation = hmdRotation;
         }
+        */
     }
 
     return result;
@@ -175,6 +184,7 @@ void UnrealHook::DetourBeginRenderingViewFamily(void* pCanvas, FSceneViewFamily*
         return;
     }
 
+    /*
     auto* openxr = OpenXRManager::GetInstance();
     if (openxr && openxr->IsSessionRunning() && pViewFamily->Views.ArrayNum > 0) {
         
@@ -206,6 +216,7 @@ void UnrealHook::DetourBeginRenderingViewFamily(void* pCanvas, FSceneViewFamily*
             // Then let the engine render it!
         }
     }
+    */
 
     // Call the original renderer to actually draw the family
     Get().m_originalBeginRenderingViewFamily(pCanvas, pViewFamily);

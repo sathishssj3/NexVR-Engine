@@ -10,37 +10,79 @@
 #include "../hooks/dxgi_factory_hook.h"
 #include "../hooks/input_hook.h"
 #include "../hooks/audio_hook.h"
-#include "../hooks/MinHook.h"
+#include <MinHook.h>
+#include "diagnostic_context.h"
 
 namespace vrinject {
 
 bool HookManager::InitializeHooks() {
-    LOG_INFO("HookManager: Initializing MinHook...");
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+    if (m_phase == HookPhase::Committed) return true;
+    if (!Prepare()) return false;
+    if (!Validate()) { Rollback(); return false; }
+    if (!Install()) { Rollback(); return false; }
+    if (!Verify()) { Rollback(); return false; }
+    if (!Commit()) { Rollback(); return false; }
+    return true;
+}
+
+bool HookManager::Prepare() {
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+    m_phase = HookPhase::Prepared;
+    m_rollbackStack.clear();
+    
+    LOG_INFO("HookManager: Preparing hooks...");
+    return true;
+}
+
+bool HookManager::Validate() {
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+    m_phase = HookPhase::Validated;
+    LOG_INFO("HookManager: Validating hook environment...");
+    
+    // Check if MinHook is already initialized or anything is preventing hooks
+    // e.g. check for anticheat presence, incompatible overlays
+    
+    return true;
+}
+
+bool HookManager::Install() {
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+    m_phase = HookPhase::Installed;
+    LOG_INFO("HookManager: Installing MinHook...");
+    
     if (MH_Initialize() != MH_OK) {
         LOG_ERROR("HookManager: Failed to initialize MinHook.");
         return false;
     }
+    
+    m_rollbackStack.push_back([]() { MH_Uninitialize(); });
 
-    // Setup Core Windows & Input Hooks first
     if (!InputHook::GetInstance().Initialize()) {
         LOG_WARN("InputHook failed to initialize. Gamepad emulation disabled.");
+    } else {
+        m_rollbackStack.push_back([]() { InputHook::GetInstance().Shutdown(); });
     }
     
     AudioHook::Initialize();
+    // AudioHook does not have a shutdown currently
 
     DXGIFactoryHook::Initialize();
-    // Setup Graphics Pipeline Hooks
-    // DX11 must hook Present FIRST because its ProcessPresent has routing logic
-    // to detect DX12 swapchains and forward them to DX12Hook::OnPresent.
-    // Both DX11 and DX12 share the same IDXGISwapChain::Present vtable entry,
-    // so only one can own the hook — DX11's handler correctly dispatches both.
+    m_rollbackStack.push_back([]() { DXGIFactoryHook::Shutdown(); });
+    
     if (!DX11Hook::Initialize()) {
         LOG_WARN("DX11Hook initialization failed.");
+    } else {
+        m_rollbackStack.push_back([]() { DX11Hook::Shutdown(); });
     }
-    DX12Hook::Initialize();
+    
+    if (!DX12Hook::Initialize()) {
+        LOG_WARN("DX12Hook initialization failed.");
+    } else {
+        m_rollbackStack.push_back([]() { DX12Hook::Shutdown(); });
+    }
 
     DX12Hook::SetOnFrameCallback([](const DX12Hook::FrameResourcesDX12& res) {
-        // Dummy implementation to verify callback is firing
         static int frameCount = 0;
         frameCount++;
         if (frameCount % 600 == 0) {
@@ -48,9 +90,6 @@ bool HookManager::InitializeHooks() {
         }
     });
 
-    // ========================================================================
-    // Engine Detection & Native Camera Hooking
-    // ========================================================================
     EngineDetector::Get().Detect();
     EngineType type = EngineDetector::Get().GetEngineType();
 
@@ -61,85 +100,90 @@ bool HookManager::InitializeHooks() {
     switch (type) {
         case EngineType::UnrealEngine4:
         case EngineType::UnrealEngine5: {
-            LOG_INFO("HookManager: Engine detected as Unreal Engine. Applying UE hooks.");
-            
-            // Phase 1: Run the memory scanner to find GWorld, GEngine, and camera functions
             auto& ueScanner = engine_scanners::UnrealScanner::Get();
             if (ueScanner.Initialize() && ueScanner.IsUnrealEngine()) {
-                // Phase 2: Attempt to hook the camera function
                 if (ueScanner.HookCamera()) {
-                    // Phase 3: Install the MinHook detour
                     nativeHookActive = ue::UnrealHook::Get().Initialize();
                     if (nativeHookActive) {
-                        LOG_INFO("HookManager: Native Unreal Engine camera hook is ACTIVE! "
-                                 "Head tracking will use engine-native projection.");
+                        m_rollbackStack.push_back([]() { ue::UnrealHook::Get().Shutdown(); });
+                        m_rollbackStack.push_back([]() { engine_scanners::UnrealScanner::Get().Shutdown(); });
+                        LOG_INFO("HookManager: Native UE hooks ACTIVE.");
                     }
                 }
-            }
-            
-            if (!nativeHookActive) {
-                LOG_WARN("HookManager: Unreal Engine native hooks failed. "
-                         "Falling back to Universal Mode (depth reprojection). "
-                         "This may result in less accurate 3D, but VR will still work.");
             }
             break;
         }
 
         case EngineType::Unity: {
-            LOG_INFO("HookManager: Engine detected as Unity. Applying Unity hooks.");
-            
-            // Phase 1: Detect backend and resolve scripting APIs
             auto& unityScanner = engine_scanners::UnityScanner::Get();
             if (unityScanner.Initialize() && unityScanner.IsUnityEngine()) {
-                // Phase 2: Find Camera class methods
                 if (unityScanner.HookCamera()) {
-                    // Phase 3: Install MinHook detours on the camera methods
                     nativeHookActive = unity::UnityHook::Get().Initialize();
                     if (nativeHookActive) {
-                        LOG_INFO("HookManager: Native Unity camera hook is ACTIVE! "
-                                 "Head tracking will use engine-native projection.");
+                        m_rollbackStack.push_back([]() { unity::UnityHook::Get().Shutdown(); });
+                        m_rollbackStack.push_back([]() { engine_scanners::UnityScanner::Get().Shutdown(); });
+                        LOG_INFO("HookManager: Native Unity hooks ACTIVE.");
                     }
                 }
-            }
-
-            if (!nativeHookActive) {
-                LOG_WARN("HookManager: Unity native hooks failed. "
-                         "Falling back to Universal Mode (depth reprojection). "
-                         "This may result in less accurate 3D, but VR will still work.");
             }
             break;
         }
 
-        case EngineType::Unknown:
         default:
-            LOG_INFO("HookManager: Engine type unknown. Relying solely on Universal Injection "
-                     "(Matrix Classification & Depth Reprojection).");
             break;
     }
 
-    // Log the final injection mode
-    if (nativeHookActive) {
-        LOG_INFO("===================================================");
-        LOG_INFO("  NexVR Engine: NATIVE ENGINE HOOK MODE ACTIVE");
-        LOG_INFO("  Engine: %s", EngineDetector::Get().GetEngineVersionString().c_str());
-        LOG_INFO("===================================================");
-    } else {
-        LOG_INFO("===================================================");
-        LOG_INFO("  NexVR Engine: UNIVERSAL MODE (Depth Reprojection)");
-        LOG_INFO("===================================================");
+    if (!nativeHookActive) {
+        LOG_INFO("HookManager: UNIVERSAL MODE (Depth Reprojection)");
     }
 
     return true;
 }
 
-void HookManager::ShutdownHooks() {
-    ue::UnrealHook::Get().Shutdown();
-    unity::UnityHook::Get().Shutdown();
-    engine_scanners::UnrealScanner::Get().Shutdown();
-    engine_scanners::UnityScanner::Get().Shutdown();
+bool HookManager::Verify() {
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+    m_phase = HookPhase::Verified;
+    LOG_INFO("HookManager: Verifying hooks...");
     
-    LOG_INFO("HookManager: Uninitializing MinHook...");
-    MH_Uninitialize();
+    // In a real system, we'd verify hook installation didn't get overwritten immediately.
+    // E.g. scan bytes of the hooked functions to ensure the JMP is still there.
+    
+    return true;
+}
+
+bool HookManager::Commit() {
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+    m_phase = HookPhase::Committed;
+    LOG_INFO("HookManager: Enabling hooks globally...");
+    
+    if (MH_EnableHook(MH_ALL_HOOKS) != MH_OK) {
+        LOG_ERROR("HookManager: Failed to enable hooks.");
+        return false;
+    }
+    
+    m_rollbackStack.push_back([]() { MH_DisableHook(MH_ALL_HOOKS); });
+    
+    return true;
+}
+
+void HookManager::Rollback() {
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+    m_phase = HookPhase::RolledBack;
+    LOG_WARN("HookManager: Rolling back transaction...");
+    
+    // Rollback in reverse order
+    for (auto it = m_rollbackStack.rbegin(); it != m_rollbackStack.rend(); ++it) {
+        (*it)();
+    }
+    m_rollbackStack.clear();
+}
+
+void HookManager::ShutdownHooks() {
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
+    if (m_phase == HookPhase::Committed || m_phase == HookPhase::Installed) {
+        Rollback();
+    }
+    m_phase = HookPhase::Uninitialized;
 }
 
 } // namespace vrinject

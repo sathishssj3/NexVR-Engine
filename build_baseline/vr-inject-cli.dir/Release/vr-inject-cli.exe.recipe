@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\x64\Release\ZERO_CHECK</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\x64\Release\generate_expected_hash</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\x64\Release\compile_shaders</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-build\include\openxr\x64\Release\generate_openxr_header</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-build\src\x64\Release\xr_global_generated_files</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\bin\vrinject.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\bin\vr-inject-cli.exe</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles />
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>

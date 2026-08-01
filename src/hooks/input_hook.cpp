@@ -1,7 +1,7 @@
 #include "input_hook.h"
 #include "../core/logger.h"
 #include "../core/config_manager.h"
-#include "../rendering/openxr_manager.h"
+#include "../openxr/openxr_runtime_manager.h"
 #include "MinHook.h"
 #include <vector>
 #include "../core/overlay_manager.h"
@@ -23,13 +23,16 @@ SetCursor_t OriginalSetCursor = nullptr;
 
 WNDPROC g_OriginalWndProc = nullptr;
 LRESULT CALLBACK HookedWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    if (OverlayManager::GetInstance().HandleWndProc(hwnd, msg, wParam, lParam)) {
-        return true; // ImGui captured the input
-    }
+    __try {
+        if (OverlayManager::GetInstance().HandleWndProc(hwnd, msg, wParam, lParam)) {
+            return true; // ImGui captured the input
+        }
+    } __except (EXCEPTION_EXECUTE_HANDLER) {}
+
     if (g_OriginalWndProc) {
-        return CallWindowProc(g_OriginalWndProc, hwnd, msg, wParam, lParam);
+        return g_OriginalWndProc(hwnd, msg, wParam, lParam);
     }
-    return DefWindowProc(hwnd, msg, wParam, lParam);
+    return DefWindowProcW(hwnd, msg, wParam, lParam);
 }
 
 HWND WINAPI HookedGetForegroundWindow() {
@@ -292,11 +295,11 @@ DWORD WINAPI InputHook::HookedXInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION
     InputHook& self = GetInstance();
     
     if (dwUserIndex == 0 && pVibration) {
-        if (self.m_openxrManager) {
-            float left = (float)pVibration->wLeftMotorSpeed / 65535.0f;
-            float right = (float)pVibration->wRightMotorSpeed / 65535.0f;
-            self.m_openxrManager->ApplyHapticFeedback(left, right);
-        }
+        // if (self.m_openxrManager) {
+        //     float left = (float)pVibration->wLeftMotorSpeed / 65535.0f;
+        //     float right = (float)pVibration->wRightMotorSpeed / 65535.0f;
+        //     self.m_openxrManager->ApplyHapticFeedback(left, right);
+        // }
         return ERROR_SUCCESS;
     }
 
@@ -343,8 +346,16 @@ void InputHook::FindTargetWindow() {
     if (m_targetHwnd) {
         LOG_INFO("InputHook: Found target game window HWND: %p", m_targetHwnd);
         
-        // Inject WndProc hook for ImGui
-        g_OriginalWndProc = (WNDPROC)SetWindowLongPtr(m_targetHwnd, GWLP_WNDPROC, (LONG_PTR)HookedWndProc);
+        // Use MinHook instead of SetWindowLongPtr because we are on a background thread.
+        // SetWindowLongPtr fails across threads with ERROR_ACCESS_DENIED.
+        WNDPROC currentWndProc = (WNDPROC)GetWindowLongPtr(m_targetHwnd, GWLP_WNDPROC);
+        if (currentWndProc) {
+            MH_CreateHook((LPVOID)currentWndProc, (LPVOID)&HookedWndProc, (reinterpret_cast<LPVOID*>(&g_OriginalWndProc)));
+            MH_EnableHook((LPVOID)currentWndProc);
+            LOG_INFO("InputHook: Successfully hooked WndProc via MinHook.");
+        } else {
+            LOG_ERROR("InputHook: Failed to get target WndProc.");
+        }
         
         // Do NOT automatically enable capture. This prevents the cursor from freezing
         // if the injector fails or if the user is just looking at the menu.

@@ -1,0 +1,288 @@
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\ASW_SHADER_CS_DX11.H.RULE
+setlocal
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\fxc.exe" /T cs_5_0 /E CSMain /O2 /Fh C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/asw_shader_cs_dx11.h /Vn g_asw_shader_DX11 C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/asw_shader.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\ASW_SHADER_CS_DX12.H.RULE
+setlocal
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -T cs_6_0 -E CSMain -O3 -Fh C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/asw_shader_cs_dx12.h -Vn g_asw_shader_DX12 C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/asw_shader.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\ASW_SHADER_CS_VK.H.RULE
+setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe -fshader-stage=compute -x hlsl -fentry-point=CSMain -O -mfmt=c -o C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/asw_shader_cs_vk.h C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/asw_shader.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\BILATERAL_BLEND_CS_DX11.H.RULE
+setlocal
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\fxc.exe" /T cs_5_0 /E CSMain /O2 /Fh C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/bilateral_blend_cs_dx11.h /Vn g_bilateral_blend_DX11 C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/bilateral_blend.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\BILATERAL_BLEND_CS_DX12.H.RULE
+setlocal
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -T cs_6_0 -E CSMain -O3 -Fh C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/bilateral_blend_cs_dx12.h -Vn g_bilateral_blend_DX12 C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/bilateral_blend.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\BILATERAL_BLEND_CS_VK.H.RULE
+setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe -fshader-stage=compute -x hlsl -fentry-point=CSMain -O -mfmt=c -o C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/bilateral_blend_cs_vk.h C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/bilateral_blend.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\BILATERAL_BLUR_CS_DX11.H.RULE
+setlocal
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\fxc.exe" /T cs_5_0 /E CSMain /O2 /Fh C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/bilateral_blur_cs_dx11.h /Vn g_bilateral_blur_DX11 C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/bilateral_blur.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\BILATERAL_BLUR_CS_DX12.H.RULE
+setlocal
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -T cs_6_0 -E CSMain -O3 -Fh C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/bilateral_blur_cs_dx12.h -Vn g_bilateral_blur_DX12 C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/bilateral_blur.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\BILATERAL_BLUR_CS_VK.H.RULE
+setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe -fshader-stage=compute -x hlsl -fentry-point=CSMain -O -mfmt=c -o C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/bilateral_blur_cs_vk.h C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/bilateral_blur.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\COMFORT_GUARD_ANALYSIS_CS_DX11.H.RULE
+setlocal
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\fxc.exe" /T cs_5_0 /E CSMain /O2 /Fh C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/comfort_guard_analysis_cs_dx11.h /Vn g_comfort_guard_analysis_DX11 C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/comfort_guard_analysis.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\COMFORT_GUARD_ANALYSIS_CS_DX12.H.RULE
+setlocal
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -T cs_6_0 -E CSMain -O3 -Fh C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/comfort_guard_analysis_cs_dx12.h -Vn g_comfort_guard_analysis_DX12 C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/comfort_guard_analysis.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\COMFORT_GUARD_ANALYSIS_CS_VK.H.RULE
+setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe -fshader-stage=compute -x hlsl -fentry-point=CSMain -O -mfmt=c -o C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/comfort_guard_analysis_cs_vk.h C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/comfort_guard_analysis.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\DEPTH_REPROJECTION_CS_DX11.H.RULE
+setlocal
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\fxc.exe" /T cs_5_0 /E CSMain /O2 /Fh C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/depth_reprojection_cs_dx11.h /Vn g_depth_reprojection_DX11 C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/depth_reprojection.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\DEPTH_REPROJECTION_CS_DX12.H.RULE
+setlocal
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -T cs_6_0 -E CSMain -O3 -Fh C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/depth_reprojection_cs_dx12.h -Vn g_depth_reprojection_DX12 C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/depth_reprojection.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\DEPTH_REPROJECTION_CS_VK.H.RULE
+setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe -fshader-stage=compute -x hlsl -fentry-point=CSMain -O -mfmt=c -o C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/depth_reprojection_cs_vk.h C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/depth_reprojection.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\DISOCCLUSION_FILL_CS_DX11.H.RULE
+setlocal
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\fxc.exe" /T cs_5_0 /E CSMain /O2 /Fh C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/disocclusion_fill_cs_dx11.h /Vn g_disocclusion_fill_DX11 C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/disocclusion_fill.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\DISOCCLUSION_FILL_CS_DX12.H.RULE
+setlocal
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -T cs_6_0 -E CSMain -O3 -Fh C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/disocclusion_fill_cs_dx12.h -Vn g_disocclusion_fill_DX12 C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/disocclusion_fill.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\DISOCCLUSION_FILL_CS_VK.H.RULE
+setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe -fshader-stage=compute -x hlsl -fentry-point=CSMain -O -mfmt=c -o C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/disocclusion_fill_cs_vk.h C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/disocclusion_fill.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\STEREO_RESOLVE_CS_DX11.H.RULE
+setlocal
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\fxc.exe" /T cs_5_0 /E CSMain /O2 /Fh C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/stereo_resolve_cs_dx11.h /Vn g_stereo_resolve_DX11 C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/stereo_resolve.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\STEREO_RESOLVE_CS_DX12.H.RULE
+setlocal
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -T cs_6_0 -E CSMain -O3 -Fh C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/stereo_resolve_cs_dx12.h -Vn g_stereo_resolve_DX12 C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/stereo_resolve.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\STEREO_RESOLVE_CS_VK.H.RULE
+setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe -fshader-stage=compute -x hlsl -fentry-point=CSMain -O -mfmt=c -o C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/stereo_resolve_cs_vk.h C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/stereo_resolve.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\STEREO_WARP_CS_DX11.H.RULE
+setlocal
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\fxc.exe" /T cs_5_0 /E CSMain /O2 /Fh C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/stereo_warp_cs_dx11.h /Vn g_stereo_warp_DX11 C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/stereo_warp.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\STEREO_WARP_CS_DX12.H.RULE
+setlocal
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -T cs_6_0 -E CSMain -O3 -Fh C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/stereo_warp_cs_dx12.h -Vn g_stereo_warp_DX12 C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/stereo_warp.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\STEREO_WARP_CS_VK.H.RULE
+setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe -fshader-stage=compute -x hlsl -fentry-point=CSMain -O -mfmt=c -o C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/stereo_warp_cs_vk.h C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/stereo_warp.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\TONEMAP_CS_DX11.H.RULE
+setlocal
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\fxc.exe" /T cs_5_0 /E CSMain /O2 /Fh C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/tonemap_cs_dx11.h /Vn g_tonemap_DX11 C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/tonemap.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\TONEMAP_CS_DX12.H.RULE
+setlocal
+"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe" -T cs_6_0 -E CSMain -O3 -Fh C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/tonemap_cs_dx12.h -Vn g_tonemap_DX12 C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/tonemap.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\4DE9DAF51F99D502404B5CD7387A77DD\TONEMAP_CS_VK.H.RULE
+setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe -fshader-stage=compute -x hlsl -fentry-point=CSMain -O -mfmt=c -o C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/bin/shaders/tonemap_cs_vk.h C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/shaders/tonemap.hlsl
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\BUILD_BASELINE\CMAKEFILES\1DFCA106F00C7959147B2FCD4542873A\COMPILE_SHADERS.RULE
+setlocal
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SATHI\.GEMINI\ANTIGRAVITY\SCRATCH\VR-INJECT\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/sathi/.gemini/antigravity/scratch/vr-inject -BC:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline --check-stamp-file C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

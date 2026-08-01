@@ -1,0 +1,110 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\loader\android_utilities.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\loader\api_layer_interface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\loader\loader_core.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\loader\loader_init_data.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\loader\loader_instance.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\loader\loader_logger.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\loader\loader_logger_recorders.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\loader\manifest_file.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\loader\runtime_interface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\common\object_info.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\loader\xr_generated_loader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\xr_generated_dispatch_table_core.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\common\filesystem_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\external\jsoncpp\src\lib_json\json_reader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\external\jsoncpp\src\lib_json\json_value.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\external\jsoncpp\src\lib_json\json_writer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\loader\android_utilities.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\loader\api_layer_interface.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\loader\loader_init_data.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\loader\loader_instance.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\loader\loader_logger.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\loader\loader_logger_recorders.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\loader\manifest_file.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\loader\runtime_interface.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\common\hex_and_handles.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\common\object_info.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\common\platform_utils.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\loader\xr_generated_loader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\xr_generated_dispatch_table_core.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\loader\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-src\src\loader\loader.rc">
+      <Filter>Source Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{3AB03AEE-AB58-31F9-854E-DB864A112581}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{94562313-8E71-3BF3-BFB1-F87AC6F093E6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\x64\Release\ZERO_CHECK</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\x64\Release\compile_shaders</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\bin\dummy_app.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\bin\dxgi.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\bin\test_app.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\bin\test_config_manager.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\bin\test_logger.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\bin\test_matrix_classifier.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-build\include\openxr\x64\Release\generate_openxr_header</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\_deps\openxr-build\src\x64\Release\xr_global_generated_files</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\bin\test_xr.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\bin\vk_test_app.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\x64\Release\generate_expected_hash</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\bin\vrinject.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\bin\vr-inject-cli.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\bin\vr-matrix-harness.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\bin\vr-profile-harness.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\bin\vr-stress-injector.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\Users\sathi\.gemini\antigravity\scratch\vr-inject\build_baseline\x64\Release\ALL_BUILD</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles />
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>

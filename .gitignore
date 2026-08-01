@@ -33,6 +33,7 @@ yarn-error.log*
 
 # Environment and Secrets
 .env
+.env.template
 .env.local
 .env.*.local
 *.pem

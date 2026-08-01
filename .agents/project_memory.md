@@ -1,6 +1,6 @@
 # NexVR Engine: Comprehensive Project Memory
 
-This document serves as the master record of the **NexVR Engine** project. It details the core mission, current architecture, code audit resolutions, active roadmap, and next-generation AI implementation plans.
+This document serves as the master record and single source of truth for the **NexVR Engine** project. Every model in the Multi-Model Engineering team must use this document as their reference.
 
 ---
 
@@ -14,7 +14,7 @@ This document serves as the master record of the **NexVR Engine** project. It de
 
 ---
 
-## 2. Codebase Architecture
+## 2. Architecture & Subsystems
 
 ```mermaid
 graph TD
@@ -26,42 +26,79 @@ graph TD
     Hooks -->|Stereo Warp Shaders| OpenXR[OpenXR Runtime / Headset]
 ```
 
+### Core Subsystems:
+*   **HookManager:** Manages MinHook lifecycle, threading, and synchronization.
+*   **GraphicsBackend (DX11/DX12/Vulkan):** Manages GPU correctness, synchronization, resource transitions, pipeline states, descriptor heaps, barriers.
+*   **Memory Scanner:** Heuristic engine traversing heaps to locate projection/view matrices.
+*   **OpenXR Submitter:** Manages VR runtime integration, rendering swapchains, and head tracking.
+
 ---
 
-## 3. Resolution Log: Audit & Stability Fixes
+## 3. Folder Structure
+*   `src/`: Core C++ source for the DLL and CLI injector.
+*   `src/rendering/`: Graphics backends (DX11, DX12, Vulkan).
+*   `src/openxr/`: VR headset communication and rendering pipeline.
+*   `launcher/`: Electron/React launcher application.
+*   `shaders/`: Stereo warp and custom rendering shaders.
+*   `tools/`: Build tools and helper scripts.
+
+---
+
+## 4. Coding Standards & Naming
+*   **Interfaces:** Prefix with `I` (e.g., `IGraphicsBackend`).
+*   **Thread Safety:** Use `std::atomic` for globals accessed across threads. Prevent deadlocks by avoiding locks during DLL attach/detach (`DllMain`).
+*   **Ownership:** Clear lifetimes for hooks and backend resources (e.g., HookManager owns MinHook).
+*   **No Hardcoded Offsets:** Avoid hardcoded matrix pointers; use dynamic `PageScanner` and heuristic matching.
+
+---
+
+## 5. Performance Budgets
+*   **Frame Budget:** 11.1ms total (targeting 90Hz).
+*   **Synchronous AI Path (Main Render Thread):** < 1.5ms budget (must compile to INT8/FP16 with node-fusion).
+*   **Asynchronous AI Path:** Background threads on worker pool.
+
+---
+
+## 6. Testing Requirements
+*   **Adversarial Testing:** Must test edge cases: what happens if descriptor heap is destroyed? Fence timeouts? Device removal? Swapchain recreation?
+*   **Raw Output:** Always report EXACT numbers and raw test output, not pass/fail summaries. Flag anything not yet run as "not yet run". Never assume verified without raw evidence.
+*   **Concurrency:** Stress test threading (e.g., 10,000 frame stress).
+
+---
+
+## 7. Resolution Log & Completed Sprints
 We successfully audited the codebase and resolved multiple critical issues, deadlocks, and code quality issues:
-
-*   **BUG-01/02 (MinHook Stability):** Removed redundant, dangerous double-initialization and double-shutdown of MinHook in `dx11_hook.cpp`. HookManager now solely owns MinHook lifecycle.
-*   **BUG-05 (Thread Handle Leak):** Fixed a thread handle leak in `dllmain.cpp` by implementing proper `CloseHandle` calls.
-*   **BUG-06 (Serialization Failure):** Added 5 missing configuration fields (recommended resolution, sRGB correction, depth submission, raw input mode, auto-inject) to the C++ `config_manager.cpp` serialization loop to prevent state desync with the Electron UI.
-*   **BUG-09 (UI Infinite Loop):** Replaced the infinite tasklist polling loop in the Electron `injectionManager.ts` with a strict iteration ceiling to prevent launcher freezes on game crashes.
-*   **DEAD-02/04 (Concurrency Races):** Converted global variables (`g_maxDepthPixels`, `g_onFrameCallback`) in `dx11_hook.cpp` to thread-safe `std::atomic` variables.
-*   **DEAD-05 (DllMain Deadlock):** Added `WaitForSingleObject` with a timeout during DLL detach inside `dllmain.cpp` to prevent loader lock deadlocks during cleanup.
-*   **QUAL-01 (Code Duplication):** Deleted redundant injector code (`tools/injector.cpp`) and synchronized all builds to use the unified C++ `src/injector/main.cpp`.
-*   **QUAL-04 (Hardcoded Logic):** Cleaned up a hardcoded icon exception for *Sekiro* in `libraryManager.ts`.
+*   **BUG-01/02 (MinHook Stability):** Removed redundant double-initialization. HookManager solely owns lifecycle.
+*   **BUG-05 (Thread Handle Leak):** Fixed thread handle leak in `dllmain.cpp` using `CloseHandle`.
+*   **BUG-06 (Serialization Failure):** Added missing configuration fields to `config_manager.cpp`.
+*   **BUG-09 (UI Infinite Loop):** Replaced infinite tasklist polling loop in Electron with iteration ceiling.
+*   **DEAD-02/04 (Concurrency Races):** Converted global variables in `dx11_hook.cpp` to `std::atomic`.
+*   **DEAD-05 (DllMain Deadlock):** Added `WaitForSingleObject` with timeout during DLL detach.
+*   **QUAL-01 (Code Duplication):** Deleted redundant injector code, unified C++ `src/injector/main.cpp`.
+*   **QUAL-04 (Hardcoded Logic):** Cleaned up hardcoded icon exception in `libraryManager.ts`.
 
 ---
 
-## 4. Current Milestone: Advanced Heuristic Memory Scanning
+## 8. Current Milestone: Advanced Heuristic Memory Scanning
 To avoid hardcoded camera matrix pointers, we are moving from basic constant buffer hooks to an active memory scanner:
-1.  **`PageScanner` (Traverses Heaps):** Loop over dynamic RAM heaps using `VirtualQuery`, filtering for `MEM_COMMIT` and `PAGE_READWRITE` regions to find where projection/view matrices reside.
-2.  **`PointerChainResolver` (Static Offset Resolution):** Backtrace dynamic matrix memory addresses to static base offsets (e.g., `Game.exe + 0x3AF10 -> +0x24 -> +0x180`) to cache paths for subsequent launches.
-3.  **`CameraDeltaTracker` (Input Synchronization):** Cross-reference candidates with mouse delta values to isolate matrices that respond directly to head movement.
+1.  **`PageScanner`:** Loop dynamic RAM heaps, filtering for `MEM_COMMIT` / `PAGE_READWRITE`.
+2.  **`PointerChainResolver`:** Backtrace dynamic addresses to static base offsets.
+3.  **`CameraDeltaTracker`:** Cross-reference candidates with mouse delta values.
 
 ---
 
-## 5. Next-Generation AI & Rendering Roadmap
-The future roadmap details 7 AI-driven models optimized to run within an 11.1ms frame budget:
+## 9. Future Roadmap: Next-Generation AI
+The future roadmap details 7 AI-driven models:
+1.  **Spatial-Temporal Memory Transformer:** Encoder-only Self-Attention for memory vectors.
+2.  **Depth-Aware Gated Inpainter:** U-Net for patching disocclusion holes.
+3.  **OFA Vector Refiner:** Quantized CNN for optical flow ASW.
+4.  **Comfort Guard MLP:** Dense network for predicting simulation sickness.
+5.  **Holographic UI Synthesizer:** YOLOv8-tiny for 2D HUD extraction.
+6.  **Gaze Predictor:** Recurrent LSTM/GRU for eye-tracker latency.
+7.  **Neural Super Resolution:** TSR-GAN for upscaling.
 
-### The 7 AI Models:
-1.  **Spatial-Temporal Memory Transformer:** Encoder-only Self-Attention model to classify raw dynamic memory vectors (10-frame sequences).
-2.  **Depth-Aware Gated Inpainter:** U-Net utilizing Gated Convolutions and depth buffer inputs to patch disocclusion holes without boundary color bleeding.
-3.  **OFA Vector Refiner:** Quantized CNN correcting raw GPU hardware Optical Flow vectors to synthesize wobbly-free ASW frames.
-4.  **Comfort Guard MLP:** Dense network predicting simulation sickness based on gaze vectors and rotational speeds.
-5.  **Holographic UI Synthesizer:** YOLOv8-tiny model extracting 2D HUD components to project them as floating wrist watch panels in 3D.
-6.  **Gaze Predictor:** Recurrent LSTM/GRU model predicting pupil trajectories to offset eye-tracker latency.
-7.  **Neural Super Resolution:** TSR-GAN network upscaling low-res internal renders to 4K.
+---
 
-### Execution Blueprint:
-*   **Synchronous Path (Main Render Thread, < 1.5ms):** Gaze Predictor, Comfort Guard, and Frame Gen Refiner. Must compile to **INT8/FP16** with node-fusion.
-*   **Asynchronous Path (Worker Thread Pool):** Memory Transformer and Inpainter Mask Generator. Runs on background threads communicating via thread-safe atomic variables.
+## 10. Known Issues / Compatibility & Anti-Cheat Posture
+*   **Anti-Cheat Warning:** Injecting via `CreateRemoteThread` is flagged by Vanguard, EAC, BattlEye. 
+*   **Unsupported Environments:** Games utilizing active kernel-level anti-cheats are strictly **unsupported** (high ban risk).
