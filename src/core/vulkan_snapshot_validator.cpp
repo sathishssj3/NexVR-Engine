@@ -1,5 +1,6 @@
 #include "vulkan_snapshot_validator.h"
 #include "vulkan_depth_snapshot_builder.h"
+#include "../rendering/frame_timing_manager.h"
 #include <cmath>
 
 namespace vrinject {
@@ -177,6 +178,45 @@ bool VulkanSnapshotValidator::ValidateStereoState(const StereoValidationState& s
     }
     if (state.resourceGeneration != state.expectedGeneration) {
         outError = "Resource generation mismatch.";
+        return false;
+    }
+    return true;
+}
+
+bool VulkanSnapshotValidator::ValidateFrameTiming(const FrameTimingSnapshot& snapshot, std::string& outError) {
+    if (snapshot.cpuFrameMs < 0.0 || snapshot.gpuFrameMs < 0.0 ||
+        snapshot.motionToPhotonMs < 0.0 || snapshot.predictionErrorMs < 0.0) {
+        outError = "Frame timing contains negative duration.";
+        return false;
+    }
+    if (snapshot.targetFrameMs <= 0.0) {
+        outError = "Frame timing target is invalid.";
+        return false;
+    }
+    if (snapshot.cpuFrameMs > 1000.0 || snapshot.gpuFrameMs > 1000.0 ||
+        snapshot.motionToPhotonMs > 2000.0) {
+        outError = "Frame timing exceeds plausible runtime bounds.";
+        return false;
+    }
+    if (snapshot.droppedFrameRatio < 0.0 || snapshot.droppedFrameRatio > 1.0) {
+        outError = "Frame timing dropped-frame ratio is invalid.";
+        return false;
+    }
+    return true;
+}
+
+bool VulkanSnapshotValidator::ValidatePerformanceSnapshot(const PerformanceSnapshot& snapshot,
+                                                          std::string& outError) {
+    if (snapshot.cpuMs < 0.0 || snapshot.gpuMs < 0.0 || snapshot.stereoLatencyMs < 0.0) {
+        outError = "Performance snapshot contains negative timing.";
+        return false;
+    }
+    if (snapshot.queueUtilization < 0.0 || snapshot.queueUtilization > 1.0) {
+        outError = "Performance snapshot queue utilization is outside [0, 1].";
+        return false;
+    }
+    if (snapshot.cpuMs > 1000.0 || snapshot.gpuMs > 1000.0 || snapshot.stereoLatencyMs > 2000.0) {
+        outError = "Performance snapshot timing exceeds plausible runtime bounds.";
         return false;
     }
     return true;

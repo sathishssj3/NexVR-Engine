@@ -7,13 +7,23 @@
 namespace vrinject {
 namespace vulkan {
 
+struct VulkanDescriptorRecycleStats {
+    uint32_t allocatedSets = 0;
+    uint32_t recycledSets = 0;
+    uint32_t poolGrowthCount = 0;
+    float fragmentationRatio = 0.0f;
+};
+
 class VulkanDescriptorManager {
 public:
     VulkanDescriptorManager(VkDevice device, VkDescriptorSetLayout layout);
     ~VulkanDescriptorManager();
 
     bool AllocateSets(uint32_t count);
+    bool EnsureCapacity(uint32_t count);
+    void RecycleDescriptorSet(uint32_t frameIndex);
     void DestroyPool();
+    VulkanDescriptorRecycleStats GetRecycleStats() const { return m_stats; }
 
     VkDescriptorSet GetDescriptorSet(uint32_t frameIndex) const;
 
@@ -33,6 +43,8 @@ private:
 
     VkDescriptorPool m_descriptorPool = VK_NULL_HANDLE;
     std::vector<VkDescriptorSet> m_descriptorSets;
+    std::vector<bool> m_recycled;
+    VulkanDescriptorRecycleStats m_stats{};
 };
 
 } // namespace vulkan

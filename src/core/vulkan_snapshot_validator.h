@@ -1,9 +1,11 @@
 #pragma once
 #include "render_frame_snapshot.h"
 #include "camera_snapshot.h"
+#include "frame_graph_profiler.h"
 #include <string>
 
 namespace vrinject {
+struct FrameTimingSnapshot;
 namespace vulkan {
 
 class VulkanSnapshotValidator {
@@ -17,6 +19,8 @@ public:
     };
 
     static DepthValidationResult ValidateDepthSnapshot(const struct VulkanDepthSnapshot& snapshot);
+    static bool ValidateFrameTiming(const FrameTimingSnapshot& snapshot, std::string& outError);
+    static bool ValidatePerformanceSnapshot(const PerformanceSnapshot& snapshot, std::string& outError);
 
     struct StereoValidationState {
         bool hasPipeline = false;

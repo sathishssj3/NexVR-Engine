@@ -15,6 +15,7 @@
 #include "depth_candidate_collector.h"
 #include "depth_lock_manager.h"
 #include "depth_delta_tracker.h"
+#include "engine_detector.h"
 
 #include "stereo_camera_generator.h"
 #include "stereo_frame_builder.h"
@@ -43,6 +44,11 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot& snapshot) {
         CameraLockManager::Get().Reset();
         DepthLockManager::Get().OnDeviceLost();
         return;
+    }
+
+    if (!m_engineDetected) {
+        EngineDetector::Get().Detect();
+        m_engineDetected = true;
     }
 
     // 1. Collect candidates
@@ -161,7 +167,17 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot& snapshot) {
                    m_oxrRuntime->GetState() != openxr::RuntimeState::STOPPED &&
                    m_oxrRuntime->GetState() != openxr::RuntimeState::FAILED;
 
-    if (camSnapshot.IsValid() && depthSnapshot.IsValid() && xrReady) {
+    m_lastCompatibility = CompatibilityScorer::Evaluate(
+        camSnapshot,
+        depthSnapshot,
+        m_currentSnapshot.backend,
+        EngineDetector::Get().GetDetection());
+
+    if (!m_lastCompatibility.shouldAttemptStereo) {
+        CompatibilityScorer::PostDiagnostic(m_lastCompatibility);
+    }
+
+    if (m_lastCompatibility.shouldAttemptStereo && xrReady) {
         
         m_graphicsBackend->SetState(StereoRendererState::READY);
         

@@ -1,11 +1,25 @@
 #include "vulkan_sync_manager.h"
 #include "../core/vulkan_dispatch_table.h"
+#include <cstring>
 #include <iostream>
 
 namespace vrinject {
 namespace vulkan {
 
 VulkanSyncManager::VulkanSyncManager(VkDevice device) : m_device(device) {
+}
+
+bool VulkanSyncManager::SupportsTimelineSemaphores(uint32_t apiVersion,
+                                                   const std::vector<const char*>& enabledExtensions) {
+    if (apiVersion >= VK_API_VERSION_1_2) {
+        return true;
+    }
+    for (const char* extension : enabledExtensions) {
+        if (extension && std::strcmp(extension, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME) == 0) {
+            return true;
+        }
+    }
+    return false;
 }
 
 VulkanSyncManager::~VulkanSyncManager() {

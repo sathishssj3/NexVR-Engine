@@ -1,6 +1,0 @@
-# CMake generation dependency list for this directory.
-C:/Program Files/CMake/share/cmake-4.3/Modules/BasicConfigVersion-SameMajorVersion.cmake.in
-C:/Program Files/CMake/share/cmake-4.3/Modules/CMakePackageConfigHelpers.cmake
-C:/Program Files/CMake/share/cmake-4.3/Modules/WriteBasicConfigVersionFile.cmake
-C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/openxr-src/src/loader/CMakeLists.txt
-C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/build_baseline/_deps/openxr-src/src/loader/OpenXRConfig.cmake.in
