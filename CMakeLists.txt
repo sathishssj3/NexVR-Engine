@@ -194,6 +194,7 @@ set(SHADER_SOURCES
     ${SHADER_SOURCE_DIR}/asw_shader.hlsl
     ${SHADER_SOURCE_DIR}/depth_reprojection.hlsl
     ${SHADER_SOURCE_DIR}/tonemap.hlsl
+    ${SHADER_SOURCE_DIR}/stereo_reprojection.hlsl
 )
 
 # Create output directory for compiled shaders.
