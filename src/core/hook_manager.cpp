@@ -7,6 +7,7 @@
 #include "../hooks/unity_hook.h"
 #include "../hooks/dx11_hook.h"
 #include "../hooks/dx12_hook.h"
+#include "../hooks/vulkan_hook.h"
 #include "../hooks/dxgi_factory_hook.h"
 #include "../hooks/input_hook.h"
 #include "../hooks/audio_hook.h"
@@ -81,6 +82,10 @@ bool HookManager::Install() {
     } else {
         m_rollbackStack.push_back([]() { DX12Hook::Shutdown(); });
     }
+
+    vulkan::hooks::InstallVulkanHooks();
+    m_rollbackStack.push_back([]() { vulkan::hooks::RemoveVulkanHooks(); });
+    LOG_INFO("HookManager: Vulkan hooks installed successfully.");
 
     DX12Hook::SetOnFrameCallback([](const DX12Hook::FrameResourcesDX12& res) {
         static int frameCount = 0;
