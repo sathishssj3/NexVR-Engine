@@ -476,3 +476,6 @@ add_nexvr_gtest(test_vulkan_memory_budget tests/test_vulkan_memory_budget.cpp)
 add_nexvr_gtest(test_frame_graph_profiler tests/test_frame_graph_profiler.cpp)
 add_nexvr_gtest(test_vulkan_performance_snapshot tests/test_vulkan_performance_snapshot.cpp)
 add_nexvr_gtest(test_vulkan_timeline_semaphore tests/test_vulkan_timeline_semaphore.cpp)
+add_executable(dummy_json src/test_apps/dummy_json.cpp src/core/sprint_compatibility_logger.cpp)
+
+target_include_directories(dummy_json PRIVATE ${JSON_INCLUDE_DIR})
