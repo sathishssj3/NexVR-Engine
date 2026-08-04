@@ -2,10 +2,10 @@
 
 <p align="center">
   <img src="assets/logo.png" width="300" style="border-radius: 50%;" alt="NexVR Engine Logo">
+  <br><br>
+  <a href="https://github.com/sathishssj3/NexVR-Engine/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/sathishssj3/NexVR-Engine/release.yml?branch=main&style=flat-square" alt="Build Status"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/sathishssj3/NexVR-Engine?style=flat-square" alt="License"></a>
 </p>
-
-[![Build Status](https://img.shields.io/github/actions/workflow/status/sathishssj3/NexVR-Engine/release.yml?branch=main&style=flat-square)](https://github.com/sathishssj3/NexVR-Engine/actions/workflows/release.yml)
-[![License](https://img.shields.io/github/license/sathishssj3/NexVR-Engine?style=flat-square)](LICENSE)
 
 > **Universal VR Injector** — Brings native OpenXR stereo rendering to flat-screen PC games by hooking into DX11, DX12, and Vulkan render pipelines.
 
