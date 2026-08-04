@@ -1,6 +1,6 @@
 #include "ai_profiler.h"
 #include "../core/logger.h"
-#include <dml_provider_factory.h>
+// #include <dml_provider_factory.h>
 #include <iostream>
 #include <chrono>
 
@@ -84,6 +84,7 @@ bool AiProfiler::Initialize(const std::wstring& moduleDir) {
         m_sessionOptions->SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
 
         // Add DirectML execution provider using DML1
+        /*
         const OrtApi& ortApi = Ort::GetApi();
         const OrtDmlApi* dmlApi = nullptr;
         const void* dmlApiVoid = nullptr;
@@ -105,6 +106,7 @@ bool AiProfiler::Initialize(const std::wstring& moduleDir) {
         } else {
             LOG_ERROR("Failed to get DML execution provider API");
         }
+        */
 
         m_memoryInfo = std::make_unique<Ort::MemoryInfo>(Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault));
         

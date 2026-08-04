@@ -62,18 +62,27 @@ set(MINHOOK_SOURCES
 # ---------------------------------------------------------------------------
 # Dependencies – ONNX Runtime (DirectML)
 # ---------------------------------------------------------------------------
-# We download the pre-compiled ONNX Runtime DirectML release for Windows x64.
-# (URL is a placeholder for the actual GitHub release zip)
-# FetchContent_Declare(
-#     onnxruntime
-#     URL https://github.com/microsoft/onnxruntime/releases/download/v1.16.3/onnxruntime-win-x64-1.16.3.zip
-# )
-# FetchContent_GetProperties(onnxruntime)
-# if(NOT onnxruntime_POPULATED)
-#     FetchContent_Populate(onnxruntime)
-# endif()
-set(ONNXRUNTIME_INCLUDE_DIR ${onnxruntime_SOURCE_DIR}/include)
-set(ONNXRUNTIME_LIB_DIR ${onnxruntime_SOURCE_DIR}/lib)
+# We download the pre-compiled ONNX Runtime DirectML release for Windows x64 via NuGet.
+FetchContent_Declare(
+    onnxruntime
+    URL https://www.nuget.org/api/v2/package/Microsoft.ML.OnnxRuntime.DirectML/1.16.3
+)
+FetchContent_GetProperties(onnxruntime)
+if(NOT onnxruntime_POPULATED)
+    FetchContent_Populate(onnxruntime)
+endif()
+set(ONNXRUNTIME_INCLUDE_DIR ${onnxruntime_SOURCE_DIR}/build/native/include)
+set(ONNXRUNTIME_LIB_DIR ${onnxruntime_SOURCE_DIR}/runtimes/win-x64/native)
+
+# We also need the DirectML redist DLL
+FetchContent_Declare(
+    directml
+    URL https://www.nuget.org/api/v2/package/Microsoft.AI.DirectML/1.13.1
+)
+FetchContent_GetProperties(directml)
+if(NOT directml_POPULATED)
+    FetchContent_Populate(directml)
+endif()
 
 # ---------------------------------------------------------------------------
 # Dependencies – Vulkan SDK
@@ -280,12 +289,14 @@ file(GLOB VRINJECT_CORE_SRCS src/core/*.cpp src/core/engine_scanners/*.cpp)
 file(GLOB VRINJECT_RENDERING_SRCS src/rendering/*.cpp src/rendering/backends/*.cpp)
 file(GLOB VRINJECT_OPENXR_SRCS src/openxr/*.cpp)
 file(GLOB VRINJECT_HOOKS_SRCS src/hooks/*.cpp)
+file(GLOB VRINJECT_AI_SRCS src/ai/*.cpp)
 
 add_library(vrinject SHARED
     ${VRINJECT_CORE_SRCS}
     ${VRINJECT_RENDERING_SRCS}
     ${VRINJECT_OPENXR_SRCS}
     ${VRINJECT_HOOKS_SRCS}
+    ${VRINJECT_AI_SRCS}
     src/dllmain.cpp
     ${MINHOOK_SOURCES}
     ${IMGUI_SOURCES}
@@ -315,14 +326,14 @@ endif()
 target_include_directories(vrinject PRIVATE 
     ${CMAKE_SOURCE_DIR}/src
     ${MINHOOK_INCLUDE_DIR}
-    # ${ONNXRUNTIME_INCLUDE_DIR}
+    ${ONNXRUNTIME_INCLUDE_DIR}
     ${OPENXR_INCLUDE_DIR}
     ${JSON_INCLUDE_DIR}
     ${IMGUI_INCLUDE_DIR}
     ${SHADER_OUTPUT_DIR}
 )
 
-# target_link_directories(vrinject PRIVATE ${ONNXRUNTIME_LIB_DIR})
+target_link_directories(vrinject PRIVATE ${ONNXRUNTIME_LIB_DIR})
 
 target_link_libraries(vrinject PRIVATE
     d3d11
@@ -330,7 +341,7 @@ target_link_libraries(vrinject PRIVATE
     dxgi
     d3dcompiler
     dxguid
-    # onnxruntime
+    onnxruntime
     openxr_loader
     xinput
     Vulkan::Vulkan
@@ -339,11 +350,11 @@ target_link_libraries(vrinject PRIVATE
 )
 
 # Post-build step to copy onnxruntime.dll to output bin dir
-# add_custom_command(TARGET vrinject POST_BUILD
-#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#     "${onnxruntime_SOURCE_DIR}/lib/onnxruntime.dll"
-#     $<TARGET_FILE_DIR:vrinject>
-# )
+add_custom_command(TARGET vrinject POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${onnxruntime_SOURCE_DIR}/runtimes/win-x64/native/onnxruntime.dll"
+    $<TARGET_FILE_DIR:vrinject>
+)
 
 # S1.1: Code-sign vrinject.dll
 if (DEFINED ENV{SIGN_CERT_PATH})
@@ -432,11 +443,13 @@ add_library(NexVRCore STATIC
     ${VRINJECT_RENDERING_SRCS}
     ${VRINJECT_OPENXR_SRCS}
     ${VRINJECT_HOOKS_SRCS}
+    ${VRINJECT_AI_SRCS}
     ${MINHOOK_SOURCES}
 )
 target_include_directories(NexVRCore PRIVATE 
     ${CMAKE_SOURCE_DIR}/src
     ${MINHOOK_INCLUDE_DIR}
+    ${ONNXRUNTIME_INCLUDE_DIR}
     ${OPENXR_INCLUDE_DIR}
     ${JSON_INCLUDE_DIR}
     ${IMGUI_INCLUDE_DIR}
@@ -470,6 +483,11 @@ endfunction()
 add_nexvr_gtest(test_frame_timing_manager tests/test_frame_timing_manager.cpp)
 add_nexvr_gtest(test_adaptive_quality tests/test_adaptive_quality.cpp)
 add_nexvr_gtest(test_vulkan_gpu_profiler tests/test_vulkan_gpu_profiler.cpp)
+add_executable(test_ai_directml tests/test_ai_directml.cpp)
+target_include_directories(test_ai_directml PRIVATE ${PROJECT_SOURCE_DIR}/src ${ONNXRUNTIME_INCLUDE_DIR})
+target_link_directories(test_ai_directml PRIVATE ${ONNXRUNTIME_LIB_DIR})
+target_link_libraries(test_ai_directml PRIVATE NexVRCore onnxruntime)
+add_test(NAME AiDirectMLTest COMMAND test_ai_directml)
 add_nexvr_gtest(test_vulkan_async_scheduler tests/test_vulkan_async_scheduler.cpp)
 add_nexvr_gtest(test_vulkan_barrier_optimizer tests/test_vulkan_barrier_optimizer.cpp)
 add_nexvr_gtest(test_vulkan_memory_budget tests/test_vulkan_memory_budget.cpp)

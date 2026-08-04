@@ -47,19 +47,15 @@ module.exports = {
       to:   'onnxruntime.dll'
     },
     {
-      from: '../build/bin/onnxruntime_providers_shared.dll',
-      to:   'onnxruntime_providers_shared.dll'
-    },
-    {
-      from: '../build/bin/openxr_loader.dll',
-      to:   'openxr_loader.dll'
+      from: '../build/bin/DirectML.dll',
+      to:   'DirectML.dll'
     },
     {
       from: '../build/bin/shaders',
       to:   'shaders'
     },
     {
-      from: '../build/bin/models',
+      from: '../models',
       to:   'models'
     },
   ],
