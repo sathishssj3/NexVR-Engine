@@ -1,6 +1,8 @@
 # NexVR Engine
 
-<img src="assets/logo.png" width="300" alt="NexVR Engine Logo">
+<p align="center">
+  <img src="assets/logo.png" width="300" style="border-radius: 50%;" alt="NexVR Engine Logo">
+</p>
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/sathishssj3/NexVR-Engine/release.yml?branch=main&style=flat-square)](https://github.com/sathishssj3/NexVR-Engine/actions/workflows/release.yml)
 [![License](https://img.shields.io/github/license/sathishssj3/NexVR-Engine?style=flat-square)](LICENSE)
