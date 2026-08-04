@@ -28,7 +28,9 @@ std::shared_ptr<Ort::Env> AiModelLoader::GetSharedEnv() {
     std::shared_ptr<Ort::Env> env = s_sharedEnv.lock();
     if (!env) {
         // Initialize ORT Environment (Warning level logging)
-        env = std::make_shared<Ort::Env>(ORT_LOGGING_LEVEL_WARNING, "NexVR_AI");
+        // Intentionally leak the environment to prevent ORT destructor crashes on exit
+        Ort::Env* rawEnv = new Ort::Env(ORT_LOGGING_LEVEL_WARNING, "NexVR_AI");
+        env = std::shared_ptr<Ort::Env>(rawEnv, [](Ort::Env*){ /* do not delete */ });
         s_sharedEnv = env;
     }
     return env;
