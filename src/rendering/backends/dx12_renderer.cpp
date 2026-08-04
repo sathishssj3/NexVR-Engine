@@ -204,9 +204,9 @@ void DX12Renderer::SetVRResolutionAndFormat(uint32_t width, uint32_t height, int
 void DX12Renderer::AllocateDescriptor(D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle) {
     if (m_descriptorCount >= 1024) m_descriptorCount = 0;
     cpuHandle = m_srvUavHeap->GetCPUDescriptorHandleForHeapStart();
-    cpuHandle.ptr += m_descriptorCount * m_srvUavDescriptorSize;
+    cpuHandle.ptr += static_cast<SIZE_T>(m_descriptorCount) * m_srvUavDescriptorSize;
     gpuHandle = m_srvUavHeap->GetGPUDescriptorHandleForHeapStart();
-    gpuHandle.ptr += m_descriptorCount * m_srvUavDescriptorSize;
+    gpuHandle.ptr += static_cast<UINT64>(m_descriptorCount) * m_srvUavDescriptorSize;
     m_descriptorCount++;
 }
 
