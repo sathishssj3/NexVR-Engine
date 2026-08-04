@@ -51,6 +51,19 @@ jobs:
       with:
         languages: cpp
 
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Generate Dummy Models
+      shell: pwsh
+      run: |
+        pip install onnx
+        if (-not (Test-Path models)) { mkdir models }
+        python generate_dummy_onnx.py
+        Copy-Item models/dummy.onnx models/depth_inpainter.onnx
+
     - name: Configure CMake
       run: cmake -B build -S . -A x64 -DDXC_EXECUTABLE="${{ github.workspace }}/dxc/bin/x64/dxc.exe" -DBUILD_TESTS=ON
 
@@ -207,8 +220,22 @@ jobs:
           exit 1
         }
 
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Generate Dummy Models
+      shell: pwsh
+      run: |
+        pip install onnx
+        if (-not (Test-Path models)) { mkdir models }
+        python generate_dummy_onnx.py
+        Copy-Item models/dummy.onnx models/depth_inpainter.onnx
+
     - name: Configure CMake
       run: cmake -B build -S . -A x64 -DDXC_EXECUTABLE="${{ github.workspace }}/dxc/bin/x64/dxc.exe"
+
 
     - name: Build C++ Components (DLL & CLI)
       shell: pwsh
