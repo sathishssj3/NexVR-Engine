@@ -16,6 +16,7 @@
 #include "../core/vulkan_framebuffer_tracker.h"
 #include "../core/vulkan_depth_candidate_collector.h"
 #include <iostream>
+#include "../core/logger.h"
 
 #include <windows.h>
 #include <MinHook.h>
@@ -485,19 +486,35 @@ VKAPI_ATTR void VKAPI_CALL Hooked_vkCmdClearDepthStencilImage(VkCommandBuffer co
 
 void InstallVulkanHooks() {
     HMODULE vulkanModule = GetModuleHandleA("vulkan-1.dll");
-    if (vulkanModule) {
-        True_vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)GetProcAddress(vulkanModule, "vkGetInstanceProcAddr");
-        True_vkCreateInstance = (PFN_vkCreateInstance)GetProcAddress(vulkanModule, "vkCreateInstance");
+    
+    // If the game hasn't loaded vulkan-1.dll yet, we should hook LoadLibrary 
+    // or simply wait. However, for a Vulkan game, if we inject after launch, it's there.
+    // Let's add logging to verify if we found it.
+    if (!vulkanModule) {
+        LOG_WARN("InstallVulkanHooks: vulkan-1.dll not found in process memory! Is this a Vulkan game?");
+        return;
+    }
 
-        VulkanDispatchTable::Get().InitOriginalGetInstanceProcAddr(True_vkGetInstanceProcAddr);
+    LOG_INFO("InstallVulkanHooks: Found vulkan-1.dll. Attempting to hook...");
 
-        if (True_vkGetInstanceProcAddr) {
-            MH_CreateHook((LPVOID)True_vkGetInstanceProcAddr, (LPVOID)VulkanDispatchTable::Hooked_vkGetInstanceProcAddr, reinterpret_cast<LPVOID*>(&True_vkGetInstanceProcAddr));
-            MH_EnableHook((LPVOID)True_vkGetInstanceProcAddr);
+    True_vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)GetProcAddress(vulkanModule, "vkGetInstanceProcAddr");
+    True_vkCreateInstance = (PFN_vkCreateInstance)GetProcAddress(vulkanModule, "vkCreateInstance");
+
+    VulkanDispatchTable::Get().InitOriginalGetInstanceProcAddr(True_vkGetInstanceProcAddr);
+
+    if (True_vkGetInstanceProcAddr) {
+        if (MH_CreateHook((LPVOID)True_vkGetInstanceProcAddr, (LPVOID)VulkanDispatchTable::Hooked_vkGetInstanceProcAddr, reinterpret_cast<LPVOID*>(&True_vkGetInstanceProcAddr)) == MH_OK) {
+            LOG_INFO("InstallVulkanHooks: Successfully created hook for vkGetInstanceProcAddr");
+        } else {
+            LOG_ERROR("InstallVulkanHooks: Failed to create hook for vkGetInstanceProcAddr");
         }
-        if (True_vkCreateInstance) {
-            MH_CreateHook((LPVOID)True_vkCreateInstance, (LPVOID)Hooked_vkCreateInstance, reinterpret_cast<LPVOID*>(&True_vkCreateInstance));
-            MH_EnableHook((LPVOID)True_vkCreateInstance);
+    }
+    
+    if (True_vkCreateInstance) {
+        if (MH_CreateHook((LPVOID)True_vkCreateInstance, (LPVOID)Hooked_vkCreateInstance, reinterpret_cast<LPVOID*>(&True_vkCreateInstance)) == MH_OK) {
+            LOG_INFO("InstallVulkanHooks: Successfully created hook for vkCreateInstance");
+        } else {
+            LOG_ERROR("InstallVulkanHooks: Failed to create hook for vkCreateInstance");
         }
     }
 }
