@@ -46,6 +46,11 @@ jobs:
         echo "VULKAN_SDK=C:\VulkanSDK" >> $env:GITHUB_ENV
         echo "C:\VulkanSDK\Bin" >> $env:GITHUB_PATH
 
+    - name: Run CodeQL Analysis (Init)
+      uses: github/codeql-action/init@v3
+      with:
+        languages: cpp
+
     - name: Configure CMake
       run: cmake -B build -S . -A x64 -DDXC_EXECUTABLE="${{ github.workspace }}/dxc/bin/x64/dxc.exe" -DBUILD_TESTS=ON
 
@@ -119,14 +124,6 @@ jobs:
     #     clang-tidy-warnings-as-errors: '*'
     #     header-filter: '.*'
     #     format-style: file
-
-    - name: Run CodeQL Analysis
-      uses: github/codeql-action/init@v3
-      with:
-        languages: cpp
-
-    - name: CodeQL Autobuild
-      uses: github/codeql-action/autobuild@v3
 
     - name: CodeQL Perform Analysis
       uses: github/codeql-action/analyze@v3
