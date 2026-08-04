@@ -7,6 +7,7 @@
 #include <psapi.h>
 #include <atomic>
 #include <cstdint>
+#include <cstring>
 #include "logger.h"
 
 #pragma comment(lib, "psapi.lib")
@@ -36,6 +37,28 @@ inline bool IsValidMemoryPointer(const void* ptr, size_t requiredAlignment = ali
     if (addr < 0x10000 || addr >= 0x7FFFFFFFFFFF) return false;
     if (requiredAlignment > 1 && (addr % requiredAlignment != 0)) return false;
     return true;
+}
+
+// Safe memory read utilizing Windows Structured Exception Handling (SEH).
+// Wraps the read to prevent Access Violations (0xC0000005) from crashing the game
+// if the memory is freed by the engine concurrently (TOCTOU).
+// Note: This is explicitly MSVC/Windows specific and not cross-platform.
+inline bool SafeReadMemory(const void* src, void* dst, size_t size) {
+    if (!src || !dst || size == 0) return false;
+
+    __try {
+        // Attempt the volatile read. If src points to a page that was just freed,
+        // this will trigger an Access Violation exception.
+        std::memcpy(dst, src, size);
+        return true;
+    }
+    __except (GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
+        // Gap 1 Rule: Discard candidate, log discard reason, never propagate partial data.
+        LOG_WARN("SEH Shield: Access Violation (TOCTOU) intercepted while reading %zu bytes from %p. Discarding candidate.", size, src);
+        // Ensure dst is zeroed out so garbage data is never propagated
+        std::memset(dst, 0, size);
+        return false;
+    }
 }
 
 /// Vectored Exception Handler to catch any unhandled hardware exception inside vrinject.dll.

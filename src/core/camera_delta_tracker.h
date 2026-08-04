@@ -1,22 +1,42 @@
 #pragma once
 #include "camera_candidate.h"
+#include <vector>
+#include <unordered_map>
+#include <cstdint>
+#include <DirectXMath.h>
 
 namespace vrinject {
+
+struct DynamicCandidate {
+    uint8_t* staticPointer;
+    bool isDoublePrecision;
+    float temporalScore;
+    Matrix4x4 previousMatrix;
+    bool hasPrevious;
+};
 
 class CameraDeltaTracker {
 public:
     CameraDeltaTracker() = default;
 
-    // Evaluates the movement of a candidate since the last frame and updates its temporalScore.
-    // previous is the state of the candidate from the previous frame.
-    // current is the candidate from the current frame.
-    static void UpdateDelta(const CameraCandidate& previous, CameraCandidate& current);
+    // Pulls new candidates from MemoryScanner and tracks them over time
+    void PollAndTrackCandidates();
 
-    // Determines if the movement represents typical camera motion.
-    static bool IsValidCameraMotion(float deltaScore);
-    
+    // Returns the highest confidence locked camera matrix
+    bool GetLockedCamera(Matrix4x4& outMatrix);
+
 private:
-    static float CalculateDelta(const Matrix4x4& m1, const Matrix4x4& m2, bool rowMajor);
+    std::unordered_map<uint8_t*, DynamicCandidate> m_candidates;
+    uint8_t* m_lockedPointer = nullptr;
+    
+    // Float vs Double disambiguation (Gap 3)
+    bool m_isEngineUE5 = false; 
+
+    float CalculateDelta(const Matrix4x4& m1, const Matrix4x4& m2) const;
+    void UpdateCandidateMotion(DynamicCandidate& candidate, const Matrix4x4& currentMatrix, float mouseDeltaX, float mouseDeltaY);
+    
+    // Helper to read float or double matrix safely
+    bool SafeReadMatrix(uint8_t* address, bool isDouble, Matrix4x4& outMatrix);
 };
 
 } // namespace vrinject
