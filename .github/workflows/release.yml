@@ -47,7 +47,7 @@ jobs:
         echo "C:\VulkanSDK\Bin" >> $env:GITHUB_PATH
 
     - name: Run CodeQL Analysis (Init)
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@v4
       with:
         languages: cpp
 
@@ -126,7 +126,7 @@ jobs:
     #     format-style: file
 
     - name: CodeQL Perform Analysis
-      uses: github/codeql-action/analyze@v3
+      uses: github/codeql-action/analyze@v4
       with:
         category: "/language:cpp"
 
@@ -234,7 +234,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '24'
 
     - name: Install Launcher Dependencies
       working-directory: ./launcher
