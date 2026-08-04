@@ -2,26 +2,33 @@ import onnx
 from onnx import helper
 from onnx import TensorProto
 
-# Create a very simple ONNX model (Identity) that takes [1, 3, 256, 256] and outputs it
-X = helper.make_tensor_value_info('input', TensorProto.FLOAT, [1, 3, 256, 256])
-Y = helper.make_tensor_value_info('output', TensorProto.FLOAT, [1, 3, 256, 256])
+import onnx
+from onnx import helper
+from onnx import TensorProto
 
-node = helper.make_node(
-    'Identity',
-    inputs=['input'],
-    outputs=['output']
-)
+def generate_dummy(name, input_shape):
+    X = helper.make_tensor_value_info('input', TensorProto.FLOAT, input_shape)
+    Y = helper.make_tensor_value_info('output', TensorProto.FLOAT, input_shape)
 
-graph = helper.make_graph(
-    [node],
-    'dummy_graph',
-    [X],
-    [Y]
-)
+    node = helper.make_node(
+        'Identity',
+        inputs=['input'],
+        outputs=['output']
+    )
 
-model = helper.make_model(graph, producer_name='dummy_model', ir_version=9)
-del model.opset_import[:]
-opset = model.opset_import.add()
-opset.domain = ''
-opset.version = 13
-onnx.save(model, 'models/dummy.onnx')
+    graph = helper.make_graph(
+        [node],
+        'dummy_graph',
+        [X],
+        [Y]
+    )
+
+    model = helper.make_model(graph, producer_name='dummy_model', ir_version=9)
+    del model.opset_import[:]
+    opset = model.opset_import.add()
+    opset.domain = ''
+    opset.version = 13
+    onnx.save(model, f'models/{name}.onnx')
+
+generate_dummy('dummy', [1, 4, 256, 256])
+generate_dummy('dummy_ui', [1, 3, 640, 640])

@@ -488,6 +488,12 @@ target_include_directories(test_ai_directml PRIVATE ${PROJECT_SOURCE_DIR}/src ${
 target_link_directories(test_ai_directml PRIVATE ${ONNXRUNTIME_LIB_DIR})
 target_link_libraries(test_ai_directml PRIVATE NexVRCore onnxruntime)
 add_test(NAME AiDirectMLTest COMMAND test_ai_directml)
+
+add_executable(test_ai_ui_synthesizer tests/test_ai_ui_synthesizer.cpp)
+target_include_directories(test_ai_ui_synthesizer PRIVATE ${PROJECT_SOURCE_DIR}/src ${ONNXRUNTIME_INCLUDE_DIR})
+target_link_directories(test_ai_ui_synthesizer PRIVATE ${ONNXRUNTIME_LIB_DIR})
+target_link_libraries(test_ai_ui_synthesizer PRIVATE NexVRCore onnxruntime)
+add_test(NAME AiUISynthesizerTest COMMAND test_ai_ui_synthesizer)
 add_nexvr_gtest(test_vulkan_async_scheduler tests/test_vulkan_async_scheduler.cpp)
 add_nexvr_gtest(test_vulkan_barrier_optimizer tests/test_vulkan_barrier_optimizer.cpp)
 add_nexvr_gtest(test_vulkan_memory_budget tests/test_vulkan_memory_budget.cpp)
