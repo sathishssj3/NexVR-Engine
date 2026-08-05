@@ -29,6 +29,8 @@ namespace hooks {
 static PFN_vkCreateInstance True_vkCreateInstance = nullptr;
 static PFN_vkGetInstanceProcAddr True_vkGetInstanceProcAddr = nullptr;
 
+static VkInstance g_vulkanInstance = nullptr;
+
 VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkCreateInstance(
     const VkInstanceCreateInfo* pCreateInfo,
     const VkAllocationCallbacks* pAllocator,
@@ -46,6 +48,7 @@ VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkCreateInstance(
     }
 
     if (result == VK_SUCCESS && pInstance && *pInstance) {
+        g_vulkanInstance = *pInstance;
         uint32_t apiVersion = pCreateInfo && pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : 0;
         VulkanLifecycleManager::Get().OnInstanceCreated(*pInstance, apiVersion);
         VulkanDispatchTable::Get().RegisterInstance(*pInstance);
@@ -63,6 +66,7 @@ VKAPI_ATTR void VKAPI_CALL Hooked_vkDestroyInstance(
     }
     VulkanLifecycleManager::Get().OnInstanceDestroyed(instance);
     VulkanDispatchTable::Get().UnregisterInstance(instance);
+    if (g_vulkanInstance == instance) g_vulkanInstance = nullptr;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkCreateDevice(
@@ -71,28 +75,17 @@ VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkCreateDevice(
     const VkAllocationCallbacks* pAllocator,
     VkDevice* pDevice) 
 {
-    // Need to find which instance this physicalDevice belongs to.
-    // For now we assume there's only one instance, or we can't easily look up instance from PD without tracking.
-    // Vulkan doesn't provide a way to get Instance from PhysicalDevice. 
-    // We'll just grab the current one from lifecycle manager for this hook's dispatch.
-    // Or we rely on the dispatch table for physical device if we intercepted enumerate.
-    // For simplicity, we just use the first instance dispatch we have.
-    VkInstance instance = nullptr;
-    auto pfn = reinterpret_cast<PFN_vkCreateDevice>(VulkanDispatchTable::Get().Hooked_vkGetInstanceProcAddr(nullptr, "vkCreateDevice")); 
-    // Wait, the caller's GetDeviceProcAddr handles this via the device dispatch. 
-    // Actually, we need the original vkCreateDevice.
-    // We can get it via the instance dispatch table.
-    
-    // As a hack for the PoC, we will assume the application calls this correctly and we just need the original.
-    // We should really track physical devices to instances.
-    VkResult result = VK_SUCCESS; 
-    // ... we would call the real CreateDevice here ...
+    auto orig = VulkanDispatchTable::Get().GetOriginalGetInstanceProcAddr();
+    if (!orig) return VK_ERROR_INITIALIZATION_FAILED;
+
+    auto pfnCreateDevice = reinterpret_cast<PFN_vkCreateDevice>(orig(g_vulkanInstance, "vkCreateDevice"));
+    if (!pfnCreateDevice) return VK_ERROR_INITIALIZATION_FAILED;
+
+    VkResult result = pfnCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice);
     
     if (result == VK_SUCCESS && pDevice && *pDevice) {
         VulkanLifecycleManager::Get().OnDeviceCreated(physicalDevice, *pDevice, pCreateInfo);
-        // We need the instance to register the device properly. 
-        // We'll pass nullptr for instance here for now and fix up in full implementation.
-        VulkanDispatchTable::Get().RegisterDevice(*pDevice, nullptr); 
+        VulkanDispatchTable::Get().RegisterDevice(*pDevice, g_vulkanInstance); 
     }
     return result;
 }
