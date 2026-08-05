@@ -79,6 +79,9 @@ void RuntimeState::BackgroundInitialize() {
         return;
     }
     
+    LOG_INFO("Waiting for remote injection thread to exit...");
+    Sleep(1000); // Prevent MH_EnableHook from deadlocking against the exiting injection thread
+
     bool success = HookManager::Get().InitializeHooks();
     
     if (success) {
