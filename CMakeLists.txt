@@ -333,6 +333,7 @@ target_include_directories(vrinject PRIVATE
     ${SHADER_OUTPUT_DIR}
 )
 
+target_link_options(vrinject PRIVATE "/DELAYLOAD:onnxruntime.dll")
 target_link_directories(vrinject PRIVATE ${ONNXRUNTIME_LIB_DIR})
 
 target_link_libraries(vrinject PRIVATE
@@ -342,6 +343,7 @@ target_link_libraries(vrinject PRIVATE
     d3dcompiler
     dxguid
     onnxruntime
+    delayimp
     openxr_loader
     xinput
     Vulkan::Vulkan

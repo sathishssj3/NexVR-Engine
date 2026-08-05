@@ -127,12 +127,9 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
       if (path.dirname(customExe).toLowerCase() !== installPath.toLowerCase()) {
         throw new Error('Custom executable is outside its registered install directory');
       }
-      const child = child_process.spawn(customExe, [], {
-        detached: true,
-        cwd: installPath,
-        stdio: 'ignore',
-      });
-      child.unref();
+      // Use child_process.exec with Windows 'start' command to properly set CWD and handle ShellExecute
+      // This bypasses Node's spawn EACCES limitation when launching games that require elevation or special permissions.
+      child_process.exec(`start "" /d "${installPath}" "${customExe}"`);
     } else if (/^\d+$/.test(validId)) {
       await shell.openExternal(`steam://rungameid/${validId}`);
     } else {
@@ -218,6 +215,15 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
           dereference: false,
         });
       }
+      // Copy ONNX and DirectML DLLs to prevent target process loader lock/freeze due to missing imports
+      const onnxDll = resolveWithinRoot(canonicalBinSourceDir, 'onnxruntime.dll');
+      const directMlDll = resolveWithinRoot(canonicalBinSourceDir, 'DirectML.dll');
+      if (fs.existsSync(onnxDll)) {
+        fs.copyFileSync(onnxDll, resolveWithinRoot(targetExeDir, 'onnxruntime.dll'));
+      }
+      if (fs.existsSync(directMlDll)) {
+        fs.copyFileSync(directMlDll, resolveWithinRoot(targetExeDir, 'DirectML.dll'));
+      }
     } catch (error) {
       console.error('Failed to copy shader/model assets to target directory:', error);
     }
@@ -264,7 +270,7 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
         for (const candidate of candidates) {
           const processPath = await getProcessPath(candidate.pid).catch(() => '');
           if (
-            processPath &&
+            !processPath || 
             path.dirname(processPath).toLowerCase() === path.resolve(targetExeDir).toLowerCase()
           ) {
             targetPid = candidate.pid;
