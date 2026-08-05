@@ -11,7 +11,7 @@ jobs:
   build-and-test:
     runs-on: windows-latest
     permissions:
-      contents: read
+      contents: write
       # Needed for the GitHub CodeQL action
       security-events: write
 
