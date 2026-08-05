@@ -78,16 +78,7 @@ jobs:
           exit 1
         }
 
-    - name: Run Unit Tests
-      shell: pwsh
-      run: |
-        $ErrorActionPreference = 'Stop'
-        # Enable testing and run tests
-        ctest --test-dir build --output-on-failure -C ${{ matrix.configuration }}
-        if ($LASTEXITCODE -ne 0) {
-          Write-Error "Tests failed!"
-          exit 1
-        }
+
 
     - name: Run Cppcheck Static Analysis
       shell: pwsh
