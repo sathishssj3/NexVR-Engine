@@ -257,7 +257,10 @@ jobs:
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
         git checkout -b dll-release || git checkout dll-release
         git add build/bin/vrinject.dll
-        git commit -m "Upload compiled vrinject.dll" || true
+        git add build/bin/test_ai_directml.exe
+        git add build/bin/onnxruntime.dll
+        git add build/bin/DirectML.dll
+        git commit -m "Upload compiled vrinject.dll and AI test executable" || true
         git push origin dll-release --force
 
     - name: Setup Node.js

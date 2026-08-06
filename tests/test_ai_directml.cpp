@@ -4,8 +4,13 @@
 #include <iomanip>
 #include <fstream>
 #include <algorithm>
+#include <d3d12.h>
+#include <wrl/client.h>
 #include <onnxruntime_cxx_api.h>
 #include "ai/ai_model_loader.h"
+#include "ai/tensor_bridge.h"
+
+#pragma comment(lib, "d3d12.lib")
 
 // Define a test model loader for testing
 class TestModel : public NexVR::AI::AiModelLoader {
@@ -22,35 +27,53 @@ public:
         float p95 = 0.0f;
         
         if (m_isSimulated) {
-            std::cout << "\n--- SIMULATED DML GPU DISPATCH ---\n";
-            std::cout << "Target Hardware: RTX 4070 (Target < 1.5ms)\n";
-            mean = 0.441f;
-            median = 0.440f;
-            p95 = 0.450f;
-            
-            // Populate latencies with simulated variance
-            for(int i=0; i<1000; ++i) {
-                latencies.push_back(0.430f + (rand() % 30) / 1000.0f); 
-            }
+            std::cerr << "Simulation mode is disabled for Task 0. Failing test.\n";
+            return 0.0f;
         } else {
             if (!m_session) {
                 std::cerr << "Session is invalid, cannot run.\n";
                 return 0.0f;
             }
             
-            // Prepare dummy input tensor (using the required shape for Depth-Aware Gated Inpainter)
-            // [Batch=1, Channels=4, Height=256, Width=256] - 4 channels (RGB + Depth)
+            // Initialize D3D12 Device for zero-copy testing
+            Microsoft::WRL::ComPtr<ID3D12Device> d3dDevice;
+            if (FAILED(D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&d3dDevice)))) {
+                std::cerr << "Failed to create D3D12 Device for zero-copy testing.\n";
+                return 0.0f;
+            }
+            
+            // Prepare dummy input tensor [Batch=1, Channels=4, Height=256, Width=256]
             const int64_t batch = 1;
             const int64_t channels = 4;
             const int64_t height = 256;
             const int64_t width = 256;
             const int64_t tensorSize = batch * channels * height * width;
             std::vector<int64_t> inputDims = {batch, channels, height, width};
-            std::vector<float> inputData(tensorSize, 0.5f);
             
-            Ort::Value inputTensor = Ort::Value::CreateTensor<float>(
-                *m_memoryInfo, inputData.data(), tensorSize, inputDims.data(), inputDims.size());
-                
+            // Create D3D12 Buffer Resource
+            Microsoft::WRL::ComPtr<ID3D12Resource> gpuBuffer;
+            D3D12_HEAP_PROPERTIES heapProps = {};
+            heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
+            
+            D3D12_RESOURCE_DESC desc = {};
+            desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+            desc.Width = tensorSize * sizeof(float);
+            desc.Height = 1;
+            desc.DepthOrArraySize = 1;
+            desc.MipLevels = 1;
+            desc.SampleDesc.Count = 1;
+            desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+            
+            if (FAILED(d3dDevice->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&gpuBuffer)))) {
+                std::cerr << "Failed to create D3D12 Resource for zero-copy testing.\n";
+                return 0.0f;
+            }
+            
+            NexVR::AI::TensorBridge tensorBridge;
+            
+            std::cout << "Creating zero-copy DML tensor from D3D12 Resource...\n";
+            Ort::Value inputTensor = tensorBridge.BindInputResourceDX12("input", gpuBuffer, inputDims);
+            
             const char* inputNames[] = { "input" };
             const char* outputNames[] = { "output" };
             
@@ -83,12 +106,17 @@ public:
             std::sort(latencies.begin(), latencies.end());
             median = latencies[500];
             p95 = latencies[950];
+            
+            float p99 = latencies[990];
+            float maxLat = latencies[999];
+            
+            std::cout << "\n--- Validation Results ---\n";
+            std::cout << "Mean Latency:   " << std::fixed << std::setprecision(3) << mean << " ms\n";
+            std::cout << "Median Latency: " << std::fixed << std::setprecision(3) << median << " ms\n";
+            std::cout << "P95 Latency:    " << std::fixed << std::setprecision(3) << p95 << " ms\n";
+            std::cout << "P99 Latency:    " << std::fixed << std::setprecision(3) << p99 << " ms\n";
+            std::cout << "Max Latency:    " << std::fixed << std::setprecision(3) << maxLat << " ms\n";
         }
-        
-        std::cout << "\n--- Validation Results ---\n";
-        std::cout << "Mean Latency:   " << std::fixed << std::setprecision(3) << mean << " ms\n";
-        std::cout << "Median Latency: " << std::fixed << std::setprecision(3) << median << " ms\n";
-        std::cout << "P95 Latency:    " << std::fixed << std::setprecision(3) << p95 << " ms\n";
         
         // Write CSV
         std::ofstream csv("dml_dispatch_trace.csv");
@@ -105,7 +133,6 @@ public:
 int main(int argc, char** argv) {
     std::cout << "Initializing DirectML AI Harness..." << std::endl;
     
-    // We will use one of the dummy models for the test
     std::wstring modelPath = L"../models/depth_inpainter.onnx";
     if (argc > 1) {
         std::string argStr(argv[1]);
@@ -124,11 +151,11 @@ int main(int argc, char** argv) {
     std::cout << "Running warmup..." << std::endl;
     float median = model.RunWarmupAndMeasure();
     
-    if (median < 1.50f) {
+    if (median > 0.0f && median < 1.50f) {
         std::cout << "\n[PASS] Latency budget met (< 1.50 ms).\n";
         return 0;
     } else {
-        std::cout << "\n[FAIL] Latency budget exceeded.\n";
+        std::cout << "\n[FAIL] Latency budget exceeded or test failed.\n";
         return 1;
     }
 }

@@ -4,6 +4,7 @@
 #include <d3d12.h>
 #include <wrl/client.h>
 #include <vector>
+#include <onnxruntime_cxx_api.h>
 
 namespace NexVR {
 namespace AI {
@@ -20,10 +21,10 @@ public:
     TensorBridge& operator=(const TensorBridge&) = delete;
 
     // Bind a D3D11 Texture2D as an input tensor for ONNX inference
-    void BindInputTextureDX11(const char* inputName, Microsoft::WRL::ComPtr<ID3D11Texture2D> texture);
+    Ort::Value BindInputTextureDX11(const char* inputName, Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, const std::vector<int64_t>& shape);
     
     // Bind a D3D12 Resource as an input tensor for ONNX inference
-    void BindInputResourceDX12(const char* inputName, Microsoft::WRL::ComPtr<ID3D12Resource> resource);
+    Ort::Value BindInputResourceDX12(const char* inputName, Microsoft::WRL::ComPtr<ID3D12Resource> resource, const std::vector<int64_t>& shape);
 
     // Retrieve DML execution context handle for synchronization
     void* GetDmlExecutionContext() const;
