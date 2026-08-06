@@ -251,17 +251,22 @@ jobs:
         }
         
     - name: Upload DLL to branch
-      shell: pwsh
+      shell: bash
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git checkout -b dll-release || git checkout dll-release
-        git add build/bin/vrinject.dll
-        git add build/bin/test_ai_directml.exe
-        git add build/bin/onnxruntime.dll
-        git add build/bin/DirectML.dll
-        git commit -m "Upload compiled vrinject.dll and AI test executable" || true
-        git push origin dll-release --force
+        git checkout --orphan dll-release-new
+        git rm -rf .
+        mkdir -p dll_export
+        cp build/bin/vrinject.dll dll_export/
+        cp build/bin/test_ai_directml.exe dll_export/
+        cp build/bin/onnxruntime.dll dll_export/
+        cp build/bin/DirectML.dll dll_export/
+        mv dll_export/* .
+        rm -rf dll_export
+        git add vrinject.dll test_ai_directml.exe onnxruntime.dll DirectML.dll
+        git commit -m "Upload compiled binaries" || true
+        git push origin dll-release-new:dll-release --force
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
