@@ -250,28 +250,16 @@ jobs:
           exit 1
         }
         
-    - name: Upload DLL to branch
-      shell: bash
-      run: |
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        
-        # Back up binaries OUTSIDE the git repository to ensure git commands cannot delete them
-        mkdir -p ../dll_export_safe
-        cp build/bin/vrinject.dll ../dll_export_safe/
-        cp build/bin/test_ai_directml.exe ../dll_export_safe/
-        cp build/bin/onnxruntime.dll ../dll_export_safe/
-        cp build/bin/DirectML.dll ../dll_export_safe/
-        
-        git checkout --orphan dll-release-new
-        git rm -rf .
-        git clean -fdx
-        
-        cp ../dll_export_safe/* .
-        
-        git add vrinject.dll test_ai_directml.exe onnxruntime.dll DirectML.dll
-        git commit -m "Upload compiled binaries" || true
-        git push origin dll-release-new:dll-release --force
+    - name: Upload Binaries to Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-ai-binaries
+        path: |
+          build/bin/vrinject.dll
+          build/bin/test_ai_directml.exe
+          build/bin/onnxruntime.dll
+          build/bin/DirectML.dll
+        retention-days: 7
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
