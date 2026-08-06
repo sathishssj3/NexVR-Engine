@@ -150,7 +150,6 @@ jobs:
   release:
     needs: build-and-test
     runs-on: windows-latest
-    if: github.event_name == 'release'
     permissions:
       contents: write
       issues: write
