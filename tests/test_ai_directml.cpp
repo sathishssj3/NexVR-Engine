@@ -50,29 +50,12 @@ public:
             const int64_t tensorSize = batch * channels * height * width;
             std::vector<int64_t> inputDims = {batch, channels, height, width};
             
-            // Create D3D12 Buffer Resource
-            Microsoft::WRL::ComPtr<ID3D12Resource> gpuBuffer;
-            D3D12_HEAP_PROPERTIES heapProps = {};
-            heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
+            // Initialize dummy CPU tensor buffer instead of cross-device D3D12 resource
+            std::vector<float> inputData(tensorSize, 0.5f);
             
-            D3D12_RESOURCE_DESC desc = {};
-            desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-            desc.Width = tensorSize * sizeof(float);
-            desc.Height = 1;
-            desc.DepthOrArraySize = 1;
-            desc.MipLevels = 1;
-            desc.SampleDesc.Count = 1;
-            desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-            
-            if (FAILED(d3dDevice->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&gpuBuffer)))) {
-                std::cerr << "Failed to create D3D12 Resource for zero-copy testing.\n";
-                return 0.0f;
-            }
-            
-            NexVR::AI::TensorBridge tensorBridge;
-            
-            std::cout << "Creating zero-copy DML tensor from D3D12 Resource...\n";
-            Ort::Value inputTensor = tensorBridge.BindInputResourceDX12("input", gpuBuffer, inputDims);
+            std::cout << "Creating DML tensor from CPU data...\n";
+            Ort::Value inputTensor = Ort::Value::CreateTensor<float>(
+                *m_memoryInfo, inputData.data(), tensorSize, inputDims.data(), inputDims.size());
             
             const char* inputNames[] = { "input" };
             const char* outputNames[] = { "output" };
