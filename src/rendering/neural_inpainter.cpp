@@ -43,8 +43,8 @@ bool NeuralInpainter::Initialize(ID3D11Device* device, const std::string& modelP
     }
 
     // Allocate host staging tensor buffers (1, 4, 256, 256) -> 262,144 floats
-    const size_t inTensorSize = 1 * 4 * m_lowResWidth * m_lowResHeight;
-    const size_t outTensorSize = 1 * 3 * m_lowResWidth * m_lowResHeight;
+    const size_t inTensorSize = static_cast<size_t>(1) * static_cast<size_t>(4) * static_cast<size_t>(m_lowResWidth) * static_cast<size_t>(m_lowResHeight);
+    const size_t outTensorSize = static_cast<size_t>(1) * static_cast<size_t>(3) * static_cast<size_t>(m_lowResWidth) * static_cast<size_t>(m_lowResHeight);
     m_inputTensorBuffer.assign(inTensorSize, 0.5f);
     m_outputTensorBuffer.assign(outTensorSize, 0.5f);
 
@@ -147,7 +147,7 @@ ID3D11ShaderResourceView* NeuralInpainter::Inpaint(
         try {
             // Setup input tensor: [1, 4, 256, 256]
             const int64_t inputDims[] = { 1, 4, static_cast<int64_t>(m_lowResHeight), static_cast<int64_t>(m_lowResWidth) };
-            const size_t numElements = 1 * 4 * m_lowResHeight * m_lowResWidth;
+            const size_t numElements = size_t{1} * size_t{4} * static_cast<size_t>(m_lowResHeight) * static_cast<size_t>(m_lowResWidth);
 
             Ort::Value inputTensor = Ort::Value::CreateTensor<float>(
                 *m_memoryInfo,
