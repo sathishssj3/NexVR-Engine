@@ -312,16 +312,16 @@ set_target_properties(dxgi_proxy PROPERTIES OUTPUT_NAME "dxgi")
 target_link_libraries(dxgi_proxy PRIVATE user32)
 
 # S1.1: Code-sign dxgi.dll
-if (DEFINED ENV{SIGN_CERT_PATH})
-    add_custom_command(TARGET dxgi_proxy POST_BUILD
-      COMMAND signtool.exe sign
-        /f "$ENV{SIGN_CERT_PATH}"
-        /p "$ENV{SIGN_CERT_PASS}"
-        /tr http://timestamp.digicert.com
-        /td sha256 /fd sha256
-        "$<TARGET_FILE:dxgi_proxy>"
-      COMMENT "Signing dxgi.dll")
-endif()
+# if (DEFINED ENV{SIGN_CERT_PATH})
+#     add_custom_command(TARGET dxgi_proxy POST_BUILD
+#       COMMAND signtool.exe sign
+#         /f "$ENV{SIGN_CERT_PATH}"
+#         /p "$ENV{SIGN_CERT_PASS}"
+#         /tr http://timestamp.digicert.com
+#         /td sha256 /fd sha256
+#         "$<TARGET_FILE:dxgi_proxy>"
+#       COMMENT "Signing dxgi.dll")
+# endif()
 
 target_include_directories(vrinject PRIVATE 
     ${CMAKE_SOURCE_DIR}/src
@@ -357,16 +357,16 @@ add_custom_command(TARGET vrinject POST_BUILD
 )
 
 # S1.1: Code-sign vrinject.dll
-if (DEFINED ENV{SIGN_CERT_PATH})
-    add_custom_command(TARGET vrinject POST_BUILD
-      COMMAND signtool.exe sign
-        /f "$ENV{SIGN_CERT_PATH}"
-        /p "$ENV{SIGN_CERT_PASS}"
-        /tr http://timestamp.digicert.com
-        /td sha256 /fd sha256
-        "$<TARGET_FILE:vrinject>"
-      COMMENT "Signing vrinject.dll")
-endif()
+# if (DEFINED ENV{SIGN_CERT_PATH})
+#     add_custom_command(TARGET vrinject POST_BUILD
+#       COMMAND signtool.exe sign
+#         /f "$ENV{SIGN_CERT_PATH}"
+#         /p "$ENV{SIGN_CERT_PASS}"
+#         /tr http://timestamp.digicert.com
+#         /td sha256 /fd sha256
+#         "$<TARGET_FILE:vrinject>"
+#       COMMENT "Signing vrinject.dll")
+# endif()
 
 # S1.4: Generate DLL hash header
 file(WRITE "${CMAKE_BINARY_DIR}/generate_hash.ps1"
@@ -406,16 +406,16 @@ target_link_libraries(vr-inject-cli PRIVATE shlwapi bcrypt psapi)
 add_dependencies(vr-inject-cli vrinject)
 
 # S1.1: Code-sign vr-inject-cli.exe
-if (DEFINED ENV{SIGN_CERT_PATH})
-    add_custom_command(TARGET vr-inject-cli POST_BUILD
-      COMMAND signtool.exe sign
-        /f "$ENV{SIGN_CERT_PATH}"
-        /p "$ENV{SIGN_CERT_PASS}"
-        /tr http://timestamp.digicert.com
-        /td sha256 /fd sha256
-        "$<TARGET_FILE:vr-inject-cli>"
-      COMMENT "Signing vr-inject-cli.exe")
-endif()
+# if (DEFINED ENV{SIGN_CERT_PATH})
+#     add_custom_command(TARGET vr-inject-cli POST_BUILD
+#       COMMAND signtool.exe sign
+#         /f "$ENV{SIGN_CERT_PATH}"
+#         /p "$ENV{SIGN_CERT_PASS}"
+#         /tr http://timestamp.digicert.com
+#         /td sha256 /fd sha256
+#         "$<TARGET_FILE:vr-inject-cli>"
+#       COMMENT "Signing vr-inject-cli.exe")
+# endif()
 
 target_link_libraries(dummy_app PRIVATE
     d3d11
