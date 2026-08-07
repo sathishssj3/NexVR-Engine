@@ -15,7 +15,7 @@
 // Define a test model loader for testing
 class TestModel : public NexVR::AI::AiModelLoader {
 public:
-    TestModel(const std::wstring& path, bool useDml) : AiModelLoader(path, useDml, 0) {}
+    TestModel(const std::wstring& path, bool useDml, int deviceId = 0) : AiModelLoader(path, useDml, deviceId) {}
     
     // Returns latency in ms
     float RunWarmupAndMeasure() {
@@ -117,13 +117,18 @@ int main(int argc, char** argv) {
     std::cout << "Initializing DirectML AI Harness..." << std::endl;
     
     std::wstring modelPath = L"../models/depth_inpainter.onnx";
+    int deviceId = 0;
+    
     if (argc > 1) {
         std::string argStr(argv[1]);
         modelPath = std::wstring(argStr.begin(), argStr.end());
     }
+    if (argc > 2) {
+        deviceId = std::stoi(argv[2]);
+    }
     
     std::cout << "Loading model..." << std::endl;
-    TestModel model(modelPath, true); // true = useDirectML
+    TestModel model(modelPath, true, deviceId);
     
     std::cout << "Checking model validity..." << std::endl;
     if (!model.IsValid() && !model.IsSimulated()) {
