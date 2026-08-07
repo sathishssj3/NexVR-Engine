@@ -5,7 +5,7 @@
 #include <vulkan/vulkan.h>
 #include <memory>
 #include <mutex>
-#include "vulkan_async_scheduler.h"
+#include "../ai/ai_scheduler.h"
 #include "vulkan_memory_budget.h"
 
 namespace vrinject {
@@ -64,7 +64,7 @@ private:
     std::unique_ptr<VulkanSyncManager> m_syncManager;
     std::unique_ptr<VulkanResourceStateTracker> m_stateTracker;
     std::unique_ptr<VulkanStereoRenderer> m_renderer;
-    std::unique_ptr<AICommandQueue> m_aiQueue;
+    std::unique_ptr<vrinject::ai::AIScheduler> m_aiQueue;
     std::unique_ptr<VulkanMemoryBudget> m_memoryBudget;
 
     // GPU resources owned by the backend
