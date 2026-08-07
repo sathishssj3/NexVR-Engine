@@ -6,6 +6,7 @@
 #include <memory>
 #include <mutex>
 #include "vulkan_async_scheduler.h"
+#include "vulkan_memory_budget.h"
 
 namespace vrinject {
 namespace vulkan {
@@ -64,6 +65,7 @@ private:
     std::unique_ptr<VulkanResourceStateTracker> m_stateTracker;
     std::unique_ptr<VulkanStereoRenderer> m_renderer;
     std::unique_ptr<AICommandQueue> m_aiQueue;
+    std::unique_ptr<VulkanMemoryBudget> m_memoryBudget;
 
     // GPU resources owned by the backend
     VkBuffer m_cameraBuffer = VK_NULL_HANDLE;

@@ -11,8 +11,15 @@ void VulkanMemoryBudget::UpdateTrackedResources(uint64_t eyeTextureBytes,
     m_snapshot.temporaryBufferBytes = temporaryBufferBytes;
     m_snapshot.pipelineCacheBytes = pipelineCacheBytes;
     m_snapshot.descriptorPoolBytes = descriptorPoolBytes;
-    m_snapshot.totalTrackedBytes =
-        eyeTextureBytes + temporaryBufferBytes + pipelineCacheBytes + descriptorPoolBytes;
+    m_snapshot.totalTrackedBytes = eyeTextureBytes + temporaryBufferBytes + pipelineCacheBytes + descriptorPoolBytes + m_snapshot.aiModelBytes + m_snapshot.aiTensorBytes;
+}
+
+void VulkanMemoryBudget::UpdateAiBudget(uint64_t modelBytes, uint64_t tensorBytes) {
+    m_snapshot.aiModelBytes = modelBytes;
+    m_snapshot.aiTensorBytes = tensorBytes;
+    m_snapshot.totalTrackedBytes = m_snapshot.eyeTextureBytes + m_snapshot.temporaryBufferBytes + 
+                                   m_snapshot.pipelineCacheBytes + m_snapshot.descriptorPoolBytes + 
+                                   modelBytes + tensorBytes;
 }
 
 void VulkanMemoryBudget::UpdateDeviceBudget(uint64_t budgetBytes, uint64_t usageBytes) {
