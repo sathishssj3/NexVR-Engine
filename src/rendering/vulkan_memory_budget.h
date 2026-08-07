@@ -12,6 +12,8 @@ struct VulkanMemoryBudgetSnapshot {
     uint64_t temporaryBufferBytes = 0;
     uint64_t pipelineCacheBytes = 0;
     uint64_t descriptorPoolBytes = 0;
+    uint64_t aiModelBytes = 0;
+    uint64_t aiTensorBytes = 0;
     uint64_t totalTrackedBytes = 0;
     uint64_t budgetBytes = 0;
     uint64_t usageBytes = 0;
@@ -25,6 +27,7 @@ public:
                                 uint64_t temporaryBufferBytes,
                                 uint64_t pipelineCacheBytes,
                                 uint64_t descriptorPoolBytes);
+    void UpdateAiBudget(uint64_t modelBytes, uint64_t tensorBytes);
     void UpdateDeviceBudget(uint64_t budgetBytes, uint64_t usageBytes);
     VulkanMemoryBudgetSnapshot GetSnapshot() const { return m_snapshot; }
 
