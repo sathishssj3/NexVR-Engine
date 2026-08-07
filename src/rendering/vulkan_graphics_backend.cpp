@@ -103,11 +103,12 @@ bool VulkanGraphicsBackend::InitializeVulkan(VkDevice device, VkPhysicalDevice p
         std::cerr << "[VulkanGraphicsBackend] WARNING: CommandManager init failed." << std::endl;
     }
 
-    // 5. Sync Manager
+    // 5. Sync Manager & AI Queue
     m_syncManager = std::make_unique<VulkanSyncManager>(m_device);
     if (!m_syncManager->Initialize()) {
         std::cerr << "[VulkanGraphicsBackend] WARNING: SyncManager init failed." << std::endl;
     }
+    m_aiQueue = std::make_unique<AICommandQueue>();
 
     // 6. Resource State Tracker
     m_stateTracker = std::make_unique<VulkanResourceStateTracker>(m_device);
@@ -245,6 +246,7 @@ void VulkanGraphicsBackend::Shutdown() {
     m_descriptorManager.reset();
     m_pipelineCache.reset();
     m_resourceManager.reset();
+    m_aiQueue.reset();
     DestroyGPUResources();
 
     m_isInitialized = false;
@@ -275,7 +277,26 @@ void VulkanGraphicsBackend::RenderStereo(const CameraSnapshot& camSnapshot, cons
     m_lastDepth = depthSnapshot;
 
     if (m_renderer && m_resourceManager && m_pipelineCache && m_descriptorManager && 
-        m_commandManager && m_syncManager && m_stateTracker) {
+        m_commandManager && m_syncManager && m_stateTracker && m_aiQueue) {
+        
+        // Task 1: Async Fallback Contract
+        uint64_t currentFrameId = camSnapshot.frame;
+        
+        // Push Adversarial Test: Sleep to simulate heavy inference
+        m_aiQueue->PushJob(currentFrameId, []() {
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        });
+
+        // Zero-blocking check to see if the AI results for THIS frame are ready.
+        if (!m_aiQueue->IsJobReady(currentFrameId)) {
+            // Task 1: 'Skip Enhancement' (DEGRADED state) fallback
+            m_state = StereoRendererState::DEGRADED;
+            // The render thread MUST not block. Return immediately. 
+            // The game will display its un-enhanced standard frame.
+            return;
+        }
+        
+        m_state = StereoRendererState::ACTIVE;
 
         // Use internally owned depth image if the snapshot doesn't provide one
         DepthSnapshot effectiveDepth = depthSnapshot;
