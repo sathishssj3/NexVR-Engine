@@ -11,8 +11,11 @@ class BackendProfiler {
 public:
     void RecordTelemetry(const std::string& backendName, const TelemetryData& data, const MemoryUsage& memory);
     
-    // Export recorded data to CSV
-    bool ExportToCSV(const std::string& filepath) const;
+    // Export recorded data to CSVs
+    bool ExportBackendComparison(const std::string& filepath) const;
+    bool ExportLatencyTrace(const std::string& filepath) const;
+    bool ExportSchedulerMetrics(const std::string& filepath) const;
+    bool ExportMemoryReport(const std::string& filepath) const;
 
 private:
     struct Entry {
