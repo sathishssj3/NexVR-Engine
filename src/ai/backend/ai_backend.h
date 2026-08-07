@@ -12,6 +12,12 @@ struct TelemetryData {
     double queueWaitMs = 0.0;
     double fenceWaitMs = 0.0;
     uint32_t droppedFrames = 0;
+    
+    // Sprint 6.5 Expanded Telemetry
+    uint32_t peakQueueDepth = 0;
+    double inferenceThroughput = 0.0; // jobs/sec
+    uint32_t fallbackFrequency = 0;
+    double initTimeMs = 0.0;
 };
 
 struct MemoryUsage {
