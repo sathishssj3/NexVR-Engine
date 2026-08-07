@@ -85,9 +85,27 @@ if(NOT directml_POPULATED)
 endif()
 
 # ---------------------------------------------------------------------------
-# Dependencies – Vulkan SDK
+# Dependencies – Vulkan SDK (Optional with automatic fallback headers)
 # ---------------------------------------------------------------------------
-find_package(Vulkan REQUIRED)
+find_package(Vulkan QUIET)
+if(NOT Vulkan_FOUND OR NOT Vulkan_INCLUDE_DIR OR "${Vulkan_INCLUDE_DIR}" MATCHES "NOTFOUND")
+    FetchContent_Declare(
+        vulkan_headers
+        URL https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/v1.3.280.zip
+    )
+    FetchContent_GetProperties(vulkan_headers)
+    if(NOT vulkan_headers_POPULATED)
+        FetchContent_Populate(vulkan_headers)
+    endif()
+    set(Vulkan_INCLUDE_DIR "${vulkan_headers_SOURCE_DIR}/include" CACHE PATH "Vulkan Include Dir" FORCE)
+    set(Vulkan_INCLUDE_DIRS "${vulkan_headers_SOURCE_DIR}/include" CACHE PATH "Vulkan Include Dirs" FORCE)
+    set(Vulkan_LIBRARY "" CACHE FILEPATH "Vulkan Library" FORCE)
+    set(Vulkan_LIBRARIES "" CACHE FILEPATH "Vulkan Libraries" FORCE)
+endif()
+if(NOT TARGET Vulkan::Vulkan)
+    add_library(Vulkan::Vulkan INTERFACE IMPORTED GLOBAL)
+    target_include_directories(Vulkan::Vulkan INTERFACE "${Vulkan_INCLUDE_DIR}")
+endif()
 
 # ---------------------------------------------------------------------------
 # Dependencies – OpenXR SDK
@@ -154,8 +172,10 @@ set(IMGUI_SOURCES
     ${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_dx11.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
 )
+if(Vulkan_FOUND)
+    list(APPEND IMGUI_SOURCES ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp)
+endif()
 
 
 # ---------------------------------------------------------------------------
@@ -274,6 +294,9 @@ if(FXC_EXECUTABLE)
                     COMMENT "Compiling HLSL compute shader to SPIR-V: ${SHADER_NAME}.hlsl -> ${SHADER_NAME}_cs_vk.h"
                     VERBATIM
                 )
+            else()
+                set(SHADER_HDR_VK ${SHADER_OUTPUT_DIR}/${SHADER_NAME}_cs_vk.h)
+                file(WRITE ${SHADER_HDR_VK} "{ 0 }\n")
             endif()
         endif()
     endforeach()

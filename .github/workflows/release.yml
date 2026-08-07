@@ -62,8 +62,6 @@ jobs:
         pip install onnx
         if (-not (Test-Path models)) { mkdir models }
         python generate_dummy_onnx.py
-        Copy-Item models/dummy.onnx models/depth_inpainter.onnx
-        Copy-Item models/dummy_ui.onnx models/ui_synthesizer.onnx
 
     - name: Configure CMake
       run: cmake -B build -S . -A x64 -DDXC_EXECUTABLE="${{ github.workspace }}/dxc/bin/x64/dxc.exe" -DBUILD_TESTS=ON
