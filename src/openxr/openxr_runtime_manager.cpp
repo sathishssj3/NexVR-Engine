@@ -1,6 +1,7 @@
 #include "openxr_runtime_manager.h"
 #include <iostream>
 #include <vector>
+#include "../core/logger.h"
 
 // Since XR_USE_GRAPHICS_API_D3D11 is defined in openxr_types.h, OpenXR knows we need the D3D11 graphics requirement functions.
 // We need to define XR_USE_GRAPHICS_API_D3D11 before including openxr.h, which openxr_types.h handles.
@@ -17,25 +18,26 @@ OpenXRRuntimeManager::~OpenXRRuntimeManager() {
 
 bool OpenXRRuntimeManager::Initialize(const std::string& applicationName, GraphicsBackend backendAPI) {
     if (state_ != RuntimeState::UNINITIALIZED) {
+        LOG_WARN("OpenXR: Initialize called but state is not UNINITIALIZED (state=%d)", (int)state_);
         return false;
     }
 
+    LOG_INFO("OpenXR: Creating instance for app '%s' (backend=%d)...", applicationName.c_str(), (int)backendAPI);
     if (!CreateInstance(applicationName, backendAPI)) {
+        LOG_ERROR("OpenXR: CreateInstance FAILED!");
         state_ = RuntimeState::FAILED;
         return false;
     }
     state_ = RuntimeState::INSTANCE_CREATED;
+    LOG_INFO("OpenXR: Instance created successfully.");
 
     if (!GetSystem()) {
+        LOG_ERROR("OpenXR: GetSystem FAILED! Is a VR headset connected and SteamVR running?");
         state_ = RuntimeState::FAILED;
         return false;
     }
     state_ = RuntimeState::SYSTEM_SELECTED;
-
-    // Note: Session creation requires graphics binding, which must be passed in from outside, 
-    // or we fetch the D3D11 device here. In this design, the FrameSubmitter or SwapchainManager 
-    // will need the session. To keep it simple, we defer session creation or require the device here.
-    // We'll leave the state at SYSTEM_SELECTED until the device is available to create the session.
+    LOG_INFO("OpenXR: System selected (HMD found). State = SYSTEM_SELECTED.");
     
     return true;
 }
@@ -62,9 +64,10 @@ bool OpenXRRuntimeManager::CreateInstance(const std::string& appName, GraphicsBa
 
     XrResult res = xrCreateInstance(&createInfo, &instance_);
     if (XR_FAILED(res)) {
-        std::cerr << "Failed to create OpenXR instance.\n";
+        LOG_ERROR("OpenXR: xrCreateInstance failed with result %d", (int)res);
         return false;
     }
+    LOG_INFO("OpenXR: xrCreateInstance succeeded (instance=%p)", (void*)instance_);
     return true;
 }
 
@@ -74,9 +77,10 @@ bool OpenXRRuntimeManager::GetSystem() {
 
     XrResult res = xrGetSystem(instance_, &systemInfo, &systemId_);
     if (XR_FAILED(res)) {
-        std::cerr << "Failed to get OpenXR system.\n";
+        LOG_ERROR("OpenXR: xrGetSystem failed with result %d", (int)res);
         return false;
     }
+    LOG_INFO("OpenXR: xrGetSystem succeeded (systemId=%llu)", (unsigned long long)systemId_);
     return true;
 }
 
@@ -101,9 +105,10 @@ bool OpenXRRuntimeManager::CreateSession(ID3D11Device* device) {
 
     XrResult res = xrCreateSession(instance_, &createInfo, &session_);
     if (XR_FAILED(res)) {
-        std::cerr << "Failed to create OpenXR session.\n";
+        LOG_ERROR("OpenXR: xrCreateSession (DX11) failed with result %d", (int)res);
         return false;
     }
+    LOG_INFO("OpenXR: DX11 session created successfully (session=%p)", (void*)session_);
 
     if (!CreateReferenceSpace()) {
         return false;
@@ -121,14 +126,14 @@ bool OpenXRRuntimeManager::CheckDX12GraphicsRequirements(LUID* outAdapterLuid) {
     PFN_xrGetD3D12GraphicsRequirementsKHR pfnGetD3D12GraphicsRequirementsKHR = nullptr;
     xrGetInstanceProcAddr(instance_, "xrGetD3D12GraphicsRequirementsKHR", (PFN_xrVoidFunction*)(&pfnGetD3D12GraphicsRequirementsKHR));
     if (!pfnGetD3D12GraphicsRequirementsKHR) {
-        std::cerr << "Failed to get xrGetD3D12GraphicsRequirementsKHR function pointer.\n";
+        LOG_ERROR("OpenXR: Failed to get xrGetD3D12GraphicsRequirementsKHR function pointer.");
         return false;
     }
 
     XrGraphicsRequirementsD3D12KHR graphicsRequirements{XR_TYPE_GRAPHICS_REQUIREMENTS_D3D12_KHR};
     XrResult res = pfnGetD3D12GraphicsRequirementsKHR(instance_, systemId_, &graphicsRequirements);
     if (XR_FAILED(res)) {
-        std::cerr << "Failed to get DX12 graphics requirements.\n";
+        LOG_ERROR("OpenXR: xrGetD3D12GraphicsRequirementsKHR failed with result %d", (int)res);
         return false;
     }
 
@@ -151,9 +156,10 @@ bool OpenXRRuntimeManager::CreateSessionDX12(ID3D12Device* device, ID3D12Command
 
     XrResult res = xrCreateSession(instance_, &createInfo, &session_);
     if (XR_FAILED(res)) {
-        std::cerr << "Failed to create OpenXR DX12 session.\n";
+        LOG_ERROR("OpenXR: xrCreateSession (DX12) failed with result %d", (int)res);
         return false;
     }
+    LOG_INFO("OpenXR: DX12 session created successfully (session=%p)", (void*)session_);
 
     if (!CreateReferenceSpace()) {
         return false;
@@ -171,27 +177,27 @@ bool OpenXRRuntimeManager::CheckVulkanGraphicsRequirements(VkInstance vkInstance
     PFN_xrGetVulkanGraphicsRequirementsKHR pfnGetVulkanGraphicsRequirementsKHR = nullptr;
     xrGetInstanceProcAddr(instance_, "xrGetVulkanGraphicsRequirementsKHR", (PFN_xrVoidFunction*)(&pfnGetVulkanGraphicsRequirementsKHR));
     if (!pfnGetVulkanGraphicsRequirementsKHR) {
-        std::cerr << "Failed to get xrGetVulkanGraphicsRequirementsKHR function pointer.\n";
+        LOG_ERROR("OpenXR: Failed to get xrGetVulkanGraphicsRequirementsKHR function pointer.");
         return false;
     }
 
     XrGraphicsRequirementsVulkanKHR graphicsRequirements{XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN_KHR};
     XrResult res = pfnGetVulkanGraphicsRequirementsKHR(instance_, systemId_, &graphicsRequirements);
     if (XR_FAILED(res)) {
-        std::cerr << "Failed to get Vulkan graphics requirements.\n";
+        LOG_ERROR("OpenXR: xrGetVulkanGraphicsRequirementsKHR failed with result %d", (int)res);
         return false;
     }
 
     PFN_xrGetVulkanGraphicsDeviceKHR pfnGetVulkanGraphicsDeviceKHR = nullptr;
     xrGetInstanceProcAddr(instance_, "xrGetVulkanGraphicsDeviceKHR", (PFN_xrVoidFunction*)(&pfnGetVulkanGraphicsDeviceKHR));
     if (!pfnGetVulkanGraphicsDeviceKHR) {
-        std::cerr << "Failed to get xrGetVulkanGraphicsDeviceKHR function pointer.\n";
+        LOG_ERROR("OpenXR: Failed to get xrGetVulkanGraphicsDeviceKHR function pointer.");
         return false;
     }
 
     res = pfnGetVulkanGraphicsDeviceKHR(instance_, systemId_, vkInstance, outPhysicalDevice);
     if (XR_FAILED(res)) {
-        std::cerr << "Failed to get Vulkan physical device from OpenXR.\n";
+        LOG_ERROR("OpenXR: xrGetVulkanGraphicsDeviceKHR failed with result %d", (int)res);
         return false;
     }
 
@@ -252,9 +258,10 @@ bool OpenXRRuntimeManager::CreateSessionVulkan(VkInstance vkInstance, VkPhysical
 
     XrResult res = xrCreateSession(instance_, &createInfo, &session_);
     if (XR_FAILED(res)) {
-        std::cerr << "Failed to create OpenXR Vulkan session.\n";
+        LOG_ERROR("OpenXR: xrCreateSession (Vulkan) failed with result %d", (int)res);
         return false;
     }
+    LOG_INFO("OpenXR: Vulkan session created successfully (session=%p)", (void*)session_);
 
     if (!CreateReferenceSpace()) {
         return false;
@@ -271,9 +278,10 @@ bool OpenXRRuntimeManager::CreateReferenceSpace() {
 
     XrResult res = xrCreateReferenceSpace(session_, &createInfo, &referenceSpace_);
     if (XR_FAILED(res)) {
-        std::cerr << "Failed to create OpenXR reference space.\n";
+        LOG_ERROR("OpenXR: xrCreateReferenceSpace failed with result %d", (int)res);
         return false;
     }
+    LOG_INFO("OpenXR: Reference space created successfully.");
     return true;
 }
 
@@ -306,7 +314,7 @@ void OpenXRRuntimeManager::PollEvents() {
                 break;
             }
             case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING:
-                std::cout << "OpenXR instance loss pending.\n";
+                LOG_WARN("OpenXR: Instance loss pending!");
                 state_ = RuntimeState::FAILED;
                 if (healthMonitor_) healthMonitor_->RecordRuntimeRestart();
                 break;
@@ -323,17 +331,25 @@ void OpenXRRuntimeManager::HandleSessionStateChanged(const XrEventDataSessionSta
     switch (stateEvent.state) {
         case XR_SESSION_STATE_READY:
             state_ = RuntimeState::SESSION_READY;
+            LOG_INFO("OpenXR: Session state -> READY. Calling xrBeginSession...");
             {
                 XrSessionBeginInfo beginInfo{XR_TYPE_SESSION_BEGIN_INFO};
                 beginInfo.primaryViewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
-                xrBeginSession(session_, &beginInfo);
+                XrResult beginRes = xrBeginSession(session_, &beginInfo);
+                if (XR_FAILED(beginRes)) {
+                    LOG_ERROR("OpenXR: xrBeginSession FAILED with result %d", (int)beginRes);
+                } else {
+                    LOG_INFO("OpenXR: xrBeginSession succeeded!");
+                }
             }
             break;
         case XR_SESSION_STATE_SYNCHRONIZED:
         case XR_SESSION_STATE_VISIBLE:
+            LOG_INFO("OpenXR: Session state -> VISIBLE/SYNCHRONIZED");
             state_ = RuntimeState::VISIBLE;
             break;
         case XR_SESSION_STATE_FOCUSED:
+            LOG_INFO("OpenXR: Session state -> FOCUSED");
             state_ = RuntimeState::FOCUSED;
             break;
         case XR_SESSION_STATE_STOPPING:

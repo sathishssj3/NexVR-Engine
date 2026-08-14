@@ -12,10 +12,12 @@
 #include "../core/seh_shield.h"
 #include "../core/config_manager.h"
 #include "../core/dx11_lifecycle_manager.h"
+#include "../core/dx12_lifecycle_manager.h"
 #include "../core/frame_coordinator.h"
 #include "../core/candidate_collector.h"
 #include "../core/depth_candidate_collector.h"
 #include "../core/depth_lock_manager.h"
+#include "dxgi_factory_hook.h"
 extern HMODULE g_hModule; // Declared in dllmain.cpp
 
 namespace vrinject {
@@ -88,8 +90,18 @@ HRESULT ProcessPresent(SwapChainType* pSwapChain, OriginalFunc originalFunc, Arg
         // Execute original present first to get the true HRESULT (e.g. DEVICE_REMOVED)
         hr = originalFunc(pSwapChain, args...);
 
-        // Advance lifecycle state machine and get immutable snapshot
-        RenderFrameSnapshot snapshot = Dx11LifecycleManager::Get().ProcessPresent(pSwapChain, hr);
+        // Check if this is a DX12 swapchain by looking for captured command queue
+        ID3D12CommandQueue* capturedQueue = DXGIFactoryHook::GetCapturedCommandQueue();
+        
+        RenderFrameSnapshot snapshot;
+        if (capturedQueue) {
+            // DX12 path - use Dx12LifecycleManager
+            snapshot = Dx12LifecycleManager::Get().ProcessPresent(
+                static_cast<IDXGISwapChain*>(pSwapChain), capturedQueue, hr);
+        } else {
+            // DX11 fallback path
+            snapshot = Dx11LifecycleManager::Get().ProcessPresent(pSwapChain, hr);
+        }
 
         // Exception-safe RAII frame lifecycle
         ScopedFrame frame(FrameCoordinator::Get(), snapshot);

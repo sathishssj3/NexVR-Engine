@@ -1,10 +1,11 @@
 {
-  "timestamp": "2026-08-13T21:01:27.714Z",
+  "timestamp": "2026-08-14T18:04:00.988Z",
   "distillationEnabled": true,
   "patternsConsolidated": 0,
   "memoryCleaned": 0,
   "duplicatesRemoved": 0,
   "episodes": 0,
+  "episodeEmbeddings": 0,
   "patternEmbeddings": 0,
   "causalEdges": 0,
   "promoted": 0,
@@ -12,5 +13,5 @@
   "namespaces": [],
   "dryRun": false,
   "corrupt": false,
-  "skipped": "no-db"
+  "skipped": "target table reasoning_patterns missing (agentdb schema not initialised)"
 }

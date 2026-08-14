@@ -60,15 +60,10 @@ bool DX12StereoRenderer::RenderStereo(
         return false; // Skip stereo rendering if degraded
     }
     
-    // Validate snapshots
-    if (!cam.IsValid() || !depth.IsValid() || !cam.resourceIdentity.nativeHandle || !depth.identity.nativeHandle) {
-        return false;
-    }
-    
     std::lock_guard<std::mutex> lock(m_mutex);
 
     // Frame Sequence
-    uint32_t frameIndex = cam.frame % MAX_FRAMES_IN_FLIGHT;
+    uint32_t frameIndex = (cam.frame > 0 ? cam.frame : 0) % MAX_FRAMES_IN_FLIGHT;
 
     // Ensure the GPU has finished with this allocator before resetting it
     if (m_frameFences[frameIndex] != 0) {
@@ -77,6 +72,52 @@ bool DX12StereoRenderer::RenderStereo(
     
     m_commandAllocators[frameIndex]->Reset();
     m_commandList->Reset(m_commandAllocators[frameIndex].Get(), nullptr);
+
+    bool isStereoValid = (cam.IsValid() && depth.IsValid() && cam.resourceIdentity.nativeHandle && depth.identity.nativeHandle);
+
+    if (!isStereoValid) {
+        // Fallback: 2D Passthrough / Virtual Cinema mode (e.g. In Menus/UI)
+        ID3D12Resource* backBuffer = Dx12LifecycleManager::Get().GetBackBuffer();
+        if (backBuffer && (oxrLeftDest || oxrRightDest)) {
+            stateTracker->ForceResourceState(backBuffer, D3D12_RESOURCE_STATE_PRESENT);
+            stateTracker->TransitionResource(backBuffer, D3D12_RESOURCE_STATE_COPY_SOURCE);
+
+            if (oxrLeftDest) {
+                stateTracker->ForceResourceState(oxrLeftDest, D3D12_RESOURCE_STATE_COMMON);
+                stateTracker->TransitionResource(oxrLeftDest, D3D12_RESOURCE_STATE_COPY_DEST);
+            }
+            if (oxrRightDest) {
+                stateTracker->ForceResourceState(oxrRightDest, D3D12_RESOURCE_STATE_COMMON);
+                stateTracker->TransitionResource(oxrRightDest, D3D12_RESOURCE_STATE_COPY_DEST);
+            }
+            stateTracker->FlushBarriers(m_commandList.Get());
+
+            if (oxrLeftDest) {
+                m_commandList->CopyResource(oxrLeftDest, backBuffer);
+            }
+            if (oxrRightDest) {
+                m_commandList->CopyResource(oxrRightDest, backBuffer);
+            }
+
+            stateTracker->TransitionResource(backBuffer, D3D12_RESOURCE_STATE_PRESENT);
+            if (oxrLeftDest) {
+                stateTracker->TransitionResource(oxrLeftDest, D3D12_RESOURCE_STATE_COMMON);
+            }
+            if (oxrRightDest) {
+                stateTracker->TransitionResource(oxrRightDest, D3D12_RESOURCE_STATE_COMMON);
+            }
+            stateTracker->FlushBarriers(m_commandList.Get());
+
+            m_commandList->Close();
+            ID3D12CommandList* ppCommandLists[] = { m_commandList.Get() };
+            gameQueue->ExecuteCommandLists(1, ppCommandLists);
+            m_frameFences[frameIndex] = fenceManager->Signal(gameQueue);
+            return true;
+        }
+
+        m_commandList->Close();
+        return true;
+    }
     
     // Transition Resources (Inputs)
     ID3D12Resource* leftEye = resourceManager->GetLeftEyeTexture();

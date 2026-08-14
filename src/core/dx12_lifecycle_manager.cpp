@@ -41,6 +41,15 @@ RenderFrameSnapshot Dx12LifecycleManager::ProcessPresent(IDXGISwapChain* swapCha
         }
     }
 
+    // Refresh active backbuffer resource for this frame
+    if (m_state.load(std::memory_order_relaxed) == RenderState::RUNNING && m_swapchainResources.swapChain) {
+        Microsoft::WRL::ComPtr<IDXGISwapChain3> sc3;
+        if (SUCCEEDED(m_swapchainResources.swapChain.As(&sc3))) {
+            UINT currentIdx = sc3->GetCurrentBackBufferIndex();
+            m_swapchainResources.swapChain->GetBuffer(currentIdx, IID_PPV_ARGS(&m_swapchainResources.backBuffer));
+        }
+    }
+
     return CreateSnapshot();
 }
 

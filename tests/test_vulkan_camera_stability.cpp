@@ -45,8 +45,11 @@ TEST(TemporalCameraFilterTest, JumpRejection) {
     auto& filter = TemporalCameraFilter::Get();
     filter.Reset();
 
-    CameraCandidate c1 = {}; c1.id = 1; c1.confidence = 1.0f;
-    CameraCandidate c2 = {}; c2.id = 2; c2.confidence = 1.0f;
+    // valid=true is required: TemporalCameraFilter::Update() gates every transition on
+    // "bestCandidate.valid && id != 0", and CameraCandidate has no default member
+    // initialisers, so "= {}" leaves valid==false and the filter never leaves SEARCHING.
+    CameraCandidate c1 = {}; c1.valid = true; c1.id = 1; c1.confidence = 1.0f;
+    CameraCandidate c2 = {}; c2.valid = true; c2.id = 2; c2.confidence = 1.0f;
 
     filter.Update(c1, 1);
     filter.Update(c2, 2); // Jumped to c2! Should reset lock counter.

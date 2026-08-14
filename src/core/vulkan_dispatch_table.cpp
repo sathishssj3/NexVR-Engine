@@ -198,22 +198,18 @@ VkInstance VulkanDispatchTable::GetInstanceForDevice(VkDevice device) {
 PFN_vkVoidFunction VKAPI_CALL VulkanDispatchTable::Hooked_vkGetInstanceProcAddr(VkInstance instance, const char* pName) {
     if (!pName) return nullptr;
 
-    // Return our hook overrides
+    // SAFE MODE: Pure pass-through to avoid crashing games that created
+    // their Vulkan instance/device before our DLL was injected.
+    // We only intercept vkCreateInstance and vkCreateDevice so we can
+    // register future devices if the game recreates them.
+    auto& dt = Get();
+
     if (strcmp(pName, "vkGetInstanceProcAddr") == 0) return reinterpret_cast<PFN_vkVoidFunction>(Hooked_vkGetInstanceProcAddr);
     if (strcmp(pName, "vkGetDeviceProcAddr") == 0) return reinterpret_cast<PFN_vkVoidFunction>(Hooked_vkGetDeviceProcAddr);
     if (strcmp(pName, "vkCreateInstance") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCreateInstance);
-    if (strcmp(pName, "vkDestroyInstance") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkDestroyInstance);
     if (strcmp(pName, "vkCreateDevice") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCreateDevice);
-    if (strcmp(pName, "vkDestroyDevice") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkDestroyDevice);
-    if (strcmp(pName, "vkGetDeviceQueue") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkGetDeviceQueue);
-    if (strcmp(pName, "vkCreateSwapchainKHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCreateSwapchainKHR);
-    if (strcmp(pName, "vkDestroySwapchainKHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkDestroySwapchainKHR);
-    if (strcmp(pName, "vkAcquireNextImageKHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkAcquireNextImageKHR);
-    if (strcmp(pName, "vkQueueSubmit") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkQueueSubmit);
-    if (strcmp(pName, "vkQueuePresentKHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkQueuePresentKHR);
-    if (strcmp(pName, "vkDestroySurfaceKHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkDestroySurfaceKHR);
 
-    auto& dt = Get();
+    // Everything else: pass through to original
     if (dt.m_originalGetInstanceProcAddr) {
         return dt.m_originalGetInstanceProcAddr(instance, pName);
     }
@@ -224,68 +220,14 @@ PFN_vkVoidFunction VKAPI_CALL VulkanDispatchTable::Hooked_vkGetDeviceProcAddr(Vk
     if (!pName) return nullptr;
 
     auto& dt = Get();
-    
-    // Check if we are tracking this device. If not (e.g. injected late), bypass hooks to prevent crashes.
-    bool isDeviceTracked = false;
-    if (device != VK_NULL_HANDLE) {
-        std::shared_lock lock(dt.m_mutex);
-        isDeviceTracked = (dt.m_deviceToInstance.find(device) != dt.m_deviceToInstance.end());
-    }
 
-    if (!isDeviceTracked && dt.m_originalGetDeviceProcAddr) {
-        return reinterpret_cast<PFN_vkVoidFunction>(dt.m_originalGetDeviceProcAddr(device, pName));
-    }
-
-    // Device level overrides
+    // SAFE MODE: Pure pass-through. Only intercept our own entry point.
+    // All other functions go directly to the original driver.
     if (strcmp(pName, "vkGetDeviceProcAddr") == 0) return reinterpret_cast<PFN_vkVoidFunction>(Hooked_vkGetDeviceProcAddr);
-    if (strcmp(pName, "vkDestroyDevice") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkDestroyDevice);
-    if (strcmp(pName, "vkGetDeviceQueue") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkGetDeviceQueue);
-    if (strcmp(pName, "vkCreateSwapchainKHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCreateSwapchainKHR);
-    if (strcmp(pName, "vkDestroySwapchainKHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkDestroySwapchainKHR);
-    if (strcmp(pName, "vkAcquireNextImageKHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkAcquireNextImageKHR);
-    if (strcmp(pName, "vkQueueSubmit") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkQueueSubmit);
-    if (strcmp(pName, "vkQueuePresentKHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkQueuePresentKHR);
 
-    // Sprint 5.2 overrides
-    if (strcmp(pName, "vkCreateImage") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCreateImage);
-    if (strcmp(pName, "vkDestroyImage") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkDestroyImage);
-    if (strcmp(pName, "vkCreateBuffer") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCreateBuffer);
-    if (strcmp(pName, "vkDestroyBuffer") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkDestroyBuffer);
-    if (strcmp(pName, "vkBindBufferMemory") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkBindBufferMemory);
-    if (strcmp(pName, "vkMapMemory") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkMapMemory);
-    if (strcmp(pName, "vkUnmapMemory") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkUnmapMemory);
-    if (strcmp(pName, "vkAllocateDescriptorSets") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkAllocateDescriptorSets);
-    if (strcmp(pName, "vkFreeDescriptorSets") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkFreeDescriptorSets);
-    if (strcmp(pName, "vkUpdateDescriptorSets") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkUpdateDescriptorSets);
-    if (strcmp(pName, "vkResetDescriptorPool") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkResetDescriptorPool);
-    if (strcmp(pName, "vkCmdBindDescriptorSets") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCmdBindDescriptorSets);
-    if (strcmp(pName, "vkCmdExecuteCommands") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCmdExecuteCommands);
-
-    if (strcmp(pName, "vkCmdBeginRenderPass") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCmdBeginRenderPass);
-    if (strcmp(pName, "vkCmdEndRenderPass") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCmdEndRenderPass);
-    if (strcmp(pName, "vkCmdBeginRendering") == 0 || strcmp(pName, "vkCmdBeginRenderingKHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCmdBeginRendering);
-    if (strcmp(pName, "vkCmdEndRendering") == 0 || strcmp(pName, "vkCmdEndRenderingKHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCmdEndRendering);
-    
-    if (strcmp(pName, "vkCmdPipelineBarrier") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCmdPipelineBarrier);
-    if (strcmp(pName, "vkCmdPipelineBarrier2") == 0 || strcmp(pName, "vkCmdPipelineBarrier2KHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCmdPipelineBarrier2);
-    if (strcmp(pName, "vkCmdWaitEvents") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCmdWaitEvents);
-    if (strcmp(pName, "vkCmdNextSubpass") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCmdNextSubpass);
-    
-    if (strcmp(pName, "vkCreateImageView") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCreateImageView);
-    if (strcmp(pName, "vkDestroyImageView") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkDestroyImageView);
-    if (strcmp(pName, "vkCreateFramebuffer") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCreateFramebuffer);
-    if (strcmp(pName, "vkDestroyFramebuffer") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkDestroyFramebuffer);
-    if (strcmp(pName, "vkCmdClearDepthStencilImage") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCmdClearDepthStencilImage);
-
+    // Pass through everything to the original
     if (dt.m_originalGetDeviceProcAddr) {
         return reinterpret_cast<PFN_vkVoidFunction>(dt.m_originalGetDeviceProcAddr(device, pName));
-    }
-    
-    // Fallback to instance proc addr if device proc addr fails or is missing
-    std::shared_lock lock(dt.m_mutex);
-    auto it = dt.m_deviceToInstance.find(device);
-    if (dt.m_originalGetInstanceProcAddr && it != dt.m_deviceToInstance.end()) {
-        return dt.m_originalGetInstanceProcAddr(it->second, pName);
     }
 
     return nullptr;

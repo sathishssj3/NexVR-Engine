@@ -1,4 +1,5 @@
 #include "dx12_stereo_resource_manager.h"
+#include "../core/dx12_lifecycle_manager.h"
 #include <iostream>
 
 namespace vrinject {
@@ -173,9 +174,15 @@ void DX12StereoResourceManager::BindDescriptorHeaps(ID3D12GraphicsCommandList* c
 void DX12StereoResourceManager::UpdateFrameResources(ID3D12Device* device, const CameraSnapshot& cam, const DepthSnapshot& depth) {
     // HandleResize has its own internal locking — call it before acquiring m_mutex
     // to avoid recursive lock deadlock
-    if (cam.IsValid()) {
+    if (cam.IsValid() && cam.resourceIdentity.width > 0 && cam.resourceIdentity.height > 0) {
         if (cam.resourceIdentity.width != m_currentWidth || cam.resourceIdentity.height != m_currentHeight) {
             HandleResize(cam.resourceIdentity.width, cam.resourceIdentity.height);
+        }
+    } else {
+        UINT scWidth = Dx12LifecycleManager::Get().GetWidth();
+        UINT scHeight = Dx12LifecycleManager::Get().GetHeight();
+        if (scWidth > 0 && scHeight > 0 && (scWidth != m_currentWidth || scHeight != m_currentHeight)) {
+            HandleResize(scWidth, scHeight);
         }
     }
 

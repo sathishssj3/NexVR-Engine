@@ -3,9 +3,27 @@
 
 using namespace vrinject;
 
+namespace {
+
+// FrameCoordinator hands the lock manager the frame's colour resource each frame via
+// SetResourceContext(). CameraSnapshot::IsValid() requires it, so a test that wants a
+// valid snapshot must supply one too -- otherwise it asserts something unreachable.
+GraphicsResourceIdentity TestBackBuffer() {
+    GraphicsResourceIdentity identity;
+    identity.backend = GraphicsBackend::DX11;
+    identity.nativeHandle = reinterpret_cast<void*>(0xC0FFEE);  // opaque; never dereferenced
+    identity.width = 1920;
+    identity.height = 1080;
+    return identity;
+}
+
+} // namespace
+
 TEST(CameraLockTest, InitialLockProgression) {
     CameraLockManager::Get().Reset();
     EXPECT_EQ(CameraLockManager::Get().GetState(), CameraLockState::UNLOCKED);
+
+    CameraLockManager::Get().SetResourceContext(TestBackBuffer());
 
     CameraCandidate c = {};
     c.id = 100;
@@ -62,4 +80,30 @@ TEST(CameraLockTest, RelockAfterConfidenceDrop) {
     c.confidence = 0.8f;
     CameraLockManager::Get().Update(c, 7);
     EXPECT_EQ(CameraLockManager::Get().GetState(), CameraLockState::LOCKED);
+}
+
+// Reset() runs on device loss, where the cached backbuffer handle becomes dangling.
+// Guards that it is dropped rather than stamped into the next epoch's snapshots.
+TEST(CameraLockTest, ResetClearsStaleResourceContext) {
+    CameraLockManager::Get().Reset();
+    CameraLockManager::Get().SetResourceContext(TestBackBuffer());
+
+    CameraCandidate c = {};
+    c.id = 100;
+    c.valid = true;
+    c.confidence = 0.6f;
+    for (uint64_t frame = 1; frame <= 4; ++frame) {
+        CameraLockManager::Get().Update(c, frame);
+    }
+    ASSERT_TRUE(CameraLockManager::Get().GetSnapshot().IsValid());
+
+    // Simulate device loss: the old backbuffer pointer must not survive.
+    CameraLockManager::Get().Reset();
+    EXPECT_EQ(CameraLockManager::Get().GetSnapshot().resourceIdentity.nativeHandle, nullptr);
+
+    // Re-locking without a fresh context must not resurrect the stale handle.
+    for (uint64_t frame = 5; frame <= 8; ++frame) {
+        CameraLockManager::Get().Update(c, frame);
+    }
+    EXPECT_FALSE(CameraLockManager::Get().GetSnapshot().IsValid());
 }

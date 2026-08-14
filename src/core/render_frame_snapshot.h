@@ -51,6 +51,21 @@ struct RenderFrameSnapshot {
         }
         return baseValid;
     }
+
+    // The swapchain colour image expressed as a GraphicsResourceIdentity. The stereo
+    // pass reprojects this texture (see Dx12StereoRenderer::RenderStereo), so camera
+    // snapshots must carry it -- CameraLockManager is backend-agnostic and cannot
+    // discover it, exactly as DepthLockManager is handed its resource context.
+    GraphicsResourceIdentity BackBufferIdentity() const {
+        GraphicsResourceIdentity identity;
+        identity.backend = backend;
+        identity.nativeHandle = backBuffer;
+        identity.width = width;
+        identity.height = height;
+        identity.format = format;
+        identity.epoch = epoch;
+        return identity;
+    }
 };
 
 } // namespace vrinject

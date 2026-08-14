@@ -45,6 +45,9 @@ public:
     
     ID3D12CommandQueue* GetMainQueue() const { return m_deviceResources.commandQueue.Get(); }
     ID3D12Device* GetDevice() const { return m_deviceResources.device.Get(); }
+    ID3D12Resource* GetBackBuffer() const { return m_swapchainResources.backBuffer.Get(); }
+    UINT GetWidth() const { return m_swapchainResources.width; }
+    UINT GetHeight() const { return m_swapchainResources.height; }
     
     void SetDeviceResourcesForTest(ID3D12Device* device, ID3D12CommandQueue* queue) {
         m_deviceResources.device = device;

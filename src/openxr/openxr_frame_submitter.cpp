@@ -409,3 +409,4 @@ bool OpenXRFrameSubmitter::ReleaseAndEndVulkan(
 
 } // namespace openxr
 } // namespace vrinject
+
