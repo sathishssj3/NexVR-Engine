@@ -9,31 +9,44 @@ namespace vulkan {
 void VulkanDepthCandidateCollector::CollectCandidates(VkDevice device) {
     if (!device) return;
 
-    auto activePasses = VulkanRenderPassTracker::Get().GetActiveRenderPasses();
+    auto allViews = VulkanImageViewTracker::Get().GetAllImageViews();
     
     std::lock_guard<std::mutex> lock(m_mutex);
+    m_frameCandidates.clear();
     
-    for (const auto& pass : activePasses) {
-        // Collect explicit depth attachment
-        if (pass.depthAttachment) {
-            DepthCandidate candidate = CreateCandidateFromAttachment(device, pass.depthAttachment, pass);
-            if (candidate.valid) {
-                m_frameCandidates.push_back(candidate);
-            }
+    for (const auto& viewRecord : allViews) {
+        // Basic check if it's a depth format
+        bool isDepth = false;
+        switch (viewRecord.format) {
+            case VK_FORMAT_D16_UNORM:
+            case VK_FORMAT_X8_D24_UNORM_PACK32:
+            case VK_FORMAT_D32_SFLOAT:
+            case VK_FORMAT_D16_UNORM_S8_UINT:
+            case VK_FORMAT_D24_UNORM_S8_UINT:
+            case VK_FORMAT_D32_SFLOAT_S8_UINT:
+                isDepth = true;
+                break;
+            default:
+                break;
         }
         
-        // Sometimes depth is bound as a color attachment (e.g. some G-buffer passes or shadow generation)
-        // We evaluate color attachments that might actually be depth formats.
-        for (VkImageView view : pass.colorAttachments) {
-            if (!view) continue;
-            // Only process if it wasn't already the explicit depth attachment
-            if (view == pass.depthAttachment) continue;
+        if (!isDepth) continue;
 
-            DepthCandidate candidate = CreateCandidateFromAttachment(device, view, pass);
-            if (candidate.valid) {
-                m_frameCandidates.push_back(candidate);
-            }
+        VulkanImageInfo imageInfo;
+        if (!VulkanResourceTracker::Get().GetImageInfo(device, viewRecord.image, imageInfo)) {
+            continue;
         }
+
+        DepthCandidate candidate{};
+        candidate.valid = true;
+        candidate.identity.nativeHandle = (void*)viewRecord.imageView;
+        candidate.identity.backend = GraphicsBackend::Vulkan;
+        candidate.identity.width = imageInfo.extent.width;
+        candidate.identity.height = imageInfo.extent.height;
+        candidate.bindCount = 1; // Fake bind count so it scores normally
+        candidate.clearCount = 0;
+        
+        m_frameCandidates.push_back(candidate);
     }
 }
 

@@ -58,13 +58,6 @@ VulkanDispatchTable& VulkanDispatchTable::Get() {
     return instance;
 }
 
-void VulkanDispatchTable::InitOriginalGetInstanceProcAddr(PFN_vkGetInstanceProcAddr original) {
-    std::unique_lock lock(m_mutex);
-    if (!m_originalGetInstanceProcAddr) {
-        m_originalGetInstanceProcAddr = original;
-    }
-}
-
 void VulkanDispatchTable::RegisterInstance(VkInstance instance) {
     if (!instance || !m_originalGetInstanceProcAddr) return;
     
@@ -86,22 +79,9 @@ void VulkanDispatchTable::UnregisterInstance(VkInstance instance) {
 }
 
 void VulkanDispatchTable::RegisterDevice(VkDevice device, VkInstance instance) {
-    if (!device || !instance || !m_originalGetInstanceProcAddr) return;
+    if (!device || !instance || !m_originalGetDeviceProcAddr) return;
 
-    PFN_vkGetDeviceProcAddr getDeviceProcAddr = nullptr;
-    {
-        std::shared_lock lock(m_mutex);
-        auto it = m_instanceTables.find(instance);
-        if (it != m_instanceTables.end()) {
-            getDeviceProcAddr = it->second.GetDeviceProcAddr;
-        }
-    }
-
-    if (!getDeviceProcAddr) {
-        getDeviceProcAddr = reinterpret_cast<PFN_vkGetDeviceProcAddr>(m_originalGetInstanceProcAddr(instance, "vkGetDeviceProcAddr"));
-    }
-
-    if (!getDeviceProcAddr) return;
+    PFN_vkGetDeviceProcAddr getDeviceProcAddr = m_originalGetDeviceProcAddr;
 
     DeviceDispatchTable table;
     table.DestroyDevice = reinterpret_cast<PFN_vkDestroyDevice>(getDeviceProcAddr(device, "vkDestroyDevice"));
@@ -285,16 +265,13 @@ PFN_vkVoidFunction VKAPI_CALL VulkanDispatchTable::Hooked_vkGetDeviceProcAddr(Vk
     if (strcmp(pName, "vkCmdClearDepthStencilImage") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCmdClearDepthStencilImage);
 
     auto& dt = Get();
-    std::shared_lock lock(dt.m_mutex);
-    auto it = dt.m_deviceToInstance.find(device);
-    if (it != dt.m_deviceToInstance.end()) {
-        auto instIt = dt.m_instanceTables.find(it->second);
-        if (instIt != dt.m_instanceTables.end() && instIt->second.GetDeviceProcAddr) {
-            return instIt->second.GetDeviceProcAddr(device, pName);
-        }
+    if (dt.m_originalGetDeviceProcAddr) {
+        return reinterpret_cast<PFN_vkVoidFunction>(dt.m_originalGetDeviceProcAddr(device, pName));
     }
     
-    // Fallback if device isn't registered yet or something
+    // Fallback to instance proc addr if device proc addr fails or is missing
+    std::shared_lock lock(dt.m_mutex);
+    auto it = dt.m_deviceToInstance.find(device);
     if (dt.m_originalGetInstanceProcAddr && it != dt.m_deviceToInstance.end()) {
         return dt.m_originalGetInstanceProcAddr(it->second, pName);
     }

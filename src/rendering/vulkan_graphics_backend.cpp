@@ -108,7 +108,7 @@ bool VulkanGraphicsBackend::InitializeVulkan(VkDevice device, VkPhysicalDevice p
     if (!m_syncManager->Initialize()) {
         std::cerr << "[VulkanGraphicsBackend] WARNING: SyncManager init failed." << std::endl;
     }
-    m_aiQueue = std::make_unique<AICommandQueue>();
+    // m_aiQueue = std::make_unique<AICommandQueue>();
     m_memoryBudget = std::make_unique<VulkanMemoryBudget>();
 
     // 6. Resource State Tracker
@@ -279,32 +279,11 @@ void VulkanGraphicsBackend::RenderStereo(const CameraSnapshot& camSnapshot, cons
     m_lastDepth = depthSnapshot;
 
     if (m_renderer && m_resourceManager && m_pipelineCache && m_descriptorManager && 
-        m_commandManager && m_syncManager && m_stateTracker && m_aiQueue) {
+        m_commandManager && m_syncManager && m_stateTracker) {
         
         // Task 1: Async Fallback Contract
         uint64_t currentFrameId = camSnapshot.frame;
-        
-        // Push Adversarial Test: Sleep to simulate heavy inference
-        m_aiQueue->PushJob(currentFrameId, []() {
-            std::this_thread::sleep_for(std::chrono::milliseconds(5));
-        });
-        
-        // Task 3: Update AI VRAM allocation
-        // Hardcode a ~25MB model budget for test reporting (well under 256MB limit)
-        if (m_memoryBudget) {
-            m_memoryBudget->UpdateAiBudget(25 * 1024 * 1024, 5 * 1024 * 1024);
-        }
-
-        // Zero-blocking check to see if the AI results for THIS frame are ready.
-        if (!m_aiQueue->IsJobReady(currentFrameId)) {
-            // Task 1: 'Skip Enhancement' (DEGRADED state) fallback
-            m_state = StereoRendererState::DEGRADED;
-            // The render thread MUST not block. Return immediately. 
-            // The game will display its un-enhanced standard frame.
-            return;
-        }
-        
-        m_state = StereoRendererState::ACTIVE;
+        m_state = StereoRendererState::RENDERING;
 
         // Use internally owned depth image if the snapshot doesn't provide one
         DepthSnapshot effectiveDepth = depthSnapshot;

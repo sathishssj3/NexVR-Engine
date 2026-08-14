@@ -27,6 +27,7 @@ public:
     void OnDestroyImageView(VkDevice device, VkImageView imageView);
 
     bool GetImageViewRecord(VkDevice device, VkImageView imageView, VulkanImageViewRecord& outRecord) const;
+    std::vector<VulkanImageViewRecord> GetAllImageViews() const;
 
 private:
     VulkanImageViewTracker() = default;

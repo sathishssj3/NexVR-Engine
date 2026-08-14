@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-08-13T21:01:27.714Z",
+  "distillationEnabled": true,
+  "patternsConsolidated": 0,
+  "memoryCleaned": 0,
+  "duplicatesRemoved": 0,
+  "episodes": 0,
+  "patternEmbeddings": 0,
+  "causalEdges": 0,
+  "promoted": 0,
+  "byProvenance": {},
+  "namespaces": [],
+  "dryRun": false,
+  "corrupt": false,
+  "skipped": "no-db"
+}

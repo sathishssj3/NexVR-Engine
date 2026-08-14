@@ -9,6 +9,9 @@
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "test": "playwright test",
+    "test:static": "playwright test regression-static.spec.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p electron/tsconfig.json --noEmit",
+    "test:ci": "npm run typecheck && npm run test:static",
     "build": "vite build && tsc -p electron/tsconfig.json",
     "pack": "npm run build && electron-builder --win --config electron-builder.config.js"
   },

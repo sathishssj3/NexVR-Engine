@@ -106,8 +106,10 @@ public:
     static PFN_vkVoidFunction VKAPI_CALL Hooked_vkGetDeviceProcAddr(VkDevice device, const char* pName);
 
     // Initialization
-    void InitOriginalGetInstanceProcAddr(PFN_vkGetInstanceProcAddr original);
+    void InitOriginalGetInstanceProcAddr(PFN_vkGetInstanceProcAddr ptr) { m_originalGetInstanceProcAddr = ptr; }
+    void InitOriginalGetDeviceProcAddr(PFN_vkGetDeviceProcAddr ptr) { m_originalGetDeviceProcAddr = ptr; }
     PFN_vkGetInstanceProcAddr GetOriginalGetInstanceProcAddr() const { return m_originalGetInstanceProcAddr; }
+    PFN_vkGetDeviceProcAddr GetOriginalGetDeviceProcAddr() const { return m_originalGetDeviceProcAddr; }
 
     void RegisterInstance(VkInstance instance);
     void UnregisterInstance(VkInstance instance);
@@ -123,6 +125,7 @@ private:
     VulkanDispatchTable() = default;
     
     PFN_vkGetInstanceProcAddr m_originalGetInstanceProcAddr = nullptr;
+    PFN_vkGetDeviceProcAddr m_originalGetDeviceProcAddr = nullptr;
     
     std::shared_mutex m_mutex;
     std::unordered_map<VkInstance, InstanceDispatchTable> m_instanceTables;

@@ -28,6 +28,8 @@ namespace hooks {
 // Original function pointers for direct exports (if any)
 static PFN_vkCreateInstance True_vkCreateInstance = nullptr;
 static PFN_vkGetInstanceProcAddr True_vkGetInstanceProcAddr = nullptr;
+static PFN_vkCreateDevice True_vkCreateDevice = nullptr;
+static PFN_vkGetDeviceProcAddr True_vkGetDeviceProcAddr = nullptr;
 
 static VkInstance g_vulkanInstance = nullptr;
 
@@ -38,14 +40,10 @@ VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkCreateInstance(
 {
     // Call original (either via dispatch table or direct)
     VkResult result = VK_ERROR_INITIALIZATION_FAILED;
-    auto& dt = VulkanDispatchTable::Get();
-    auto orig = dt.GetOriginalGetInstanceProcAddr();
-    if (orig) {
-        auto pfn = reinterpret_cast<PFN_vkCreateInstance>(orig(nullptr, "vkCreateInstance"));
-        if (pfn) result = pfn(pCreateInfo, pAllocator, pInstance);
-    } else if (True_vkCreateInstance) {
+    if (True_vkCreateInstance) {
         result = True_vkCreateInstance(pCreateInfo, pAllocator, pInstance);
     }
+
 
     if (result == VK_SUCCESS && pInstance && *pInstance) {
         g_vulkanInstance = *pInstance;
@@ -75,13 +73,14 @@ VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkCreateDevice(
     const VkAllocationCallbacks* pAllocator,
     VkDevice* pDevice) 
 {
-    auto orig = VulkanDispatchTable::Get().GetOriginalGetInstanceProcAddr();
-    if (!orig) return VK_ERROR_INITIALIZATION_FAILED;
+    VkResult result = VK_ERROR_INITIALIZATION_FAILED;
+    if (True_vkCreateDevice) {
+        result = True_vkCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice);
+    } else {
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
 
-    auto pfnCreateDevice = reinterpret_cast<PFN_vkCreateDevice>(orig(g_vulkanInstance, "vkCreateDevice"));
-    if (!pfnCreateDevice) return VK_ERROR_INITIALIZATION_FAILED;
 
-    VkResult result = pfnCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice);
     
     if (result == VK_SUCCESS && pDevice && *pDevice) {
         VulkanLifecycleManager::Get().OnDeviceCreated(physicalDevice, *pDevice, pCreateInfo);
@@ -259,6 +258,15 @@ VKAPI_ATTR void VKAPI_CALL Hooked_vkDestroyBuffer(VkDevice device, VkBuffer buff
     VulkanResourceTracker::Get().UntrackBuffer(device, buffer);
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo) {
+    auto device = VulkanQueueManager::Get().GetDevice();
+    auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
+    if (dt && dt->BeginCommandBuffer) {
+        return dt->BeginCommandBuffer(commandBuffer, pBeginInfo);
+    }
+    return VK_ERROR_INITIALIZATION_FAILED;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset) {
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
     if (!dt || !dt->BindBufferMemory) return VK_ERROR_INITIALIZATION_FAILED;
@@ -381,28 +389,24 @@ VKAPI_ATTR void VKAPI_CALL Hooked_vkCmdExecuteCommands(
 
 VKAPI_ATTR void VKAPI_CALL Hooked_vkCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin, VkSubpassContents contents) {
     auto device = VulkanQueueManager::Get().GetDevice();
-    VulkanRenderPassTracker::Get().OnCmdBeginRenderPass(device, commandBuffer, pRenderPassBegin);
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
     if (dt && dt->CmdBeginRenderPass) dt->CmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
 }
 
 VKAPI_ATTR void VKAPI_CALL Hooked_vkCmdEndRenderPass(VkCommandBuffer commandBuffer) {
     auto device = VulkanQueueManager::Get().GetDevice();
-    VulkanRenderPassTracker::Get().OnCmdEndRenderPass(device, commandBuffer);
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
     if (dt && dt->CmdEndRenderPass) dt->CmdEndRenderPass(commandBuffer);
 }
 
 VKAPI_ATTR void VKAPI_CALL Hooked_vkCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) {
     auto device = VulkanQueueManager::Get().GetDevice();
-    VulkanRenderPassTracker::Get().OnCmdBeginRendering(device, commandBuffer, pRenderingInfo);
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
     if (dt && dt->CmdBeginRendering) dt->CmdBeginRendering(commandBuffer, pRenderingInfo);
 }
 
 VKAPI_ATTR void VKAPI_CALL Hooked_vkCmdEndRendering(VkCommandBuffer commandBuffer) {
     auto device = VulkanQueueManager::Get().GetDevice();
-    VulkanRenderPassTracker::Get().OnCmdEndRendering(device, commandBuffer);
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
     if (dt && dt->CmdEndRendering) dt->CmdEndRendering(commandBuffer);
 }
@@ -492,12 +496,14 @@ void InstallVulkanHooks() {
 
     True_vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)GetProcAddress(vulkanModule, "vkGetInstanceProcAddr");
     True_vkCreateInstance = (PFN_vkCreateInstance)GetProcAddress(vulkanModule, "vkCreateInstance");
+    True_vkCreateDevice = (PFN_vkCreateDevice)GetProcAddress(vulkanModule, "vkCreateDevice");
+    True_vkGetDeviceProcAddr = (PFN_vkGetDeviceProcAddr)GetProcAddress(vulkanModule, "vkGetDeviceProcAddr");
 
-    VulkanDispatchTable::Get().InitOriginalGetInstanceProcAddr(True_vkGetInstanceProcAddr);
 
     if (True_vkGetInstanceProcAddr) {
         if (MH_CreateHook((LPVOID)True_vkGetInstanceProcAddr, (LPVOID)VulkanDispatchTable::Hooked_vkGetInstanceProcAddr, reinterpret_cast<LPVOID*>(&True_vkGetInstanceProcAddr)) == MH_OK) {
             LOG_INFO("InstallVulkanHooks: Successfully created hook for vkGetInstanceProcAddr");
+            VulkanDispatchTable::Get().InitOriginalGetInstanceProcAddr(True_vkGetInstanceProcAddr);
         } else {
             LOG_ERROR("InstallVulkanHooks: Failed to create hook for vkGetInstanceProcAddr");
         }
@@ -510,6 +516,23 @@ void InstallVulkanHooks() {
             LOG_ERROR("InstallVulkanHooks: Failed to create hook for vkCreateInstance");
         }
     }
+    
+    if (True_vkCreateDevice) {
+        if (MH_CreateHook((LPVOID)True_vkCreateDevice, (LPVOID)Hooked_vkCreateDevice, reinterpret_cast<LPVOID*>(&True_vkCreateDevice)) == MH_OK) {
+            LOG_INFO("InstallVulkanHooks: Successfully created hook for vkCreateDevice");
+        } else {
+            LOG_ERROR("InstallVulkanHooks: Failed to create hook for vkCreateDevice");
+        }
+    }
+
+    if (True_vkGetDeviceProcAddr) {
+        if (MH_CreateHook((LPVOID)True_vkGetDeviceProcAddr, (LPVOID)VulkanDispatchTable::Hooked_vkGetDeviceProcAddr, reinterpret_cast<LPVOID*>(&True_vkGetDeviceProcAddr)) == MH_OK) {
+            LOG_INFO("InstallVulkanHooks: Successfully created hook for vkGetDeviceProcAddr");
+            VulkanDispatchTable::Get().InitOriginalGetDeviceProcAddr(True_vkGetDeviceProcAddr);
+        } else {
+            LOG_ERROR("InstallVulkanHooks: Failed to create hook for vkGetDeviceProcAddr");
+        }
+    }
 }
 
 void RemoveVulkanHooks() {
@@ -520,6 +543,14 @@ void RemoveVulkanHooks() {
     if (True_vkCreateInstance) {
         MH_DisableHook((LPVOID)True_vkCreateInstance);
         MH_RemoveHook((LPVOID)True_vkCreateInstance);
+    }
+    if (True_vkCreateDevice) {
+        MH_DisableHook((LPVOID)True_vkCreateDevice);
+        MH_RemoveHook((LPVOID)True_vkCreateDevice);
+    }
+    if (True_vkGetDeviceProcAddr) {
+        MH_DisableHook((LPVOID)True_vkGetDeviceProcAddr);
+        MH_RemoveHook((LPVOID)True_vkGetDeviceProcAddr);
     }
 }
 

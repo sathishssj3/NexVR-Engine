@@ -20,6 +20,8 @@ VulkanAsyncSchedulerConfig VulkanAsyncScheduler::SelectQueueFamily(
             return config;
         }
     }
+    return config;
+}
 
 } // namespace vulkan
 } // namespace vrinject

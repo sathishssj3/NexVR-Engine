@@ -36,5 +36,15 @@ bool VulkanImageViewTracker::GetImageViewRecord(VkDevice device, VkImageView ima
     return false;
 }
 
+std::vector<VulkanImageViewRecord> VulkanImageViewTracker::GetAllImageViews() const {
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    std::vector<VulkanImageViewRecord> views;
+    views.reserve(m_imageViews.size());
+    for (const auto& pair : m_imageViews) {
+        views.push_back(pair.second);
+    }
+    return views;
+}
+
 } // namespace vulkan
 } // namespace vrinject
