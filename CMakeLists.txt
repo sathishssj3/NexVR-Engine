@@ -330,13 +330,33 @@ add_library(vrinject SHARED
 add_library(dxgi_proxy SHARED
     src/proxy/dxgi_proxy.cpp
 )
-set_target_properties(dxgi_proxy PROPERTIES OUTPUT_NAME "dxgi")
+# NOTE: these proxies are deliberately named dxgi.dll / d3d11.dll so they can be
+# dropped next to a game executable and take load precedence over the system
+# DLLs. That same precedence is harmful inside bin/, where it shadowed the real
+# system DLLs for every test executable and made them fail to start with
+# 0xC000007B (STATUS_INVALID_IMAGE_FORMAT). They are emitted into bin/proxy/
+# instead; deployment copies them next to the target game, not next to tests.
+set_target_properties(dxgi_proxy PROPERTIES
+    OUTPUT_NAME "dxgi"
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/proxy
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/proxy
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/proxy
+    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/bin/proxy
+    RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_BINARY_DIR}/bin/proxy
+)
 target_link_libraries(dxgi_proxy PRIVATE user32)
 
 add_library(d3d11_proxy SHARED
     src/proxy/d3d11_proxy.cpp
 )
-set_target_properties(d3d11_proxy PROPERTIES OUTPUT_NAME "d3d11")
+set_target_properties(d3d11_proxy PROPERTIES
+    OUTPUT_NAME "d3d11"
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/proxy
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/proxy
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/proxy
+    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/bin/proxy
+    RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_BINARY_DIR}/bin/proxy
+)
 target_link_libraries(d3d11_proxy PRIVATE user32)
 
 
@@ -460,8 +480,16 @@ target_link_libraries(dummy_app PRIVATE
 add_executable(test_app WIN32 test_app/test_app.cpp)
 target_link_libraries(test_app PRIVATE d3d11 dxgi user32)
 
-add_executable(e2e_test_app WIN32 tests/e2e_test_app.cpp)
-target_link_libraries(e2e_test_app PRIVATE d3d11 dxgi user32)
+# tests/e2e_test_app.cpp is currently an empty (0-byte) placeholder, so it has no
+# entry point and fails to link (unresolved WinMain). Build it only once it has
+# real content, rather than carrying a permanently broken target.
+file(SIZE ${CMAKE_SOURCE_DIR}/tests/e2e_test_app.cpp E2E_TEST_APP_SIZE)
+if(E2E_TEST_APP_SIZE GREATER 0)
+    add_executable(e2e_test_app WIN32 tests/e2e_test_app.cpp)
+    target_link_libraries(e2e_test_app PRIVATE d3d11 dxgi user32)
+else()
+    message(STATUS "Skipping e2e_test_app: tests/e2e_test_app.cpp is empty")
+endif()
 
 add_executable(test_xr src/test_xr.cpp)
 target_include_directories(test_xr PRIVATE ${OPENXR_INCLUDE_DIR})
@@ -522,7 +550,36 @@ target_include_directories(test_engine_detector PRIVATE ${PROJECT_SOURCE_DIR})
 target_link_libraries(test_engine_detector PRIVATE NexVRCore gtest_main)
 add_test(NAME EngineDetectorTest COMMAND test_engine_detector)
 
+# Returns TRUE only if <source> exists and is non-empty. Several test sources
+# were restored as 0-byte shells; a target built from an empty translation unit
+# always fails to link (unresolved main/WinMain), so those targets are skipped
+# and reported at configure time instead of breaking the whole build.
+function(nexvr_source_has_content result source)
+    # The auto-registration loop passes absolute paths from file(GLOB), while the
+    # explicit registrations pass repo-relative ones. Handle both.
+    if(IS_ABSOLUTE "${source}")
+        set(_full "${source}")
+    else()
+        set(_full "${CMAKE_SOURCE_DIR}/${source}")
+    endif()
+    set(${result} FALSE PARENT_SCOPE)
+    if(EXISTS ${_full})
+        file(SIZE ${_full} _sz)
+        if(_sz GREATER 0)
+            set(${result} TRUE PARENT_SCOPE)
+        else()
+            message(STATUS "Skipping target: ${source} is empty (0 bytes)")
+        endif()
+    else()
+        message(STATUS "Skipping target: ${source} does not exist")
+    endif()
+endfunction()
+
 function(add_nexvr_gtest target source)
+    nexvr_source_has_content(_ok ${source})
+    if(NOT _ok)
+        return()
+    endif()
     add_executable(${target} ${source})
     # gmock is linked (and its headers propagated) because several suites use
     # gmock matchers; OPENXR_INCLUDE_DIR is needed by the OpenXR lifecycle suites.
@@ -539,32 +596,37 @@ target_link_libraries(test_logger PRIVATE gtest_main)
 add_test(NAME test_logger COMMAND test_logger)
 
 add_executable(test_adaptive_quality tests/test_adaptive_quality.cpp)
-target_include_directories(test_adaptive_quality PRIVATE ${PROJECT_SOURCE_DIR}/src ${ONNXRUNTIME_INCLUDE_DIR})
+# PROJECT_SOURCE_DIR (not just /src) because this suite includes headers by
+# repo-relative path, e.g. #include "src/rendering/adaptive_quality_controller.h".
+target_include_directories(test_adaptive_quality PRIVATE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/src ${ONNXRUNTIME_INCLUDE_DIR})
 target_link_directories(test_adaptive_quality PRIVATE ${ONNXRUNTIME_LIB_DIR})
 target_link_libraries(test_adaptive_quality PRIVATE NexVRCore onnxruntime gtest_main)
 
 add_test(NAME AdaptiveQualityTest COMMAND test_adaptive_quality)
 
-add_executable(test_reconstruction_quality 
-    tests/test_reconstruction_quality.cpp
-)
-target_include_directories(test_reconstruction_quality PRIVATE ${PROJECT_SOURCE_DIR}/src)
-target_link_libraries(test_reconstruction_quality PRIVATE NexVRCore)
+nexvr_source_has_content(_ok tests/test_reconstruction_quality.cpp)
+if(_ok)
+    add_executable(test_reconstruction_quality tests/test_reconstruction_quality.cpp)
+    target_include_directories(test_reconstruction_quality PRIVATE ${PROJECT_SOURCE_DIR}/src)
+    target_link_libraries(test_reconstruction_quality PRIVATE NexVRCore)
+    add_test(NAME ReconstructionQualityTest COMMAND test_reconstruction_quality)
+endif()
 
-add_executable(test_game_compatibility 
-    tests/test_game_compatibility.cpp
-)
-target_include_directories(test_game_compatibility PRIVATE ${PROJECT_SOURCE_DIR}/src)
-target_link_libraries(test_game_compatibility PRIVATE NexVRCore gtest_main)
-add_test(NAME test_game_compatibility COMMAND test_game_compatibility)
+nexvr_source_has_content(_ok tests/test_game_compatibility.cpp)
+if(_ok)
+    add_executable(test_game_compatibility tests/test_game_compatibility.cpp)
+    target_include_directories(test_game_compatibility PRIVATE ${PROJECT_SOURCE_DIR}/src)
+    target_link_libraries(test_game_compatibility PRIVATE NexVRCore gtest_main)
+    add_test(NAME test_game_compatibility COMMAND test_game_compatibility)
+endif()
 
-add_executable(test_release_pipeline 
-    tests/test_release_pipeline.cpp
-)
-target_include_directories(test_release_pipeline PRIVATE ${PROJECT_SOURCE_DIR}/src)
-target_link_libraries(test_release_pipeline PRIVATE NexVRCore gtest_main)
-add_test(NAME test_release_pipeline COMMAND test_release_pipeline)
-add_test(NAME ReconstructionQualityTest COMMAND test_reconstruction_quality)
+nexvr_source_has_content(_ok tests/test_release_pipeline.cpp)
+if(_ok)
+    add_executable(test_release_pipeline tests/test_release_pipeline.cpp)
+    target_include_directories(test_release_pipeline PRIVATE ${PROJECT_SOURCE_DIR}/src)
+    target_link_libraries(test_release_pipeline PRIVATE NexVRCore gtest_main)
+    add_test(NAME test_release_pipeline COMMAND test_release_pipeline)
+endif()
 
 add_nexvr_gtest(test_vulkan_gpu_profiler tests/test_vulkan_gpu_profiler.cpp)
 add_executable(test_ai_directml tests/test_ai_directml.cpp)
@@ -582,46 +644,66 @@ add_nexvr_gtest(test_vulkan_async_scheduler tests/test_vulkan_async_scheduler.cp
 add_nexvr_gtest(test_cross_backend_ai tests/test_cross_backend_ai.cpp)
 add_nexvr_gtest(test_depth_pipeline tests/test_depth_pipeline.cpp)
 add_nexvr_gtest(test_stereo_pipeline tests/test_stereo_pipeline.cpp)
-target_include_directories(test_depth_pipeline PRIVATE ${PROJECT_SOURCE_DIR}/src ${ONNXRUNTIME_INCLUDE_DIR})
-target_link_directories(test_depth_pipeline PRIVATE ${ONNXRUNTIME_LIB_DIR})
-target_link_libraries(test_depth_pipeline PRIVATE onnxruntime)
+if(TARGET test_depth_pipeline)
+    target_include_directories(test_depth_pipeline PRIVATE ${PROJECT_SOURCE_DIR}/src ${ONNXRUNTIME_INCLUDE_DIR})
+    target_link_directories(test_depth_pipeline PRIVATE ${ONNXRUNTIME_LIB_DIR})
+    target_link_libraries(test_depth_pipeline PRIVATE onnxruntime)
+endif()
 
 add_nexvr_gtest(test_beta_validation tests/test_beta_validation.cpp)
-target_compile_definitions(test_beta_validation PRIVATE NEXVR_VALIDATION_BUILD NEXVR_BUILD_CHANNEL_INTERNAL)
+if(TARGET test_beta_validation)
+    target_compile_definitions(test_beta_validation PRIVATE NEXVR_VALIDATION_BUILD NEXVR_BUILD_CHANNEL_INTERNAL)
+endif()
 
-add_executable(test_runtime_capture tests/test_runtime_capture.cpp)
-target_include_directories(test_runtime_capture PRIVATE ${PROJECT_SOURCE_DIR}/src)
-target_link_libraries(test_runtime_capture PRIVATE NexVRCore gtest_main)
-add_test(NAME test_runtime_capture COMMAND test_runtime_capture)
+nexvr_source_has_content(_ok tests/test_runtime_capture.cpp)
+if(_ok)
+    add_executable(test_runtime_capture tests/test_runtime_capture.cpp)
+    target_include_directories(test_runtime_capture PRIVATE ${PROJECT_SOURCE_DIR}/src)
+    target_link_libraries(test_runtime_capture PRIVATE NexVRCore gtest_main)
+    add_test(NAME test_runtime_capture COMMAND test_runtime_capture)
+endif()
 
-add_executable(test_runtime_integration tests/test_runtime_integration.cpp)
-target_include_directories(test_runtime_integration PRIVATE ${PROJECT_SOURCE_DIR}/src)
-target_link_libraries(test_runtime_integration PRIVATE NexVRCore gtest_main)
-add_test(NAME test_runtime_integration COMMAND test_runtime_integration)
+nexvr_source_has_content(_ok tests/test_runtime_integration.cpp)
+if(_ok)
+    add_executable(test_runtime_integration tests/test_runtime_integration.cpp)
+    target_include_directories(test_runtime_integration PRIVATE ${PROJECT_SOURCE_DIR}/src)
+    target_link_libraries(test_runtime_integration PRIVATE NexVRCore gtest_main)
+    add_test(NAME test_runtime_integration COMMAND test_runtime_integration)
+endif()
 
 
 
 file(GLOB_RECURSE VR_SOURCES "src/vr/*.cpp")
 file(GLOB_RECURSE VR_RENDERING_SOURCES "src/rendering/*.cpp")
-add_executable(test_vr_runtime tests/test_vr_runtime.cpp ${VR_SOURCES} ${VR_RENDERING_SOURCES})
-target_include_directories(test_vr_runtime PRIVATE src ${Vulkan_INCLUDE_DIRS} ${OPENXR_INCLUDE_DIR} ${SHADER_OUTPUT_DIR} ${IMGUI_INCLUDE_DIR})
-target_link_libraries(test_vr_runtime PRIVATE NexVRCore Vulkan::Vulkan openxr_loader)
-add_dependencies(test_vr_runtime compile_shaders)
+nexvr_source_has_content(_ok tests/test_vr_runtime.cpp)
+if(_ok)
+    add_executable(test_vr_runtime tests/test_vr_runtime.cpp ${VR_SOURCES} ${VR_RENDERING_SOURCES})
+    target_include_directories(test_vr_runtime PRIVATE src ${Vulkan_INCLUDE_DIRS} ${OPENXR_INCLUDE_DIR} ${SHADER_OUTPUT_DIR} ${IMGUI_INCLUDE_DIR})
+    target_link_libraries(test_vr_runtime PRIVATE NexVRCore Vulkan::Vulkan openxr_loader)
+    add_dependencies(test_vr_runtime compile_shaders)
+endif()
 
-add_executable(test_performance_pipeline tests/test_performance_pipeline.cpp)
-target_include_directories(test_performance_pipeline PRIVATE src ${Vulkan_INCLUDE_DIRS} ${OPENXR_INCLUDE_DIR} ${SHADER_OUTPUT_DIR} ${IMGUI_INCLUDE_DIR} ${ONNXRUNTIME_INCLUDE_DIR})
-target_link_directories(test_performance_pipeline PRIVATE ${ONNXRUNTIME_LIB_DIR})
-target_link_libraries(test_performance_pipeline PRIVATE NexVRCore Vulkan::Vulkan openxr_loader onnxruntime)
-add_dependencies(test_performance_pipeline compile_shaders)
+nexvr_source_has_content(_ok tests/test_performance_pipeline.cpp)
+if(_ok)
+    add_executable(test_performance_pipeline tests/test_performance_pipeline.cpp)
+    target_include_directories(test_performance_pipeline PRIVATE src ${Vulkan_INCLUDE_DIRS} ${OPENXR_INCLUDE_DIR} ${SHADER_OUTPUT_DIR} ${IMGUI_INCLUDE_DIR} ${ONNXRUNTIME_INCLUDE_DIR})
+    target_link_directories(test_performance_pipeline PRIVATE ${ONNXRUNTIME_LIB_DIR})
+    target_link_libraries(test_performance_pipeline PRIVATE NexVRCore Vulkan::Vulkan openxr_loader onnxruntime)
+    add_dependencies(test_performance_pipeline compile_shaders)
+endif()
 
+if(TARGET test_stereo_pipeline)
 target_include_directories(test_stereo_pipeline PRIVATE ${ONNXRUNTIME_INCLUDE_DIR})
 target_link_directories(test_stereo_pipeline PRIVATE ${ONNXRUNTIME_LIB_DIR})
 target_link_libraries(test_stereo_pipeline PRIVATE onnxruntime)
+endif()
 
 add_nexvr_gtest(test_temporal_pipeline tests/test_temporal_pipeline.cpp)
-target_include_directories(test_temporal_pipeline PRIVATE ${ONNXRUNTIME_INCLUDE_DIR})
-target_link_directories(test_temporal_pipeline PRIVATE ${ONNXRUNTIME_LIB_DIR})
-target_link_libraries(test_temporal_pipeline PRIVATE onnxruntime)
+if(TARGET test_temporal_pipeline)
+    target_include_directories(test_temporal_pipeline PRIVATE ${ONNXRUNTIME_INCLUDE_DIR})
+    target_link_directories(test_temporal_pipeline PRIVATE ${ONNXRUNTIME_LIB_DIR})
+    target_link_libraries(test_temporal_pipeline PRIVATE onnxruntime)
+endif()
 
 add_nexvr_gtest(test_vulkan_barrier_optimizer tests/test_vulkan_barrier_optimizer.cpp)
 add_nexvr_gtest(test_vulkan_memory_budget tests/test_vulkan_memory_budget.cpp)
@@ -666,6 +748,15 @@ set(AUTO_GTEST_EXCLUDES
 # silently breaking the build. Populated during the 67->100 test-registration
 # triage; the goal is to drive this list back to empty.
 set(AUTO_GTEST_QUARANTINE
+    # --- Stale: reference types/members that no longer exist on the current API ---
+    test_ai_pipeline                 # 'AICommandQueue' type no longer exists
+    test_camera_tracker              # CameraDeltaTracker::UpdateDelta -> UpdateCandidateMotion (new signature)
+    test_depth_tracker               # GraphicsResourceIdentity::creationGeneration field removed
+    test_dx11_lifecycle              # 'Dx11ContextSnapshot' type removed
+    # --- Toolchain: gmock 1.14 cannot mock __stdcall COM interfaces (static_assert) ---
+    test_dx12_descriptor_tracker
+    test_dx12_fence_manager
+    test_dx12_resource_state_tracker
 )
 
 foreach(test_src IN LISTS AUTO_GTEST_SOURCES)

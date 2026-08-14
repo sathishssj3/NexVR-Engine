@@ -223,6 +223,19 @@ PFN_vkVoidFunction VKAPI_CALL VulkanDispatchTable::Hooked_vkGetInstanceProcAddr(
 PFN_vkVoidFunction VKAPI_CALL VulkanDispatchTable::Hooked_vkGetDeviceProcAddr(VkDevice device, const char* pName) {
     if (!pName) return nullptr;
 
+    auto& dt = Get();
+    
+    // Check if we are tracking this device. If not (e.g. injected late), bypass hooks to prevent crashes.
+    bool isDeviceTracked = false;
+    if (device != VK_NULL_HANDLE) {
+        std::shared_lock lock(dt.m_mutex);
+        isDeviceTracked = (dt.m_deviceToInstance.find(device) != dt.m_deviceToInstance.end());
+    }
+
+    if (!isDeviceTracked && dt.m_originalGetDeviceProcAddr) {
+        return reinterpret_cast<PFN_vkVoidFunction>(dt.m_originalGetDeviceProcAddr(device, pName));
+    }
+
     // Device level overrides
     if (strcmp(pName, "vkGetDeviceProcAddr") == 0) return reinterpret_cast<PFN_vkVoidFunction>(Hooked_vkGetDeviceProcAddr);
     if (strcmp(pName, "vkDestroyDevice") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkDestroyDevice);
@@ -264,7 +277,6 @@ PFN_vkVoidFunction VKAPI_CALL VulkanDispatchTable::Hooked_vkGetDeviceProcAddr(Vk
     if (strcmp(pName, "vkDestroyFramebuffer") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkDestroyFramebuffer);
     if (strcmp(pName, "vkCmdClearDepthStencilImage") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCmdClearDepthStencilImage);
 
-    auto& dt = Get();
     if (dt.m_originalGetDeviceProcAddr) {
         return reinterpret_cast<PFN_vkVoidFunction>(dt.m_originalGetDeviceProcAddr(device, pName));
     }
