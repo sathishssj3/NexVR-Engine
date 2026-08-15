@@ -394,7 +394,7 @@ void DX12Renderer::DestroyShader(ShaderHandle& handle) {
 
 
 
-#include "../../../build/bin/shaders/tonemap_cs_dx12.h"
+#include "tonemap_cs_dx12.h"
 void DX12Renderer::LoadTonemapShader() {
     m_tonemapShader = LoadComputeShader(g_tonemap_DX12, sizeof(g_tonemap_DX12));
 }

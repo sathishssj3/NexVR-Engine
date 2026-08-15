@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-14T18:28:01.103Z",
+  "timestamp": "2026-08-15T06:19:29.135Z",
   "projectRoot": "C:\\Users\\sathi\\.gemini\\antigravity\\scratch\\vr-inject",
   "structure": {
     "hasPackageJson": false,
@@ -7,5 +7,5 @@
     "hasClaudeConfig": true,
     "hasClaudeFlow": true
   },
-  "scannedAt": 1786732081104
+  "scannedAt": 1786774769137
 }
