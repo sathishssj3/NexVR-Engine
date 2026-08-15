@@ -16,7 +16,10 @@
 //   node .claude/scripts/morph-route.mjs "fix a typo in the README"
 
 const ENDPOINT = 'https://api.morphllm.com/v1/router/multimodel';
-const TIMEOUT_MS = 500;
+// Docs claim ~180ms. Measured against the live endpoint: 326-477ms warm,
+// 991ms cold. 1200 covers a cold call; anything slower is not worth blocking
+// a prompt for, so it lapses into the silent fail-open path.
+const TIMEOUT_MS = 1200;
 
 // Restrict the router to models this harness can actually run. Morph's catalog
 // spans many providers; recommending gpt-5.5 here would be noise.
@@ -32,15 +35,16 @@ function readStdin() {
     let data = '';
     process.stdin.setEncoding('utf8');
     process.stdin.on('data', (chunk) => { data += chunk; });
-    process.stdin.on('end', () => resolve(data));
-    process.stdin.on('error', () => resolve(''));
+    // pause() releases the libuv handle. Without it, forcing exit while the
+    // stream is mid-close aborts with
+    // "Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)".
+    process.stdin.on('end', () => { process.stdin.pause(); resolve(data); });
+    process.stdin.on('error', () => { process.stdin.pause(); resolve(''); });
   });
 }
 
-// The hook receives a JSON payload on stdin; argv is the manual-test path.
-function extractPrompt(argv, stdin) {
-  const fromArgv = argv.slice(2).join(' ').trim();
-  if (fromArgv) return fromArgv;
+// The hook delivers a JSON payload on stdin; argv is the manual-test path.
+function parseStdinPrompt(stdin) {
   if (!stdin.trim()) return '';
   try {
     const payload = JSON.parse(stdin);
@@ -62,7 +66,10 @@ async function main() {
   const apiKey = process.env.MORPH_API_KEY;
   if (!apiKey) return;                        // not configured - stay silent
 
-  const prompt = extractPrompt(process.argv, await readStdin());
+  // Only touch stdin when argv is empty - attaching stdin handlers we do not
+  // need is what provoked the libuv close assertion.
+  const fromArgv = process.argv.slice(2).join(' ').trim();
+  const prompt = fromArgv || parseStdinPrompt(await readStdin());
   if (!prompt) return;
 
   const response = await fetch(ENDPOINT, {
@@ -71,10 +78,15 @@ async function main() {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
+    // Field is "input", not "prompt". Sending "prompt" returns 400 with an
+    // empty body, which the fail-open path below swallows into silence.
     body: JSON.stringify({
-      prompt,
+      input: prompt,
       allowed_models: ALLOWED_MODELS,
-      policy: 'cost_efficient',
+      // "balanced", not "cost_efficient": cost_efficient returned haiku for
+      // both a typo fix and a 6DOF matrix derivation, so it never surfaced the
+      // one recommendation worth having - escalate to opus for hard work.
+      policy: 'balanced',
     }),
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
@@ -95,4 +107,6 @@ async function main() {
 
 // Single catch-all: every failure path is silent success. Never throw, never
 // print to stderr - stderr from a hook is surfaced to the user as noise.
-main().catch(() => {}).finally(() => process.exit(0));
+// Let the event loop drain on its own; process.exit() here raced the stdin
+// handle teardown and aborted the process.
+main().catch(() => { process.exitCode = 0; });
