@@ -93,16 +93,26 @@ void DX11GraphicsBackend::RenderStereo(
         height
     );
     
-    // In a real implementation we would create SRVs for the backbuffer and depth buffer
-    ID3D11ShaderResourceView* gameColorSRV = nullptr;
-    ID3D11ShaderResourceView* gameDepthSRV = nullptr;
-    
+    // The compute shader samples the game's colour and depth. Those live behind
+    // the resource identities the lock managers captured this frame: colour is
+    // the swapchain backbuffer stamped in by FrameCoordinator, depth is the
+    // locked depth target. Both arrive as raw ID3D11Texture2D*.
+    auto* gameColorTex = static_cast<ID3D11Texture2D*>(camSnapshot.resourceIdentity.nativeHandle);
+    auto* gameDepthTex = static_cast<ID3D11Texture2D*>(depthSnapshot.identity.nativeHandle);
+
+    // Bail rather than dispatch with nulls. RenderStereoFrame would latch
+    // StereoRendererState::FAILED, which is sticky and would disable stereo for
+    // the rest of the session over what is usually a single bad frame.
+    if (!m_resourceManager->EnsureSourceViews(m_context, gameColorTex, gameDepthTex)) {
+        return;
+    }
+
     m_stereoRenderer->RenderStereoFrame(
         m_context,
         m_resourceManager.get(),
         frameCtx,
-        gameColorSRV,
-        gameDepthSRV
+        m_resourceManager->GetGameColorSRV(),
+        m_resourceManager->GetGameDepthSRV()
     );
 }
 
