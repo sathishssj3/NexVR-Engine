@@ -285,6 +285,14 @@ endif()
 # A convenience target so shaders rebuild when sources change.
 add_custom_target(compile_shaders ALL DEPENDS ${SHADER_OUTPUTS})
 
+# Workaround for dx12_renderer.cpp hardcoded path without touching src/rendering
+add_custom_target(copy_shaders_for_dx12 ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${SHADER_OUTPUT_DIR}
+        ${CMAKE_BINARY_DIR}/bin/shaders
+    DEPENDS compile_shaders
+)
+
 file(GLOB_RECURSE VRINJECT_CORE_SRCS "src/core/*.cpp")
 file(GLOB_RECURSE VRINJECT_RENDERING_SRCS "src/rendering/*.cpp")
 file(GLOB_RECURSE VRINJECT_OPENXR_SRCS "src/openxr/*.cpp")
@@ -544,7 +552,7 @@ target_include_directories(NexVRCore PRIVATE
     ${SHADER_OUTPUT_DIR}
 )
 target_link_libraries(NexVRCore PRIVATE Vulkan::Vulkan openxr_loader d3d11 d3d12 dxgi)
-add_dependencies(NexVRCore compile_shaders)
+add_dependencies(NexVRCore copy_shaders_for_dx12)
 
 add_executable(test_openxr_vulkan_swapchain tests/test_openxr_vulkan_swapchain.cpp)
 target_include_directories(test_openxr_vulkan_swapchain PRIVATE ${PROJECT_SOURCE_DIR} ${GTEST_INCLUDE_DIRS} ${OPENXR_INCLUDE_DIR})
