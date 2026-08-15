@@ -66,7 +66,12 @@ dissolve — a stable random threshold field decides when each 10px block flips,
 blocks at the wavefront are drawn offset and tinted cyan, so the flat frame visibly
 shatters into VR. It runs at 30fps, only while on screen, only while the tab is
 visible, and paints a single static stereo frame under `prefers-reduced-motion`.
-Click it to force a transition.
+
+Because it animates on its own, it carries two real controls in the HUD — **Inject**
+(advance a phase) and **Pause/Play** — both keyboard-operable buttons rather than a
+bare click handler on the canvas. Clicking the canvas still works as a pointer
+shortcut, but it is never the only way in. While paused, **Inject** jumps straight to
+the destination state instead of animating.
 
 **The skeleton system (`.skeleton`).** Not a smooth shimmer. The filigree frame paints
 instantly so structure exists before data does, and the content area fills with chunky
@@ -93,7 +98,11 @@ unchanged.
 - Body text is `#EDE6D6` on `#0B0A0C` — 15.8:1, well past WCAG AA. Muted violet-grey is
   used only for non-essential metadata at ≥14px.
 - Every animation — the pixel shimmer, dust particles, etch-in reveals, and the portal —
-  is disabled or reduced under `prefers-reduced-motion`.
+  is disabled or reduced under `prefers-reduced-motion`. The portal's Pause control
+  reports itself as already stopped in that mode rather than claiming to be running.
+- Status badges are pixel-grid SVGs (`#px-check`, `#px-warn`, `#px-gear`), not emoji.
+  Emoji render in their own colours and would break the gold-on-black palette at
+  exactly the size they're used, and they read unpredictably to screen readers.
 - Skip link, real `<details>` accordions, arrow-key tab navigation, `aria-live` on the
   hall while it loads, and visible focus everywhere.
 - Ornament is vector SVG and `aria-hidden`; it stays crisp from phone to TV and silent

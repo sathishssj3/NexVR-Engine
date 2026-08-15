@@ -49,6 +49,26 @@
       <path d="M12 6.5 17.5 12 12 17.5 6.5 12z" fill="none" opacity=".6"/>
       <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/>
     </g>
+
+    <!-- Status badges, drawn on a 10x10 pixel grid so they read as retro
+         achievement icons rather than emoji. One rect per pixel. -->
+    <g id="px-check">
+      <rect x="1" y="5" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/>
+      <rect x="3" y="7" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/>
+      <rect x="5" y="5" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/>
+      <rect x="7" y="3" width="1" height="1"/><rect x="8" y="2" width="1" height="1"/>
+    </g>
+    <g id="px-warn">
+      <rect x="4" y="1" width="2" height="5"/><rect x="4" y="7" width="2" height="2"/>
+    </g>
+    <!-- Hollow ring, not a solid block: at 12px a filled centre reads as a
+         blob, while the open middle keeps it legible as a gear. -->
+    <g id="px-gear">
+      <rect x="3" y="2" width="4" height="1"/><rect x="3" y="7" width="4" height="1"/>
+      <rect x="2" y="3" width="1" height="4"/><rect x="7" y="3" width="1" height="4"/>
+      <rect x="4" y="0" width="2" height="1"/><rect x="4" y="9" width="2" height="1"/>
+      <rect x="0" y="4" width="1" height="2"/><rect x="9" y="4" width="1" height="2"/>
+    </g>
   </defs>
 </svg>
 
@@ -118,9 +138,12 @@
             <div class="portal__skeleton skeleton" data-skeleton>
               <span class="skeleton__label">LOADING…</span>
             </div>
-            <div class="portal__hud" aria-hidden="true">
-              <span class="portal__hud-item" data-portal-state>FLAT · 1 VIEW</span>
-              <span class="portal__hud-item">6DoF TRACKING</span>
+            <div class="portal__hud">
+              <span class="portal__hud-item" data-portal-state aria-hidden="true">FLAT · 1 VIEW</span>
+              <span class="portal__hud-controls">
+                <button class="portal__btn" data-portal-step>Inject</button>
+                <button class="portal__btn" data-portal-play aria-pressed="false">Pause</button>
+              </span>
             </div>
           </div>
         </div>
@@ -202,9 +225,9 @@
 
       <div class="hall__filters" role="group" aria-label="Filter by status" data-reveal>
         <button class="chip is-active" data-filter="all">All</button>
-        <button class="chip" data-filter="tested"><span class="pixel-tag pixel-tag--ok">✔</span> Tested</button>
-        <button class="chip" data-filter="partial"><span class="pixel-tag pixel-tag--warn">⚠</span> Partial</button>
-        <button class="chip" data-filter="progress"><span class="pixel-tag pixel-tag--wip">🔧</span> In Dev</button>
+        <button class="chip" data-filter="tested"><span class="pixel-tag pixel-tag--ok"><svg class="pixel-icon" viewBox="0 0 10 10" aria-hidden="true"><use href="#px-check"/></svg></span> Tested</button>
+        <button class="chip" data-filter="partial"><span class="pixel-tag pixel-tag--warn"><svg class="pixel-icon" viewBox="0 0 10 10" aria-hidden="true"><use href="#px-warn"/></svg></span> Partial</button>
+        <button class="chip" data-filter="progress"><span class="pixel-tag pixel-tag--wip"><svg class="pixel-icon" viewBox="0 0 10 10" aria-hidden="true"><use href="#px-gear"/></svg></span> In Dev</button>
       </div>
 
       <!-- Populated by JS. Skeletons render first (filigree frame instant,
@@ -392,7 +415,7 @@
         </details>
         <details class="faq__item">
           <summary class="faq__q">Is it true 6DoF, or just a screen floating in front of me?<span class="faq__mark" aria-hidden="true"></span></summary>
-          <div class="faq__a"><p>True stereoscopic 6DoF wherever the game's view matrix can be recovered — you get real depth and positional head movement. Titles where only rotation can be resolved are marked <span class="pixel-tag pixel-tag--warn">⚠ PARTIAL</span> in the hall, and behave closer to a 3D theater.</p></div>
+          <div class="faq__a"><p>True stereoscopic 6DoF wherever the game's view matrix can be recovered — you get real depth and positional head movement. Titles where only rotation can be resolved are marked <span class="pixel-tag pixel-tag--warn"><svg class="pixel-icon" viewBox="0 0 10 10" aria-hidden="true"><use href="#px-warn"/></svg> PARTIAL</span> in the hall, and behave closer to a 3D theater.</p></div>
         </details>
         <details class="faq__item">
           <summary class="faq__q">Do motion controllers work?<span class="faq__mark" aria-hidden="true"></span></summary>

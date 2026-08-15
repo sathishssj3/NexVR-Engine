@@ -118,10 +118,15 @@
 
   /* ----------------------------------------------- Compatibility Hall */
   var hall = document.getElementById("hall");
+
+  function pixelIcon(id) {
+    return '<svg class="pixel-icon" viewBox="0 0 10 10" aria-hidden="true"><use href="#px-' + id + '"/></svg>';
+  }
+
   var STATUS = {
-    tested:   { mark: "✔", label: "TESTED",      cls: "pixel-tag--ok" },
-    partial:  { mark: "⚠", label: "PARTIAL",     cls: "pixel-tag--warn" },
-    progress: { mark: "🔧", label: "IN DEV", cls: "pixel-tag--wip" }
+    tested:   { icon: "check", label: "TESTED",  cls: "pixel-tag--ok" },
+    partial:  { icon: "warn",  label: "PARTIAL", cls: "pixel-tag--warn" },
+    progress: { icon: "gear",  label: "IN DEV",  cls: "pixel-tag--wip" }
   };
 
   function skeletonCard() {
@@ -148,7 +153,7 @@
     card.innerHTML =
       '<div class="game__head">' +
         '<h3 class="game__title">' + game.title + "</h3>" +
-        '<span class="pixel-tag ' + status.cls + '">' + status.mark + " " + status.label + "</span>" +
+        '<span class="pixel-tag ' + status.cls + '">' + pixelIcon(status.icon) + " " + status.label + "</span>" +
       "</div>" +
       '<p class="game__meta">' + game.year + " · " + game.api + "</p>" +
       '<p class="game__note">' + game.note + "</p>" +
@@ -463,6 +468,7 @@
 
     var running = false;
     var lastFrame = 0;
+    var userPaused = false;   // set by the Pause control; outranks visibility
 
     function frame(now) {
       if (!running) return;
@@ -498,12 +504,27 @@
     }
 
     function start() {
-      if (running || prefersStill()) return;
+      if (running || userPaused || prefersStill()) return;
       running = true;
       lastFrame = 0;
       requestAnimationFrame(frame);
     }
     function stop() { running = false; }
+
+    /* Advance one phase without waiting for the hold to elapse. */
+    function stepPhase() {
+      if (phase === PHASE.FLAT || phase === PHASE.TO_FLAT) phase = PHASE.TO_STEREO;
+      else phase = PHASE.TO_FLAT;
+      phaseStart = 0;
+      if (userPaused || prefersStill()) {
+        /* Paused: jump straight to the destination rather than animating. */
+        phase = phase === PHASE.TO_STEREO ? PHASE.STEREO : PHASE.FLAT;
+        var buf = phase === PHASE.STEREO ? stereo : flat;
+        (phase === PHASE.STEREO ? renderStereo : renderFlat)(performance.now());
+        ctx.drawImage(buf.canvas, 0, 0);
+        setHud(phase === PHASE.STEREO ? "STEREO · 2 VIEWS" : "FLAT · 1 VIEW");
+      }
+    }
 
     function paintStill() {
       renderStereo(0);
@@ -534,16 +555,59 @@
     });
 
     reduceMotion.addEventListener("change", function () {
-      if (prefersStill()) { stop(); paintStill(); } else { start(); }
+      var btn = portal.querySelector("[data-portal-play]");
+      if (prefersStill()) {
+        stop();
+        paintStill();
+        userPaused = true;
+        if (btn) { btn.setAttribute("aria-pressed", "true"); btn.textContent = "Play"; }
+      } else {
+        /* Clear the pause this listener set, so the control isn't stuck. */
+        userPaused = false;
+        if (btn) { btn.setAttribute("aria-pressed", "false"); btn.textContent = "Pause"; }
+        start();
+      }
     });
 
-    /* Click the portal to force the transition — the interaction people
-       reach for first when they see something transform on its own. */
+    /* Controls. The canvas animates on its own, so it needs a real stop —
+       and every action has to work without a pointer, which a click handler
+       on the canvas alone does not. Both are buttons in the HUD. */
+    var stepBtn = portal.querySelector("[data-portal-step]");
+    var playBtn = portal.querySelector("[data-portal-play]");
+
+    if (stepBtn) {
+      stepBtn.addEventListener("click", function () {
+        stepPhase();
+        var r = portal.getBoundingClientRect();
+        scatterDust(portal, r.width / 2, r.height / 2, 18);
+      });
+    }
+
+    if (playBtn) {
+      var setPaused = function (paused) {
+        userPaused = paused;
+        playBtn.setAttribute("aria-pressed", String(paused));
+        playBtn.textContent = paused ? "Play" : "Pause";
+        if (paused) stop(); else start();
+      };
+      playBtn.addEventListener("click", function () { setPaused(!userPaused); });
+
+      /* Under reduced motion the loop never runs, so the control would be a
+         lie — present it as already stopped and let it drive stepPhase only. */
+      if (prefersStill()) {
+        userPaused = true;
+        playBtn.setAttribute("aria-pressed", "true");
+        playBtn.textContent = "Play";
+      }
+    }
+
+    /* Clicking the canvas stays as a pointer shortcut; the buttons above are
+       the accessible path, so this is an extra rather than the only way in. */
     portal.addEventListener("click", function (e) {
+      if (e.target.closest(".portal__btn")) return;
       var rect = portal.getBoundingClientRect();
       scatterDust(portal, e.clientX - rect.left, e.clientY - rect.top, 18);
-      if (phase === PHASE.FLAT) { phase = PHASE.TO_STEREO; phaseStart = 0; }
-      else if (phase === PHASE.STEREO) { phase = PHASE.TO_FLAT; phaseStart = 0; }
+      stepPhase();
     });
   }
 })();

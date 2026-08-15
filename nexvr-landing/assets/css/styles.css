@@ -228,6 +228,13 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   border: 1px solid var(--hairline);
   text-transform: uppercase;
 }
+/* Pixel-grid badge icons. SVG, not emoji: emoji render in their own colours
+   and break the gold-on-black palette at exactly the size they're used. */
+.pixel-icon {
+  width: 1em; height: 1em; flex: none;
+  fill: currentColor;
+  shape-rendering: crispEdges;
+}
 .pixel-tag--ok   { color: var(--cyan); background: rgba(79, 243, 232, .08); border-color: rgba(79, 243, 232, .3); }
 .pixel-tag--warn { color: var(--gold); }
 .pixel-tag--wip  { color: var(--violet-grey); border-color: rgba(107, 95, 114, .4); background: rgba(107, 95, 114, .1); }
@@ -418,12 +425,23 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .portal.is-ready .portal__skeleton { opacity: 0; pointer-events: none; }
 .portal__hud {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
-  display: flex; justify-content: space-between; gap: .5rem;
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
   padding: .6rem .7rem;
   background: linear-gradient(180deg, transparent, rgba(7, 6, 10, .85));
 }
 .portal__hud-item { font-family: var(--font-pixel); font-size: 9px; color: var(--cyan); opacity: .85; }
-.portal__hud-item + .portal__hud-item { color: var(--gold); }
+.portal__hud-controls { display: flex; gap: .4rem; }
+.portal__btn {
+  font-family: var(--font-pixel); font-size: 9px; line-height: 1;
+  padding: .55em .7em;
+  color: var(--gold);
+  background: rgba(11, 10, 12, .72);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  transition: color .2s, border-color .2s, background-color .2s;
+}
+.portal__btn:hover { color: var(--bone); border-color: var(--gold); }
+.portal__btn[aria-pressed="true"] { color: var(--cyan); border-color: rgba(79, 243, 232, .5); }
 .portal__caption {
   margin-top: .9rem; text-align: center;
   font-size: .8125rem; color: var(--violet-grey); letter-spacing: .04em;
