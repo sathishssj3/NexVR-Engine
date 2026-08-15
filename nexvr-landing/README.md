@@ -1,8 +1,8 @@
 # NexVR Engine — Landing Page
 
-A console/headset dashboard for NexVR Engine: phosphor-green CRT palette, Oxanium
-type, and a live stereoscopic viewport that renders a real 3D room through two VR
-lens barrels.
+A console/headset dashboard for NexVR Engine: void black, ice white and crimson,
+Oxanium type, and a live stereoscopic viewport that renders a real 3D room through
+two VR lens barrels.
 
 Zero dependencies, zero build step.
 
@@ -31,20 +31,34 @@ A server is needed only so the browser will load the sibling asset files.
 
 | Role | Token | Hex |
 |---|---|---|
-| Background | `--void` | `#0A0E0A` |
-| Text | `--phosphor` | `#D6F5D6` |
-| Accent / signal | `--green` | `#39FF14` |
+| Background | `--void` | `#08090D` |
+| Text | `--ice` | `#E8EDF2` |
+| Accent / signal | `--red` | `#D90429` |
 
-Every panel, border, glow, and state in the stylesheet is one of these three or an
-alpha variant of one of them (`--line` is phosphor at 14%, `--green-soft` is green
-at 12%, and so on). **If a fourth hue appears, the palette is broken.** A test in
-the verification pass walks every rendered element and asserts that the set of
-computed colours never exceeds those three plus `--void-deep` (`#070907`, the
-viewport's inner black).
+Every panel, border, glow, and state is one of these three or an alpha variant
+(`--line` is ice at 14%, `--red-soft` is red at 12%, and so on). **If a fourth hue
+appears, the palette is broken.** A test in the verification pass walks every
+rendered element and asserts the set of computed colours never exceeds those three
+plus `--void-deep` (`#05060A`, the viewport's inner black).
 
-Status is encoded with only those three: green = tested, phosphor = partial,
-dimmed = in development — with a distinct pixel glyph on each so the meaning never
-rests on colour alone.
+### Red is rationed
+
+This is the rule that keeps a red brand from looking cheap. Red carries roughly
+**15%** of the surface and only ever means one of four things:
+
+1. a primary action (CTA fills, the download button)
+2. an active / hover / focus state (nav, chips, tabs, open FAQ rows, focus rings)
+3. a live VR status (`tag--on`, the viewport readout values)
+4. the portal itself (the gate in the 3D room, and the accent headline words)
+
+Everything structural is ice on void: body copy, headings, borders, panels, the
+room wireframe, step numbers, stat figures, pricing amounts, tick marks. Several of
+those started red during the rebuild and were deliberately pulled back — four large
+red stat figures plus red prices plus red CTAs tipped the page into RGB-gaming
+territory and away from premium.
+
+Status is encoded inside the budget: red = tested, ice = partial, dimmed = in
+development — each with its own pixel glyph, so meaning never rests on colour alone.
 
 ## Typography
 
@@ -53,10 +67,24 @@ rests on colour alone.
 - **Logo** — custom lettering, drawn as SVG paths on a 32-unit grid in
   `#wm-nex` / `#wm-vr`. Not set in any typeface.
 
-The wordmark is split into two `<use>` elements rather than one, because CSS
-selectors cannot match elements inside a `<use>` shadow tree — `fill` inherits
-through it from the `<use>` itself, which is how NEX stays phosphor while VR
-takes the accent.
+## The logo
+
+Rebuilt from the supplied artwork as vector rather than embedded as a raster, so it
+stays crisp from a 16px favicon to a full-bleed lockup and takes its colours from
+the palette tokens.
+
+- **`#wm-nex` / `#wm-vr`** — the wordmark, heavy geometric letterforms on a 32-unit
+  grid. Split in two so each half takes its own fill: NEX in ice, VR in red.
+- **`#halftone-fine` / `#halftone-coarse`** — the dot disc, as tiled SVG patterns.
+  Two densities because the fine grid turns to mush when shrunk to nav height.
+- **`#logo-disc-sm`** — the coarse disc, for the nav lockup.
+- The **footer** carries the full lockup: disc behind the wordmark, wordmark
+  overhanging it, as in the original.
+
+The wordmark is split across two `<use>` elements rather than styled by descendant
+selectors, because CSS cannot match elements inside a `<use>` shadow tree — `fill`
+inherits through it from the `<use>` itself. Same reason `.halftone-dot` is styled
+on the pattern's own circle, which does live in the main document.
 
 ## The viewport
 
@@ -77,6 +105,10 @@ Each frame:
 
 Some details worth knowing if you touch it:
 
+- **The room is ice; only the gate is red.** The wireframe is structure, so it takes
+  the text colour. The gate is the portal — the one thing in the viewport that earns
+  the accent — and it is the only element given a `shadowBlur` bloom, paid on ~16
+  segments out of ~130.
 - **Chromatic aberration is a radial two-tap smear, not an RGB channel split.** A
   real channel split invents magenta and cyan fringes, and this page has a hard
   three-colour budget. The smear reads as lens softness and stays in the palette.
@@ -120,8 +152,9 @@ for a `fetch()` and it keeps working unchanged.
 
 ## Accessibility
 
-- `#D6F5D6` on `#0A0E0A` is ~15:1. Dimmed phosphor is used only for non-essential
-  metadata.
+- `#E8EDF2` on `#08090D` is ~16:1. Dimmed ice is used only for non-essential
+  metadata. Red is never used for body copy — only for short labels, numerals and
+  fills, where its contrast on void is comfortable.
 - Every animation — block shimmer, particles, reveals, the viewport — is disabled or
   reduced under `prefers-reduced-motion`.
 - The viewport's controls are real buttons, keyboard-operable; pointer look is an
@@ -146,4 +179,5 @@ reveals fire, the index populates, the palette audit holds, and the viewport pai
 2. Replace the `Fig. 01–04` values in `index.html` (`data-count`) with real numbers.
 3. Point the install snippets and the installer button at real URLs.
 4. Self-host Oxanium and Inter if you would rather not depend on Google Fonts.
+   The logo needs nothing — it is inline SVG.
 5. Add an OG image and set `og:image`.

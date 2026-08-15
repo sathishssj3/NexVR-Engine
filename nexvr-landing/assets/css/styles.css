@@ -1,11 +1,14 @@
 /* ==========================================================================
    NexVR Engine — console / headset dashboard
    --------------------------------------------------------------------------
-   THREE COLOURS ONLY. Every surface, border, and state in this file is one of
-   --void, --phosphor, --green, or an alpha variant of one of them. There are
-   no other hues in the system — if you add a fourth colour, the palette is
-   broken. Panels are --phosphor at 3-8%, borders at 12-30%, and every glow is
-   --green. That constraint is what makes it read as one machine.
+   THREE COLOURS ONLY: --void, --ice, --red, or an alpha variant of one of
+   them. If a fourth hue appears, the palette is broken.
+
+   RED IS RATIONED. It carries roughly 15% of the surface and only ever means
+   one of: a primary action, an active/hover/focus state, a live VR status, or
+   the portal itself. Structure — body copy, headings, borders, panels, the
+   room wireframe, stat figures — is always ice on void. Spending red on
+   ordinary structure is what makes a red brand look cheap, so don't.
    --------------------------------------------------------------------------
     0. Tokens
     1. Reset & base
@@ -33,22 +36,22 @@
 /* ---------------------------------------------------------------- 0. Tokens */
 :root {
   /* THE THREE */
-  --void:     #0A0E0A;   /* background      */
-  --phosphor: #D6F5D6;   /* text            */
-  --green:    #39FF14;   /* accent / signal */
+  --void:     #08090D;   /* background      */
+  --ice:      #E8EDF2;   /* text            */
+  --red:      #D90429;   /* accent / signal */
 
   /* Alpha variants — derived, not new colours */
-  --panel:        rgba(214, 245, 214, .035);
-  --panel-raised: rgba(214, 245, 214, .06);
-  --line:         rgba(214, 245, 214, .14);
-  --line-strong:  rgba(214, 245, 214, .26);
-  --dim:          rgba(214, 245, 214, .55);
-  --dimmer:       rgba(214, 245, 214, .38);
+  --panel:        rgba(232, 237, 242, .035);
+  --panel-raised: rgba(232, 237, 242, .06);
+  --line:         rgba(232, 237, 242, .14);
+  --line-strong:  rgba(232, 237, 242, .26);
+  --dim:          rgba(232, 237, 242, .55);
+  --dimmer:       rgba(232, 237, 242, .38);
 
-  --green-line:  rgba(57, 255, 20, .38);
-  --green-soft:  rgba(57, 255, 20, .12);
-  --green-glow:  rgba(57, 255, 20, .45);
-  --void-deep:   #070907;
+  --red-line:  rgba(217, 4, 41, .38);
+  --red-soft:  rgba(217, 4, 41, .12);
+  --red-glow:  rgba(217, 4, 41, .45);
+  --void-deep:   #05060A;
 
   /* Type */
   --font-display: "Oxanium", "Rajdhani", "Segoe UI", sans-serif;
@@ -72,7 +75,7 @@ html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 body {
   margin: 0;
   background: var(--void);
-  color: var(--phosphor);
+  color: var(--ice);
   font-family: var(--font-body);
   font-size: clamp(1rem, .96rem + .2vw, 1.0625rem);
   line-height: 1.65;
@@ -80,15 +83,15 @@ body {
   overflow-x: hidden;
 }
 
-/* CRT scanlines + a soft phosphor bloom from the top. Both are --phosphor
-   and --green only, at very low alpha. */
+/* Scanlines plus the faintest red bloom from the top edge — the one ambient
+   use of the accent, kept under 6% so it reads as atmosphere, not colour. */
 body::before {
   content: "";
   position: fixed; inset: 0; z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(120% 70% at 50% -10%, rgba(57, 255, 20, .09), transparent 60%),
-    repeating-linear-gradient(180deg, rgba(10, 14, 10, 0) 0 2px, rgba(10, 14, 10, .38) 2px 4px);
+    radial-gradient(120% 70% at 50% -10%, rgba(217, 4, 41, .055), transparent 60%),
+    repeating-linear-gradient(180deg, rgba(8, 9, 13, 0) 0 2px, rgba(8, 9, 13, .38) 2px 4px);
   opacity: .55;
 }
 body > * { position: relative; z-index: 1; }
@@ -97,8 +100,8 @@ img, svg { max-width: 100%; }
 svg { display: block; }
 .svg-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
 
-a { color: var(--green); text-decoration-color: var(--green-line); text-underline-offset: .22em; }
-a:hover { color: var(--phosphor); text-decoration-color: var(--phosphor); }
+a { color: var(--red); text-decoration-color: var(--red-line); text-underline-offset: .22em; }
+a:hover { color: var(--ice); text-decoration-color: var(--ice); }
 
 ul, ol { margin: 0; padding: 0; list-style: none; }
 p { margin: 0 0 1em; }
@@ -106,9 +109,9 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 
 /* Console focus ring — loud on purpose, this is a D-pad-navigable surface */
 :focus-visible {
-  outline: 2px solid var(--green);
+  outline: 2px solid var(--red);
   outline-offset: 3px;
-  box-shadow: 0 0 0 5px var(--green-soft), 0 0 22px var(--green-glow);
+  box-shadow: 0 0 0 5px var(--red-soft), 0 0 22px var(--red-glow);
 }
 
 .skip-link {
@@ -116,7 +119,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   transform: translate(-50%, -120%);
   padding: .7em 1.4em;
   font-family: var(--font-display); font-weight: 600; letter-spacing: .1em;
-  background: var(--green); color: var(--void); text-decoration: none;
+  background: var(--red); color: var(--void); text-decoration: none;
 }
 .skip-link:focus { transform: translate(-50%, .5rem); }
 
@@ -137,8 +140,8 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .display--xl { font-size: clamp(2.4rem, 1.5rem + 3.9vw, 4.5rem); }
 .display--lg { font-size: clamp(1.9rem, 1.35rem + 2.3vw, 3rem); }
 .display__accent {
-  color: var(--green);
-  text-shadow: 0 0 28px var(--green-glow);
+  color: var(--red);
+  text-shadow: 0 0 34px rgba(217, 4, 41, .3);
 }
 
 /* Technical metadata — Oxanium, tracked out, always uppercase */
@@ -177,18 +180,18 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .hud-rule {
   display: flex; align-items: center; gap: 1rem;
   margin: 0 0 clamp(2rem, 4vw, 3rem);
-  color: var(--green);
+  color: var(--red);
 }
 .hud-rule::before, .hud-rule::after {
   content: ""; height: 1px; flex: 1;
-  background: linear-gradient(90deg, transparent, var(--green-line));
+  background: linear-gradient(90deg, transparent, var(--red-line));
 }
-.hud-rule::after { background: linear-gradient(90deg, var(--green-line), transparent); }
-.hud-rule__tick { width: 6px; height: 6px; background: var(--green); flex: none; transform: rotate(45deg); }
+.hud-rule::after { background: linear-gradient(90deg, var(--red-line), transparent); }
+.hud-rule__tick { width: 6px; height: 6px; background: var(--red); flex: none; transform: rotate(45deg); }
 
 /* ------------------------------------------------- 4. Panels (primitive) */
 /* The console surface: a chamfered rectangle with a hairline edge and a
-   green edge-glow that intensifies on hover/focus. */
+   red edge-glow that intensifies on hover/focus. */
 .panel {
   position: relative;
   padding: clamp(1.35rem, 2.6vw, 2rem);
@@ -204,12 +207,12 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   content: "";
   position: absolute; top: 6px; right: 6px;
   width: 5px; height: 5px;
-  background: var(--green);
+  background: var(--red);
   opacity: .5;
   transition: opacity .25s, box-shadow .25s;
 }
 .panel:hover { background: var(--panel-raised); border-color: var(--line-strong); }
-.panel:hover::after { opacity: 1; box-shadow: 0 0 10px var(--green-glow); }
+.panel:hover::after { opacity: 1; box-shadow: 0 0 10px var(--red-glow); }
 
 .panel--flush { padding: 0; }
 
@@ -224,8 +227,8 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   border-radius: var(--radius);
   white-space: nowrap;
 }
-.tag--on   { color: var(--green); border-color: var(--green-line); background: var(--green-soft); }
-.tag--warn { color: var(--phosphor); border-color: var(--line-strong); }
+.tag--on   { color: var(--red); border-color: var(--red-line); background: var(--red-soft); }
+.tag--warn { color: var(--ice); border-color: var(--line-strong); }
 .tag--off  { color: var(--dimmer); }
 
 /* Status glyphs stay pixel-grid SVG: crisp, monochrome, palette-safe. */
@@ -242,14 +245,14 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   content: "";
   position: absolute; inset: 0;
   background:
-    repeating-linear-gradient(90deg, transparent 0 14px, rgba(10, 14, 10, .9) 14px 16px),
-    repeating-linear-gradient(0deg,  transparent 0 14px, rgba(10, 14, 10, .9) 14px 16px),
+    repeating-linear-gradient(90deg, transparent 0 14px, rgba(8, 9, 13, .9) 14px 16px),
+    repeating-linear-gradient(0deg,  transparent 0 14px, rgba(8, 9, 13, .9) 14px 16px),
     linear-gradient(90deg,
-      rgba(214, 245, 214, .04) 0 38%,
-      rgba(57, 255, 20, .26) 47%,
-      rgba(57, 255, 20, .34) 50%,
-      rgba(57, 255, 20, .26) 53%,
-      rgba(214, 245, 214, .04) 62% 100%);
+      rgba(232, 237, 242, .04) 0 38%,
+      rgba(232, 237, 242, .22) 46%,
+      rgba(217, 4, 41, .55) 50%,
+      rgba(232, 237, 242, .22) 54%,
+      rgba(232, 237, 242, .04) 62% 100%);
   background-size: 16px 16px, 16px 16px, 260% 100%;
   background-repeat: repeat, repeat, no-repeat;
   animation: block-sweep 1.9s steps(14, end) infinite;
@@ -262,7 +265,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   position: relative; z-index: 1;
   font-family: var(--font-display); font-weight: 600;
   font-size: .75rem; letter-spacing: .2em; text-transform: uppercase;
-  color: var(--green);
+  color: var(--dim);
   animation: blink 1.4s steps(2, end) infinite;
 }
 @keyframes blink { 50% { opacity: .3; } }
@@ -270,11 +273,11 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 /* Particle bits used by the viewport + card hovers */
 .dust {
   position: absolute; width: 3px; height: 3px;
-  background: var(--green);
+  background: var(--ice);
   pointer-events: none; z-index: 3;
   animation: dust-fly 700ms steps(8, end) forwards;
 }
-.dust--pale { background: var(--phosphor); }
+.dust--pale { background: var(--red); }
 @keyframes dust-fly {
   from { opacity: 1; transform: translate(0, 0); }
   to   { opacity: 0; transform: translate(var(--dx), var(--dy)); }
@@ -295,16 +298,16 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 .btn--primary {
   color: var(--void);
-  background: var(--green);
-  box-shadow: 0 0 0 rgba(57, 255, 20, 0);
+  background: var(--red);
+  box-shadow: 0 0 0 rgba(217, 4, 41, 0);
 }
-.btn--primary:hover { color: var(--void); transform: translateY(-1px); box-shadow: 0 6px 30px var(--green-glow); }
+.btn--primary:hover { color: var(--void); transform: translateY(-1px); box-shadow: 0 6px 30px var(--red-glow); }
 .btn--ghost {
-  color: var(--phosphor);
+  color: var(--ice);
   border: 1px solid var(--line-strong);
   background: var(--panel);
 }
-.btn--ghost:hover { color: var(--green); border-color: var(--green-line); box-shadow: 0 0 24px var(--green-soft); }
+.btn--ghost:hover { color: var(--red); border-color: var(--red-line); box-shadow: 0 0 24px var(--red-soft); }
 .btn--wide { width: 100%; }
 
 .chip {
@@ -317,27 +320,36 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   border-radius: var(--radius);
   transition: color .2s, border-color .2s, background-color .2s;
 }
-.chip:hover { color: var(--phosphor); border-color: var(--line-strong); }
-.chip.is-active { color: var(--green); border-color: var(--green-line); background: var(--green-soft); }
+.chip:hover { color: var(--ice); border-color: var(--line-strong); }
+.chip.is-active { color: var(--red); border-color: var(--red-line); background: var(--red-soft); }
 
 /* ------------------------------------------------------------- 8. Nav */
 .nav {
   position: sticky; top: 0; z-index: 40;
   backdrop-filter: blur(12px);
-  background: linear-gradient(180deg, rgba(10, 14, 10, .95), rgba(10, 14, 10, .7));
+  background: linear-gradient(180deg, rgba(8, 9, 13, .95), rgba(8, 9, 13, .7));
   border-bottom: 1px solid transparent;
   transition: border-color .3s, background-color .3s;
 }
-.nav.is-stuck { border-bottom-color: var(--line); background: rgba(10, 14, 10, .97); }
+.nav.is-stuck { border-bottom-color: var(--line); background: rgba(8, 9, 13, .97); }
 .nav__inner { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; min-height: 70px; }
 
 /* Custom NexVR wordmark — drawn, not set in a typeface */
-.brand { display: inline-flex; align-items: center; gap: .65rem; text-decoration: none; color: var(--phosphor); }
-.brand__mark { width: 26px; height: 26px; flex: none; color: var(--green); }
-.brand__word { width: auto; height: 17px; color: var(--phosphor); }
-.brand__word .wm-accent { fill: var(--green); }   /* on the <use>, so it inherits inward */
-.brand:hover .brand__word { color: var(--green); }
-.brand--sm .brand__word { height: 14px; }
+.brand { display: inline-flex; align-items: center; gap: .65rem; text-decoration: none; color: var(--ice); }
+.brand__mark { width: 26px; height: 26px; flex: none; color: var(--red); }
+.brand__word { width: auto; height: 16px; }
+/* Set on the <use> elements themselves — fill inherits into the shadow tree
+   where a descendant selector could never reach. */
+.wm-ice     { fill: var(--ice); transition: fill .2s var(--ease); }
+.wm-accent  { fill: var(--red); }
+.halftone-dot { fill: var(--ice); }
+.brand:hover .wm-ice { fill: var(--red); }
+
+/* Full lockup: halftone disc behind the wordmark, as supplied. */
+.footer__logo { display: block; width: clamp(150px, 22vw, 210px); }
+.footer__logo .logo__disc { opacity: .34; transition: opacity .3s var(--ease); }
+.footer__logo:hover .logo__disc { opacity: .55; }
+.footer__note { margin: 0; max-width: 34ch; }
 
 .nav__links { display: flex; align-items: center; gap: clamp(.9rem, 1.8vw, 1.9rem); }
 .nav__links a {
@@ -346,9 +358,9 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   color: var(--dim); text-decoration: none;
   transition: color .2s;
 }
-.nav__links a:hover { color: var(--green); }
+.nav__links a:hover { color: var(--red); }
 .nav__cta { min-height: 40px; padding: .5em 1.1em; font-size: .8125rem; }
-.nav__toggle { display: none; width: 44px; height: 44px; place-items: center; color: var(--green); }
+.nav__toggle { display: none; width: 44px; height: 44px; place-items: center; color: var(--red); }
 .nav__toggle svg { width: 24px; height: 24px; }
 
 /* ------------------------------------------------ 9. Hero & viewport */
@@ -357,10 +369,10 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   position: absolute; inset: -20% -10% 0;
   pointer-events: none;
   background-image:
-    linear-gradient(var(--green-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--green-line) 1px, transparent 1px);
+    linear-gradient(var(--line-strong) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line-strong) 1px, transparent 1px);
   background-size: 68px 68px;
-  opacity: .085;
+  opacity: .13;
   transform: perspective(420px) rotateX(58deg);
   transform-origin: 50% 0;
   mask-image: linear-gradient(180deg, transparent, #000 35%, transparent 85%);
@@ -396,23 +408,23 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
   display: flex; align-items: center; justify-content: space-between; gap: .75rem;
   padding: .6rem .75rem;
-  background: linear-gradient(180deg, transparent, rgba(7, 9, 7, .92));
+  background: linear-gradient(180deg, transparent, rgba(5, 6, 10, .92));
 }
 .viewport__readout { display: flex; gap: 1rem; flex-wrap: wrap; }
-.viewport__readout b { color: var(--green); font-weight: 600; }
+.viewport__readout b { color: var(--red); font-weight: 600; }
 .viewport__controls { display: flex; gap: .4rem; }
 .viewport__btn {
   font-family: var(--font-display); font-weight: 600;
   font-size: .6875rem; letter-spacing: .12em; text-transform: uppercase;
   padding: .5em .75em;
   color: var(--dim);
-  background: rgba(10, 14, 10, .8);
+  background: rgba(8, 9, 13, .8);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   transition: color .2s, border-color .2s;
 }
-.viewport__btn:hover { color: var(--green); border-color: var(--green-line); }
-.viewport__btn[aria-pressed="true"] { color: var(--green); border-color: var(--green-line); background: var(--green-soft); }
+.viewport__btn:hover { color: var(--red); border-color: var(--red-line); }
+.viewport__btn[aria-pressed="true"] { color: var(--red); border-color: var(--red-line); background: var(--red-soft); }
 .viewport__caption { margin: .85rem 0 0; text-align: center; }
 
 /* --------------------------------------------------------- 10. Steps */
@@ -422,8 +434,8 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .step__num {
   font-family: var(--font-display); font-weight: 700;
   font-size: 2rem; line-height: 1;
-  color: var(--green);
-  opacity: .35;
+  color: var(--ice);
+  opacity: .22;
   margin-bottom: .6rem;
 }
 .step__title {
@@ -453,7 +465,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 
 /* ------------------------------------------------ 12. Platform tiles */
 .tiles { display: grid; gap: clamp(.85rem, 1.8vw, 1.25rem); grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-.tile__icon { width: 44px; height: 44px; color: var(--green); margin-bottom: 1rem; }
+.tile__icon { width: 44px; height: 44px; color: var(--red); margin-bottom: 1rem; }
 .tile__icon svg { width: 100%; height: 100%; }
 .tile__title { font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; letter-spacing: .06em; text-transform: uppercase; margin: 0 0 .5rem; }
 .tile__body { font-size: .9rem; color: var(--dim); }
@@ -463,25 +475,24 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 
 /* ------------------------------------------------------ 13. Figures */
 .figs { display: grid; gap: clamp(.85rem, 1.8vw, 1.25rem); grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
-.fig__label { margin: 0 0 .9rem; }
+.fig__label { margin: 0 0 .9rem; color: var(--red); }
 .fig__num {
   font-family: var(--font-display); font-weight: 700;
   font-size: clamp(2.1rem, 1.6rem + 2vw, 3rem); line-height: 1;
-  color: var(--green); margin: 0 0 .5rem;
+  color: var(--ice); margin: 0 0 .5rem;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 24px var(--green-glow);
 }
 .fig__cap { font-size: .875rem; color: var(--dim); margin: 0; }
 
 /* ------------------------------------------------------ 14. Pricing */
 .plans { display: grid; gap: clamp(.85rem, 1.8vw, 1.4rem); grid-template-columns: repeat(auto-fit, minmax(275px, 1fr)); align-items: stretch; }
 .plan { display: flex; flex-direction: column; }
-.plan--featured { border-color: var(--green-line); background: var(--green-soft); }
-.plan--featured::after { opacity: 1; box-shadow: 0 0 10px var(--green-glow); }
-.plan__badge { position: absolute; top: -1px; left: -1px; border-radius: 0; border-color: var(--green-line); background: var(--void); }
+.plan--featured { border-color: var(--red-line); background: var(--red-soft); }
+.plan--featured::after { opacity: 1; box-shadow: 0 0 10px var(--red-glow); }
+.plan__badge { position: absolute; top: -1px; left: -1px; border-radius: 0; border-color: var(--red-line); background: var(--void); }
 .plan__name { font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; letter-spacing: .12em; text-transform: uppercase; margin: .6rem 0 .9rem; }
 .plan__price { display: flex; align-items: baseline; gap: .4em; margin: 0 0 .8rem; }
-.plan__amount { font-family: var(--font-display); font-weight: 700; font-size: clamp(2.1rem, 1.7rem + 1.5vw, 2.75rem); line-height: 1; color: var(--green); }
+.plan__amount { font-family: var(--font-display); font-weight: 700; font-size: clamp(2.1rem, 1.7rem + 1.5vw, 2.75rem); line-height: 1; color: var(--ice); }
 .plan__per { color: var(--dimmer); font-size: .875rem; }
 .plan__blurb { color: var(--dim); font-size: .9375rem; }
 .plan__cta { margin-top: auto; }
@@ -491,7 +502,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .ticks li::before {
   content: ""; position: absolute; left: 0; top: .5em;
   width: 9px; height: 9px;
-  background: var(--green);
+  background: var(--dim);
   clip-path: polygon(0 45%, 12% 45%, 12% 60%, 25% 60%, 25% 75%, 38% 75%, 38% 60%, 50% 60%, 50% 40%, 63% 40%, 63% 22%, 75% 22%, 75% 6%, 88% 6%, 88% 22%, 75% 22%, 75% 40%, 63% 40%, 63% 60%, 50% 60%, 50% 75%, 38% 75%, 38% 90%, 25% 90%, 25% 75%, 12% 75%, 12% 60%, 0 60%);
 }
 
@@ -507,7 +518,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   transition: color .2s;
 }
 .faq__q::-webkit-details-marker { display: none; }
-.faq__q:hover, .faq__item[open] .faq__q { color: var(--green); }
+.faq__q:hover, .faq__item[open] .faq__q { color: var(--red); }
 .faq__mark { position: relative; flex: none; width: 13px; height: 13px; }
 .faq__mark::before, .faq__mark::after {
   content: ""; position: absolute; inset: 50% 0 auto 0;
@@ -535,13 +546,13 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   border-bottom: 1px solid transparent;
   transition: color .2s, border-color .2s, background-color .2s;
 }
-.tab:hover { color: var(--phosphor); }
-.tab.is-active { color: var(--green); border-bottom-color: var(--green); background: var(--green-soft); }
+.tab:hover { color: var(--ice); }
+.tab.is-active { color: var(--red); border-bottom-color: var(--red); background: var(--red-soft); }
 
 .term { position: relative; padding: 1.35rem clamp(1rem, 3vw, 1.6rem); }
 .term pre { margin: 0; overflow-x: auto; }
 .term code { font-family: var(--font-mono); font-size: clamp(.8125rem, .78rem + .2vw, .9rem); line-height: 1.9; white-space: pre; }
-.term__p { color: var(--green); user-select: none; }
+.term__p { color: var(--red); user-select: none; }
 .copy {
   position: absolute; top: .7rem; right: .7rem;
   padding: .4em .85em;
@@ -552,7 +563,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   border-radius: var(--radius);
   transition: color .2s, border-color .2s;
 }
-.copy:hover, .copy.is-done { color: var(--green); border-color: var(--green-line); }
+.copy:hover, .copy.is-done { color: var(--red); border-color: var(--red-line); }
 .install__alt { text-align: center; }
 .install__meta { margin: .8rem 0 0; }
 
@@ -589,7 +600,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
     position: absolute; left: 0; right: 0; top: 100%;
     flex-direction: column; align-items: stretch; gap: 0;
     padding: .5rem var(--gutter) 1.25rem;
-    background: rgba(10, 14, 10, .99);
+    background: rgba(8, 9, 13, .99);
     border-bottom: 1px solid var(--line);
     display: none;
   }
@@ -613,7 +624,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
     display: block;
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
     padding: .7rem var(--gutter) calc(.7rem + env(safe-area-inset-bottom));
-    background: linear-gradient(180deg, rgba(10, 14, 10, 0), rgba(10, 14, 10, .97) 40%);
+    background: linear-gradient(180deg, rgba(8, 9, 13, 0), rgba(8, 9, 13, .97) 40%);
   }
   .footer { padding-bottom: 6rem; }
   .footer__inner { flex-direction: column; text-align: center; }
@@ -638,7 +649,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   .hero__viewport { max-width: 1200px; margin-inline: auto; }
   .section__head { text-align: center; }
   .hall__filters { justify-content: center; }
-  :focus-visible { outline-width: 4px; outline-offset: 6px; box-shadow: 0 0 0 12px var(--green-soft), 0 0 60px var(--green-glow); }
+  :focus-visible { outline-width: 4px; outline-offset: 6px; box-shadow: 0 0 0 12px var(--red-soft), 0 0 60px var(--red-glow); }
   .faq__a { font-size: 1.2rem; }
 }
 

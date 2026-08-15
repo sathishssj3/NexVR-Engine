@@ -372,7 +372,7 @@
        more time on draw-call overhead than on the lines themselves, and this
        was the difference between 22fps and a steady 30. */
     var LEVELS = 6;
-    var BUCKETS = LEVELS * 2;                      // x2: green room / white gate
+    var BUCKETS = LEVELS * 2;                      // x2: ice room / red gate
     var segBuf = [], segN = new Int32Array(BUCKETS);
     for (var bi = 0; bi < BUCKETS; bi++) segBuf.push(new Float32Array(ROOM.length * 4));
 
@@ -398,7 +398,7 @@
 
         // Nearer lines burn brighter — cheap depth cue, and very CRT
         var depth = Math.min(1, 6 / Math.max(1.2, (-az - bz) / 2));
-        var a = Math.min(1, L[6] * (0.45 + depth * 0.75));
+        var a = Math.min(1, L[6] * (L[6] >= 0.9 ? 0.62 + depth * 0.8 : 0.32 + depth * 0.6));
         var lvl = Math.min(LEVELS - 1, (a * LEVELS) | 0);
         var key = (L[6] >= 0.9 ? LEVELS : 0) + lvl;
         var buf = segBuf[key], n = segN[key];
@@ -418,8 +418,14 @@
         if (!count) continue;
         var b = segBuf[k];
         var alpha = ((k % LEVELS) + 0.7) / LEVELS;
-        g.strokeStyle = (k >= LEVELS ? "rgba(214,245,214," : "rgba(57,255,20,")
+        var isGate = k >= LEVELS;
+        g.strokeStyle = (isGate ? "rgba(217,4,41," : "rgba(232,237,242,")
           + Math.min(1, alpha).toFixed(3) + ")";
+        /* Only the gate blooms. shadowBlur is expensive, but it is paid on
+           ~16 segments out of ~130, and it is what makes the portal read as
+           a light source rather than an outline. */
+        if (isGate) { g.shadowColor = "rgba(217,4,41,0.95)"; g.shadowBlur = 10; }
+        else if (g.shadowBlur) { g.shadowBlur = 0; g.shadowColor = "transparent"; }
         g.beginPath();
         for (i = 0; i < count; i += 4) {
           g.moveTo(b[i], b[i + 1]);
@@ -427,6 +433,7 @@
         }
         g.stroke();
       }
+      g.shadowBlur = 0;
       g.restore();
     }
 
@@ -447,16 +454,16 @@
        read as a round lens instead of one wide letterbox. */
     function bakeVignette(ox) {
       var g = sctx.createRadialGradient(ox + SR, SR, SR * 0.30, ox + SR, SR, SR * 0.98);
-      g.addColorStop(0, "rgba(7,9,7,0)");
-      g.addColorStop(0.55, "rgba(7,9,7,0.10)");
-      g.addColorStop(0.82, "rgba(7,9,7,0.58)");
-      g.addColorStop(1, "rgba(7,9,7,1)");
+      g.addColorStop(0, "rgba(5,6,10,0)");
+      g.addColorStop(0.55, "rgba(5,6,10,0.10)");
+      g.addColorStop(0.82, "rgba(5,6,10,0.58)");
+      g.addColorStop(1, "rgba(5,6,10,1)");
       sctx.fillStyle = g;
       sctx.fillRect(ox, 0, SRC, SRC);
     }
 
     function renderStereo() {
-      sctx.fillStyle = "#070907";
+      sctx.fillStyle = "#05060A";
       sctx.fillRect(0, 0, SRC * 2, SRC);
       drawRoom(sctx, 0, 0, -1, FOCAL);
       drawRoom(sctx, SRC, 0, 1, FOCAL);
@@ -468,9 +475,9 @@
       var img32 = new Uint32Array(raw.data.buffer);
       var out = lensOut.data;
       var out32 = new Uint32Array(out.buffer);
-      if (!VOID32) { out32[0] = 0; out[0] = 7; out[1] = 9; out[2] = 7; out[3] = 255; VOID32 = out32[0]; }
+      if (!VOID32) { out32[0] = 0; out[0] = 5; out[1] = 6; out[2] = 10; out[3] = 255; VOID32 = out32[0]; }
 
-      ctx.fillStyle = "#070907";
+      ctx.fillStyle = "#05060A";
       ctx.fillRect(0, 0, W, H);
 
       var N = LENS * LENS;
@@ -493,7 +500,7 @@
     }
 
     function renderFlat() {
-      ctx.fillStyle = "#070907";
+      ctx.fillStyle = "#05060A";
       ctx.fillRect(0, 0, W, H);
       ctx.save();
       ctx.translate(W / 2 - SR, H / 2 - SR);       // centre the source square

@@ -28,21 +28,39 @@
      ============================================================ -->
 <svg class="svg-defs" aria-hidden="true" focusable="false">
   <defs>
-    <!-- NEXVR wordmark, custom lettering on a 32-unit grid. Split in two
-         so each half can be coloured: CSS cannot select into a <use> shadow
-         tree, but `fill` inherits through it from the <use> element. -->
+    <!-- NEXVR wordmark: custom lettering on a 32-unit grid, heavy and tight
+         to match the supplied mark. Split in two so each half takes its own
+         colour — CSS cannot select into a <use> shadow tree, but `fill`
+         inherits through it from the <use> element itself. -->
     <g id="wm-nex">
-      <path d="M0,32 L0,0 L7,0 L16,19 L16,0 L22,0 L22,32 L15,32 L6,13 L6,32 Z"/>
-      <path d="M27,0 L47,0 L47,6 L33,6 L33,13 L44,13 L44,19 L33,19 L33,26 L47,26 L47,32 L27,32 Z"/>
-      <path d="M52,0 L59,0 L74,32 L67,32 Z"/>
-      <path d="M67,0 L74,0 L59,32 L52,32 Z"/>
+      <!-- N -->
+      <path d="M0,32 L0,0 L8,0 L18,17 L18,0 L26,0 L26,32 L18,32 L8,15 L8,32 Z"/>
+      <!-- E -->
+      <path d="M31,0 L54,0 L54,7 L39,7 L39,12 L51,12 L51,19 L39,19 L39,25 L54,25 L54,32 L31,32 Z"/>
+      <!-- X: two crossing parallelograms -->
+      <path d="M58,0 L67,0 L86,32 L77,32 Z"/>
+      <path d="M77,0 L86,0 L67,32 L58,32 Z"/>
     </g>
     <g id="wm-vr">
-      <path d="M79,0 L86,0 L90,21 L94,0 L101,0 L92,32 L88,32 Z"/>
+      <!-- V -->
+      <path d="M90,0 L99,0 L104,20 L109,0 L118,0 L108,32 L100,32 Z"/>
+      <!-- R, bowl punched with evenodd -->
       <path fill-rule="evenodd"
-            d="M106,0 L122,0 L128,6 L128,13 L123,18 L128,32 L121,32 L117,19 L112,19 L112,32 L106,32 Z
-               M112,6 L121,6 L122,7 L122,12 L121,13 L112,13 Z"/>
+            d="M122,0 L141,0 L148,7 L148,16 L142,21 L148,32 L139,32 L134,22 L130,22 L130,32 L122,32 Z
+               M130,7 L139,7 L140,8 L140,14 L139,15 L130,15 Z"/>
     </g>
+
+    <!-- Halftone disc from the supplied artwork, rebuilt as a tiled pattern so
+         it stays crisp at any size. Two densities: the fine grid reads at
+         logo scale, the coarse one survives being shrunk to nav height. -->
+    <pattern id="halftone-fine" width="7" height="7" patternUnits="userSpaceOnUse">
+      <circle class="halftone-dot" cx="3.5" cy="3.5" r="1.55"/>
+    </pattern>
+    <pattern id="halftone-coarse" width="4.2" height="4.2" patternUnits="userSpaceOnUse">
+      <circle class="halftone-dot" cx="2.1" cy="2.1" r="1.15"/>
+    </pattern>
+
+    <g id="logo-disc-sm"><circle cx="13" cy="13" r="12.5" fill="url(#halftone-coarse)"/></g>
 
     <!-- Headset mark -->
     <g id="mk-headset">
@@ -75,8 +93,8 @@
 <header class="nav" id="nav">
   <div class="shell nav__inner">
     <a class="brand" href="#top" aria-label="NexVR Engine, home">
-      <svg class="brand__mark" viewBox="0 0 26 26" aria-hidden="true"><use href="#mk-headset"/></svg>
-      <svg class="brand__word" viewBox="0 0 128 32" role="img" aria-label="NexVR"><use href="#wm-nex" fill="currentColor"/><use class="wm-accent" href="#wm-vr"/></svg>
+      <svg class="brand__mark" viewBox="0 0 26 26" aria-hidden="true"><use href="#logo-disc-sm"/></svg>
+      <svg class="brand__word" viewBox="0 0 150 32" role="img" aria-label="NexVR"><use class="wm-ice" href="#wm-nex"/><use class="wm-accent" href="#wm-vr"/></svg>
     </a>
 
     <nav class="nav__links" id="nav-links" aria-label="Primary">
@@ -468,11 +486,16 @@
 <!-- ======================================================== FOOTER -->
 <footer class="footer">
   <div class="shell footer__inner">
-    <a class="brand brand--sm" href="#top" aria-label="NexVR Engine, back to top">
-      <svg class="brand__mark" viewBox="0 0 26 26" aria-hidden="true" style="width:20px;height:20px"><use href="#mk-headset"/></svg>
-      <svg class="brand__word" viewBox="0 0 128 32" role="img" aria-label="NexVR"><use href="#wm-nex" fill="currentColor"/><use class="wm-accent" href="#wm-vr"/></svg>
+    <a class="footer__logo" href="#top" aria-label="NexVR Engine, back to top">
+      <svg viewBox="0 0 220 220" role="img" aria-label="NexVR">
+        <circle class="logo__disc" cx="110" cy="110" r="92" fill="url(#halftone-fine)"/>
+        <g transform="translate(10 89) scale(1.333)">
+          <use class="wm-ice" href="#wm-nex"/>
+          <use class="wm-accent" href="#wm-vr"/>
+        </g>
+      </svg>
     </a>
-    <p class="meta" style="margin:0">Built for the games that were never built for this</p>
+    <p class="meta footer__note">Built for the games that were never built for this</p>
   </div>
 </footer>
 
