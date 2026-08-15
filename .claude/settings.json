@@ -19,6 +19,16 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:/Users/sathi/.gemini/antigravity/scratch/vr-inject/.claude/scripts/morph-route.mjs\""
+          }
+        ]
+      }
     ]
   }
 }
