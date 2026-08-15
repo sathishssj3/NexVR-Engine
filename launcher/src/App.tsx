@@ -59,6 +59,7 @@ export default function App() {
   const [injectState, setInjectState] = useState<'default' | 'injecting' | 'success' | 'running' | 'error' | 'cancelled'>('default');
   const [currentTab, setCurrentTab] = useState<'library' | 'about'>('library');
   const [transitioning, setTransitioning] = useState(false);
+  const [hasConsented, setHasConsented] = useState<boolean>(() => localStorage.getItem('ag_ac_consent') === 'true');
   const injectTokenRef = useRef<number>(0);
   const mainContentRef = useRef<HTMLDivElement>(null);
 
@@ -124,8 +125,17 @@ export default function App() {
     }
   };
 
-  const handleInject = async () => {
+    const handleInject = async () => {
     if (!selectedGame) return;
+    
+    if (!hasConsented) {
+      if (!window.confirm("WARNING: ACCOUNT BAN RISK\n\nInjecting into multiplayer games protected by Anti-Cheat software (e.g., Easy Anti-Cheat, BattlEye, Vanguard) is strictly prohibited and can result in permanent account bans.\n\nNexVR Engine explicitly refuses to inject when these systems are detected, but the risk remains.\n\nBy proceeding, you acknowledge this risk and agree to only use NexVR Engine with single-player or unprotected titles.\n\nDo you accept these risks and wish to continue?")) {
+        return;
+      }
+      localStorage.setItem('ag_ac_consent', 'true');
+      setHasConsented(true);
+    }
+    
     if (injectState === 'injecting' || injectState === 'running') {
        injectTokenRef.current = 0;
        window.ag.inject.cancel();

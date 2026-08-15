@@ -19,6 +19,8 @@ module.exports = {
   win: {
     icon: 'assets/icon.ico',
     target: [{ target: 'nsis', arch: ['x64'] }],
+    certificateFile: process.env.SIGN_CERT_PATH,
+    certificatePassword: process.env.SIGN_CERT_PASS,
   },
 
   nsis: {

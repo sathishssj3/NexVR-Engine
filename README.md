@@ -11,6 +11,9 @@
 
 NexVR Engine intercepts a game's graphics pipeline in real time, converts its mono output into stereoscopic VR frames, and submits them directly to your headset via OpenXR. It ships as an Electron/React launcher with a robust C++ injection engine underneath.
 
+> [!CAUTION]
+> **Account Ban Risk**: Injecting into multiplayer games protected by Anti-Cheat software (e.g., Easy Anti-Cheat, BattlEye, Vanguard) is strictly prohibited and can result in permanent account bans. NexVR Engine explicitly refuses to inject when these systems are detected. Use this tool only with single-player or unprotected titles.
+
 Project context, current roadmap, and prior audit decisions are tracked in [docs/project_memory.md](docs/project_memory.md). Read that file before making architectural or feature changes.
 
 ---

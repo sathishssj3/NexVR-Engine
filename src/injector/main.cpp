@@ -21,6 +21,7 @@
 typedef LONG NTSTATUS;
 #endif
 #include <bcrypt.h>
+#include "expected_hash.h"
 
 
 #pragma comment(lib, "Shlwapi.lib")
@@ -322,6 +323,28 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    // S3.4: Anti-Cheat Protection
+    const char* blocklist[] = { "easyanticheat", "beservice", "vgc.exe", "vgtray", "battleye" };
+    HANDLE hSnapAC = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hSnapAC != INVALID_HANDLE_VALUE) {
+        PROCESSENTRY32 peAC{};
+        peAC.dwSize = sizeof(peAC);
+        if (::Process32First(hSnapAC, &peAC)) {
+            do {
+                std::string pName = peAC.szExeFile;
+                for (char& c : pName) c = static_cast<char>(std::tolower(c));
+                for (const char* blocked : blocklist) {
+                    if (pName.find(blocked) != std::string::npos) {
+                        PrintErr("[ERROR] Anti-cheat process detected (%s). Injection REFUSED to prevent account ban.", peAC.szExeFile);
+                        ::CloseHandle(hSnapAC);
+                        return 15;
+                    }
+                }
+            } while (::Process32Next(hSnapAC, &peAC));
+        }
+        ::CloseHandle(hSnapAC);
+    }
+
     if (targetPid == 0 || dllPath.empty()) {
         PrintErr("[ERROR] Missing required arguments (--pid and --dll).");
         return 1;
@@ -401,8 +424,12 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    // We disable the hash check during development to prevent
-    // CMake build order race conditions from blocking injection.
+    // S1.4: DLL Hash Verification
+    std::wstring computedHash = ComputeFileHashSHA256(dllPath);
+    if (computedHash.empty() || computedHash != EXPECTED_DLL_HASH) {
+        PrintErr("[ERROR] Security verification failed. DLL hash mismatch or tampering detected.");
+        return 14;
+    }
 
     PrintInfo("Target PID:  %lu", targetPid);
     PrintInfo("DLL path:    %s", dllPath.c_str());
