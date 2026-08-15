@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="gilded-arcade">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>NexVR Engine — Open the Gate to VR for Any PC Game</title>
 <meta name="description" content="NexVR Engine injects stereoscopic, head-tracked VR into games you already own. No native VR support required.">
-<meta name="theme-color" content="#0B0A0C">
+<meta name="theme-color" content="#0A0E0A">
 
 <meta property="og:type" content="website">
 <meta property="og:title" content="NexVR Engine — Open the Gate to VR for Any PC Game">
@@ -14,7 +14,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600&family=Press+Start+2P&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="assets/css/styles.css">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 </head>
@@ -23,35 +23,36 @@
 <a class="skip-link" href="#main">Skip to content</a>
 
 <!-- ============================================================
-     Shared SVG defs: filigree ornament, drawn once, used by ref.
-     Vector so it stays crisp from phone to TV (§10).
+     Shared SVG defs. The wordmark is custom lettering — drawn as
+     paths on a 32-unit grid, not set in any typeface.
      ============================================================ -->
 <svg class="svg-defs" aria-hidden="true" focusable="false">
   <defs>
-    <!-- Corner flourish: one quadrant, mirrored via transforms -->
-    <g id="fil-corner">
-      <path d="M0.5 24V8C0.5 3.86 3.86 0.5 8 0.5H24" fill="none"/>
-      <path d="M6 20V10C6 7.79 7.79 6 10 6H20" fill="none" opacity=".65"/>
-      <path d="M10 14c0-2.2 1.8-4 4-4" fill="none" opacity=".5"/>
-      <circle cx="14" cy="14" r="1.4" fill="currentColor" stroke="none" opacity=".8"/>
+    <!-- NEXVR wordmark, custom lettering on a 32-unit grid. Split in two
+         so each half can be coloured: CSS cannot select into a <use> shadow
+         tree, but `fill` inherits through it from the <use> element. -->
+    <g id="wm-nex">
+      <path d="M0,32 L0,0 L7,0 L16,19 L16,0 L22,0 L22,32 L15,32 L6,13 L6,32 Z"/>
+      <path d="M27,0 L47,0 L47,6 L33,6 L33,13 L44,13 L44,19 L33,19 L33,26 L47,26 L47,32 L27,32 Z"/>
+      <path d="M52,0 L59,0 L74,32 L67,32 Z"/>
+      <path d="M67,0 L74,0 L59,32 L52,32 Z"/>
     </g>
-    <!-- Divider: symmetrical etched rule with a central rosette -->
-    <g id="fil-divider">
-      <path d="M0 8h74" fill="none"/>
-      <path d="M74 8c6 0 10-6 16-6s10 6 10 6-4 6-10 6-10-6-16-6z" fill="none"/>
-      <path d="M126 8c-6 0-10-6-16-6s-10 6-10 6 4 6 10 6 10-6 16-6z" fill="none"/>
-      <path d="M126 8h74" fill="none"/>
-      <circle cx="100" cy="8" r="2.5" fill="currentColor" stroke="none"/>
-    </g>
-    <!-- Sigil used for the mobile nav toggle + brand mark -->
-    <g id="fil-sigil">
-      <path d="M12 2 22 12 12 22 2 12z" fill="none"/>
-      <path d="M12 6.5 17.5 12 12 17.5 6.5 12z" fill="none" opacity=".6"/>
-      <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/>
+    <g id="wm-vr">
+      <path d="M79,0 L86,0 L90,21 L94,0 L101,0 L92,32 L88,32 Z"/>
+      <path fill-rule="evenodd"
+            d="M106,0 L122,0 L128,6 L128,13 L123,18 L128,32 L121,32 L117,19 L112,19 L112,32 L106,32 Z
+               M112,6 L121,6 L122,7 L122,12 L121,13 L112,13 Z"/>
     </g>
 
-    <!-- Status badges, drawn on a 10x10 pixel grid so they read as retro
-         achievement icons rather than emoji. One rect per pixel. -->
+    <!-- Headset mark -->
+    <g id="mk-headset">
+      <rect x="1" y="7" width="24" height="13" rx="4" fill="none" stroke="currentColor" stroke-width="1.7"/>
+      <circle cx="8" cy="13.5" r="2.5"/>
+      <circle cx="18" cy="13.5" r="2.5"/>
+      <path d="M10 20.2 L13 23 L16 20.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+    </g>
+
+    <!-- Status glyphs on a 10x10 pixel grid -->
     <g id="px-check">
       <rect x="1" y="5" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/>
       <rect x="3" y="7" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/>
@@ -61,8 +62,6 @@
     <g id="px-warn">
       <rect x="4" y="1" width="2" height="5"/><rect x="4" y="7" width="2" height="2"/>
     </g>
-    <!-- Hollow ring, not a solid block: at 12px a filled centre reads as a
-         blob, while the open middle keeps it legible as a gear. -->
     <g id="px-gear">
       <rect x="3" y="2" width="4" height="1"/><rect x="3" y="7" width="4" height="1"/>
       <rect x="2" y="3" width="1" height="4"/><rect x="7" y="3" width="1" height="4"/>
@@ -76,8 +75,8 @@
 <header class="nav" id="nav">
   <div class="shell nav__inner">
     <a class="brand" href="#top" aria-label="NexVR Engine, home">
-      <svg class="brand__sigil" viewBox="0 0 24 24" aria-hidden="true"><use href="#fil-sigil"/></svg>
-      <span class="brand__word">NexVR<span class="brand__word-dim">&nbsp;Engine</span></span>
+      <svg class="brand__mark" viewBox="0 0 26 26" aria-hidden="true"><use href="#mk-headset"/></svg>
+      <svg class="brand__word" viewBox="0 0 128 32" role="img" aria-label="NexVR"><use href="#wm-nex" fill="currentColor"/><use class="wm-accent" href="#wm-vr"/></svg>
     </a>
 
     <nav class="nav__links" id="nav-links" aria-label="Primary">
@@ -90,7 +89,11 @@
     </nav>
 
     <button class="nav__toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-links" aria-label="Open menu">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#fil-sigil"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="2" y="4"  width="20" height="2.4" fill="currentColor"/>
+        <rect x="2" y="10.8" width="20" height="2.4" fill="currentColor"/>
+        <rect x="2" y="17.6" width="20" height="2.4" fill="currentColor"/>
+      </svg>
     </button>
   </div>
 </header>
@@ -99,12 +102,11 @@
 
   <!-- ========================================================== HERO -->
   <section class="hero" id="top">
-    <div class="hero__watermark" aria-hidden="true"></div>
-    <div class="hero__vignette" aria-hidden="true"></div>
+    <div class="hero__grid" aria-hidden="true"></div>
 
     <div class="shell hero__inner">
       <div class="hero__copy" data-reveal>
-        <p class="eyebrow"><span class="pixel-tag">v0.1 BETA</span> Universal VR injection framework</p>
+        <p class="eyebrow"><span class="tag tag--on">v0.1 Beta</span> Universal VR injection framework</p>
         <h1 class="display display--xl">Open the Gate to VR<br><span class="display__accent">For Any PC Game</span></h1>
         <p class="lede">
           NexVR Engine injects stereoscopic, head-tracked VR into games you already own.
@@ -112,98 +114,93 @@
         </p>
 
         <div class="hero__actions">
-          <a class="btn btn--primary" href="#download">
-            <span>Enter the Gate</span>
-            <svg class="btn__fil" viewBox="0 0 100 44" preserveAspectRatio="none" aria-hidden="true">
-              <rect x="1" y="1" width="98" height="42" rx="2" fill="none" vector-effect="non-scaling-stroke"/>
-            </svg>
-          </a>
-          <a class="btn btn--ghost" href="#compatibility">View Compatibility Hall</a>
+          <a class="btn btn--primary" href="#download">Enter the Gate</a>
+          <a class="btn btn--ghost" href="#compatibility">View Compatibility</a>
         </div>
 
         <ul class="hero__facts">
-          <li><span class="pixel-tag pixel-tag--ok">DX11</span> Hooked</li>
-          <li><span class="pixel-tag pixel-tag--ok">DX12</span> Hooked</li>
-          <li><span class="pixel-tag pixel-tag--wip">VULKAN</span> Roadmap</li>
+          <li><span class="tag tag--on">DX11 Hooked</span></li>
+          <li><span class="tag tag--on">DX12 Hooked</span></li>
+          <li><span class="tag tag--off">Vulkan Roadmap</span></li>
         </ul>
       </div>
 
-      <!-- The portal: a flat frame dissolving into a stereo pair through
-           a shower of chunky pixels. Rendered procedurally, no assets. -->
-      <figure class="hero__portal" data-reveal>
-        <div class="plaque plaque--portal">
-          <div class="portal" id="portal" data-skeleton-host>
-            <canvas id="portal-canvas" width="640" height="360" role="img"
-              aria-label="A flat game frame dissolving through pixel particles into a side-by-side stereoscopic VR view."></canvas>
-            <div class="portal__skeleton skeleton" data-skeleton>
-              <span class="skeleton__label">LOADING…</span>
+      <!-- Live headset viewport: a real 3D room, rendered per eye at true
+           IPD, warped through lens barrels with chromatic fringing. -->
+      <figure class="hero__viewport" data-reveal>
+        <div class="viewport" id="viewport">
+          <div class="viewport__stage">
+            <canvas id="viewport-canvas" width="512" height="256" role="img"
+              aria-label="A stereoscopic view through two VR headset lenses into a 3D room, with a glowing gate ahead. The view turns as the pointer moves."></canvas>
+            <div class="viewport__skeleton skeleton">
+              <span class="skeleton__label">Initialising</span>
             </div>
-            <div class="portal__hud">
-              <span class="portal__hud-item" data-portal-state aria-hidden="true">FLAT · 1 VIEW</span>
-              <span class="portal__hud-controls">
-                <button class="portal__btn" data-portal-step>Inject</button>
-                <button class="portal__btn" data-portal-play aria-pressed="false">Pause</button>
+            <div class="viewport__hud">
+              <span class="viewport__readout meta">
+                <span>Mode <b data-vp-mode>Stereo</b></span>
+                <span>Yaw <b data-vp-yaw>0°</b></span>
+                <span>FPS <b data-vp-fps>—</b></span>
+              </span>
+              <span class="viewport__controls">
+                <button class="viewport__btn" data-vp-eyes aria-pressed="true">Stereo</button>
+                <button class="viewport__btn" data-vp-play aria-pressed="false">Pause</button>
               </span>
             </div>
           </div>
         </div>
-        <figcaption class="portal__caption">Injection preview — flat frame → stereo pair, in real time.</figcaption>
+        <figcaption class="viewport__caption meta">Live render — move your pointer to look around</figcaption>
       </figure>
-    </div>
-
-    <div class="rule" aria-hidden="true">
-      <svg viewBox="0 0 200 16" preserveAspectRatio="xMidYMid meet"><use href="#fil-divider"/></svg>
     </div>
   </section>
 
   <!-- ================================================== HOW IT WORKS -->
   <section class="section" id="how">
     <div class="shell">
-      <header class="section__head" data-reveal>
-        <p class="eyebrow">The Rite</p>
+      <header class="section__head section__head--center" data-reveal>
+        <p class="eyebrow">Pipeline</p>
         <h2 class="display display--lg">How It Works</h2>
-        <p class="section__sub">Five steps between a flat executable and a world you can lean into.</p>
+        <p class="section__sub">Five stages between a flat executable and a world you can lean into.</p>
       </header>
 
       <ol class="steps">
         <li class="step" data-reveal>
-          <article class="plaque plaque--step">
-            <p class="step__num">#1</p>
+          <article class="panel">
+            <p class="step__num">01</p>
             <h3 class="step__title">Detect</h3>
             <p class="step__body">The launcher fingerprints the running process, identifies the graphics API and engine, and loads the matching profile from the compatibility index.</p>
-            <p class="step__meta pixel-tag">PROCESS SCAN</p>
+            <span class="tag step__meta">Process scan</span>
           </article>
         </li>
         <li class="step" data-reveal>
-          <article class="plaque plaque--step">
-            <p class="step__num">#2</p>
+          <article class="panel">
+            <p class="step__num">02</p>
             <h3 class="step__title">Hook</h3>
             <p class="step__body">A signed DLL is injected into the target and intercepts the swapchain, device context, and draw submission at the boundary — no game files are modified on disk.</p>
-            <p class="step__meta pixel-tag">DX11 / DX12</p>
+            <span class="tag step__meta">DX11 / DX12</span>
           </article>
         </li>
         <li class="step" data-reveal>
-          <article class="plaque plaque--step">
-            <p class="step__num">#3</p>
+          <article class="panel">
+            <p class="step__num">03</p>
             <h3 class="step__title">Render</h3>
             <p class="step__body">The view and projection matrices are recovered and duplicated per eye. The scene is submitted twice against the headset's exact frustum, with per-eye culling to keep the cost sane.</p>
-            <p class="step__meta pixel-tag">STEREO PASS</p>
+            <span class="tag step__meta">Stereo pass</span>
           </article>
         </li>
         <li class="step" data-reveal>
-          <article class="plaque plaque--step">
-            <p class="step__num">#4</p>
+          <article class="panel">
+            <p class="step__num">04</p>
             <h3 class="step__title">Track</h3>
             <p class="step__body">Head pose from OpenVR/OpenXR is folded into the camera each frame, with late-latching before submit so rotation stays locked to your neck, not to the game's tick rate.</p>
-            <p class="step__meta pixel-tag">6DoF · LATE LATCH</p>
+            <span class="tag step__meta">6DoF · late latch</span>
           </article>
         </li>
         <li class="step" data-reveal>
-          <article class="plaque plaque--step">
-            <p class="step__num">#5</p>
+          <article class="panel">
+            <p class="step__num">05</p>
             <h3 class="step__title">Play</h3>
             <p class="step__body">Frames go to the compositor with reprojection and per-title comfort options — snap turn, world scale, HUD depth — tunable from the in-headset overlay.</p>
-            <p class="step__meta pixel-tag">COMPOSITOR</p>
+            <span class="tag step__meta">Compositor</span>
           </article>
         </li>
       </ol>
@@ -214,10 +211,10 @@
   <section class="section section--alt" id="compatibility">
     <div class="shell">
       <header class="section__head" data-reveal>
-        <p class="eyebrow">The Armory</p>
-        <h2 class="display display--lg">Compatibility Hall</h2>
-        <p class="section__sub">
-          A curated, hand-verified list — not a promise of blanket support. Every plaque below
+        <p class="eyebrow">Verified index</p>
+        <h2 class="display display--lg">Compatibility</h2>
+        <p class="section__sub" style="margin-inline:0">
+          A curated, hand-verified list — not a promise of blanket support. Every entry below
           has been run end-to-end on real hardware.
           <span class="note">Entries shown are preview data pending the v0.1 verified list.</span>
         </p>
@@ -225,13 +222,11 @@
 
       <div class="hall__filters" role="group" aria-label="Filter by status" data-reveal>
         <button class="chip is-active" data-filter="all">All</button>
-        <button class="chip" data-filter="tested"><span class="pixel-tag pixel-tag--ok"><svg class="pixel-icon" viewBox="0 0 10 10" aria-hidden="true"><use href="#px-check"/></svg></span> Tested</button>
-        <button class="chip" data-filter="partial"><span class="pixel-tag pixel-tag--warn"><svg class="pixel-icon" viewBox="0 0 10 10" aria-hidden="true"><use href="#px-warn"/></svg></span> Partial</button>
-        <button class="chip" data-filter="progress"><span class="pixel-tag pixel-tag--wip"><svg class="pixel-icon" viewBox="0 0 10 10" aria-hidden="true"><use href="#px-gear"/></svg></span> In Dev</button>
+        <button class="chip" data-filter="tested"><svg class="pixel-icon" viewBox="0 0 10 10" aria-hidden="true"><use href="#px-check"/></svg> Tested</button>
+        <button class="chip" data-filter="partial"><svg class="pixel-icon" viewBox="0 0 10 10" aria-hidden="true"><use href="#px-warn"/></svg> Partial</button>
+        <button class="chip" data-filter="progress"><svg class="pixel-icon" viewBox="0 0 10 10" aria-hidden="true"><use href="#px-gear"/></svg> In Dev</button>
       </div>
 
-      <!-- Populated by JS. Skeletons render first (filigree frame instant,
-           pixel-block shimmer inside) — see §7. -->
       <div class="hall" id="hall" aria-live="polite" aria-busy="true"></div>
 
       <p class="hall__foot" data-reveal>
@@ -244,52 +239,59 @@
   <!-- =================================================== PLATFORMS -->
   <section class="section" id="platforms">
     <div class="shell">
-      <header class="section__head" data-reveal>
-        <p class="eyebrow">The Seals</p>
+      <header class="section__head section__head--center" data-reveal>
+        <p class="eyebrow">Targets</p>
         <h2 class="display display--lg">Platform &amp; Headset Support</h2>
         <p class="section__sub">What the engine speaks, and what it speaks to.</p>
       </header>
 
-      <div class="seals">
-        <article class="seal" data-reveal>
-          <div class="seal__crest" aria-hidden="true">
-            <svg viewBox="0 0 64 64"><use href="#fil-sigil" transform="translate(20 20) scale(1.0)"/><circle cx="32" cy="32" r="26" fill="none"/><circle cx="32" cy="32" r="30" fill="none" opacity=".4"/></svg>
+      <div class="tiles">
+        <article class="panel" data-reveal>
+          <div class="tile__icon" aria-hidden="true">
+            <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="6" width="17" height="15"/><rect x="24" y="6" width="17" height="15"/>
+              <rect x="3" y="25" width="17" height="15"/><rect x="24" y="25" width="17" height="15"/>
+            </svg>
           </div>
-          <h3 class="seal__title">Windows 10 / 11</h3>
-          <p class="seal__body">64-bit only. Ships as a signed launcher plus injector DLL.</p>
-          <p class="pixel-tag pixel-tag--ok">SUPPORTED</p>
+          <h3 class="tile__title">Windows 10 / 11</h3>
+          <p class="tile__body">64-bit only. Ships as a signed launcher plus injector DLL.</p>
+          <span class="tag tag--on">Supported</span>
         </article>
 
-        <article class="seal" data-reveal>
-          <div class="seal__crest" aria-hidden="true">
-            <svg viewBox="0 0 64 64"><use href="#fil-sigil" transform="translate(20 20)"/><rect x="8" y="8" width="48" height="48" fill="none"/><rect x="14" y="14" width="36" height="36" fill="none" opacity=".4"/></svg>
+        <article class="panel" data-reveal>
+          <div class="tile__icon" aria-hidden="true">
+            <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 34V10h10l12 24h10"/><path d="M6 10h32"/><circle cx="22" cy="22" r="3" fill="currentColor" stroke="none"/>
+            </svg>
           </div>
-          <h3 class="seal__title">DirectX 11 &amp; 12</h3>
-          <p class="seal__body">Full swapchain and command-list interception, including deferred contexts.</p>
-          <p class="pixel-tag pixel-tag--ok">SUPPORTED</p>
+          <h3 class="tile__title">DirectX 11 &amp; 12</h3>
+          <p class="tile__body">Full swapchain and command-list interception, including deferred contexts.</p>
+          <span class="tag tag--on">Supported</span>
         </article>
 
-        <article class="seal" data-reveal>
-          <div class="seal__crest" aria-hidden="true">
-            <svg viewBox="0 0 64 64"><use href="#fil-sigil" transform="translate(20 20)"/><path d="M32 6 58 32 32 58 6 32z" fill="none"/><path d="M32 14 50 32 32 50 14 32z" fill="none" opacity=".4"/></svg>
+        <article class="panel" data-reveal>
+          <div class="tile__icon" aria-hidden="true">
+            <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 4 40 22 22 40 4 22z"/><path d="M22 13 31 22 22 31 13 22z"/>
+            </svg>
           </div>
-          <h3 class="seal__title">Vulkan</h3>
-          <p class="seal__body">Layer-based injection in active development. Targeted for the 0.3 milestone.</p>
-          <p class="pixel-tag pixel-tag--wip">ROADMAP</p>
+          <h3 class="tile__title">Vulkan</h3>
+          <p class="tile__body">Layer-based injection in active development. Targeted for the 0.3 milestone.</p>
+          <span class="tag tag--off">Roadmap</span>
         </article>
 
-        <article class="seal" data-reveal>
-          <div class="seal__crest" aria-hidden="true">
-            <svg viewBox="0 0 64 64"><use href="#fil-sigil" transform="translate(20 20)"/><path d="M10 24h44a6 6 0 0 1 6 6v6a6 6 0 0 1-6 6H40l-8 6-8-6H10a6 6 0 0 1-6-6v-6a6 6 0 0 1 6-6z" fill="none"/></svg>
+        <article class="panel" data-reveal>
+          <div class="tile__icon" aria-hidden="true">
+            <svg viewBox="0 0 44 44"><use href="#mk-headset" transform="translate(9 9) scale(1)"/></svg>
           </div>
-          <h3 class="seal__title">Headsets</h3>
-          <ul class="seal__list">
+          <h3 class="tile__title">Headsets</h3>
+          <ul class="tile__list">
             <li>Quest 2 / 3 / Pro <span class="dim">via Link or Virtual Desktop</span></li>
             <li>Valve Index</li>
             <li>HTC Vive &amp; Vive Pro</li>
             <li>PSVR2 <span class="dim">via PC adapter</span></li>
           </ul>
-          <p class="pixel-tag pixel-tag--ok">OPENVR / OPENXR</p>
+          <span class="tag tag--on">OpenVR / OpenXR</span>
         </article>
       </div>
     </div>
@@ -298,30 +300,30 @@
   <!-- ======================================================= STATS -->
   <section class="section section--alt" id="stats">
     <div class="shell">
-      <header class="section__head" data-reveal>
-        <p class="eyebrow">The Record</p>
+      <header class="section__head section__head--center" data-reveal>
+        <p class="eyebrow">Telemetry</p>
         <h2 class="display display--lg">By the Numbers</h2>
         <p class="section__sub">Placeholders until the real figures land at launch.</p>
       </header>
 
       <div class="figs">
-        <article class="fig" data-reveal>
-          <p class="fig__label">Fig. 1</p>
+        <article class="panel" data-reveal>
+          <p class="fig__label meta">Fig. 01</p>
           <p class="fig__num" data-count="48">—</p>
           <p class="fig__cap">Verified titles in the compatibility index</p>
         </article>
-        <article class="fig" data-reveal>
-          <p class="fig__label">Fig. 2</p>
+        <article class="panel" data-reveal>
+          <p class="fig__label meta">Fig. 02</p>
           <p class="fig__num" data-count="12400" data-suffix="+">—</p>
           <p class="fig__cap">Sessions injected during closed beta</p>
         </article>
-        <article class="fig" data-reveal>
-          <p class="fig__label">Fig. 3</p>
+        <article class="panel" data-reveal>
+          <p class="fig__label meta">Fig. 03</p>
           <p class="fig__num" data-count="90" data-suffix=" Hz">—</p>
           <p class="fig__cap">Median headset framerate held on an RTX 3070</p>
         </article>
-        <article class="fig" data-reveal>
-          <p class="fig__label">Fig. 4</p>
+        <article class="panel" data-reveal>
+          <p class="fig__label meta">Fig. 04</p>
           <p class="fig__num" data-count="2300" data-suffix="+">—</p>
           <p class="fig__cap">GitHub stars on the open core</p>
         </article>
@@ -332,33 +334,31 @@
   <!-- ===================================================== PRICING -->
   <section class="section" id="pricing">
     <div class="shell">
-      <header class="section__head" data-reveal>
-        <p class="eyebrow">The Columns</p>
+      <header class="section__head section__head--center" data-reveal>
+        <p class="eyebrow">Licence tiers</p>
         <h2 class="display display--lg">Pricing</h2>
         <p class="section__sub">The core stays free and open. Pay only for the conveniences.</p>
       </header>
 
-      <div class="columns">
-        <article class="column" data-reveal>
-          <div class="column__cap" aria-hidden="true"></div>
-          <h3 class="column__name">Initiate</h3>
-          <p class="column__price"><span class="column__amount">Free</span></p>
-          <p class="column__blurb">The open-source injector, forever.</p>
+      <div class="plans">
+        <article class="panel plan" data-reveal>
+          <h3 class="plan__name">Initiate</h3>
+          <p class="plan__price"><span class="plan__amount">Free</span></p>
+          <p class="plan__blurb">The open-source injector, forever.</p>
           <ul class="ticks">
             <li>DX11 &amp; DX12 injection</li>
             <li>Community compatibility profiles</li>
             <li>6DoF head tracking</li>
             <li>Community support on Discord</li>
           </ul>
-          <a class="btn btn--ghost column__cta" href="#download">Download</a>
+          <a class="btn btn--ghost plan__cta" href="#download">Download</a>
         </article>
 
-        <article class="column column--featured" data-reveal>
-          <div class="column__cap" aria-hidden="true"></div>
-          <p class="pixel-tag pixel-tag--ok column__badge">MOST CHOSEN</p>
-          <h3 class="column__name">Adept</h3>
-          <p class="column__price"><span class="column__amount">$9</span><span class="column__per">/ month</span></p>
-          <p class="column__blurb">Verified profiles and comfort tuning, maintained by us.</p>
+        <article class="panel plan plan--featured" data-reveal>
+          <span class="tag tag--on plan__badge">Most chosen</span>
+          <h3 class="plan__name">Adept</h3>
+          <p class="plan__price"><span class="plan__amount">$9</span><span class="plan__per">/ month</span></p>
+          <p class="plan__blurb">Verified profiles and comfort tuning, maintained by us.</p>
           <ul class="ticks">
             <li>Everything in Initiate</li>
             <li>Curated, verified game profiles</li>
@@ -366,19 +366,13 @@
             <li>In-headset settings overlay</li>
             <li>Priority profile requests</li>
           </ul>
-          <a class="btn btn--primary column__cta" href="#download">
-            <span>Choose Adept</span>
-            <svg class="btn__fil" viewBox="0 0 100 44" preserveAspectRatio="none" aria-hidden="true">
-              <rect x="1" y="1" width="98" height="42" rx="2" fill="none" vector-effect="non-scaling-stroke"/>
-            </svg>
-          </a>
+          <a class="btn btn--primary plan__cta" href="#download">Choose Adept</a>
         </article>
 
-        <article class="column" data-reveal>
-          <div class="column__cap" aria-hidden="true"></div>
-          <h3 class="column__name">Archon</h3>
-          <p class="column__price"><span class="column__amount">$29</span><span class="column__per">/ month</span></p>
-          <p class="column__blurb">For studios, arcades, and researchers shipping on top of the engine.</p>
+        <article class="panel plan" data-reveal>
+          <h3 class="plan__name">Archon</h3>
+          <p class="plan__price"><span class="plan__amount">$29</span><span class="plan__per">/ month</span></p>
+          <p class="plan__blurb">For studios, arcades, and researchers shipping on top of the engine.</p>
           <ul class="ticks">
             <li>Everything in Adept</li>
             <li>Commercial &amp; venue licence</li>
@@ -386,7 +380,7 @@
             <li>Headless / kiosk deployment</li>
             <li>Direct engineering support</li>
           </ul>
-          <a class="btn btn--ghost column__cta" href="#download">Talk to us</a>
+          <a class="btn btn--ghost plan__cta" href="#download">Talk to us</a>
         </article>
       </div>
     </div>
@@ -395,8 +389,8 @@
   <!-- ========================================================= FAQ -->
   <section class="section section--alt" id="faq">
     <div class="shell shell--narrow">
-      <header class="section__head" data-reveal>
-        <p class="eyebrow">The Inscriptions</p>
+      <header class="section__head section__head--center" data-reveal>
+        <p class="eyebrow">Answers</p>
         <h2 class="display display--lg">Frequently Asked</h2>
       </header>
 
@@ -411,11 +405,11 @@
         </details>
         <details class="faq__item">
           <summary class="faq__q">What hardware do I actually need?<span class="faq__mark" aria-hidden="true"></span></summary>
-          <div class="faq__a"><p>Stereo rendering roughly doubles GPU load. An RTX 3060 / RX 6600 is a realistic floor for older titles at 90 Hz; modern AAA games want a 4070-class card or better. Per-title recommendations live on each compatibility plaque.</p></div>
+          <div class="faq__a"><p>Stereo rendering roughly doubles GPU load. An RTX 3060 / RX 6600 is a realistic floor for older titles at 90 Hz; modern AAA games want a 4070-class card or better. Per-title recommendations live on each compatibility card.</p></div>
         </details>
         <details class="faq__item">
           <summary class="faq__q">Is it true 6DoF, or just a screen floating in front of me?<span class="faq__mark" aria-hidden="true"></span></summary>
-          <div class="faq__a"><p>True stereoscopic 6DoF wherever the game's view matrix can be recovered — you get real depth and positional head movement. Titles where only rotation can be resolved are marked <span class="pixel-tag pixel-tag--warn"><svg class="pixel-icon" viewBox="0 0 10 10" aria-hidden="true"><use href="#px-warn"/></svg> PARTIAL</span> in the hall, and behave closer to a 3D theater.</p></div>
+          <div class="faq__a"><p>True stereoscopic 6DoF wherever the game's view matrix can be recovered — you get real depth and positional head movement. Titles where only rotation can be resolved are marked Partial in the index, and behave closer to a 3D theater.</p></div>
         </details>
         <details class="faq__item">
           <summary class="faq__q">Do motion controllers work?<span class="faq__mark" aria-hidden="true"></span></summary>
@@ -432,14 +426,14 @@
   <!-- ==================================================== DOWNLOAD -->
   <section class="section" id="download">
     <div class="shell shell--narrow">
-      <header class="section__head" data-reveal>
-        <p class="eyebrow">The Gate</p>
-        <h2 class="display display--lg">Install NexVR Engine</h2>
+      <header class="section__head section__head--center" data-reveal>
+        <p class="eyebrow">Install</p>
+        <h2 class="display display--lg">Get NexVR Engine</h2>
         <p class="section__sub">Two doors, same room. Both are Windows 64-bit.</p>
       </header>
 
       <div class="install" data-reveal>
-        <div class="plaque plaque--terminal">
+        <div class="panel panel--flush">
           <div class="tabs" role="tablist" aria-label="Install method">
             <button class="tab is-active" role="tab" aria-selected="true" aria-controls="tab-ps" id="tabbtn-ps">PowerShell</button>
             <button class="tab" role="tab" aria-selected="false" aria-controls="tab-winget" id="tabbtn-winget">winget</button>
@@ -462,13 +456,8 @@
         </div>
 
         <div class="install__alt">
-          <a class="btn btn--primary btn--wide" href="#download">
-            <span>Download Installer · .exe</span>
-            <svg class="btn__fil" viewBox="0 0 100 44" preserveAspectRatio="none" aria-hidden="true">
-              <rect x="1" y="1" width="98" height="42" rx="2" fill="none" vector-effect="non-scaling-stroke"/>
-            </svg>
-          </a>
-          <p class="install__meta">v0.1.0-beta · Windows 10/11 64-bit · signed · 24 MB</p>
+          <a class="btn btn--primary btn--wide" href="#download">Download Installer · .exe</a>
+          <p class="install__meta meta">v0.1.0-beta · Windows 10/11 64-bit · signed · 24 MB</p>
         </div>
       </div>
     </div>
@@ -478,29 +467,17 @@
 
 <!-- ======================================================== FOOTER -->
 <footer class="footer">
-  <div class="rule rule--tight" aria-hidden="true">
-    <svg viewBox="0 0 200 16" preserveAspectRatio="xMidYMid meet"><use href="#fil-divider"/></svg>
-  </div>
   <div class="shell footer__inner">
-    <a class="brand brand--sm" href="#top">
-      <svg class="brand__sigil" viewBox="0 0 24 24" aria-hidden="true"><use href="#fil-sigil"/></svg>
-      <span class="brand__word">NexVR<span class="brand__word-dim">&nbsp;Engine</span></span>
+    <a class="brand brand--sm" href="#top" aria-label="NexVR Engine, back to top">
+      <svg class="brand__mark" viewBox="0 0 26 26" aria-hidden="true" style="width:20px;height:20px"><use href="#mk-headset"/></svg>
+      <svg class="brand__word" viewBox="0 0 128 32" role="img" aria-label="NexVR"><use href="#wm-nex" fill="currentColor"/><use class="wm-accent" href="#wm-vr"/></svg>
     </a>
-    <p class="footer__note">Built for the games that were never built for this.</p>
-    <button class="footer__cursor-toggle" id="cursor-toggle" aria-pressed="false">
-      <span class="pixel-tag">PIXEL CURSOR</span>
-    </button>
+    <p class="meta" style="margin:0">Built for the games that were never built for this</p>
   </div>
 </footer>
 
-<!-- Sticky CTA — phone only -->
 <div class="sticky-cta">
-  <a class="btn btn--primary btn--wide" href="#download">
-    <span>Download NexVR</span>
-    <svg class="btn__fil" viewBox="0 0 100 44" preserveAspectRatio="none" aria-hidden="true">
-      <rect x="1" y="1" width="98" height="42" rx="2" fill="none" vector-effect="non-scaling-stroke"/>
-    </svg>
-  </a>
+  <a class="btn btn--primary btn--wide" href="#download">Download NexVR</a>
 </div>
 
 <script src="assets/js/compatibility-data.js"></script>
