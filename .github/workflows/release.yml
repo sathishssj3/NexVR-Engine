@@ -135,12 +135,45 @@ jobs:
       with:
         category: "/language:cpp"
 
+    # The suite was configured with -DBUILD_TESTS=ON and built, but never run,
+    # so "Upload Test Results" matched nothing and CI stayed green through any
+    # test failure. Two known failures are tolerated below; everything else must
+    # fail the job. Remove that allowance once AiDirectMLTest and
+    # test_vulkan_stress are fixed, so the gate becomes strict.
+    - name: Run Tests
+      shell: pwsh
+      working-directory: build
+      run: |
+        $ErrorActionPreference = 'Continue'
+        ctest -C ${{ matrix.configuration }} --output-on-failure --output-junit TestResults.xml
+        $ctestExit = $LASTEXITCODE
+
+        if ($ctestExit -eq 0) { exit 0 }
+
+        $known = @('AiDirectMLTest', 'test_vulkan_stress')
+        $failing = @(
+          ctest -C ${{ matrix.configuration }} -N --rerun-failed |
+            Select-String -Pattern '^\s*Test\s+#\d+:\s+(\S+)' |
+            ForEach-Object { $_.Matches[0].Groups[1].Value }
+        )
+
+        Write-Host "Failing tests: $($failing -join ', ')"
+        $unexpected = @($failing | Where-Object { $known -notcontains $_ })
+
+        if ($unexpected.Count -gt 0) {
+          Write-Host "::error::Unexpected test failures: $($unexpected -join ', ')"
+          exit 1
+        }
+        Write-Host "::warning::Only known failures ($($known -join ', ')) failed."
+        exit 0
+
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: test-results-${{ matrix.configuration }}
         path: |
+          build/TestResults.xml
           **/TestResult*.xml
           **/test_results*.xml
           **/TEST-*.xml
@@ -232,24 +265,34 @@ jobs:
     - name: Build C++ Components (DLL & CLI)
       shell: pwsh
       run: |
-        $ErrorActionPreference = 'SilentlyContinue'
+        # Was 'SilentlyContinue', which hid errors from the log it then shipped.
+        $ErrorActionPreference = 'Continue'
         cmake --build build --config Release > build.log 2>&1
         if ($LASTEXITCODE -ne 0) {
-          Write-Host "Build failed! Pushing log to repo..."
           $LogTail = Get-Content build.log -Tail 300 | Out-String
           Write-Host "=== ERROR PREVIEW ==="
           Write-Host $LogTail
           Write-Host "====================="
           Set-Content -Path build_crash.log -Value $LogTail
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add build_crash.log
-          git commit -m "[bot] Upload build crash log for analysis" || true
-          git pull --rebase origin main || true
-          git push origin HEAD:main || true
+          Write-Host "::error::Release build failed. Full log in the build-crash-log artifact."
           exit 1
         }
-        
+
+    # The failure path above used to commit build_crash.log and run
+    # 'git push origin HEAD:main || true' from the CI bot - a job with write
+    # access mutating the default branch, with '|| true' swallowing every error.
+    # A failing build now uploads its log as an artifact instead and touches no
+    # branch.
+    - name: Upload Build Crash Log
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-crash-log
+        path: |
+          build_crash.log
+          build.log
+        if-no-files-found: ignore
+
     - name: Upload Binaries to Artifacts
       uses: actions/upload-artifact@v4
       with:
