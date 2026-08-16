@@ -83,9 +83,18 @@ bool HookManager::Install() {
         m_rollbackStack.push_back([]() { DX12Hook::Shutdown(); });
     }
 
-    vulkan::hooks::InstallVulkanHooks();
-    m_rollbackStack.push_back([]() { vulkan::hooks::RemoveVulkanHooks(); });
-    LOG_INFO("HookManager: Vulkan hooks installed successfully.");
+    // When the loader has already inserted us as a Vulkan layer we are on the dispatch
+    // chain properly and must NOT also detour vulkan-1.dll's exported symbols. Doing both
+    // corrupts the loader's chain and faults with 0xC0000409 during swapchain creation.
+    // The MinHook path stays for late injection into an already-running process, where no
+    // layer is present.
+    if (vulkan::hooks::IsLayerActive()) {
+        LOG_INFO("HookManager: Vulkan layer active - skipping MinHook Vulkan detours.");
+    } else {
+        vulkan::hooks::InstallVulkanHooks();
+        m_rollbackStack.push_back([]() { vulkan::hooks::RemoveVulkanHooks(); });
+        LOG_INFO("HookManager: Vulkan hooks installed successfully.");
+    }
 
     DX12Hook::SetOnFrameCallback([](const DX12Hook::FrameResourcesDX12& res) {
         static int frameCount = 0;

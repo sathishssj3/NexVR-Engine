@@ -1,10 +1,34 @@
 
 #include "../rendering/vulkan/vk_layer.h"
+#include <atomic>
 #include <mutex>
 #include <iostream>
 #include "../rendering/backends/vulkan_renderer.h"
 #include "../rendering/stereo_pipeline.h"
 #include "../core/logger.h"
+#include "vulkan_hook.h"
+
+namespace vrinject {
+namespace vulkan {
+namespace hooks {
+
+// Whether the Vulkan loader activated us as a layer. Read from the RuntimeState
+// background thread (HookManager) and written from whichever thread the loader uses
+// to negotiate the layer interface, so it must be atomic.
+static std::atomic<bool> s_layerActive{false};
+
+void SetLayerActive() {
+    // Log once on the transition; this is called from several entry points because the
+    // loader picks whichever interface the manifest advertises.
+    if (!s_layerActive.exchange(true, std::memory_order_acq_rel)) {
+        LOG_INFO("Vulkan Layer: active - MinHook Vulkan detours will be suppressed.");
+    }
+}
+bool IsLayerActive()  { return s_layerActive.load(std::memory_order_acquire); }
+
+} // namespace hooks
+} // namespace vulkan
+} // namespace vrinject
 
 
 namespace vrinject {
@@ -45,6 +69,8 @@ namespace {
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL VRInject_vkCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance) {
+    vrinject::vulkan::hooks::SetLayerActive();
+
     VkLayerInstanceCreateInfo* layerCreateInfo = (VkLayerInstanceCreateInfo*)pCreateInfo->pNext;
     while (layerCreateInfo && (layerCreateInfo->sType != VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO || layerCreateInfo->function != VK_LAYER_LINK_INFO)) {
         layerCreateInfo = (VkLayerInstanceCreateInfo*)layerCreateInfo->pNext;
@@ -219,6 +245,10 @@ extern "C" {
     }
 
     __declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL VRInject_vkGetInstanceProcAddr(VkInstance instance, const char* pName) {
+        // Earliest entry point the loader actually calls when the manifest names the
+        // legacy functions directly (it then never calls the negotiate export at all).
+        vrinject::vulkan::hooks::SetLayerActive();
+
         if (strcmp(pName, "vkCreateInstance") == 0) return reinterpret_cast<PFN_vkVoidFunction>(VRInject_vkCreateInstance);
         if (strcmp(pName, "vkCreateDevice") == 0) return reinterpret_cast<PFN_vkVoidFunction>(VRInject_vkCreateDevice);
         
@@ -238,6 +268,12 @@ extern "C" {
     }
 
     __declspec(dllexport) VKAPI_ATTR VkResult VKAPI_CALL VRInject_vkNegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface* pVersionStruct) {
+        // Earliest possible signal that we are in the loader's dispatch chain. HookManager
+        // consults this before installing MinHook detours on vulkan-1.dll's exports; running
+        // both interception strategies at once faults inside the loader (0xC0000409) during
+        // swapchain creation.
+        vrinject::vulkan::hooks::SetLayerActive();
+
         if (pVersionStruct->loaderLayerInterfaceVersion >= 2) {
             pVersionStruct->pfnGetInstanceProcAddr = VRInject_vkGetInstanceProcAddr;
             pVersionStruct->pfnGetDeviceProcAddr = VRInject_vkGetDeviceProcAddr;
