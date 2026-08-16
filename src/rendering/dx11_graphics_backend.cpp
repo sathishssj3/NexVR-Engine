@@ -3,7 +3,13 @@
 #include "../rendering/dx11_graphics_backend.h"
 #include "../core/camera_lock_manager.h"
 #include "../core/depth_lock_manager.h"
+#include "../core/performance_profiler.h"
+#include "../core/gpu_profiler.h"
+#include "../core/runtime_state_monitor.h"
 #include "../rendering/stereo_pipeline.h"
+#include "../openxr/openxr_runtime_manager.h"
+#include "../openxr/openxr_swapchain_manager.h"
+#include "../openxr/openxr_frame_submitter.h"
 
 namespace vrinject {
 
@@ -58,29 +64,28 @@ void* DX11GraphicsBackend::GetRightEyeTexture() {
 }
 
 void DX11GraphicsBackend::RenderStereo(
+    const RenderFrameSnapshot& frameSnapshot,
     const CameraSnapshot& camSnapshot, 
     const DepthSnapshot& depthSnapshot, 
-    const StereoParams& params
-) {
-    if (!m_stereoRenderer || !m_context) return;
-    
-    // Ensure resource manager is initialized to the current resolution
-    DXGI_FORMAT targetFormat = DXGI_FORMAT_R8G8B8A8_UNORM; // Should come from snapshot, defaulting for now
+    const StereoParams& params) 
+{
+    if (!m_stereoRenderer || !m_context) {
+        return;
+    }
+
     uint32_t width = depthSnapshot.identity.width;
     uint32_t height = depthSnapshot.identity.height;
     if (width == 0) width = 1024;
     if (height == 0) height = 1024;
-    
-    if (!m_resourceManager->Initialize(width, height, targetFormat)) {
-        return;
-    }
-    
+
     StereoConstants constants;
     constants.ipd = params.ipd;
+    constants.nearPlane = params.nearPlane;
+    constants.farPlane = params.farPlane;
     constants.convergence = params.convergence;
-    
+
     EyeView leftEye, rightEye;
-    StereoCameraGenerator::Generate(camSnapshot, constants, leftEye, rightEye);
+    StereoCameraGenerator::Generate(frameSnapshot, camSnapshot, constants, leftEye, rightEye);
     
     StereoFrameContext frameCtx = StereoFrameBuilder::Build(
         camSnapshot.frame,
@@ -114,6 +119,79 @@ void DX11GraphicsBackend::RenderStereo(
         m_resourceManager->GetGameColorSRV(),
         m_resourceManager->GetGameDepthSRV()
     );
+}
+
+bool DX11GraphicsBackend::CreateOpenXRSession(openxr::OpenXRRuntimeManager* xrRuntime, const RenderFrameSnapshot& snapshot) {
+    if (!xrRuntime) return false;
+    return xrRuntime->CreateSession(static_cast<ID3D11Device*>(snapshot.nativeDevice));
+}
+
+void DX11GraphicsBackend::SubmitStereoFrame(
+    openxr::OpenXRRuntimeManager* xrRuntime,
+    openxr::OpenXRSwapchainManager* oxrSwapchain,
+    openxr::OpenXRFrameSubmitter* oxrSubmitter,
+    RenderFrameSnapshot& currentSnapshot,
+    const CameraSnapshot& camSnapshot,
+    const DepthSnapshot& depthSnapshot,
+    const StereoParams& params,
+    RuntimeStateMonitor& stateMonitor,
+    PerformanceProfiler& cpuProfiler,
+    GpuProfiler& gpuProfiler,
+    bool shouldAttemptStereo
+) {
+    XrPosef leftPose, rightPose;
+    XrFovf leftFov, rightFov;
+
+    {
+        ScopedCpuTimer oxrTimer(&cpuProfiler, CpuSegment::OpenXrSubmission);
+        gpuProfiler.BeginSegment(static_cast<ID3D11DeviceContext*>(currentSnapshot.nativeContext),
+                                 GpuSegment::OpenXrSubmission);
+
+        if (oxrSubmitter->BeginAndAcquireDX11(xrRuntime->GetSession(),
+                                              xrRuntime->GetReferenceSpace(),
+                                              oxrSwapchain,
+                                              leftPose, leftFov, rightPose, rightFov)) {
+            currentSnapshot.leftPose = leftPose;
+            currentSnapshot.leftFov = leftFov;
+            currentSnapshot.rightPose = rightPose;
+            currentSnapshot.rightFov = rightFov;
+
+            gpuProfiler.EndSegment(static_cast<ID3D11DeviceContext*>(currentSnapshot.nativeContext),
+                                   GpuSegment::OpenXrSubmission);
+
+            RenderStereo(currentSnapshot, camSnapshot, depthSnapshot, params);
+
+            gpuProfiler.EndSegment(
+                static_cast<ID3D11DeviceContext*>(currentSnapshot.nativeContext),
+                GpuSegment::StereoCompute);
+            gpuProfiler.BeginSegment(
+                static_cast<ID3D11DeviceContext*>(currentSnapshot.nativeContext),
+                GpuSegment::TextureCopies);
+
+            stateMonitor.UpdateStereoHealth(true);
+
+            gpuProfiler.BeginSegment(static_cast<ID3D11DeviceContext*>(currentSnapshot.nativeContext),
+                                     GpuSegment::OpenXrSubmission);
+
+            oxrSubmitter->ReleaseAndEndDX11(
+                xrRuntime->GetSession(), xrRuntime->GetReferenceSpace(),
+                oxrSwapchain,
+                static_cast<ID3D11DeviceContext*>(currentSnapshot.nativeContext),
+                static_cast<ID3D11Texture2D*>(GetLeftEyeTexture()),
+                static_cast<ID3D11Texture2D*>(GetRightEyeTexture()));
+
+            gpuProfiler.EndSegment(static_cast<ID3D11DeviceContext*>(currentSnapshot.nativeContext),
+                                   GpuSegment::OpenXrSubmission);
+            gpuProfiler.EndSegment(static_cast<ID3D11DeviceContext*>(currentSnapshot.nativeContext),
+                                   GpuSegment::TextureCopies);
+            
+            stateMonitor.UpdateOpenXrHealth(true);
+        } else {
+            gpuProfiler.EndSegment(static_cast<ID3D11DeviceContext*>(currentSnapshot.nativeContext),
+                                   GpuSegment::OpenXrSubmission);
+            stateMonitor.UpdateOpenXrHealth(false);
+        }
+    }
 }
 
 } // namespace vrinject

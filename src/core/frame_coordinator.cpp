@@ -202,34 +202,8 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
 
   if (m_oxrRuntime->GetState() == openxr::RuntimeState::SYSTEM_SELECTED) {
     LOG_INFO("FrameCoordinator: OpenXR state is SYSTEM_SELECTED, creating session (backend=%d)...", (int)m_currentSnapshot.backend);
-    if (m_currentSnapshot.backend == GraphicsBackend::DX12) {
-      // OpenXR REQUIRES xrGetD3D12GraphicsRequirementsKHR before xrCreateSession
-      LUID adapterLuid{};
-      if (!m_oxrRuntime->CheckDX12GraphicsRequirements(&adapterLuid)) {
-        LOG_ERROR("FrameCoordinator: CheckDX12GraphicsRequirements failed!");
-      } else {
-        LOG_INFO("FrameCoordinator: DX12 graphics requirements satisfied (LUID: %08x:%08x).",
-                 adapterLuid.HighPart, adapterLuid.LowPart);
-      }
-      bool sessionOk = m_oxrRuntime->CreateSessionDX12(
-          static_cast<ID3D12Device *>(m_currentSnapshot.nativeDevice),
-          static_cast<ID3D12CommandQueue *>(m_currentSnapshot.nativeContext));
-      if (sessionOk) {
-        LOG_INFO("FrameCoordinator: DX12 OpenXR session created successfully!");
-      } else {
-        LOG_ERROR("FrameCoordinator: DX12 OpenXR session creation FAILED!");
-      }
-    } else if (m_currentSnapshot.backend == GraphicsBackend::Vulkan) {
-      m_oxrRuntime->CreateSessionVulkan(
-          static_cast<VkInstance>(m_currentSnapshot.nativeInstance),
-          static_cast<VkPhysicalDevice>(m_currentSnapshot.nativePhysicalDevice),
-          static_cast<VkDevice>(m_currentSnapshot.nativeDevice),
-          0, // queueFamilyIndex
-          0  // queueIndex
-      );
-    } else {
-      m_oxrRuntime->CreateSession(
-          static_cast<ID3D11Device *>(m_currentSnapshot.nativeDevice));
+    if (!m_graphicsBackend->CreateOpenXRSession(m_oxrRuntime.get(), m_currentSnapshot)) {
+        LOG_ERROR("FrameCoordinator: OpenXR session creation FAILED!");
     }
   }
 
@@ -274,114 +248,19 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
       StereoParams params;
       params.convergence = 0.5f;
 
-      if (m_currentSnapshot.backend == GraphicsBackend::DX12) {
-        ID3D12Resource *leftDest = nullptr;
-        ID3D12Resource *rightDest = nullptr;
-
-        {
-          ScopedCpuTimer oxrTimer(&m_cpuProfiler, CpuSegment::OpenXrSubmission);
-          if (m_oxrSubmitter->BeginAndAcquireDX12(m_oxrRuntime->GetSession(),
-                                                  m_oxrSwapchain.get(),
-                                                  leftDest, rightDest)) {
-            static_cast<DX12GraphicsBackend *>(m_graphicsBackend.get())
-                ->SetOpenXRSwapchainImages(leftDest, rightDest);
-
-            m_graphicsBackend->RenderStereo(camSnapshot, depthSnapshot, params);
-
-            m_oxrSubmitter->ReleaseAndEndDX12(
-                m_oxrRuntime->GetSession(), m_oxrRuntime->GetReferenceSpace(),
-                m_oxrSwapchain.get(), m_currentSnapshot.width,
-                m_currentSnapshot.height, m_currentSnapshot.width,
-                m_currentSnapshot.height);
-
-            m_stateMonitor.UpdateStereoHealth(m_lastCompatibility.shouldAttemptStereo);
-            m_stateMonitor.UpdateOpenXrHealth(true);
-          } else {
-            m_stateMonitor.UpdateOpenXrHealth(false);
-          }
-        }
-      } else if (m_currentSnapshot.backend == GraphicsBackend::Vulkan) {
-        VkImage leftDest = VK_NULL_HANDLE;
-        VkImage rightDest = VK_NULL_HANDLE;
-
-        {
-          ScopedCpuTimer oxrTimer(&m_cpuProfiler, CpuSegment::OpenXrSubmission);
-          if (m_oxrSubmitter->BeginAndAcquireVulkan(m_oxrRuntime->GetSession(),
-                                                    m_oxrSwapchain.get(),
-                                                    leftDest, rightDest)) {
-            // Ensure the tracker knows these external images are in UNDEFINED
-            // layout before the first use
-            auto stateTracker = static_cast<vulkan::VulkanGraphicsBackend *>(
-                                    m_graphicsBackend.get())
-                                    ->GetStateTracker();
-            if (leftDest) {
-              stateTracker->ForceResourceState(
-                  leftDest, VK_IMAGE_LAYOUT_UNDEFINED,
-                  VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0);
-            }
-            if (rightDest) {
-              stateTracker->ForceResourceState(
-                  rightDest, VK_IMAGE_LAYOUT_UNDEFINED,
-                  VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0);
-            }
-
-            static_cast<vulkan::VulkanGraphicsBackend *>(
-                m_graphicsBackend.get())
-                ->SetOpenXRSwapchainImages(leftDest, rightDest);
-
-            m_graphicsBackend->RenderStereo(camSnapshot, depthSnapshot, params);
-
-            m_oxrSubmitter->ReleaseAndEndVulkan(
-                m_oxrRuntime->GetSession(), m_oxrRuntime->GetReferenceSpace(),
-                m_oxrSwapchain.get(), m_currentSnapshot.width,
-                m_currentSnapshot.height, m_currentSnapshot.width,
-                m_currentSnapshot.height);
-
-            m_stateMonitor.UpdateStereoHealth(true);
-            m_stateMonitor.UpdateOpenXrHealth(true);
-          } else {
-            m_stateMonitor.UpdateOpenXrHealth(false);
-          }
-        }
-      } else if (m_currentSnapshot.backend == GraphicsBackend::DX11) {
-        // DX11 backend logic
-        m_graphicsBackend->RenderStereo(camSnapshot, depthSnapshot, params);
-
-        m_gpuProfiler.EndSegment(
-            static_cast<ID3D11DeviceContext *>(m_currentSnapshot.nativeContext),
-            GpuSegment::StereoCompute);
-        m_gpuProfiler.BeginSegment(
-            static_cast<ID3D11DeviceContext *>(m_currentSnapshot.nativeContext),
-            GpuSegment::TextureCopies);
-
-        m_stateMonitor.UpdateStereoHealth(true);
-
-        {
-          ScopedCpuTimer oxrTimer(&m_cpuProfiler, CpuSegment::OpenXrSubmission);
-
-          m_gpuProfiler.BeginSegment(static_cast<ID3D11DeviceContext *>(
-                                         m_currentSnapshot.nativeContext),
-                                     GpuSegment::OpenXrSubmission);
-
-          m_oxrSubmitter->SubmitStereoTextures(
-              m_oxrRuntime->GetSession(), m_oxrRuntime->GetReferenceSpace(),
-              m_oxrSwapchain.get(),
-              static_cast<ID3D11DeviceContext *>(
-                  m_currentSnapshot.nativeContext),
-              static_cast<ID3D11Texture2D *>(
-                  m_graphicsBackend->GetLeftEyeTexture()),
-              static_cast<ID3D11Texture2D *>(
-                  m_graphicsBackend->GetRightEyeTexture()));
-
-          m_gpuProfiler.EndSegment(static_cast<ID3D11DeviceContext *>(
-                                       m_currentSnapshot.nativeContext),
-                                   GpuSegment::OpenXrSubmission);
-          m_gpuProfiler.EndSegment(static_cast<ID3D11DeviceContext *>(
-                                       m_currentSnapshot.nativeContext),
-                                   GpuSegment::TextureCopies);
-        }
-        m_stateMonitor.UpdateOpenXrHealth(true);
-      }
+      m_graphicsBackend->SubmitStereoFrame(
+          m_oxrRuntime.get(),
+          m_oxrSwapchain.get(),
+          m_oxrSubmitter.get(),
+          m_currentSnapshot,
+          camSnapshot,
+          depthSnapshot,
+          params,
+          m_stateMonitor,
+          m_cpuProfiler,
+          m_gpuProfiler,
+          m_lastCompatibility.shouldAttemptStereo
+      );
       m_stateMonitor.UpdateOpenXrHealth(true);
     } else {
       m_stateMonitor.UpdateStereoHealth(false);

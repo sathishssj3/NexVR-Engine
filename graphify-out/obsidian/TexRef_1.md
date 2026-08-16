@@ -1,0 +1,17 @@
+---
+source_file: "src/hooks/imgui/imgui.h"
+type: "code"
+community: "Community 81"
+location: "L3218"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Community_81
+---
+
+# TexRef
+
+## Connections
+- [[ImDrawCmdHeader]] - `defines` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Community_81

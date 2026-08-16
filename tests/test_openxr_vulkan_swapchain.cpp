@@ -200,7 +200,9 @@ int main() {
         
         if (i % 1000 == 0) std::cout << "Frame " << i << "\n";
 
-        if (submitter.BeginAndAcquireVulkan(runtimeManager.GetSession(), &swapchainManager, leftDest, rightDest)) {
+        XrPosef outLeftPose, outRightPose;
+        XrFovf outLeftFov, outRightFov;
+        if (submitter.BeginAndAcquireVulkan(runtimeManager.GetSession(), XR_NULL_HANDLE, &swapchainManager, leftDest, rightDest, outLeftPose, outLeftFov, outRightPose, outRightFov)) {
             if (i < 5) {
                 std::cout << "Frame " << i << " leftDest: " << (void*)leftDest << "\n";
             }
@@ -213,7 +215,8 @@ int main() {
 
             cam.frame = i;
             backend.SetOpenXRSwapchainImages(leftDest, rightDest);
-            backend.RenderStereo(cam, depth, params);
+            RenderFrameSnapshot dummyFrame;
+            backend.RenderStereo(dummyFrame, cam, depth, params);
 
             submitter.ReleaseAndEndVulkan(
                 runtimeManager.GetSession(), 

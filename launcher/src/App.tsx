@@ -168,13 +168,15 @@ export default function App() {
     if (injectTokenRef.current !== token) return;
     
     window.ag.log.offLine();
-    if (res.success && res.pid) {
+    if (res.success && res.pid !== undefined) {
       setInjectState('success');
       setTimeout(async () => {
         if (injectTokenRef.current !== token) return;
         setInjectState('running');
         
-        await window.ag.inject.monitor(res.pid);
+        if (res.pid !== undefined) {
+          await window.ag.inject.monitor(res.pid);
+        }
         
         if (injectTokenRef.current === token) {
           setInjectState('default');

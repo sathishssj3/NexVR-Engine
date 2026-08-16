@@ -107,6 +107,7 @@ void CameraLockManager::Update(const CameraCandidate& bestCandidate, uint64_t cu
         m_snapshot.view = bestCandidate.view;
         m_snapshot.confidence = bestCandidate.confidence;
         m_snapshot.reversedZ = bestCandidate.reversedZ;
+        m_snapshot.isLeftHanded = bestCandidate.isLeftHanded;
         // CameraSnapshot::IsValid() requires a resource identity, and a CameraCandidate
         // has none (it describes a constant buffer, not a texture). Carry the frame's
         // colour resource supplied by SetResourceContext(); without this the snapshot is

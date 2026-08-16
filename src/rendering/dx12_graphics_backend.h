@@ -30,6 +30,7 @@ public:
     DepthSnapshot GetDepth() override;
 
     void RenderStereo(
+        const RenderFrameSnapshot& frameSnapshot,
         const CameraSnapshot& camSnapshot, 
         const DepthSnapshot& depthSnapshot, 
         const StereoParams& params
@@ -39,8 +40,24 @@ public:
     void* GetRightEyeTexture() override;
     
     GraphicsBackend GetAPI() const override { return GraphicsBackend::DX12; }
+
+    bool CreateOpenXRSession(openxr::OpenXRRuntimeManager* xrRuntime, const RenderFrameSnapshot& snapshot) override;
     
-    // OpenXR Interop
+    void SubmitStereoFrame(
+        openxr::OpenXRRuntimeManager* xrRuntime,
+        openxr::OpenXRSwapchainManager* oxrSwapchain,
+        openxr::OpenXRFrameSubmitter* oxrSubmitter,
+        RenderFrameSnapshot& currentSnapshot,
+        const CameraSnapshot& camSnapshot,
+        const DepthSnapshot& depthSnapshot,
+        const StereoParams& params,
+        RuntimeStateMonitor& stateMonitor,
+        PerformanceProfiler& cpuProfiler,
+        GpuProfiler& gpuProfiler,
+        bool shouldAttemptStereo
+    ) override;
+
+    // DX12 specific logic
     void SetOpenXRSwapchainImages(ID3D12Resource* left, ID3D12Resource* right);
 
     // Test support

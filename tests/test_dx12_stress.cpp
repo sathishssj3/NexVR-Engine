@@ -140,7 +140,8 @@ TEST_F(DX12StressTest, Render100kFramesWithoutLeaks) {
             std::cout << "Frame " << i << std::endl;
         }
         camSnapshot.frame = i;
-        backend.RenderStereo(camSnapshot, depthSnapshot, params);
+        RenderFrameSnapshot dummyFrame;
+        backend.RenderStereo(dummyFrame, camSnapshot, depthSnapshot, params);
         
         // In a real loop, we would submit OpenXR, then present, then wait on fences.
         // We'll let the FenceManager handle deferred deletion over the frames.

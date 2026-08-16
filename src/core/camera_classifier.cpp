@@ -125,9 +125,12 @@ bool CameraClassifier::TryCreateCandidate(uint64_t id, void* cbAddress, const Ma
     // guessed. Logged from a live title, one line settles it.
     //
     // Rate-limited: this runs on the render thread for every accepted candidate.
+    
+    const float m23 = M(m, 2, 3, rowMajor);
+    outCandidate.isLeftHanded = (m23 > 0.0f);
+
     static std::atomic<int> s_probesLogged{0};
     if (s_probesLogged.fetch_add(1, std::memory_order_relaxed) < 16) {
-        const float m23 = M(m, 2, 3, rowMajor);
         const bool isVP = (std::abs(m30) > 0.001f || std::abs(m31) > 0.001f);
         LOG_INFO("CameraProbe: id=%llu m23=%+.4f handed=%s rowMajor=%d reverseZ=%d kind=%s m00=%+.4f",
                  (unsigned long long)id,

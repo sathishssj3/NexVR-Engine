@@ -25,7 +25,13 @@ TEST(StereoCameraGenerator, TranslationCorrectness) {
     constants.convergence = 1.0f;
 
     EyeView left, right;
-    StereoCameraGenerator::Generate(cam, constants, left, right);
+    RenderFrameSnapshot dummyFrame;
+    dummyFrame.leftPose.orientation.w = 1.0f;
+    dummyFrame.rightPose.orientation.w = 1.0f;
+    // OpenXR pose gives world space translation from head.
+    dummyFrame.leftPose.position.x = -0.0315f;
+    dummyFrame.rightPose.position.x = 0.0315f;
+    StereoCameraGenerator::Generate(dummyFrame, cam, constants, left, right);
 
     // Left eye translates right in view space, so m[3][0] increases
     EXPECT_FLOAT_EQ(left.view.m[3][0], 0.0315f);
@@ -57,7 +63,23 @@ TEST(StereoCameraGenerator, ProjectionShift) {
     constants.convergence = 1.0f;
 
     EyeView left, right;
-    StereoCameraGenerator::Generate(cam, constants, left, right);
+    RenderFrameSnapshot dummyFrame;
+    dummyFrame.leftPose.orientation.w = 1.0f;
+    dummyFrame.rightPose.orientation.w = 1.0f;
+    
+    // We want (tanRight + tanLeft) / (tanRight - tanLeft) = 0.063f
+    // If tanRight = 1.063 and tanLeft = -0.937, sum = 0.126, diff = 2.0. 0.126 / 2.0 = 0.063
+    dummyFrame.leftFov.angleRight = atan(1.063f);
+    dummyFrame.leftFov.angleLeft = atan(-0.937f);
+    dummyFrame.leftFov.angleUp = atan(1.0f);
+    dummyFrame.leftFov.angleDown = atan(-1.0f);
+
+    dummyFrame.rightFov.angleRight = atan(0.937f);
+    dummyFrame.rightFov.angleLeft = atan(-1.063f);
+    dummyFrame.rightFov.angleUp = atan(1.0f);
+    dummyFrame.rightFov.angleDown = atan(-1.0f);
+
+    StereoCameraGenerator::Generate(dummyFrame, cam, constants, left, right);
 
     // Shift magnitude = (halfIpd * xScale) / convergence
     // = (0.0315 * 2.0) / 1.0 = 0.063

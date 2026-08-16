@@ -1,0 +1,17 @@
+---
+source_file: ""
+type: "code"
+community: "Openxr Openxr Health Monitor Openxr..."
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Openxr_Openxr_Health_Monitor_Openxr
+---
+
+# unordered_map
+
+## Connections
+- [[VulkanDescriptorSetInfo]] - `references` [EXTRACTED]
+- [[VulkanDescriptorTracker]] - `references` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Openxr_Openxr_Health_Monitor_Openxr

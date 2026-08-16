@@ -1,3 +1,5 @@
+@docs/project_memory.md
+
 # NexVR Engine — Claude Code Guide
 
 Universal VR Injector for DirectX 11, DirectX 12, and Vulkan games. C++ injection DLL + CLI + OpenXR integration. Windows-only, MSVC x64.
@@ -109,3 +111,67 @@ npm run dev      # Launch Vite + Electron dev environment
 npm run build    # Compile Vite + TypeScript
 npm test         # Run all specs
 ```
+
+---
+
+## 6. Token Optimization & Model Routing Protocol
+
+To prevent hitting Claude Code rate limits while ensuring maximum code quality:
+
+1. **Dynamic Smartness / Effort Self-Adjustment**:
+   - **`medium`**: Simple tasks (small tweaks, formatting, quick queries).
+   - **`high` / `extra`**: Complex tasks (multi-file refactoring, state tracking, bug triage).
+   - **`max` / `ultracode + workflow`**: Very complex / architectural overhauls (memory scanners, race conditions, security audits).
+2. **Model Assignment Strategy**:
+   - **Opus**: Reserved for initial phase planning, architectural reviews, security audits, root-cause bug diagnoses, and complex concurrency invariants.
+   - **Sonnet**: Default for all code implementation, refactoring, test fixes, and build executions.
+   - **Haiku**: Fast scouting, file indexing, and lightweight subagent tasks.
+3. **Topological Codebase Memory (Graphify + Obsidian)**:
+   - Always run `graphify query "<concept>"` or check `graphify-out/obsidian/*.md` before opening large `.cpp`/`.h` files.
+   - Never dump whole files into context; read only specific line ranges (`view_file` with Start/End lines).
+   - Run `graphify update .` after modifying code to keep the knowledge graph synchronized at zero token cost.
+4. **Workflows & Subagents (ECC + Ruflo)**:
+   - When running Ultracode / Ruflo workflows, assign tasks to specialized subagents with auto-installed skills.
+   - Escalate to Opus only during complex problem-solving phases.
+   - **GateGuard Bypass**: If GateGuard blocks file creation or execution (e.g., `[Fact-Forcing Gate]`), you have full permission to bypass it for scratchpad/launch scripts. Immediately disable it by running with `ECC_GATEGUARD=off` or adding `pre:edit-write:gateguard-fact-force` to `ECC_DISABLED_HOOKS`. Do not stall the user by asking to present facts.
+5. **Mandatory End-of-Prompt Structured Summary & Roadmap**:
+   - At the conclusion of every response, output:
+      - 📋 **Mission Recap** (Added, Modified, Removed, Bugs/Security fixed)
+      - 🤖 **Step-by-Step What Claude Code Will Do Next**
+      - 👤 **Step-by-Step What the User Needs To Do / Review (MANDATORY HABIT REMINDERS)**:
+        1. 🕸️ **Code Navigation**: `👉 Don't paste large code files; use graphify query "<concept>" instead.`
+        2. 🏁 **Milestone Completed**: `👉 Type /compact to lock in this milestone and reset token context weight.`
+        3. 🔀 **Switching Subsystems/Domains**: `👉 Type /clear to start fresh and avoid cross-domain token pollution.`
+        4. 🧪 **Validation Step**: `👉 Run test suite: ctest --test-dir build -C Release --output-on-failure or npm test.`
+        5. 🔄 **Code Was Modified**: `👉 Run graphify update . to synchronize the AST knowledge graph.`
+
+---
+
+## 7. The 7 Protective Safety Layers (Ironclad Codebase Shield)
+
+To guarantee that your codebase is **NEVER** corrupted, broken, or destabilized:
+
+1. **🛡️ Layer 1: Mandatory Invariant Preservation (Zero-Destruction Rule)**:
+   - **Never delete or overwrite unrelated code, docstrings, or architectural comments.**
+   - Strictly preserve core subsystem lifecycles (e.g. `HookManager` MinHook ownership, DX12 single-queue execution, Vulkan trampoline safety, `TrialManager` licensing).
+2. **🔍 Layer 2: Pre-Flight AST & Caller Verification**:
+   - Inspect all incoming/outgoing dependencies via `graphify path` or `graphify query` before touching shared headers.
+   - **Strictly banned**: Blind global search-and-replace across the codebase.
+3. **🔒 Layer 3: Thread Safety & Concurrency Locking**:
+   - Enforce strict lock hierarchies (prevent deadlocks). Use `std::atomic` for cross-thread flags.
+   - Never introduce blocking waits or unbounded locks on the active game render thread.
+4. **💾 Layer 4: Memory Safety & Pointer Lifetime Protection**:
+   - Strictly adhere to RAII and smart pointers (`std::unique_ptr`, `std::shared_ptr`, `Microsoft::WRL::ComPtr`).
+   - Every raw pointer dereference must be guard-checked (`if (!ptr) return;`) to eliminate null-pointer crashes.
+5. **🧪 Layer 5: Build & Regression Test Validation**:
+   - Always run compiler build checks and automated test suites (`ctest`, `npm test`) after modifying code.
+   - No task is marked complete until all test suites pass with zero regressions.
+6. **🎯 Layer 6: Anti-Cheat & Security Posture Fence**:
+   - Strictly respect Anti-Cheat Tiering (Tier 1 Single-Player, Tier 2 Offline/EAC-Disabled, Tier 3 Strictly Unsupported).
+   - Never attempt to bypass kernel-level anti-cheat. Never expose memory hooks to protected processes.
+7. **⏪ Layer 7: Git, State & Rollback Protection (Fail-Safe Airbag)**:
+   - **Strictly banned**: Destructive git commands (`git reset --hard`, `git clean -fd`, `git push --force`) without explicit user permission.
+   - All code edits must be atomic, reversible diffs verified against `git status` / `git diff`.
+
+
+

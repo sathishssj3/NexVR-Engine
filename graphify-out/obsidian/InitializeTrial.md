@@ -1,0 +1,18 @@
+---
+source_file: "src/core/drm_manager.h"
+type: "code"
+community: "Community 61"
+location: "L19"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Community_61
+---
+
+# InitializeTrial
+
+## Connections
+- [[TrialManager]] - `defines` [EXTRACTED]
+- [[drm_manager.cpp]] - `contains` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Community_61

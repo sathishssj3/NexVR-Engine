@@ -216,13 +216,13 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
         });
       }
       // Copy ONNX and DirectML DLLs to prevent target process loader lock/freeze due to missing imports
-      const onnxDll = resolveWithinRoot(canonicalBinSourceDir, 'onnxruntime.dll');
-      const directMlDll = resolveWithinRoot(canonicalBinSourceDir, 'DirectML.dll');
-      if (fs.existsSync(onnxDll)) {
-        fs.copyFileSync(onnxDll, resolveWithinRoot(targetExeDir, 'onnxruntime.dll'));
-      }
-      if (fs.existsSync(directMlDll)) {
-        fs.copyFileSync(directMlDll, resolveWithinRoot(targetExeDir, 'DirectML.dll'));
+      // Also copy vrinject.dll and openxr_loader.dll so the implicit Vulkan layer can pick it up BEFORE the game starts
+      const dllsToCopy = ['onnxruntime.dll', 'DirectML.dll', 'vrinject.dll', 'openxr_loader.dll'];
+      for (const dll of dllsToCopy) {
+        const srcPath = resolveWithinRoot(canonicalBinSourceDir, dll);
+        if (fs.existsSync(srcPath)) {
+          fs.copyFileSync(srcPath, resolveWithinRoot(targetExeDir, dll));
+        }
       }
     } catch (error) {
       console.error('Failed to copy shader/model assets to target directory:', error);
@@ -294,7 +294,6 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     const innerScript =
       `$env:NEXVR_AUTH_TOKEN = '${escapePs(process.env.NEXVR_AUTH_TOKEN || '')}'; ` +
       `& '${escapePs(cliSource)}' --pid ${targetPid} --dll '${escapePs(dllTarget)}' ` +
-      `--copy-src '${escapePs(canonicalBinSourceDir)}' --copy-dst '${escapePs(targetExeDir)}' ` +
       `*>&1 | Out-File -LiteralPath '${escapePs(logPath)}' -Append -Encoding utf8`;
     const base64Inner = Buffer.from(innerScript, 'utf16le').toString('base64');
     const outerScript =

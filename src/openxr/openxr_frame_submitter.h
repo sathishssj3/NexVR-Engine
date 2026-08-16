@@ -14,7 +14,16 @@ public:
     OpenXRFrameSubmitter(OpenXRHealthMonitor* healthMonitor);
     ~OpenXRFrameSubmitter() = default;
 
-    bool SubmitStereoTextures(
+    // DX11 Phased Submission
+    bool BeginAndAcquireDX11(
+        XrSession session,
+        XrSpace referenceSpace,
+        OpenXRSwapchainManager* swapchainManager,
+        XrPosef& outLeftPose, XrFovf& outLeftFov,
+        XrPosef& outRightPose, XrFovf& outRightFov
+    );
+
+    bool ReleaseAndEndDX11(
         XrSession session,
         XrSpace referenceSpace,
         OpenXRSwapchainManager* swapchainManager,
@@ -26,9 +35,12 @@ public:
     // DX12 Phased Submission
     bool BeginAndAcquireDX12(
         XrSession session,
+        XrSpace referenceSpace,
         OpenXRSwapchainManager* swapchainManager,
         ID3D12Resource*& outLeftDest,
-        ID3D12Resource*& outRightDest
+        ID3D12Resource*& outRightDest,
+        XrPosef& outLeftPose, XrFovf& outLeftFov,
+        XrPosef& outRightPose, XrFovf& outRightFov
     );
 
     bool ReleaseAndEndDX12(
@@ -42,9 +54,12 @@ public:
     // Vulkan Phased Submission
     bool BeginAndAcquireVulkan(
         XrSession session,
+        XrSpace referenceSpace,
         OpenXRSwapchainManager* swapchainManager,
         VkImage& outLeftDest,
-        VkImage& outRightDest
+        VkImage& outRightDest,
+        XrPosef& outLeftPose, XrFovf& outLeftFov,
+        XrPosef& outRightPose, XrFovf& outRightFov
     );
 
     bool ReleaseAndEndVulkan(
@@ -59,10 +74,23 @@ public:
     void ResetState() { state_ = SubmitterState::WAIT_FRAME; }
 
 private:
+    bool LocateViews(XrSession session, XrSpace referenceSpace, 
+                     XrPosef& outLeftPose, XrFovf& outLeftFov,
+                     XrPosef& outRightPose, XrFovf& outRightFov);
+
     OpenXRHealthMonitor* healthMonitor_ = nullptr;
     SubmitterState state_ = SubmitterState::WAIT_FRAME;
 
     XrFrameState currentFrameState_{XR_TYPE_FRAME_STATE};
+    
+    // Cached fallback poses in case of tracking loss
+    XrPosef lastLeftPose_ = {{0, 0, 0, 1}, {0, 0, 0}};
+    XrPosef lastRightPose_ = {{0, 0, 0, 1}, {0, 0, 0}};
+    XrFovf lastLeftFov_ = {-0.8f, 0.8f, 0.8f, -0.8f};
+    XrFovf lastRightFov_ = {-0.8f, 0.8f, 0.8f, -0.8f};
+
+    uint32_t lastAcquiredLeftIndex_ = 0;
+    uint32_t lastAcquiredRightIndex_ = 0;
 };
 
 } // namespace openxr

@@ -2,6 +2,8 @@
 #include "graphics_types.h"
 #include <cstdint>
 
+#include "../rendering/openxr/openxr.h"
+
 namespace vrinject {
 
 enum class RenderState {
@@ -25,6 +27,12 @@ struct RenderFrameSnapshot {
     GraphicsResourceEpoch epoch;
     RenderState state = RenderState::UNINITIALIZED;
     
+    // OpenXR Head Pose
+    XrPosef leftPose = {{0, 0, 0, 1}, {0, 0, 0}};
+    XrFovf leftFov = {-0.8f, 0.8f, 0.8f, -0.8f};
+    XrPosef rightPose = {{0, 0, 0, 1}, {0, 0, 0}};
+    XrFovf rightFov = {-0.8f, 0.8f, 0.8f, -0.8f};
+
     // Abstract backend contexts
     void* nativeDevice = nullptr;       // ID3D11Device*, ID3D12Device*, or VkDevice
     void* nativeContext = nullptr;      // ID3D11DeviceContext*, ID3D12CommandQueue*, or VkQueue

@@ -1,0 +1,17 @@
+---
+source_file: "src/rendering/vulkan_descriptor_manager.h"
+type: "code"
+community: "Community 32"
+location: "L45"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Community_32
+---
+
+# m_descriptorSets
+
+## Connections
+- [[VulkanDescriptorManager_1]] - `defines` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Community_32

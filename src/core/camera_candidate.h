@@ -21,6 +21,7 @@ struct CameraCandidate
 
     bool rowMajor;
     bool reversedZ;
+    bool isLeftHanded;
     bool valid;
 };
 

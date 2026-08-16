@@ -1,7 +1,17 @@
 #include "dx12_graphics_backend.h"
 #include "../core/camera_lock_manager.h"
 #include "../core/depth_lock_manager.h"
+#include "../core/performance_profiler.h"
+#include "../core/gpu_profiler.h"
+#include "../core/runtime_state_monitor.h"
+#include "../rendering/stereo_pipeline.h"
+#include "../openxr/openxr_runtime_manager.h"
+#include "../openxr/openxr_swapchain_manager.h"
+#include "../openxr/openxr_frame_submitter.h"
+#include "../core/logger.h"
 #include "../core/dx12_lifecycle_manager.h"
+#include "../core/stereo_camera_generator.h"
+#include "stereo_pipeline.h"
 #include <iostream>
 
 namespace vrinject {
@@ -97,9 +107,18 @@ DepthSnapshot DX12GraphicsBackend::GetDepth() {
     return DepthLockManager::Get().GetSnapshot();
 }
 
-void DX12GraphicsBackend::RenderStereo(const CameraSnapshot& camSnapshot, const DepthSnapshot& depthSnapshot, const StereoParams& params) {
+void DX12GraphicsBackend::RenderStereo(const RenderFrameSnapshot& frameSnapshot, const CameraSnapshot& camSnapshot, const DepthSnapshot& depthSnapshot, const StereoParams& params) {
     if (m_state != StereoRendererState::READY) return;
     if (!m_commandQueue) return;
+
+    StereoConstants constants;
+    constants.ipd = params.ipd;
+    constants.nearPlane = params.nearPlane;
+    constants.farPlane = params.farPlane;
+    constants.convergence = params.convergence;
+
+    EyeView leftEye, rightEye;
+    StereoCameraGenerator::Generate(frameSnapshot, camSnapshot, constants, leftEye, rightEye);
 
     std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -140,6 +159,76 @@ void DX12GraphicsBackend::SetOpenXRSwapchainImages(ID3D12Resource* left, ID3D12R
     std::lock_guard<std::mutex> lock(m_mutex);
     m_oxrLeftDest = left;
     m_oxrRightDest = right;
+}
+
+bool DX12GraphicsBackend::CreateOpenXRSession(openxr::OpenXRRuntimeManager* xrRuntime, const RenderFrameSnapshot& snapshot) {
+    if (!xrRuntime) return false;
+
+    // OpenXR REQUIRES xrGetD3D12GraphicsRequirementsKHR before xrCreateSession
+    LUID adapterLuid{};
+    if (!xrRuntime->CheckDX12GraphicsRequirements(&adapterLuid)) {
+        LOG_ERROR("DX12GraphicsBackend: CheckDX12GraphicsRequirements failed!");
+    } else {
+        LOG_INFO("DX12GraphicsBackend: DX12 graphics requirements satisfied (LUID: %08x:%08x).",
+                 adapterLuid.HighPart, adapterLuid.LowPart);
+    }
+    bool sessionOk = xrRuntime->CreateSessionDX12(
+        static_cast<ID3D12Device *>(snapshot.nativeDevice),
+        static_cast<ID3D12CommandQueue *>(snapshot.nativeContext));
+    if (sessionOk) {
+        LOG_INFO("DX12GraphicsBackend: DX12 OpenXR session created successfully!");
+    } else {
+        LOG_ERROR("DX12GraphicsBackend: DX12 OpenXR session creation FAILED!");
+    }
+    return sessionOk;
+}
+
+void DX12GraphicsBackend::SubmitStereoFrame(
+    openxr::OpenXRRuntimeManager* xrRuntime,
+    openxr::OpenXRSwapchainManager* oxrSwapchain,
+    openxr::OpenXRFrameSubmitter* oxrSubmitter,
+    RenderFrameSnapshot& currentSnapshot,
+    const CameraSnapshot& camSnapshot,
+    const DepthSnapshot& depthSnapshot,
+    const StereoParams& params,
+    RuntimeStateMonitor& stateMonitor,
+    PerformanceProfiler& cpuProfiler,
+    GpuProfiler& gpuProfiler,
+    bool shouldAttemptStereo
+) {
+    ID3D12Resource *leftDest = nullptr;
+    ID3D12Resource *rightDest = nullptr;
+    XrPosef leftPose, rightPose;
+    XrFovf leftFov, rightFov;
+
+    {
+        ScopedCpuTimer oxrTimer(&cpuProfiler, CpuSegment::OpenXrSubmission);
+        if (oxrSubmitter->BeginAndAcquireDX12(xrRuntime->GetSession(),
+                                              xrRuntime->GetReferenceSpace(),
+                                              oxrSwapchain,
+                                              leftDest, rightDest,
+                                              leftPose, leftFov, rightPose, rightFov)) {
+            currentSnapshot.leftPose = leftPose;
+            currentSnapshot.leftFov = leftFov;
+            currentSnapshot.rightPose = rightPose;
+            currentSnapshot.rightFov = rightFov;
+
+            SetOpenXRSwapchainImages(leftDest, rightDest);
+
+            RenderStereo(currentSnapshot, camSnapshot, depthSnapshot, params);
+
+            oxrSubmitter->ReleaseAndEndDX12(
+                xrRuntime->GetSession(), xrRuntime->GetReferenceSpace(),
+                oxrSwapchain, currentSnapshot.width,
+                currentSnapshot.height, currentSnapshot.width,
+                currentSnapshot.height);
+
+            stateMonitor.UpdateStereoHealth(shouldAttemptStereo);
+            stateMonitor.UpdateOpenXrHealth(true);
+        } else {
+            stateMonitor.UpdateOpenXrHealth(false);
+        }
+    }
 }
 
 } // namespace vrinject

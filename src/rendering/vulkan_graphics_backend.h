@@ -32,10 +32,26 @@ public:
     bool Healthy() const override;
     CameraSnapshot GetCamera() override;
     DepthSnapshot GetDepth() override;
-    void RenderStereo(const CameraSnapshot& camSnapshot, const DepthSnapshot& depthSnapshot, const StereoParams& params) override;
+    void RenderStereo(const RenderFrameSnapshot& frameSnapshot, const CameraSnapshot& camSnapshot, const DepthSnapshot& depthSnapshot, const StereoParams& params) override;
     void* GetLeftEyeTexture() override;
     void* GetRightEyeTexture() override;
     GraphicsBackend GetAPI() const override { return GraphicsBackend::Vulkan; }
+
+    bool CreateOpenXRSession(openxr::OpenXRRuntimeManager* xrRuntime, const RenderFrameSnapshot& snapshot) override;
+    
+    void SubmitStereoFrame(
+        openxr::OpenXRRuntimeManager* xrRuntime,
+        openxr::OpenXRSwapchainManager* oxrSwapchain,
+        openxr::OpenXRFrameSubmitter* oxrSubmitter,
+        RenderFrameSnapshot& currentSnapshot,
+        const CameraSnapshot& camSnapshot,
+        const DepthSnapshot& depthSnapshot,
+        const StereoParams& params,
+        RuntimeStateMonitor& stateMonitor,
+        PerformanceProfiler& cpuProfiler,
+        GpuProfiler& gpuProfiler,
+        bool shouldAttemptStereo
+    ) override;
 
     // OpenXR Interop
     void SetOpenXRSwapchainImages(VkImage left, VkImage right);

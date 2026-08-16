@@ -18,6 +18,7 @@ struct CameraSnapshot
 
     float confidence;
     bool reversedZ;
+    bool isLeftHanded;
     bool valid;
     
     GraphicsResourceIdentity resourceIdentity;

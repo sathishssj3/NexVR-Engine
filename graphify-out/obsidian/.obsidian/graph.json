@@ -1,0 +1,2272 @@
+{
+  "colorGroups": [
+    {
+      "query": "tag:#community/Core_Vulkan_Dispatch_Table_Devicedi...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Imguiio_\u00b7_Imguiba...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Imdrawlist_\u00b7_Hook...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Vulkan_Graphics_Backend_V...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Launcher_Electron_Injectionmanager_...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_\u00b7_Hooks_Imgui_Img...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Imfontatlas_\u00b7_Hoo...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Backends_Dx12_Renderer_Dx...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Openxr_Openxr_Health_Monitor_Openxr...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Lifecycle_Manager_Vulka...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Dx11_Hook_Cpp_Hooks_Dx11_Hook...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Ai_Ai_Profiler_Aiprofiler_\u00b7_Ai_Ai_P...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Imguiinputtextcal...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Vulkan_Gpu_Profiler_Vulka...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Imvec2_\u00b7_Hooks_Imgui_Imgui_Imguivie...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Neural_Inpainter_Neuralin...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Launcher_Package_\u00b7_Launcher_Package...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Queue_Manager_Vulkanque...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Core_Logger_\u00b7_Hooks_Input_Hook_Cpp_...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Vulkan_Pipeline_Cache_Vul...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Vulkan_Stereo_Resource_Ma...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Proxy_Dxgi_Proxy_\u00b7_Tests_Test_Dx12_...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Dx12_Stereo_Resource_Mana...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Input_Hook_Inputhook_\u00b7_Hooks_...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Imtexturedata_\u00b7_I...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Dx12_Graphics_Backend_Dx1...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Backends_Vulkan_Renderer_...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Core_Frame_Graph_Profiler_Performan...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Vulkan_Hook_Cpp_Hooks_Vulkan_...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Openxr_Openxr_Swapchain_Manager_Ope...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Core_Diagnostic_Context_Diagnosticc...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Vulkan_Hook_Cpp_Vkdevice_\u00b7_Ho...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Stereo_Resource_Manager_S...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Vulkan_Descriptor_Manager...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Vulkan_Resource_State_Tra...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Core_Frame_Coordinator_H_Core_Frame...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Vulkan_Layer_\u00b7_Hooks_Vulkan_L...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Readme_Nexvr_Engine_\u00b7_Docs_Project_...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Imdrawcmd_\u00b7_Hooks...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Core_Matrix_Classifier_Matrixclassi...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Imguistorage_\u00b7_Ho...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Imfont_\u00b7_Imfontflags",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Core_Frame_Graph_Profiler_Framegrap...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Core_Dx12_Lifecycle_Manager_Dx12Lif...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Comfort_Guard_Comfortguar...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Stereo_Pipeline_Stereopip...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Ai_Ai_Model_Loader_Aimodelloader_\u00b7_...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Imfontconfig_\u00b7_Ho...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Backends_Dx11_Renderer_Dx...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Core_Memory_Scanner_Memoryscanner_\u00b7...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Core_Engine_Scanners_Unity_Scanner_...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Core_Dx11_Lifecycle_Manager_Dx11Lif...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Core_Runtime_State_Monitor_Runtimes...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Core_Engine_Scanners_Unreal_Scanner...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Vulkan_Sync_Manager_Vulka...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Core_Drm_Manager_Trialmanager_\u00b7_Cor...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Dx12_Fence_Manager_Dx12Fe...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Imguipayload_\u00b7_Im...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Imfontbaked_\u00b7_Imu16",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Imguiplatformio_\u00b7...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Dispatch_Table_Vulkandi...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Vulkan_Command_Manager_Vu...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Core_Performance_Profiler_Performan...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Core_Hook_Manager_Cpp_Core_Hook_Man...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Dx12_Hook_Cpp_Uint_\u00b7_Hooks_Dx...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Core_Config_Manager_H_String_\u00b7_Rend...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Core_Frame_Coordinator_Framecoordin...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Ai_Matrix_Classifier_Matrix_Classif...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Impl_Dx11_Id3D11D...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Core_Stereo_Types_Stereoframecontex...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Impl_Dx11_Id3D11B...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Vulkan_Memory_Budget_Vulk...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Unreal_Hook_Unrealhook_\u00b7_Hook...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Unity_Hook_Unityhook_\u00b7_Hooks_...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Dx12_Resource_State_Track...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Image_State_Tracker_Vul...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Core_Depth_Candidate_Collector_Dept...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Cross_Adapter_Copier_Cros...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Launcher_Tsconfig_Compileroptions_\u00b7...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Core_Dx12_Descriptor_Tracker_Dx12De...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Stress_Vulkanstre...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Openxr_Openxr_Health_Monitor_Openxr...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Dx11_Graphics_Backend_Dx1...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Dx12_Pipeline_State_Cache...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Ai_Ai_Scheduler_H_Atomic_\u00b7_Ai_Ai_Sc...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Core_Runtime_State_Runtimestate_\u00b7_C...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Input_Manager_Inputmanager_\u00b7_...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Ai_Matrix_Classifier_Camera_Delta_T...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Core_Dx12_Lifecycle_Manager_Dx12Swa...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Core_Render_Frame_Snapshot_Renderfr...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Dx11_Hook_Processpresent_\u00b7_Ho...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Core_Graphics_Types_Graphicsresourc...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Imvector_\u00b7_Hooks_...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Security_Scans_Vr_Inject_Threat_Mod...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Core_Temporal_Depth_Filter_Temporal...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Buffer_Resolver_Resolve...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Imdrawdata_\u00b7_Hook...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Openxr_Openxr_Frame_Submitter_Openx...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Core_Overlay_Manager_Overlaymanager...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Ai_Ai_Scheduler_Aischeduler_\u00b7_Ai_Ai...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Core_Camera_Snapshot_Camerasnapshot...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Core_Config_Manager_Vrconfig_\u00b7_Core...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Core_Depth_Candidate_Depthcandidate...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Stereo_Renderer_Stereosha...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Descriptor_Tracker_Vulk...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Render_Pass_Tracker_Ren...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Openxr_Openxr_Runtime_Manager_Openx...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Dx12_Stereo_Renderer_Dx12...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Image_View_Tracker_Vulk...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Vulkan_Barrier_Optimizer_...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Core_Graphics_Types_Graphicsresourc...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Core_Dx11_Lifecycle_Manager_Dx11Swa...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Core_Ue_Sdk_\u00b7_Core_Ue_Sdk_Fvector",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Resource_Tracker_Cpp_Co...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Openxr_Openxr_Runtime_Manager_Cpp_O...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Backends_Dx12_Renderer_Cp...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Stereo_Visual_Bmpheader_...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Dx12_Descriptor_Tracker_...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Core_Config_Manager_Configmanager_\u00b7...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Core_Depth_Lock_Manager_Depthlockma...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Imguimultiselecti...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Ai_Backend_Dx11_Ai_Backend_Dx11Aiba...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Ai_Backend_Vulkan_Ai_Backend_Vulkan...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Camera_Extractor_Vulkan...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Imfontglyph_\u00b7_Hoo...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Irenderer_Texturehandle_\u00b7...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Core_Camera_Lock_Manager_Cameralock...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Injector_Main_\u00b7_Injector_Main_Main",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Docs_Nexvr_Research_Paper_Nexvr_A_U...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Core_Temporal_Camera_Filter_Tempora...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Imguitextbuffer_\u00b7...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Core_Stereo_Camera_Generator_Stereo...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Core_Camera_Candidate_Cameracandida...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Core_Engine_Detector_Cpp_Core_Engin...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Descriptor_Tracker_Desc...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Render_Pass_Tracker_Vul...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Input_Manager_Cpp_Hooks_Input...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Adaptive_Quality_Controll...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Vulkan_Vulkan_Core_\u00b7_Rend...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Agents_Project_Memory_Nexvr_Engine_...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Dx11_Lifecycle_Dx11Lifec...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Ai_Backend_Ai_Backend_\u00b7_Ai_Backend_...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Vulkan_Async_Scheduler_Vu...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Stereo_Renderer_Stereoren...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Dispatch_Table_Cpp_Core...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Ai_Backend_Dx12_Ai_Backend_Dx12Aiba...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Ai_Tensor_Bridge_Tensorbridge_\u00b7_Ai_...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Igraphics_Backend_Igraphi...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Core_Sprint_Compatibility_Logger_Co...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Core_Ue_Sdk_Fminimalviewinfo_\u00b7_Core...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Imgui_Dx12_Integration_Im...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Irenderer_Irenderer_\u00b7_Ren...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Docs_Architecture_Audit_Nexvr_Engin...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Docs_Refactoring_Plan_Nexvr_Engine_...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Dxgi_Factory_Hook_Hkcreateswa...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Imguitablecolumns...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Launcher_Electron_Tsconfig_Compiler...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Core_Sprint_Compatibility_Logger_Sp...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Ai_Matrix_Classifier_Matrix_Classif...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Core_Camera_Delta_Tracker_Cameradel...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Core_Dx12_Descriptor_Tracker_Descri...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Core_Engine_Detector_Enginedetector...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Core_Motion_Predictor_Motionpredict...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Core_Runtime_Dashboard_Runtimedashb...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Core_Runtime_State_Runtimestate_Get...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Framebuffer_Tracker_Vul...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Image_State_Tracker_Ima...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Resource_Tracker_Vulkan...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Dx12_Hook_Frameresourcesdx12_...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Frame_Timing_Manager_Fram...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Claude_Nexvr_Engine_Claude_Code_Gui...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Core_Dx12_Resource_Validator_Dx12Va...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Dx12_Resource_State_Trac...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Matrix_Classifier_Test_F...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Dispatch_Table_Instance...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Ai_Backend_Ai_Backend_Iaibackend_\u00b7_...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Ai_Yolo_Synthesizer_Boundingbox_\u00b7_A...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Core_Base_Hook_Basehook_\u00b7_Core_Base...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Core_Depth_Ranking_Engine_Depthrank...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Core_Engine_Scanners_Universal_Scan...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Core_Ue_Sdk_Ftransform_\u00b7_Core_Ue_Sd...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Core_Ue_Sdk_Fuobjectarray_\u00b7_Core_Ue...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Stereo_Pipeline_Stereopar...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Camera_Validator_Test_\u00b7_...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Ai_Ai_Model_Loader_Aimodelloader_Ge...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Core_Capability_Registry_Capability...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Imguitextfilter_\u00b7...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Logger_Loggertest_\u00b7_Test...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Openxr_Openxr_\u00b7_Core_Moti...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Core_Ue_Sdk_Uobject_\u00b7_Core_Ue_Sdk_F...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Core_Ue_Sdk_Fsceneviewfamily_\u00b7_Core...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Depth_Candidate_Collect...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Image_View_Tracker_Vulk...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Input_Hook_Hookedwndproc_\u00b7_Ho...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Vulkan_Stereo_Renderer_Vu...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Test_Apps_Dx11_Test_App_\u00b7_Test_Apps...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Tools_Dx11_Test_App_Windowproc_\u00b7_To...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Core_Gpu_Profiler_Gpuprofiler_Tryge...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Cross_Backend_Ai_Test_\u00b7_...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Dx12_Hook_Hkcleardepthstencil...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Docs_Baseline_Nexvr_Engine_Architec...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Docs_Brain_Artifacts_Implementation...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Core_Runtime_State_Monitor_Runtimeh...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Ai_Backend_Ai_Backend_Telemetrydata...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Core_Depth_Snapshot_Depthsnapshot_\u00b7...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Core_Motion_Predictor_Cpp_Core_Moti...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Descriptor_Tracker_Cpp_...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Resource_Tracker_Vulkan...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Resource_Tracker_Vulkan...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Imgui_Dx12_Integration_Cp...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Frame_Timing_Manager_Fram...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Tools_Dummy_D3D11_App_Windowproc_\u00b7_...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Compatibility_Scorer_Tes...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Core_Candidate_Collector_Candidatec...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Core_Compatibility_Scorer_Compatibi...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Resource_Tracker_Vulkan...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Depth_Reprojector_Reproje...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Descriptor_Tracki...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Agents_Nexvr_Engine_Agent_Instructi...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Camera_Lock_Test_\u00b7_Core_...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Deps_Onnxruntime_Readme_\u00b7_Deps_Onnx...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Core_Depth_Delta_Tracker_H_Core_Dep...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Framebuffer_Tracker_Vul...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Failure_Injection...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Device_Lost_Test_...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Onnx_Dml_Readme_\u00b7_Onnx_Dml_Readme_B...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Core_Camera_Classifier_Cameraclassi...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Core_Performance_Profiler_Performan...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Input_Hook_Inputhook_Hookedxi...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Vulkan_Hook_Hooked_Vkcmdpipel...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Adaptive_Quality_Controll...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Vulkan_Stereo_Renderer_Vu...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Config_Manager_Configman...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Core_Depth_Classifier_Depthclassifi...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Dx12_Hook_Hkcopydescriptorssi...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Docs_Brain_Artifacts_Scorecard_Audi...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Resource_Tracking...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Core_Depth_Validator_Depthvalidator...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Core_Camera_Delta_Tracker_Dynamicca...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Framebuffer_Tracker_Vul...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Frame_Timing_Manager_H_Re...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Matrix_Harness_\u00b7_Tests_Matrix...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Ai_Directml_Testmodel_\u00b7_...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Ai_Ui_Synthesizer_Testui...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Third_Party_Licenses_Third_Party_Li...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Camera_Classifier_Test_\u00b7...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Claude_Scripts_Morph_Route_\u00b7_Claude...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Frame_Timing_Manager_Tes...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Deps_Onnxruntime_Privacy_Data_Colle...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Engine_Detector_Test_\u00b7_D...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Docs_Compatibility_Matrix_Nexvr_Eng...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Dx12_Fence_Manager_\u00b7_Tes...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Dx12_Graphics_Backend_Te...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Timeline_Semaphor...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Input_Hook_Hookedgetrawinputd...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Runtime_State_Runtimesta...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Launcher_Gen_Icon_\u00b7_Launcher_Gen_Ic...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Launcher_Inject_Game_\u00b7_Launcher_Inj...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Ai_Backend_Ai_Backend_Memoryusage_\u00b7...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Core_Reverse_Z_Detector_H_Core_Reve...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Core_Diagnostic_Context_Diagnostice...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Camera_Extractor_Vulkan...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Dllmain_Dllmain_\u00b7_Dllmain",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Rendering_Dx12_Stereo_Resource_Mana...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Camera_Stability_...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Docs_Architecture_Architectural_Phi...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Docs_Brain_Artifacts_Walkthrough_Re...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Launcher_Test_Tasklist_\u00b7_Launcher_T...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Camera_Extraction...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Camera_Classifier...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Core_Engine_Detector_Enginetuningpr...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Core_Vulkan_Resource_Tracker_H_Vkde...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Imgui_Imgui_Imguikeydata_\u00b7_Ho...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Vulkan_Hook_Hooked_Vkbindbuff...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Stress_Vulkandebu...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Claude_Scripts_Morph_Compact_\u00b7_Clau...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Adaptive_Quality_Test_\u00b7_...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Launcher_E2E_Regression_Static_Spec...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Launcher_Test_\u00b7_Launcher_Test_Cp",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Dynamic_Offsets_T...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Security_Security_Policy_\u00b7_Security",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Ai_Raft_Optical_Flow_Raftopticalflo...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Audio_Hook_Cpp_Hooks_Audio_Ho...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Command_Manager_T...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Descriptor_Manage...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Descriptor_Pool_E...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Graphics_Backend_...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Pipeline_Cache_Te...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Pipeline_Recreati...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Queue_Submission_...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Renderer_Test_\u00b7_T...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Resize_Storm_Test...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Resource_Lifetime...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Resource_State_Tr...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Sync_Manager_Test...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Hook_Manager_Hookmanager...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Temporal_Depth_Filter_Te...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Aliased_Image_Reu...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Depth_Discovery_T...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Depth_Ranking_Tes...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Dynamic_Rendering...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Framebuffer_Recre...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Image_View_Lifeti...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Layout_Tracking_T...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Multisample_Depth...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Snapshot_Validati...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Swapchain_Recreat...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Tests_Test_Vulkan_Transient_Depth_T...",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Launcher_Counter_\u00b7_Launcher_Counter...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Launcher_Test_Dev_\u00b7_Launcher_Test_D...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Launcher_Test_Simple_\u00b7_Launcher_Tes...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Input_Hook_Hookedgetcursorpos...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Input_Hook_Inputhook_Capturet...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Openxr_Openxr_Runtime_Manager_Openx...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Agents_Rules_Graphify_\u00b7_Agents_Rule...",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Agents_Workflows_Graphify_\u00b7_Agents_...",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Deps_Directml_Readme_\u00b7_Deps_Directm...",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Dummy_\u00b7_Dummy_Main",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Input_Hook_Hookedsetcursor_\u00b7_...",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Launcher_Scripts_Dev_\u00b7_Launcher_Scr...",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Launcher_Vite_Config_\u00b7_Launcher_Vit...",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Openxr_Openxr_Runtime_Manager_Openx...",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Security_Scans_Vr_Inject_Aece26Daa3...",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Hooks_Input_Hook_H_Hwnd_\u00b7_Hooks_Inp...",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    }
+  ]
+}

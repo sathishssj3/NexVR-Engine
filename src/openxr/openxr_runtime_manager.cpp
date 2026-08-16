@@ -272,8 +272,21 @@ bool OpenXRRuntimeManager::CreateSessionVulkan(VkInstance vkInstance, VkPhysical
 }
 
 bool OpenXRRuntimeManager::CreateReferenceSpace() {
+    uint32_t spaceCount = 0;
+    xrEnumerateReferenceSpaces(session_, 0, &spaceCount, nullptr);
+    std::vector<XrReferenceSpaceType> spaces(spaceCount);
+    xrEnumerateReferenceSpaces(session_, spaceCount, &spaceCount, spaces.data());
+
+    XrReferenceSpaceType preferredSpace = XR_REFERENCE_SPACE_TYPE_LOCAL;
+    for (auto space : spaces) {
+        if (space == XR_REFERENCE_SPACE_TYPE_STAGE) {
+            preferredSpace = XR_REFERENCE_SPACE_TYPE_STAGE;
+            break;
+        }
+    }
+
     XrReferenceSpaceCreateInfo createInfo{XR_TYPE_REFERENCE_SPACE_CREATE_INFO};
-    createInfo.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_LOCAL;
+    createInfo.referenceSpaceType = preferredSpace;
     createInfo.poseInReferenceSpace.orientation.w = 1.0f;
 
     XrResult res = xrCreateReferenceSpace(session_, &createInfo, &referenceSpace_);
@@ -281,7 +294,8 @@ bool OpenXRRuntimeManager::CreateReferenceSpace() {
         LOG_ERROR("OpenXR: xrCreateReferenceSpace failed with result %d", (int)res);
         return false;
     }
-    LOG_INFO("OpenXR: Reference space created successfully.");
+    LOG_INFO("OpenXR: Reference space created successfully (Type: %s).", 
+        preferredSpace == XR_REFERENCE_SPACE_TYPE_STAGE ? "STAGE" : "LOCAL");
     return true;
 }
 

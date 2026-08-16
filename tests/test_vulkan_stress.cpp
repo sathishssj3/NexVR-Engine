@@ -275,7 +275,8 @@ TEST_F(VulkanStressTest, Render10kFramesFullRenderCopyPath) {
         stateTracker->ForceResourceState(rightImage, VK_IMAGE_LAYOUT_UNDEFINED,
                                          VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0);
         backend.SetOpenXRSwapchainImages(leftImage, rightImage);
-        backend.RenderStereo(camSnapshot, depthSnapshot, params);
+        RenderFrameSnapshot dummyFrame;
+        backend.RenderStereo(dummyFrame, camSnapshot, depthSnapshot, params);
     }
 
     auto endTime   = std::chrono::high_resolution_clock::now();
