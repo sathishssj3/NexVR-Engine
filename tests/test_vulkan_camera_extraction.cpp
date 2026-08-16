@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "src/core/vulkan_camera_extractor.h"
-#include "src/core/candidate_collector.h"
+#include "rendering/vulkan/vulkan_camera_extractor.h"
+#include "heuristics/candidate_collector.h"
 
 using namespace vrinject;
 using namespace vrinject::vulkan;

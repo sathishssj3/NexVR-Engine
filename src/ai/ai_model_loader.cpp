@@ -1,4 +1,4 @@
-#include "ai_model_loader.h"
+#include "ai/ai_model_loader.h"
 #include <iostream>
 
 // Since we fetch content via CMake, we assume the headers are in include paths

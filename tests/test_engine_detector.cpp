@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "src/core/engine_detector.h"
+#include "core/engine_detector.h"
 
 using namespace vrinject;
 

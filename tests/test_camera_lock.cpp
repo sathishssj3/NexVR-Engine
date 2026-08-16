@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../src/core/camera_lock_manager.h"
+#include "heuristics/camera_lock_manager.h"
 
 using namespace vrinject;
 

@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "src/rendering/vulkan_memory_budget.h"
+#include "rendering/vulkan_memory_budget.h"
 
 using namespace vrinject::vulkan;
 

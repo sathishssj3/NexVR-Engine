@@ -1,5 +1,8 @@
 #include "gtest/gtest.h"
 #include "core/hook_manager.h"
+#include "core/logger.h"
+#include "core/config_manager.h"
+#include "core/subsystem_context.h"
 #include <windows.h>
 #include <thread>
 #include <atomic>
@@ -11,10 +14,14 @@ protected:
     void SetUp() override {
         // Reset HookManager to uninitialized state
         vrinject::HookManager::Get().ShutdownHooks();
+        auto logger = std::make_shared<vrinject::FileLogger>();
+        auto config = std::make_shared<vrinject::ConfigManager>();
+        vrinject::SubsystemContext::Get().Initialize(std::move(logger), std::move(config));
     }
     
     void TearDown() override {
         vrinject::HookManager::Get().ShutdownHooks();
+        vrinject::SubsystemContext::Get().Shutdown();
     }
 };
 

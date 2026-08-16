@@ -1,5 +1,5 @@
 #pragma once
-#include "../core/base_hook.h"
+#include "core/base_hook.h"
 
 namespace vrinject {
 

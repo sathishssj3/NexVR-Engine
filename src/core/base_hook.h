@@ -28,11 +28,11 @@
 #include <chrono>
 #include <functional>
 #include <MinHook.h>
-#include "../rendering/irenderer.h"
-#include "../openxr/openxr_runtime_manager.h"
-#include "../core/config_manager.h"
-#include "../core/logger.h"
-#include "../core/seh_shield.h"
+#include "rendering/irenderer.h"
+#include "openxr/openxr_runtime_manager.h"
+#include "core/config_manager.h"
+#include "core/logger.h"
+#include "core/seh_shield.h"
 
 namespace vrinject {
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "../irenderer.h"
+#include "rendering/irenderer.h"
 #include <d3d11.h>
 
 class DX11Renderer : public ::IRenderer {

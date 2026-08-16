@@ -1,6 +1,8 @@
 #include "core/runtime_state.h"
 #include "core/hook_manager.h"
 #include "core/logger.h"
+#include "core/subsystem_context.h"
+#include "core/config_manager.h"
 #include "core/seh_shield.h"
 #include "core/drm_manager.h"
 #include <windows.h>
@@ -72,7 +74,12 @@ void RuntimeState::BackgroundInitialize() {
         strcpy_s(logPath, dllDir);
         strcat_s(logPath, "vrinject.log");
     }
-    Logger::Init(logPath);
+    
+    auto logger = std::make_shared<FileLogger>();
+    logger->Init(logPath);
+    auto config = std::make_shared<ConfigManager>();
+    SubsystemContext::Get().Initialize(std::move(logger), std::move(config));
+
     seh::RegisterVehShield(static_cast<HMODULE>(m_hModule));
 
     LOG_INFO("========================================");
@@ -109,6 +116,8 @@ void RuntimeState::BackgroundTeardown() {
     HookManager::Get().ShutdownHooks();
     seh::UnregisterVehShield();
     
+    SubsystemContext::Get().Shutdown();
+
     DiagnosticContext::Get().PostEvent(DiagnosticLevel::Info, "Runtime", "Teardown complete");
     TransitionTo(RuntimePhase::Stopped);
 }

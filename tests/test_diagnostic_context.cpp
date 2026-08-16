@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "src/core/diagnostic_context.h"
+#include "core/diagnostic_context.h"
 #include <thread>
 #include <vector>
 

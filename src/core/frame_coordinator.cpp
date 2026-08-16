@@ -1,27 +1,31 @@
-#include "frame_coordinator.h"
+#include "core/frame_coordinator.h"
 #include <system_error>
-#include "../rendering/dx11_graphics_backend.h"
-#include "../rendering/dx12_graphics_backend.h"
-#include "../rendering/stereo_pipeline.h"
-#include "../rendering/vulkan_graphics_backend.h"
-#include "../rendering/vulkan_resource_state_tracker.h"
-#include "dx11_resource_validator.h"
-#include "logger.h"
+#include "rendering/dx11/dx11_graphics_backend.h"
+#include "rendering/dx12/dx12_graphics_backend.h"
+#include "rendering/stereo/stereo_pipeline.h"
+#include "rendering/vulkan/vulkan_graphics_backend.h"
+#include "rendering/vulkan_resource_state_tracker.h"
+#include "rendering/dx11/dx11_resource_validator.h"
+#include "core/logger.h"
+
+#include "memory_scanner/camera_delta_tracker.h"
+#include "memory_scanner/page_scanner.h"
+#include "heuristics/camera_lock_manager.h"
+#include "heuristics/camera_ranking_engine.h"
+#include "heuristics/camera_validator.h"
+#include "heuristics/candidate_collector.h"
+#include "heuristics/depth_candidate_collector.h"
+#include "heuristics/depth_delta_tracker.h"
+#include "heuristics/depth_lock_manager.h"
+#include "core/engine_detector.h"
 
 
-#include "camera_delta_tracker.h"
-#include "camera_lock_manager.h"
-#include "camera_ranking_engine.h"
-#include "camera_validator.h"
-#include "candidate_collector.h"
-#include "depth_candidate_collector.h"
-#include "depth_delta_tracker.h"
-#include "depth_lock_manager.h"
-#include "engine_detector.h"
+#include "rendering/stereo/stereo_camera_generator.h"
+#include "rendering/stereo/stereo_frame_builder.h"
 
-
-#include "stereo_camera_generator.h"
-#include "stereo_frame_builder.h"
+#include "ai/backend/dx11_ai_backend.h"
+#include "ai/backend/dx12_ai_backend.h"
+#include "ai/backend/vulkan_ai_backend.h"
 
 namespace vrinject {
 
@@ -65,6 +69,11 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
   if (!m_engineDetected) {
     EngineDetector::Get().Detect();
     m_engineDetected = true;
+    
+    // Phase 6: Initialize dynamic memory scanner
+    if (PageScanner::Get().Initialize()) {
+        PageScanner::Get().StartDynamicScan(90.0f); // Default 90 FOV
+    }
   }
 
   if (m_globalFrameCounter <= 5 || m_globalFrameCounter % 300 == 0) {
@@ -93,12 +102,29 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
         }
       }
 
-      CameraCandidate bestCandidate;
-      static uint64_t frameCounter = 0;
-      frameCounter++;
+      // Phase 9: Feed headset tracking pose into the camera tracker
+      m_deltaTracker.UpdateHeadsetPose(m_cachedHeadsetPose);
 
-      bool hasBest = CameraRankingEngine::RankCandidates(candidates, frameCounter,
-                                                         bestCandidate);
+      // Phase 6: Poll dynamic candidates and track them
+      m_deltaTracker.PollAndTrackCandidates();
+      
+      CameraCandidate bestCandidate = {};
+      bool hasBest = false;
+      
+      Matrix4x4 dynamicCameraMatrix;
+      if (m_deltaTracker.GetLockedCamera(dynamicCameraMatrix)) {
+          // Dynamic scanner found a locked camera matrix!
+          bestCandidate.view = dynamicCameraMatrix;
+          bestCandidate.valid = true;
+          bestCandidate.temporalScore = 1.0f;
+          bestCandidate.confidence = 100.0f; // Force selection
+          hasBest = true;
+      } else {
+          // Fall back to static hardcoded hooks/heuristics
+          static uint64_t frameCounter = 0;
+          frameCounter++;
+          hasBest = CameraRankingEngine::RankCandidates(candidates, frameCounter, bestCandidate);
+      }
 
       // Hand the lock manager this frame's colour resource before Update(), the same way
       // DepthLockManager::OnFrameEnd() is handed its resource context below. A
@@ -181,6 +207,25 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
     }
   }
 
+  // Initialize AI Scheduler
+  if (!m_aiScheduler) {
+    std::unique_ptr<ai::IAIBackend> aiBackend;
+    if (m_currentSnapshot.backend == GraphicsBackend::DX11) {
+      aiBackend = std::make_unique<ai::DX11AIBackend>();
+    } else if (m_currentSnapshot.backend == GraphicsBackend::DX12) {
+      aiBackend = std::make_unique<ai::DX12AIBackend>();
+    } else if (m_currentSnapshot.backend == GraphicsBackend::Vulkan) {
+      aiBackend = std::make_unique<ai::VulkanAIBackend>();
+    }
+    
+    if (aiBackend) {
+        m_aiScheduler = std::make_unique<ai::AIScheduler>(std::move(aiBackend));
+        LOG_INFO("FrameCoordinator: AI Scheduler initialized.");
+    } else {
+        LOG_WARN("FrameCoordinator: Could not initialize AI Scheduler (Unsupported backend)");
+    }
+  }
+
   if (!m_oxrHealthMonitor) {
     m_oxrHealthMonitor = std::make_unique<openxr::OpenXRHealthMonitor>();
     LOG_INFO("FrameCoordinator: OpenXR health monitor created.");
@@ -204,6 +249,9 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
     LOG_INFO("FrameCoordinator: OpenXR state is SYSTEM_SELECTED, creating session (backend=%d)...", (int)m_currentSnapshot.backend);
     if (!m_graphicsBackend->CreateOpenXRSession(m_oxrRuntime.get(), m_currentSnapshot)) {
         LOG_ERROR("FrameCoordinator: OpenXR session creation FAILED!");
+    } else {
+        LOG_INFO("FrameCoordinator: OpenXR session created successfully. Initializing Input Manager...");
+        m_inputManager.Initialize(m_oxrRuntime->GetInstance(), m_oxrRuntime->GetSession());
     }
   }
 
@@ -224,6 +272,9 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
   }
 
   if (xrReady) {
+    // Phase 9: Update virtual gamepad input from VR controllers
+    m_inputManager.Update(m_oxrRuntime->GetSession());
+
     m_graphicsBackend->SetState(StereoRendererState::READY);
 
     if (m_graphicsBackend->GetState() == StereoRendererState::READY) {
@@ -248,6 +299,16 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
       StereoParams params;
       params.convergence = 0.5f;
 
+      if (m_aiScheduler) {
+          ai::AIJob aiJob;
+          aiJob.frameId = m_globalFrameCounter;
+          aiJob.colorTarget = camSnapshot.resourceIdentity.nativeHandle;
+          aiJob.depthTarget = depthSnapshot.identity.nativeHandle;
+          aiJob.width = m_currentSnapshot.width;
+          aiJob.height = m_currentSnapshot.height;
+          m_aiScheduler->PushJob(aiJob);
+      }
+
       m_graphicsBackend->SubmitStereoFrame(
           m_oxrRuntime.get(),
           m_oxrSwapchain.get(),
@@ -259,8 +320,13 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
           m_stateMonitor,
           m_cpuProfiler,
           m_gpuProfiler,
-          m_lastCompatibility.shouldAttemptStereo
+          m_lastCompatibility.shouldAttemptStereo,
+          m_aiScheduler ? m_aiScheduler->GetLatestUIMask() : nullptr
       );
+
+      // Cache the headset pose for the next frame's injection
+      m_cachedHeadsetPose = m_currentSnapshot.leftPose;
+
       m_stateMonitor.UpdateOpenXrHealth(true);
     } else {
       m_stateMonitor.UpdateStereoHealth(false);

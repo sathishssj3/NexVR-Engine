@@ -1,4 +1,4 @@
-#include "audio_hook.h"
+#include "hooks/audio_hook.h"
 #include <windows.h>
 
 namespace vrinject {

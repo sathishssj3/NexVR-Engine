@@ -1,11 +1,11 @@
 #pragma once
-#include "../irenderer.h"
+#include "rendering/irenderer.h"
 
 // We define VK_NO_PROTOTYPES or similar depending on the project,
 // but for simplicity we'll just include the standard vulkan header.
 // Windows platform define required before vulkan.h
 #define VK_USE_PLATFORM_WIN32_KHR
-#include "../vulkan/vulkan.h"
+#include "rendering/vulkan/vulkan.h"
 
 namespace vrinject {
 

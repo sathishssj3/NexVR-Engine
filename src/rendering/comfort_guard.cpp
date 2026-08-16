@@ -1,5 +1,5 @@
-#include "comfort_guard.h"
-#include "../core/logger.h"
+#include "rendering/comfort_guard.h"
+#include "core/logger.h"
 #include <fstream>
 #include <vector>
 

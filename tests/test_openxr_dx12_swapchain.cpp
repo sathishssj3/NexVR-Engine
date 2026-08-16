@@ -3,12 +3,12 @@
 #include <d3d12.h>
 #include <dxgi1_4.h>
 #include <wrl/client.h>
-#include "../src/openxr/openxr_runtime_manager.h"
-#include "../src/openxr/openxr_swapchain_manager.h"
-#include "../src/openxr/openxr_frame_submitter.h"
-#include "../src/core/dx12_lifecycle_manager.h"
-#include "../src/rendering/dx12_resource_state_tracker.h"
-#include "../src/openxr/openxr_health_monitor.h"
+#include "openxr/openxr_runtime_manager.h"
+#include "openxr/openxr_swapchain_manager.h"
+#include "openxr/openxr_frame_submitter.h"
+#include "rendering/dx12/dx12_lifecycle_manager.h"
+#include "rendering/dx12/dx12_resource_state_tracker.h"
+#include "openxr/openxr_health_monitor.h"
 
 using namespace Microsoft::WRL;
 using namespace vrinject;

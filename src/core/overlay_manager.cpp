@@ -1,8 +1,9 @@
-#include "overlay_manager.h"
-#include "logger.h"
-#include "config_manager.h"
+#include "core/overlay_manager.h"
+#include "core/logger.h"
+#include "core/config_manager.h"
+#include "core/subsystem_context.h"
 #include "imgui.h"
-#include "backends/imgui_impl_win32.h"
+#include "imgui_impl_win32.h"
 
 // Forward declare Win32 message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -77,8 +78,8 @@ void OverlayManager::Render() {
         return;
     }
 
-    auto& cfgManager = ConfigManager::GetInstance();
-    auto& cfg = cfgManager.GetConfigMutable();
+    auto cfgManager = SubsystemContext::Get().GetConfig();
+    auto& cfg = cfgManager->GetConfigMutable();
 
     ImGui::SetNextWindowSize(ImVec2(500, 350), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
@@ -91,13 +92,13 @@ void OverlayManager::Render() {
         float ipd = cfg.ipd;
         if (ImGui::SliderFloat("IPD (Eye Distance)", &ipd, 0.01f, 0.15f, "%.3f m")) {
             cfg.ipd = ipd;
-            cfgManager.Save();
+            cfgManager->Save();
         }
 
         float conv = cfg.convergence;
         if (ImGui::SliderFloat("Convergence", &conv, 1.0f, 1000.0f, "%.1f cm")) {
             cfg.convergence = conv;
-            cfgManager.Save();
+            cfgManager->Save();
         }
 
         ImGui::Spacing();
@@ -107,7 +108,7 @@ void OverlayManager::Render() {
         bool inpainter = cfg.enableNeuralInpainter;
         if (ImGui::Checkbox("Enable Neural Inpainter", &inpainter)) {
             cfg.enableNeuralInpainter = inpainter;
-            cfgManager.Save();
+            cfgManager->Save();
         }
 
         ImGui::Spacing();

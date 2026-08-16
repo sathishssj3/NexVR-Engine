@@ -28,10 +28,6 @@ struct VRConfig {
 
 class ConfigManager {
 public:
-    static ConfigManager& GetInstance() {
-        static ConfigManager instance;
-        return instance;
-    }
 
     // Loads configuration from a vrinject.json file located in the provided moduleDir.
     bool Load(const std::string& moduleDir);
@@ -42,7 +38,7 @@ public:
     const VRConfig& GetConfig() const { return m_config; }
     VRConfig& GetConfigMutable() { return m_config; }
 
-private:
+public:
     ConfigManager() = default;
     ~ConfigManager() = default;
 

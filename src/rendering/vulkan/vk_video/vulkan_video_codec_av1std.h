@@ -21,7 +21,7 @@ extern "C" {
 
 // vulkan_video_codec_av1std is a preprocessor guard. Do not pass it to API calls.
 #define vulkan_video_codec_av1std 1
-#include "vulkan_video_codecs_common.h"
+#include "rendering/vulkan/vk_video/vulkan_video_codecs_common.h"
 #define STD_VIDEO_AV1_NUM_REF_FRAMES      8U
 #define STD_VIDEO_AV1_REFS_PER_FRAME      7U
 #define STD_VIDEO_AV1_TOTAL_REFS_PER_FRAME 8U

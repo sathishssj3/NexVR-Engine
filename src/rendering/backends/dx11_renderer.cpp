@@ -1,5 +1,5 @@
-#include "dx11_renderer.h"
-#include "../../core/logger.h"
+#include "rendering/backends/dx11_renderer.h"
+#include "core/logger.h"
 #include <d3dcompiler.h>
 #include <vector>
 #include <string>

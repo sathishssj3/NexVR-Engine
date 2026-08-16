@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../src/core/vulkan_descriptor_tracker.h"
+#include "rendering/vulkan/vulkan_descriptor_tracker.h"
 
 using namespace vrinject;
 using namespace vrinject::vulkan;

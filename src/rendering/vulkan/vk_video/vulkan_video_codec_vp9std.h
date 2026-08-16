@@ -21,7 +21,7 @@ extern "C" {
 
 // vulkan_video_codec_vp9std is a preprocessor guard. Do not pass it to API calls.
 #define vulkan_video_codec_vp9std 1
-#include "vulkan_video_codecs_common.h"
+#include "rendering/vulkan/vk_video/vulkan_video_codecs_common.h"
 #define STD_VIDEO_VP9_NUM_REF_FRAMES      8U
 #define STD_VIDEO_VP9_REFS_PER_FRAME      3U
 #define STD_VIDEO_VP9_MAX_REF_FRAMES      4U

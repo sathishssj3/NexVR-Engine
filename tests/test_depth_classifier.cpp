@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../src/core/depth_classifier.h"
+#include "heuristics/depth_classifier.h"
 #include <dxgiformat.h>
 
 using namespace vrinject;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../core/ue_sdk.h"
+#include "core/ue_sdk.h"
 #include <cstdint>
 
 namespace vrinject {

@@ -1,10 +1,10 @@
-#include "dx12_renderer.h"
+#include "rendering/backends/dx12_renderer.h"
 #include <vector>
 #include <string>
 #include <windows.h>
 #include <algorithm>
 #include <d3dcompiler.h>
-#include "../../core/logger.h"
+#include "core/logger.h"
 #include <bcrypt.h>
 #ifdef _MSC_VER
 #pragma comment(lib, "bcrypt.lib")

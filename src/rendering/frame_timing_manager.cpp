@@ -1,4 +1,4 @@
-#include "frame_timing_manager.h"
+#include "rendering/frame_timing_manager.h"
 
 #include <algorithm>
 

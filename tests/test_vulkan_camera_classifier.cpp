@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "src/core/camera_classifier.h"
+#include "heuristics/camera_classifier.h"
 
 using namespace vrinject;
 

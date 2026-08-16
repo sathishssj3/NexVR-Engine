@@ -1,18 +1,22 @@
 #pragma once
-#include "render_frame_snapshot.h"
+#include "heuristics/render_frame_snapshot.h"
 
 #include <memory>
-#include "../rendering/igraphics_backend.h"
-#include "../openxr/openxr_runtime_manager.h"
-#include "../openxr/openxr_swapchain_manager.h"
-#include "../openxr/openxr_frame_submitter.h"
-#include "../openxr/openxr_health_monitor.h"
+#include "rendering/igraphics_backend.h"
+#include "openxr/openxr_runtime_manager.h"
+#include "openxr/openxr_swapchain_manager.h"
+#include "openxr/openxr_frame_submitter.h"
+#include "openxr/openxr_health_monitor.h"
 
-#include "runtime_state_monitor.h"
-#include "performance_profiler.h"
-#include "gpu_profiler.h"
-#include "runtime_dashboard.h"
-#include "compatibility_scorer.h"
+#include "core/runtime_state_monitor.h"
+#include "core/performance_profiler.h"
+#include "core/gpu_profiler.h"
+#include "core/runtime_dashboard.h"
+#include "core/compatibility_scorer.h"
+#include "memory_scanner/camera_delta_tracker.h"
+#include "ai/ai_scheduler.h"
+#include "hooks/input_manager.h"
+
 namespace vrinject {
 
 class FrameCoordinator {
@@ -40,8 +44,11 @@ private:
     std::unique_ptr<openxr::OpenXRRuntimeManager> m_oxrRuntime;
     std::unique_ptr<openxr::OpenXRSwapchainManager> m_oxrSwapchain;
     std::unique_ptr<openxr::OpenXRFrameSubmitter> m_oxrSubmitter;
+    std::unique_ptr<ai::AIScheduler> m_aiScheduler;
+    InputManager m_inputManager;
     
     RuntimeStateMonitor m_stateMonitor;
+    CameraDeltaTracker m_deltaTracker;
     PerformanceProfiler m_cpuProfiler;
     GpuProfiler m_gpuProfiler;
     RuntimeDashboard m_dashboard;
@@ -49,6 +56,9 @@ private:
     bool m_engineDetected = false;
     
     uint64_t m_globalFrameCounter = 0;
+    
+    // Cached headset pose from the previous frame to feed back into the engine
+    XrPosef m_cachedHeadsetPose = {{0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}};
 };
 
 // RAII Guard to guarantee OnPresentEnd is fired

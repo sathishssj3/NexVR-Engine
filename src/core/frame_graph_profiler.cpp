@@ -1,4 +1,4 @@
-#include "frame_graph_profiler.h"
+#include "core/frame_graph_profiler.h"
 
 #include <algorithm>
 #include <cstring>

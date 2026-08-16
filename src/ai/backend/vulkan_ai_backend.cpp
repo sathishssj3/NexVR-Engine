@@ -1,4 +1,4 @@
-#include "vulkan_ai_backend.h"
+#include "ai/backend/vulkan_ai_backend.h"
 #include <thread>
 
 namespace vrinject {
@@ -13,14 +13,14 @@ void VulkanAIBackend::Shutdown() {}
 bool VulkanAIBackend::CreateResources() { return true; }
 void VulkanAIBackend::DestroyResources() {}
 
-uint64_t VulkanAIBackend::SubmitInference(uint64_t frameId) {
+uint64_t VulkanAIBackend::SubmitInference(const AIJob& job) {
     auto start = std::chrono::high_resolution_clock::now();
     // Simulate AI execution (e.g. 1.1ms)
     std::this_thread::sleep_for(std::chrono::microseconds(1100));
     auto end = std::chrono::high_resolution_clock::now();
     
     m_telemetry.gpuTimeMs = std::chrono::duration<double, std::milli>(end - start).count();
-    m_currentJobId = frameId;
+    m_currentJobId++;
     return m_currentJobId;
 }
 

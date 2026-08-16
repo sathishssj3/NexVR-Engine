@@ -6,12 +6,12 @@
 #include <vector>
 #include <dxgidebug.h>
 
-#include "../src/rendering/dx12_graphics_backend.h"
-#include "../src/core/dx12_lifecycle_manager.h"
-#include "../src/core/camera_lock_manager.h"
-#include "../src/core/depth_lock_manager.h"
-#include "../src/core/stereo_types.h"
-#include "../src/rendering/stereo_pipeline.h"
+#include "rendering/dx12/dx12_graphics_backend.h"
+#include "rendering/dx12/dx12_lifecycle_manager.h"
+#include "heuristics/camera_lock_manager.h"
+#include "heuristics/depth_lock_manager.h"
+#include "core/stereo_types.h"
+#include "rendering/stereo/stereo_pipeline.h"
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")

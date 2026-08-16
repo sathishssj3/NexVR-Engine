@@ -1,4 +1,4 @@
-#include "vulkan_barrier_optimizer.h"
+#include "rendering/vulkan_barrier_optimizer.h"
 
 namespace vrinject {
 namespace vulkan {

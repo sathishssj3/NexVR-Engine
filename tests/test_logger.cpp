@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
-#include "src/core/logger.h"
+#include "core/logger.h"
+#include "core/subsystem_context.h"
+#include "core/config_manager.h"
 #include <string>
 #include <filesystem>
 #include <fstream>
@@ -11,11 +13,14 @@ protected:
     void SetUp() override {
         // Create a temporary log file for testing
         logFile = fs::temp_directory_path() / "vrinject_test.log";
-        vrinject::Logger::Init(logFile.string());
+        auto logger = std::make_shared<vrinject::FileLogger>();
+        logger->Init(logFile.string());
+        auto config = std::make_shared<vrinject::ConfigManager>();
+        vrinject::SubsystemContext::Get().Initialize(std::move(logger), std::move(config));
     }
 
     void TearDown() override {
-        vrinject::Logger::Shutdown();
+        vrinject::SubsystemContext::Get().Shutdown();
         // Clean up the log file
         if (fs::exists(logFile)) {
             fs::remove(logFile);
@@ -32,7 +37,7 @@ TEST_F(LoggerTest, LoggerInitialization) {
 
 TEST_F(LoggerTest, LoggerLogging) {
     // Test that we can log messages
-    vrinject::Logger::Log(vrinject::Logger::Level::Info, "test.cpp", 10, "Test message %d", 42);
+    vrinject::SubsystemContext::Get().GetLogger()->Log(vrinject::ILogger::Level::Info, "test.cpp", 10, "Test message %d", 42);
 
     // Give it a moment to write
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -51,10 +56,10 @@ TEST_F(LoggerTest, LoggerLogging) {
 }
 
 TEST_F(LoggerTest, LoggerDifferentLevels) {
-    vrinject::Logger::Log(vrinject::Logger::Level::Debug, "test.cpp", 10, "Debug message");
-    vrinject::Logger::Log(vrinject::Logger::Level::Info, "test.cpp", 10, "Info message");
-    vrinject::Logger::Log(vrinject::Logger::Level::Warn, "test.cpp", 10, "Warning message");
-    vrinject::Logger::Log(vrinject::Logger::Level::Error, "test.cpp", 10, "Error message");
+    vrinject::SubsystemContext::Get().GetLogger()->Log(vrinject::ILogger::Level::Debug, "test.cpp", 10, "Debug message");
+    vrinject::SubsystemContext::Get().GetLogger()->Log(vrinject::ILogger::Level::Info, "test.cpp", 10, "Info message");
+    vrinject::SubsystemContext::Get().GetLogger()->Log(vrinject::ILogger::Level::Warn, "test.cpp", 10, "Warning message");
+    vrinject::SubsystemContext::Get().GetLogger()->Log(vrinject::ILogger::Level::Error, "test.cpp", 10, "Error message");
 
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
@@ -74,7 +79,7 @@ TEST_F(LoggerTest, LoggerDifferentLevels) {
 
 TEST_F(LoggerTest, LoggerPathFiltering) {
     // Test that paths are filtered out of log messages
-    vrinject::Logger::Log(vrinject::Logger::Level::Info, "C:\\long\\path\\to\\file.cpp", 10, "Message with C:\\test\\path.exe in it");
+    vrinject::SubsystemContext::Get().GetLogger()->Log(vrinject::ILogger::Level::Info, "C:\\long\\path\\to\\file.cpp", 10, "Message with C:\\test\\path.exe in it");
 
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 

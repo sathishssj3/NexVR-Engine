@@ -1,4 +1,4 @@
-#include "../core/sprint_compatibility_logger.h"
+#include "core/sprint_compatibility_logger.h"
 #include <iostream>
 
 int main() {

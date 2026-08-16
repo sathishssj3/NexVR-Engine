@@ -5,6 +5,13 @@
 
 namespace vrinject {
 namespace ai {
+struct AIJob {
+    uint64_t frameId;
+    void* colorTarget = nullptr;
+    void* depthTarget = nullptr;
+    uint32_t width = 0;
+    uint32_t height = 0;
+};
 
 struct TelemetryData {
     double gpuTimeMs = 0.0;
@@ -41,7 +48,7 @@ public:
 
     // Inference Execution
     // Returns a backend-specific job/fence ID that can be polled
-    virtual uint64_t SubmitInference(uint64_t frameId) = 0;
+    virtual uint64_t SubmitInference(const AIJob& job) = 0;
 
     // Non-blocking poll for job completion
     virtual bool PollCompletion(uint64_t jobId) = 0;
@@ -52,6 +59,9 @@ public:
     // Telemetry & Reporting
     virtual MemoryUsage GetMemoryUsage() const = 0;
     virtual TelemetryData GetTelemetry() const = 0;
+    
+    // Output retrieval
+    virtual void* GetUIMask() = 0;
     
     // Backend Identifier
     virtual const char* GetName() const = 0;

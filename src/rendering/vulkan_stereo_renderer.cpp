@@ -1,5 +1,5 @@
-#include "vulkan_stereo_renderer.h"
-#include "../core/vulkan_dispatch_table.h"
+#include "rendering/vulkan_stereo_renderer.h"
+#include "rendering/vulkan/vulkan_dispatch_table.h"
 #include <iostream>
 
 namespace vrinject {
@@ -28,7 +28,8 @@ bool VulkanStereoRenderer::Render(const CameraSnapshot& camera,
                                   VulkanSyncManager& syncManager,
                                   VulkanResourceStateTracker& stateTracker,
                                   VkImage oxrLeftDest,
-                                  VkImage oxrRightDest) {
+                                  VkImage oxrRightDest,
+                                  VkImageView uiMaskView) {
     
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(m_device);
     if (!dt) {

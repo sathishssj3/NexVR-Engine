@@ -1,4 +1,5 @@
-#include "dx11_hook.h"
+#include "hooks/dx11_hook.h"
+#include "core/subsystem_context.h"
 #include <system_error>
 #include <dxgi1_2.h>
 #include "MinHook.h"
@@ -9,16 +10,16 @@
 #include <d3d11.h>
 #include <dxgi1_2.h>
 
-#include "../core/logger.h"
-#include "../core/seh_shield.h"
-#include "../core/config_manager.h"
-#include "../core/dx11_lifecycle_manager.h"
-#include "../core/dx12_lifecycle_manager.h"
-#include "../core/frame_coordinator.h"
-#include "../core/candidate_collector.h"
-#include "../core/depth_candidate_collector.h"
-#include "../core/depth_lock_manager.h"
-#include "dxgi_factory_hook.h"
+#include "core/logger.h"
+#include "core/seh_shield.h"
+#include "core/config_manager.h"
+#include "rendering/dx11/dx11_lifecycle_manager.h"
+#include "rendering/dx12/dx12_lifecycle_manager.h"
+#include "core/frame_coordinator.h"
+#include "heuristics/candidate_collector.h"
+#include "heuristics/depth_candidate_collector.h"
+#include "heuristics/depth_lock_manager.h"
+#include "hooks/dxgi_factory_hook.h"
 extern HMODULE g_hModule; // Declared in dllmain.cpp
 
 namespace vrinject {
@@ -228,7 +229,10 @@ bool Initialize() {
     if (GetModuleFileNameA(g_hModule, dllPath, MAX_PATH)) {
         std::string baseDir = std::string(dllPath);
         baseDir = baseDir.substr(0, baseDir.find_last_of("\\/"));
-        ConfigManager::GetInstance().Load(baseDir);
+        auto config = SubsystemContext::Get().GetConfig();
+        if (config) {
+            config->Load(baseDir);
+        }
     }
 
     // Create dummy window and swapchain to get vtables

@@ -1,4 +1,4 @@
-#include "neural_inpainter.h"
+#include "rendering/neural_inpainter.h"
 
 namespace vrinject {
 

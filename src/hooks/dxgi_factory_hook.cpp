@@ -1,6 +1,6 @@
-#include "dxgi_factory_hook.h"
+#include "hooks/dxgi_factory_hook.h"
 #include "MinHook.h"
-#include "../core/logger.h"
+#include "core/logger.h"
 #include <mutex>
 
 namespace vrinject {

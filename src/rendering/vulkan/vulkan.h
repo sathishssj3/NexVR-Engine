@@ -7,8 +7,8 @@
 ** SPDX-License-Identifier: Apache-2.0
 */
 
-#include "vk_platform.h"
-#include "vulkan_core.h"
+#include "rendering/vulkan/vk_platform.h"
+#include "rendering/vulkan/vulkan_core.h"
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 #include "vulkan_android.h"
@@ -44,7 +44,7 @@
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 #include <windows.h>
-#include "vulkan_win32.h"
+#include "rendering/vulkan/vulkan_win32.h"
 #endif
 
 

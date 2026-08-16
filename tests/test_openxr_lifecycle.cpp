@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "../src/openxr/openxr_runtime_manager.h"
-#include "../src/openxr/openxr_health_monitor.h"
+#include "openxr/openxr_runtime_manager.h"
+#include "openxr/openxr_health_monitor.h"
 
 using namespace vrinject::openxr;
 

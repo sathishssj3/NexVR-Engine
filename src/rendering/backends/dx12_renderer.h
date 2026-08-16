@@ -1,12 +1,12 @@
 #pragma once
-#include "../irenderer.h"
+#include "rendering/irenderer.h"
 #include <d3d12.h>
 #include <dxgi1_4.h>
 #include <wrl/client.h>
 #include <atomic>
 #include <mutex>
 #include <d3d11on12.h>
-#include "../stereo_pipeline.h"
+#include "rendering/stereo/stereo_pipeline.h"
 
 class DX12Renderer : public ::IRenderer {
 public:

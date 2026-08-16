@@ -1,14 +1,14 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-#include "../core/camera_snapshot.h"
-#include "../core/depth_snapshot.h"
-#include "vulkan_stereo_resource_manager.h"
-#include "vulkan_pipeline_cache.h"
-#include "vulkan_descriptor_manager.h"
-#include "vulkan_command_manager.h"
-#include "vulkan_sync_manager.h"
-#include "vulkan_resource_state_tracker.h"
+#include "heuristics/camera_snapshot.h"
+#include "heuristics/depth_snapshot.h"
+#include "rendering/vulkan_stereo_resource_manager.h"
+#include "rendering/vulkan_pipeline_cache.h"
+#include "rendering/vulkan_descriptor_manager.h"
+#include "rendering/vulkan_command_manager.h"
+#include "rendering/vulkan_sync_manager.h"
+#include "rendering/vulkan_resource_state_tracker.h"
 
 namespace vrinject {
 namespace vulkan {
@@ -33,7 +33,8 @@ public:
                 VulkanSyncManager& syncManager,
                 VulkanResourceStateTracker& stateTracker,
                 VkImage oxrLeftDest = VK_NULL_HANDLE,
-                VkImage oxrRightDest = VK_NULL_HANDLE);
+                VkImage oxrRightDest = VK_NULL_HANDLE,
+                VkImageView uiMaskView = VK_NULL_HANDLE);
 
 private:
     VkDevice m_device = VK_NULL_HANDLE;

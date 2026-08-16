@@ -1,13 +1,13 @@
 #include <iostream>
 #include <windows.h>
 #include <vulkan/vulkan.h>
-#include "../src/openxr/openxr_runtime_manager.h"
-#include "../src/openxr/openxr_swapchain_manager.h"
-#include "../src/openxr/openxr_frame_submitter.h"
-#include "../src/rendering/vulkan_resource_state_tracker.h"
-#include "../src/openxr/openxr_health_monitor.h"
-#include "../src/rendering/vulkan_graphics_backend.h"
-#include "../src/core/vulkan_dispatch_table.h"
+#include "openxr/openxr_runtime_manager.h"
+#include "openxr/openxr_swapchain_manager.h"
+#include "openxr/openxr_frame_submitter.h"
+#include "rendering/vulkan_resource_state_tracker.h"
+#include "openxr/openxr_health_monitor.h"
+#include "rendering/vulkan/vulkan_graphics_backend.h"
+#include "rendering/vulkan/vulkan_dispatch_table.h"
 #include <vector>
 #include <chrono>
 

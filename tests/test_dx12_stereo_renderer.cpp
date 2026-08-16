@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../src/rendering/dx12_stereo_renderer.h"
+#include "rendering/dx12/dx12_stereo_renderer.h"
 
 using namespace vrinject;
 

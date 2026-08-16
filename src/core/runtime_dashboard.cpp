@@ -1,5 +1,5 @@
-#include "runtime_dashboard.h"
-#include "logger.h"
+#include "core/runtime_dashboard.h"
+#include "core/logger.h"
 #include <chrono>
 #include <iostream>
 #include <iomanip>

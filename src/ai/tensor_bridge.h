@@ -26,6 +26,9 @@ public:
     // Bind a D3D12 Resource as an input tensor for ONNX inference
     Ort::Value BindInputResourceDX12(const char* inputName, Microsoft::WRL::ComPtr<ID3D12Resource> resource, const std::vector<int64_t>& shape);
 
+    // Bind a D3D12 Resource as an output tensor for ONNX inference
+    Ort::Value BindOutputResourceDX12(const char* outputName, Microsoft::WRL::ComPtr<ID3D12Resource> resource, const std::vector<int64_t>& shape);
+
     // Retrieve DML execution context handle for synchronization
     void* GetDmlExecutionContext() const;
 

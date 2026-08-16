@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <DirectXMath.h>
-#include "../src/core/matrix_classifier.h"
+#include "heuristics/matrix_classifier.h"
 
 using namespace vrinject;
 using namespace DirectX;

@@ -1,6 +1,6 @@
 #define _CRT_SECURE_NO_WARNINGS
-#include "drm_manager.h"
-#include "../core/logger.h"
+#include "core/drm_manager.h"
+#include "core/logger.h"
 #include <vector>
 #include <stdio.h>
 #include <chrono>

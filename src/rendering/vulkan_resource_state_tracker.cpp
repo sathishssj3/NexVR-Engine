@@ -1,5 +1,5 @@
-#include "vulkan_resource_state_tracker.h"
-#include "../core/vulkan_dispatch_table.h"
+#include "rendering/vulkan_resource_state_tracker.h"
+#include "rendering/vulkan/vulkan_dispatch_table.h"
 
 namespace vrinject {
 namespace vulkan {

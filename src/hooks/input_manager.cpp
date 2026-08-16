@@ -1,6 +1,6 @@
-#include "input_manager.h"
-#include "../core/logger.h"
-#include "input_hook.h"
+#include "hooks/input_manager.h"
+#include "core/logger.h"
+#include "hooks/input_hook.h"
 #include <vector>
 
 namespace vrinject {

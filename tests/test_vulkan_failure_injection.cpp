@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
-#include "../src/core/vulkan_lifecycle_manager.h"
-#include "../src/core/vulkan_dispatch_table.h"
-#include "../src/hooks/vulkan_hook.h"
+#include "rendering/vulkan/vulkan_lifecycle_manager.h"
+#include "rendering/vulkan/vulkan_dispatch_table.h"
+#include "hooks/vulkan_hook.h"
 
 using namespace vrinject;
 using namespace vrinject::vulkan;

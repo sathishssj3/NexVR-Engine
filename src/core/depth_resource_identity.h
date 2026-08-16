@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <tuple>
-#include "graphics_types.h"
+#include "core/graphics_types.h"
 
 namespace vrinject {
 

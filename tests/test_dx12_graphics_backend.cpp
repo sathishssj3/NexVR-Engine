@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../src/rendering/dx12_graphics_backend.h"
+#include "rendering/dx12/dx12_graphics_backend.h"
 
 using namespace vrinject;
 

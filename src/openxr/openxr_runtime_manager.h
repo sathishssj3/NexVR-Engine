@@ -1,10 +1,10 @@
 #pragma once
 
-#include "openxr_types.h"
-#include "openxr_health_monitor.h"
+#include "openxr/openxr_types.h"
+#include "openxr/openxr_health_monitor.h"
 #include <string>
 #include <vector>
-#include "../core/graphics_types.h" // For GraphicsBackend
+#include "core/graphics_types.h" // For GraphicsBackend
 
 namespace vrinject {
 namespace openxr {

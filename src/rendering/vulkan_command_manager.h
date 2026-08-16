@@ -3,7 +3,7 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include <mutex>
-#include "vulkan_sync_manager.h" // For MAX_FRAMES_IN_FLIGHT
+#include "rendering/vulkan_sync_manager.h" // For MAX_FRAMES_IN_FLIGHT
 
 namespace vrinject {
 namespace vulkan {

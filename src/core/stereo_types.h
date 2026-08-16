@@ -1,8 +1,8 @@
 #pragma once
 
-#include "math_types.h"
-#include "camera_snapshot.h"
-#include "depth_snapshot.h"
+#include "core/math_types.h"
+#include "heuristics/camera_snapshot.h"
+#include "heuristics/depth_snapshot.h"
 #include <cstdint>
 
 namespace vrinject {
@@ -19,6 +19,8 @@ struct StereoConstants {
     float nearPlane = 0.1f;
     float farPlane = 1000.0f;
     float convergence = 5.0f;    // Distance where parallax is zero
+    uint32_t enableASW = 0;
+    uint32_t aswTargetFps = 90;
 };
 
 struct StereoViewport {

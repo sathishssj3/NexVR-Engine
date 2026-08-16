@@ -12,7 +12,7 @@
 **
 */
 
-#include "openxr.h"
+#include "rendering/openxr/openxr.h"
 
 /*
 This file contains expansion macros (X Macros) for OpenXR enumerations and structures.

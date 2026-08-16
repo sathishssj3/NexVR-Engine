@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
-#include "../src/core/vulkan_lifecycle_manager.h"
-#include "../src/core/vulkan_queue_manager.h"
-#include "../src/core/vulkan_dispatch_table.h"
-#include "../src/core/render_frame_snapshot.h"
-#include "../src/core/vulkan_snapshot_validator.h"
+#include "rendering/vulkan/vulkan_lifecycle_manager.h"
+#include "rendering/vulkan/vulkan_queue_manager.h"
+#include "rendering/vulkan/vulkan_dispatch_table.h"
+#include "heuristics/render_frame_snapshot.h"
+#include "rendering/vulkan/vulkan_snapshot_validator.h"
 
 using namespace vrinject;
 using namespace vrinject::vulkan;

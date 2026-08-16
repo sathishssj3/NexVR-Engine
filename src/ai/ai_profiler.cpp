@@ -1,5 +1,5 @@
-#include "ai_profiler.h"
-#include "../core/logger.h"
+#include "ai/ai_profiler.h"
+#include "core/logger.h"
 // #include <dml_provider_factory.h>
 #include <iostream>
 #include <chrono>

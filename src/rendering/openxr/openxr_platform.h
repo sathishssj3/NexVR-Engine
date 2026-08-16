@@ -12,7 +12,7 @@
 **
 */
 
-#include "openxr.h"
+#include "rendering/openxr/openxr.h"
 
 #ifdef __cplusplus
 extern "C" {

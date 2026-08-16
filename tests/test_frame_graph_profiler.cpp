@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "src/core/frame_graph_profiler.h"
+#include "core/frame_graph_profiler.h"
 
 using namespace vrinject;
 

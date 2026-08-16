@@ -1,7 +1,7 @@
-#include "depth_reprojector.h"
-#include "shaders/stereo_shaders.h"
-#include "../core/logger.h"
-#include "stereo_pipeline.h"
+#include "rendering/depth_reprojector.h"
+#include "rendering/shaders/stereo_shaders.h"
+#include "core/logger.h"
+#include "rendering/stereo/stereo_pipeline.h"
 
 namespace vrinject {
 

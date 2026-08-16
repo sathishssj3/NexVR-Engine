@@ -1,4 +1,4 @@
-#include "sprint_compatibility_logger.h"
+#include "core/sprint_compatibility_logger.h"
 #include <iostream>
 
 namespace vrinject {

@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "src/core/compatibility_scorer.h"
+#include "core/compatibility_scorer.h"
 
 #include <string>
 

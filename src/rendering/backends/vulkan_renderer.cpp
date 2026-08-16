@@ -1,5 +1,5 @@
-#include "vulkan_renderer.h"
-#include "../../core/logger.h"
+#include "rendering/backends/vulkan_renderer.h"
+#include "core/logger.h"
 #include <vector>
 #include <string>
 #include <windows.h>
@@ -8,7 +8,7 @@ typedef LONG NTSTATUS;
 #endif
 #include <bcrypt.h>
 #pragma comment(lib, "bcrypt.lib")
-#include "../../core/vulkan_dispatch_table.h"
+#include "rendering/vulkan/vulkan_dispatch_table.h"
 
 #ifndef EXPECTED_SHADER_HASH
 #define EXPECTED_SHADER_HASH L"SECURITY_ERROR: PLEASE_SET_EXPECTED_SHADER_HASH_IN_BUILD_CONFIG"

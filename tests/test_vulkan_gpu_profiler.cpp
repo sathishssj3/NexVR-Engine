@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "src/rendering/vulkan_gpu_profiler.h"
+#include "rendering/vulkan_gpu_profiler.h"
 
 using namespace vrinject::vulkan;
 

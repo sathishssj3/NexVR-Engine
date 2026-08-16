@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "../src/core/depth_lock_manager.h"
-#include "../src/core/depth_candidate_collector.h"
+#include "heuristics/depth_lock_manager.h"
+#include "heuristics/depth_candidate_collector.h"
 
 using namespace vrinject;
 

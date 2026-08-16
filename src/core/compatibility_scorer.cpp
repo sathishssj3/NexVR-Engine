@@ -1,6 +1,6 @@
-#include "compatibility_scorer.h"
+#include "core/compatibility_scorer.h"
 
-#include "diagnostic_context.h"
+#include "core/diagnostic_context.h"
 
 #include <algorithm>
 #include <cstdio>

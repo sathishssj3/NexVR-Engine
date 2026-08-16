@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../src/core/vulkan_resource_tracker.h"
+#include "rendering/vulkan/vulkan_resource_tracker.h"
 
 using namespace vrinject;
 using namespace vrinject::vulkan;

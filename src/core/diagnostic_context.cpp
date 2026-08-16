@@ -1,7 +1,7 @@
-#include "diagnostic_context.h"
+#include "core/diagnostic_context.h"
 #include <cstring>
 #include <iostream>
-#include "logger.h"
+#include "core/logger.h"
 
 #ifdef _WIN32
 #define strncpy_safe(dest, src, size) strncpy_s(dest, size, src, _TRUNCATE)

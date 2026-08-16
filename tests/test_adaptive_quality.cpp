@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "src/rendering/adaptive_quality_controller.h"
+#include "rendering/adaptive_quality_controller.h"
 
 using namespace vrinject;
 

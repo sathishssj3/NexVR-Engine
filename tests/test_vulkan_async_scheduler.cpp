@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "src/rendering/vulkan_async_scheduler.h"
+#include "rendering/vulkan_async_scheduler.h"
 
 using namespace vrinject::vulkan;
 

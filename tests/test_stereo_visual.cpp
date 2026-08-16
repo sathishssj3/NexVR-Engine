@@ -4,9 +4,9 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
-#include "../src/rendering/stereo_renderer.h"
-#include "../src/core/stereo_camera_generator.h"
-#include "../src/core/stereo_frame_builder.h"
+#include "rendering/stereo/stereo_renderer.h"
+#include "rendering/stereo/stereo_camera_generator.h"
+#include "rendering/stereo/stereo_frame_builder.h"
 
 using namespace Microsoft::WRL;
 using namespace vrinject;

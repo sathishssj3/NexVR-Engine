@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "src/rendering/vulkan_barrier_optimizer.h"
+#include "rendering/vulkan_barrier_optimizer.h"
 
 using namespace vrinject::vulkan;
 

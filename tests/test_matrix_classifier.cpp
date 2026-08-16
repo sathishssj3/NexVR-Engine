@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "src/core/matrix_classifier.h"
+#include "heuristics/matrix_classifier.h"
 #include <DirectXMath.h>
 
 using namespace DirectX;

@@ -1,4 +1,4 @@
-#include "ai_scheduler.h"
+#include "ai/ai_scheduler.h"
 #include <iostream>
 
 namespace vrinject {
@@ -25,7 +25,7 @@ AIScheduler::~AIScheduler() {
     }
 }
 
-void AIScheduler::PushJob(uint64_t frameId) {
+void AIScheduler::PushJob(const AIJob& job) {
     {
         std::lock_guard<std::mutex> lock(m_queueMutex);
         
@@ -35,7 +35,7 @@ void AIScheduler::PushJob(uint64_t frameId) {
             m_jobQueue.pop(); // Drop oldest
         }
         
-        m_jobQueue.push({frameId});
+        m_jobQueue.push(job);
     }
     m_cv.notify_one();
 }
@@ -61,8 +61,9 @@ void AIScheduler::WorkerThreadLoop() {
         }
         
         if (m_backend) {
-            uint64_t jobId = m_backend->SubmitInference(job.frameId);
+            uint64_t jobId = m_backend->SubmitInference(job);
             m_backend->Synchronize(jobId);
+            m_latestUIMask.store(m_backend->GetUIMask(), std::memory_order_release);
         }
         
         // Mark this frame (and any older skipped frames) as completed.

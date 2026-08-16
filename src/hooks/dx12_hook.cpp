@@ -1,28 +1,28 @@
-#include "dx12_hook.h"
+#include "hooks/dx12_hook.h"
 #include <system_error>
-#include "dxgi_factory_hook.h"
-#include "../core/logger.h"
-#include "../core/seh_shield.h"
+#include "hooks/dxgi_factory_hook.h"
+#include "core/logger.h"
+#include "core/seh_shield.h"
 #include "MinHook.h"
 // removed openxr_manager.h
-#include "../rendering/backends/dx12_renderer.h"
-#include "../core/config_manager.h"
-#include "../hooks/input_hook.h"
-#include "../core/overlay_manager.h"
-#include "../rendering/imgui_dx12_integration.h"
-#include "../rendering/comfort_guard.h"
-#include "../core/depth_candidate_collector.h"
-#include "../core/dx12_descriptor_tracker.h"
+#include "rendering/backends/dx12_renderer.h"
+#include "core/config_manager.h"
+#include "hooks/input_hook.h"
+#include "core/overlay_manager.h"
+#include "rendering/dx12/imgui_dx12_integration.h"
+#include "rendering/comfort_guard.h"
+#include "heuristics/depth_candidate_collector.h"
+#include "rendering/dx12/dx12_descriptor_tracker.h"
 #include <mutex>
 #include <shared_mutex>
-#include "../core/dx12_lifecycle_manager.h"
-#include "../core/frame_coordinator.h"
+#include "rendering/dx12/dx12_lifecycle_manager.h"
+#include "core/frame_coordinator.h"
 
 #include <wrl/client.h>
 #include <unordered_map>
 #include <d3d12.h>
 #include <dxgi1_4.h>
-#include "../core/engine_scanners/universal_scanner.h"
+#include "core/engine_scanners/universal_scanner.h"
 #include <chrono>
 
 extern HMODULE g_hModule;
@@ -385,8 +385,8 @@ bool Initialize() {
     sd0.Windowed = TRUE;
     sd0.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
-    IDXGISwapChain* pSwapChain0 = nullptr;
-    if (FAILED(dxgiFactory->CreateSwapChain(pCommandQueue, &sd0, &pSwapChain0)) || !pSwapChain0) {
+    IDXGISwapChain* pSwapChain = nullptr;
+    if (FAILED(dxgiFactory->CreateSwapChain(pCommandQueue, &sd0, &pSwapChain))) {
         LOG_ERROR("DX12Hook: CreateSwapChain failed");
         dxgiFactory->Release();
         pCommandQueue->Release();
@@ -395,6 +395,10 @@ bool Initialize() {
         UnregisterClassA(wc.lpszClassName, wc.hInstance);
         return false;
     }
+    if (!pSwapChain) {
+        return false;
+    }
+    IDXGISwapChain* pSwapChain0 = pSwapChain;
 
     HWND hwnd2 = CreateWindowExA(0, wc.lpszClassName, "Dummy2", WS_OVERLAPPEDWINDOW, 0, 0, 100, 100, NULL, NULL, wc.hInstance, NULL);
 

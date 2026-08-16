@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "src/core/temporal_camera_filter.h"
+#include "heuristics/temporal_camera_filter.h"
 #include <cmath>
 
 using namespace vrinject;

@@ -21,7 +21,7 @@ extern "C" {
 
 // XR_VERSION_1_0 is a preprocessor guard. Do not pass it to API calls.
 #define XR_VERSION_1_0 1
-#include "openxr_platform_defines.h"
+#include "rendering/openxr/openxr_platform_defines.h"
 #define XR_MAKE_VERSION(major, minor, patch) \
     ((((major) & 0xffffULL) << 48) | (((minor) & 0xffffULL) << 32) | ((patch) & 0xffffffffULL))
 

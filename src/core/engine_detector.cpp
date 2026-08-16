@@ -1,6 +1,6 @@
-#include "engine_detector.h"
-#include "logger.h"
-#include "engine_scanners/universal_scanner.h"
+#include "core/engine_detector.h"
+#include "core/logger.h"
+#include "core/engine_scanners/universal_scanner.h"
 
 #include <TlHelp32.h>
 #include <algorithm>

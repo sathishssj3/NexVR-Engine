@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ai_model_loader.h"
+#include "ai/ai_model_loader.h"
 
 namespace NexVR {
 namespace AI {

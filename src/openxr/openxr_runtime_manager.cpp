@@ -1,7 +1,7 @@
-#include "openxr_runtime_manager.h"
+#include "openxr/openxr_runtime_manager.h"
 #include <iostream>
 #include <vector>
-#include "../core/logger.h"
+#include "core/logger.h"
 
 // Since XR_USE_GRAPHICS_API_D3D11 is defined in openxr_types.h, OpenXR knows we need the D3D11 graphics requirement functions.
 // We need to define XR_USE_GRAPHICS_API_D3D11 before including openxr.h, which openxr_types.h handles.

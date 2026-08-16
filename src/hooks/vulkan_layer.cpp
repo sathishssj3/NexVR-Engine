@@ -1,17 +1,17 @@
 
-#include "../rendering/vulkan/vk_layer.h"
+#include "rendering/vulkan/vk_layer.h"
 #include <atomic>
 #include <mutex>
 #include <iostream>
-#include "../rendering/stereo_pipeline.h"
-#include "../core/logger.h"
-#include "vulkan_hook.h"
-#include "../core/vulkan_dispatch_table.h"
-#include "../core/frame_coordinator.h"
-#include "../core/vulkan_lifecycle_manager.h"
-#include "../core/vulkan_queue_manager.h"
-#include "../core/vulkan_snapshot_validator.h"
-#include "../core/vulkan_depth_candidate_collector.h"
+#include "rendering/stereo/stereo_pipeline.h"
+#include "core/logger.h"
+#include "hooks/vulkan_hook.h"
+#include "rendering/vulkan/vulkan_dispatch_table.h"
+#include "core/frame_coordinator.h"
+#include "rendering/vulkan/vulkan_lifecycle_manager.h"
+#include "rendering/vulkan/vulkan_queue_manager.h"
+#include "rendering/vulkan/vulkan_snapshot_validator.h"
+#include "rendering/vulkan/vulkan_depth_candidate_collector.h"
 
 namespace vrinject {
 namespace vulkan {

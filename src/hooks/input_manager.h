@@ -4,7 +4,7 @@
 
 #define XR_USE_PLATFORM_WIN32
 #define XR_USE_GRAPHICS_API_D3D11
-#include "../rendering/openxr/openxr.h"
+#include "rendering/openxr/openxr.h"
 
 namespace vrinject {
 

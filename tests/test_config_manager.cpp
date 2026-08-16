@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
-#include "src/core/config_manager.h"
+#include "core/config_manager.h"
+#include "core/subsystem_context.h"
+#include "core/logger.h"
 #include <filesystem>
 #include <fstream>
 
@@ -12,9 +14,14 @@ protected:
         testDir = fs::temp_directory_path() / "vrinject_config_test";
         fs::create_directories(testDir);
         configPath = testDir / "vrinject.json";
+        
+        auto logger = std::make_shared<vrinject::FileLogger>();
+        auto config = std::make_shared<vrinject::ConfigManager>();
+        vrinject::SubsystemContext::Get().Initialize(std::move(logger), std::move(config));
     }
 
     void TearDown() override {
+        vrinject::SubsystemContext::Get().Shutdown();
         // Clean up the test directory
         if (fs::exists(testDir)) {
             fs::remove_all(testDir);
@@ -26,7 +33,7 @@ protected:
 };
 
 TEST_F(ConfigManagerTest, ConfigLoadDefaultWhenMissing) {
-    vrinject::ConfigManager& config = vrinject::ConfigManager::GetInstance();
+    vrinject::ConfigManager& config = (*vrinject::SubsystemContext::Get().GetConfig());
 
     // Load from directory where config doesn't exist
     bool result = config.Load(testDir.string());
@@ -66,7 +73,7 @@ TEST_F(ConfigManagerTest, ConfigLoadFromFile) {
     })";
     outFile.close();
 
-    vrinject::ConfigManager& config = vrinject::ConfigManager::GetInstance();
+    vrinject::ConfigManager& config = (*vrinject::SubsystemContext::Get().GetConfig());
     bool result = config.Load(testDir.string());
 
     EXPECT_TRUE(result);
@@ -91,7 +98,8 @@ TEST_F(ConfigManagerTest, ConfigLoadFromFile) {
 }
 
 TEST_F(ConfigManagerTest, ConfigSaveAndLoad) {
-    vrinject::ConfigManager& config = vrinject::ConfigManager::GetInstance();
+    vrinject::ConfigManager& config = (*vrinject::SubsystemContext::Get().GetConfig());
+    config.Load(testDir.string());
 
     // Modify some settings
     vrinject::VRConfig& cfg = config.GetConfigMutable();
@@ -106,7 +114,7 @@ TEST_F(ConfigManagerTest, ConfigSaveAndLoad) {
     EXPECT_TRUE(fs::exists(configPath));
 
     // Create a new config manager instance and load
-    vrinject::ConfigManager& config2 = vrinject::ConfigManager::GetInstance();
+    vrinject::ConfigManager& config2 = (*vrinject::SubsystemContext::Get().GetConfig());
     bool loadResult = config2.Load(testDir.string());
     EXPECT_TRUE(loadResult);
 
@@ -123,7 +131,7 @@ TEST_F(ConfigManagerTest, ConfigMotionAimSensitivityClamping) {
     outFile << R"({"motionAimSensitivity": 15.0})";  // Way above max
     outFile.close();
 
-    vrinject::ConfigManager& config = vrinject::ConfigManager::GetInstance();
+    vrinject::ConfigManager& config = (*vrinject::SubsystemContext::Get().GetConfig());
     config.Load(testDir.string());
 
     const vrinject::VRConfig& cfg = config.GetConfig();
@@ -144,7 +152,7 @@ TEST_F(ConfigManagerTest, ConfigJsonParseErrorHandling) {
     outFile << R"({"ipd": "not a number"})";
     outFile.close();
 
-    vrinject::ConfigManager& config = vrinject::ConfigManager::GetInstance();
+    vrinject::ConfigManager& config = (*vrinject::SubsystemContext::Get().GetConfig());
     bool result = config.Load(testDir.string());
 
     // Should return false but reset to defaults

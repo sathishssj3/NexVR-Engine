@@ -1,0 +1,86 @@
+#pragma once
+
+#include "rendering/igraphics_backend.h"
+#include <d3d12.h>
+#include <wrl/client.h>
+#include <mutex>
+#include <memory>
+#include "rendering/dx12/dx12_stereo_resource_manager.h"
+#include "rendering/dx12/dx12_pipeline_state_cache.h"
+#include "rendering/dx12/dx12_resource_state_tracker.h"
+#include "rendering/dx12/dx12_fence_manager.h"
+#include "rendering/dx12/dx12_stereo_renderer.h"
+
+namespace vrinject {
+
+class DX12GraphicsBackend : public IGraphicsBackend {
+public:
+    DX12GraphicsBackend();
+    ~DX12GraphicsBackend() override;
+
+    bool Initialize(void* nativeDevice, void* nativeContext) override;
+    void Shutdown() override;
+
+    void SetState(StereoRendererState state) override;
+    StereoRendererState GetState() const override;
+
+    bool Healthy() const override;
+
+    CameraSnapshot GetCamera() override;
+    DepthSnapshot GetDepth() override;
+
+    void RenderStereo(
+        const RenderFrameSnapshot& frameSnapshot,
+        const CameraSnapshot& camSnapshot, 
+        const DepthSnapshot& depthSnapshot, 
+        const StereoParams& params,
+        void* uiMaskHandle = nullptr
+    ) override;
+    
+    void* GetLeftEyeTexture() override;
+    void* GetRightEyeTexture() override;
+    
+    GraphicsBackend GetAPI() const override { return GraphicsBackend::DX12; }
+
+    bool CreateOpenXRSession(openxr::OpenXRRuntimeManager* xrRuntime, const RenderFrameSnapshot& snapshot) override;
+    
+    void SubmitStereoFrame(
+        openxr::OpenXRRuntimeManager* xrRuntime,
+        openxr::OpenXRSwapchainManager* oxrSwapchain,
+        openxr::OpenXRFrameSubmitter* oxrSubmitter,
+        RenderFrameSnapshot& currentSnapshot,
+        const CameraSnapshot& camSnapshot,
+        const DepthSnapshot& depthSnapshot,
+        const StereoParams& params,
+        RuntimeStateMonitor& stateMonitor,
+        PerformanceProfiler& cpuProfiler,
+        GpuProfiler& gpuProfiler,
+        bool shouldAttemptStereo,
+        void* uiMaskHandle = nullptr
+    ) override;
+
+    // DX12 specific logic
+    void SetOpenXRSwapchainImages(ID3D12Resource* left, ID3D12Resource* right);
+
+    // Test support
+    DX12FenceManager* GetFenceManager() { return m_fenceManager.get(); }
+
+private:
+    Microsoft::WRL::ComPtr<ID3D12Device> m_device;
+    Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_commandQueue;
+    
+    // Subsystems
+    std::unique_ptr<DX12StereoResourceManager> m_resourceManager;
+    std::unique_ptr<DX12PipelineStateCache> m_psoCache;
+    std::unique_ptr<DX12ResourceStateTracker> m_stateTracker;
+    std::unique_ptr<DX12FenceManager> m_fenceManager;
+    std::unique_ptr<DX12StereoRenderer> m_renderer;
+
+    StereoRendererState m_state = StereoRendererState::UNINITIALIZED;
+    mutable std::mutex m_mutex;
+
+    ID3D12Resource* m_oxrLeftDest = nullptr;
+    ID3D12Resource* m_oxrRightDest = nullptr;
+};
+
+} // namespace vrinject

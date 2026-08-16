@@ -1,4 +1,4 @@
-#include "tensor_bridge.h"
+#include "ai/tensor_bridge.h"
 #include <iostream>
 
 namespace NexVR {
@@ -37,6 +37,21 @@ Ort::Value TensorBridge::BindInputResourceDX12(const char* inputName, Microsoft:
     size_t byteSize = totalElements * sizeof(float);
     
     // ORT DML EP interprets pData as the ID3D12Resource pointer
+    return Ort::Value::CreateTensor(dmlMemoryInfo, resource.Get(), byteSize, shape.data(), shape.size(), ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
+}
+
+Ort::Value TensorBridge::BindOutputResourceDX12(const char* outputName, Microsoft::WRL::ComPtr<ID3D12Resource> resource, const std::vector<int64_t>& shape) {
+    if (!resource) throw std::runtime_error("Invalid DX12 resource");
+    std::cout << "[NexVR AI] Binding DX12 Resource to ONNX output: " << outputName << "\n";
+    
+    // Similarly to input, bind the resource pointer to the output tensor
+    Ort::MemoryInfo dmlMemoryInfo("DML", OrtDeviceAllocator, 0, OrtMemTypeDefault);
+    
+    int64_t totalElements = 1;
+    for (int64_t dim : shape) totalElements *= dim;
+    
+    size_t byteSize = totalElements * sizeof(float);
+    
     return Ort::Value::CreateTensor(dmlMemoryInfo, resource.Get(), byteSize, shape.data(), shape.size(), ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT);
 }
 

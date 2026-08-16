@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../core/camera_snapshot.h"
-#include "../core/depth_snapshot.h"
-#include "../core/graphics_types.h"
-#include "../core/render_frame_snapshot.h"
-#include "stereo_renderer.h"
+#include "heuristics/camera_snapshot.h"
+#include "heuristics/depth_snapshot.h"
+#include "core/graphics_types.h"
+#include "heuristics/render_frame_snapshot.h"
+#include "rendering/stereo/stereo_renderer.h"
 
 namespace vrinject {
 
@@ -45,7 +45,8 @@ public:
         const RenderFrameSnapshot& frameSnapshot,
         const CameraSnapshot& camSnapshot, 
         const DepthSnapshot& depthSnapshot, 
-        const StereoParams& params
+        const StereoParams& params,
+        void* uiMaskHandle = nullptr
     ) = 0;
     
     virtual void* GetLeftEyeTexture() = 0;
@@ -69,7 +70,8 @@ public:
         RuntimeStateMonitor& stateMonitor,
         PerformanceProfiler& cpuProfiler,
         GpuProfiler& gpuProfiler,
-        bool shouldAttemptStereo
+        bool shouldAttemptStereo,
+        void* uiMaskHandle = nullptr
     ) = 0;
 };
 

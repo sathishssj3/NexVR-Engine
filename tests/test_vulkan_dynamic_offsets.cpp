@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "src/core/vulkan_buffer_resolver.h"
+#include "rendering/vulkan/vulkan_buffer_resolver.h"
 
 using namespace vrinject;
 using namespace vrinject::vulkan;

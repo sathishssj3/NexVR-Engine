@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "src/rendering/frame_timing_manager.h"
+#include "rendering/frame_timing_manager.h"
 
 using namespace vrinject;
 

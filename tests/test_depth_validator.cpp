@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../src/core/depth_validator.h"
+#include "heuristics/depth_validator.h"
 
 using namespace vrinject;
 

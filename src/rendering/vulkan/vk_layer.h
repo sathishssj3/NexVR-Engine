@@ -12,7 +12,7 @@
  * Along with object ptrs for current and next OBJ
  */
 
-#include "vulkan_core.h"
+#include "rendering/vulkan/vulkan_core.h"
 
 #define MAX_NUM_UNKNOWN_EXTS 250
 

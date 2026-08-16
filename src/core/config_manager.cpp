@@ -1,5 +1,5 @@
-#include "config_manager.h"
-#include "logger.h"
+#include "core/config_manager.h"
+#include "core/logger.h"
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <algorithm>

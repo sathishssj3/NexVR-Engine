@@ -1,4 +1,4 @@
-#include "adaptive_quality_controller.h"
+#include "rendering/adaptive_quality_controller.h"
 
 namespace vrinject {
 

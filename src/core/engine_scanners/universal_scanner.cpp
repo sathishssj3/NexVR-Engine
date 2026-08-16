@@ -1,7 +1,7 @@
-#include "universal_scanner.h"
-#include "../logger.h"
-#include "../frame_coordinator.h"
-#include "../config_manager.h"
+#include "core/engine_scanners/universal_scanner.h"
+#include "core/logger.h"
+#include "core/frame_coordinator.h"
+#include "core/config_manager.h"
 #include <cstring>
 #include <cmath>
 

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "camera_snapshot.h"
-#include "depth_snapshot.h"
-#include "engine_detector.h"
-#include "graphics_types.h"
+#include "heuristics/camera_snapshot.h"
+#include "heuristics/depth_snapshot.h"
+#include "core/engine_detector.h"
+#include "core/graphics_types.h"
 
 #include <array>
 #include <cstddef>

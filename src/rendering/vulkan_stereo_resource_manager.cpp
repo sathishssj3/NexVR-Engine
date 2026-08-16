@@ -1,5 +1,5 @@
-#include "vulkan_stereo_resource_manager.h"
-#include "../core/vulkan_dispatch_table.h"
+#include "rendering/vulkan_stereo_resource_manager.h"
+#include "rendering/vulkan/vulkan_dispatch_table.h"
 #include <stdexcept>
 
 namespace vrinject {

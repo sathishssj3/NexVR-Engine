@@ -1,7 +1,7 @@
-#include "cross_adapter_copier.h"
+#include "rendering/cross_adapter_copier.h"
 #include <d3d11_1.h>
 #include <dxgi1_2.h>
-#include "../core/logger.h"
+#include "core/logger.h"
 
 namespace vrinject {
 

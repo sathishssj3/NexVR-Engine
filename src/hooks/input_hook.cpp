@@ -1,10 +1,11 @@
-#include "input_hook.h"
-#include "../core/logger.h"
-#include "../core/config_manager.h"
-#include "../openxr/openxr_runtime_manager.h"
+#include "hooks/input_hook.h"
+#include "core/logger.h"
+#include "core/config_manager.h"
+#include "core/subsystem_context.h"
+#include "openxr/openxr_runtime_manager.h"
 #include "MinHook.h"
 #include <vector>
-#include "../core/overlay_manager.h"
+#include "core/overlay_manager.h"
 
 namespace vrinject {
 
@@ -310,7 +311,7 @@ DWORD WINAPI InputHook::HookedXInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION
 }
 
 void InputHook::InjectAimDelta(float pitchDeg, float yawDeg) {
-    float sens = ConfigManager::GetInstance().GetConfig().motionAimSensitivity;
+    float sens = SubsystemContext::Get().GetConfig()->GetConfig().motionAimSensitivity;
 
         LONG dx = static_cast<LONG>(yawDeg   * sens * 10.0f);
         LONG dy = static_cast<LONG>(pitchDeg * sens * 10.0f);

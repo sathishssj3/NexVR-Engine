@@ -1,5 +1,5 @@
-#include "vulkan_sync_manager.h"
-#include "../core/vulkan_dispatch_table.h"
+#include "rendering/vulkan_sync_manager.h"
+#include "rendering/vulkan/vulkan_dispatch_table.h"
 #include <cstring>
 #include <iostream>
 

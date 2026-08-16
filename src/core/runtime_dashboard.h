@@ -1,8 +1,8 @@
 #pragma once
 
-#include "runtime_state_monitor.h"
-#include "performance_profiler.h"
-#include "gpu_profiler.h"
+#include "core/runtime_state_monitor.h"
+#include "core/performance_profiler.h"
+#include "core/gpu_profiler.h"
 
 namespace vrinject {
 

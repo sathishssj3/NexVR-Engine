@@ -8,7 +8,7 @@
 #include <atomic>
 #include <cstdint>
 #include <cstring>
-#include "logger.h"
+#include "core/logger.h"
 
 #pragma comment(lib, "psapi.lib")
 
@@ -57,6 +57,22 @@ inline bool SafeReadMemory(const void* src, void* dst, size_t size) {
         LOG_WARN("SEH Shield: Access Violation (TOCTOU) intercepted while reading %zu bytes from %p. Discarding candidate.", size, src);
         // Ensure dst is zeroed out so garbage data is never propagated
         std::memset(dst, 0, size);
+        return false;
+    }
+}
+
+// Safe memory write utilizing Windows Structured Exception Handling (SEH).
+// Wraps the write to prevent Access Violations (0xC0000005) from crashing the game
+// if the memory is freed by the engine concurrently or is read-only.
+inline bool SafeWriteMemory(void* dst, const void* src, size_t size) {
+    if (!src || !dst || size == 0) return false;
+
+    __try {
+        std::memcpy(dst, src, size);
+        return true;
+    }
+    __except (GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
+        LOG_WARN("SEH Shield: Access Violation intercepted while writing %zu bytes to %p.", size, dst);
         return false;
     }
 }

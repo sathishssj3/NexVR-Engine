@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ai_backend.h"
+#include "ai/backend/ai_backend.h"
 #include <vulkan/vulkan.h>
 #include <chrono>
 
@@ -18,12 +18,13 @@ public:
     bool CreateResources() override;
     void DestroyResources() override;
 
-    uint64_t SubmitInference(uint64_t frameId) override;
+    uint64_t SubmitInference(const AIJob& job) override;
     bool PollCompletion(uint64_t jobId) override;
     void Synchronize(uint64_t jobId) override;
 
     MemoryUsage GetMemoryUsage() const override;
     TelemetryData GetTelemetry() const override;
+    void* GetUIMask() override { return nullptr; }
     const char* GetName() const override { return "Vulkan"; }
 
 private:

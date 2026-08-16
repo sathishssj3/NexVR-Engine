@@ -1,5 +1,5 @@
-#include "vulkan_pipeline_cache.h"
-#include "../core/vulkan_dispatch_table.h"
+#include "rendering/vulkan_pipeline_cache.h"
+#include "rendering/vulkan/vulkan_dispatch_table.h"
 #include <fstream>
 #include <cassert>
 

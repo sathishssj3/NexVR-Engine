@@ -21,7 +21,7 @@ extern "C" {
 
 // vulkan_video_codec_h264std_encode is a preprocessor guard. Do not pass it to API calls.
 #define vulkan_video_codec_h264std_encode 1
-#include "vulkan_video_codec_h264std.h"
+#include "rendering/vulkan/vk_video/vulkan_video_codec_h264std.h"
 
 #define VK_STD_VULKAN_VIDEO_CODEC_H264_ENCODE_API_VERSION_1_0_0 VK_MAKE_VIDEO_STD_VERSION(1, 0, 0)
 

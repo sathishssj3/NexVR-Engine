@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "../src/core/stereo_camera_generator.h"
-#include "../src/core/stereo_frame_builder.h"
+#include "rendering/stereo/stereo_camera_generator.h"
+#include "rendering/stereo/stereo_frame_builder.h"
 
 using namespace vrinject;
 

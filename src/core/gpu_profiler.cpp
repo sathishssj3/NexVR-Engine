@@ -1,5 +1,5 @@
-#include "gpu_profiler.h"
-#include "logger.h"
+#include "core/gpu_profiler.h"
+#include "core/logger.h"
 
 namespace vrinject {
 

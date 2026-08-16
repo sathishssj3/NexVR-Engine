@@ -1,4 +1,4 @@
-#include "performance_profiler.h"
+#include "core/performance_profiler.h"
 
 namespace vrinject {
 

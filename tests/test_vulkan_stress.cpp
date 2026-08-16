@@ -5,12 +5,12 @@
 #include <chrono>
 #include <atomic>
 
-#include "../src/rendering/vulkan_graphics_backend.h"
-#include "../src/rendering/vulkan_resource_state_tracker.h"
-#include "../src/core/vulkan_lifecycle_manager.h"
-#include "../src/core/vulkan_dispatch_table.h"
-#include "../src/core/fault_injector.h"
-#include "../src/rendering/stereo_pipeline.h"
+#include "rendering/vulkan/vulkan_graphics_backend.h"
+#include "rendering/vulkan_resource_state_tracker.h"
+#include "rendering/vulkan/vulkan_lifecycle_manager.h"
+#include "rendering/vulkan/vulkan_dispatch_table.h"
+#include "core/fault_injector.h"
+#include "rendering/stereo/stereo_pipeline.h"
 
 using namespace vrinject;
 using namespace vrinject::vulkan;

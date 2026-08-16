@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "src/rendering/vulkan_sync_manager.h"
+#include "rendering/vulkan_sync_manager.h"
 
 using namespace vrinject::vulkan;
 

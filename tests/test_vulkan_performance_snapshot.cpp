@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "src/core/vulkan_snapshot_validator.h"
-#include "src/rendering/frame_timing_manager.h"
+#include "rendering/vulkan/vulkan_snapshot_validator.h"
+#include "rendering/frame_timing_manager.h"
 
 #include <string>
 

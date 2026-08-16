@@ -1,4 +1,4 @@
-#include "dx11_ai_backend.h"
+#include "ai/backend/dx11_ai_backend.h"
 #include <thread>
 
 namespace vrinject {
@@ -13,14 +13,14 @@ void DX11AIBackend::Shutdown() {}
 bool DX11AIBackend::CreateResources() { return true; }
 void DX11AIBackend::DestroyResources() {}
 
-uint64_t DX11AIBackend::SubmitInference(uint64_t frameId) {
+uint64_t DX11AIBackend::SubmitInference(const AIJob& job) {
     auto start = std::chrono::high_resolution_clock::now();
     // Simulate AI execution via Deferred Context (e.g. 1.1ms)
     std::this_thread::sleep_for(std::chrono::microseconds(1100));
     auto end = std::chrono::high_resolution_clock::now();
     
     m_telemetry.gpuTimeMs = std::chrono::duration<double, std::milli>(end - start).count();
-    m_currentJobId = frameId;
+    m_currentJobId++;
     return m_currentJobId;
 }
 

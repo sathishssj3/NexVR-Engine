@@ -3,8 +3,8 @@
 #include <random>
 #include <chrono>
 #include <iomanip>
-#include "../ai_matrix_classifier/matrix_classifier.h"
-#include "../ai_matrix_classifier/camera_delta_tracker.h"
+#include "heuristics/matrix_classifier.h"
+#include "memory_scanner/camera_delta_tracker.h"
 
 using namespace vrinject::ai;
 

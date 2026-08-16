@@ -6,11 +6,11 @@
 #include <thread>
 #include <random>
 
-#include "src/ai/ai_scheduler.h"
-#include "src/ai/backend/vulkan_ai_backend.h"
-#include "src/ai/backend/dx12_ai_backend.h"
-#include "src/ai/backend/dx11_ai_backend.h"
-#include "src/ai/backend_profiler.h"
+#include "ai/ai_scheduler.h"
+#include "ai/backend/vulkan_ai_backend.h"
+#include "ai/backend/dx12_ai_backend.h"
+#include "ai/backend/dx11_ai_backend.h"
+#include "ai/backend_profiler.h"
 
 using namespace vrinject::ai;
 
@@ -49,7 +49,11 @@ TEST(CrossBackendAI, HighFPS_QueueStress) {
         // Wait, if AI takes 1.1ms, it can handle 144hz.
         // Let's simulate a massive spike where we push 500 frames instantly.
         for (int i = 1; i <= 500; ++i) {
-            scheduler.PushJob(i);
+            AIJob job;
+            job.frameId = i;
+            job.colorTarget = nullptr;
+            job.depthTarget = nullptr;
+            scheduler.PushJob(job);
         }
         auto end = std::chrono::high_resolution_clock::now();
         double pushTime = std::chrono::duration<double, std::milli>(end - start).count();
@@ -72,7 +76,11 @@ TEST(CrossBackendAI, LongDuration_MemoryStability) {
         AIScheduler scheduler(std::move(backend));
         
         for (int i = 1; i <= 1000; ++i) {
-            scheduler.PushJob(i);
+            AIJob job;
+            job.frameId = i;
+            job.colorTarget = nullptr;
+            job.depthTarget = nullptr;
+            scheduler.PushJob(job);
             if (i % 100 == 0) {
                 MemoryUsage usage = scheduler.GetBackend()->GetMemoryUsage();
                 EXPECT_LT(usage.totalBytes, 256 * 1024 * 1024);
