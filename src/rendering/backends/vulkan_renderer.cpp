@@ -8,6 +8,7 @@ typedef LONG NTSTATUS;
 #endif
 #include <bcrypt.h>
 #pragma comment(lib, "bcrypt.lib")
+#include "../../core/vulkan_dispatch_table.h"
 
 #ifndef EXPECTED_SHADER_HASH
 #define EXPECTED_SHADER_HASH L"SECURITY_ERROR: PLEASE_SET_EXPECTED_SHADER_HASH_IN_BUILD_CONFIG"
@@ -53,8 +54,13 @@ bool VulkanRenderer::Initialize(void* nativeDevice, void* nativeContext) {
     m_device = static_cast<VkDevice>(nativeDevice);
     m_queue = static_cast<VkQueue>(nativeContext);
 
-    if (m_physicalDevice != VK_NULL_HANDLE) {
-        vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &m_memoryProperties);
+    if (m_physicalDevice != VK_NULL_HANDLE && m_instance != VK_NULL_HANDLE) {
+        auto idt = vulkan::VulkanDispatchTable::Get().GetInstanceDispatch(m_instance);
+        if (idt && idt->GetPhysicalDeviceMemoryProperties) {
+            idt->GetPhysicalDeviceMemoryProperties(m_physicalDevice, &m_memoryProperties);
+        } else {
+            vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &m_memoryProperties);
+        }
     }
 
     // Create a command pool for our rendering operations

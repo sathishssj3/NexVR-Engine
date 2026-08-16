@@ -20,6 +20,7 @@
 
 #include <windows.h>
 #include <MinHook.h>
+#include <atomic>
 
 namespace vrinject {
 namespace vulkan {
@@ -30,6 +31,11 @@ static PFN_vkCreateInstance True_vkCreateInstance = nullptr;
 static PFN_vkGetInstanceProcAddr True_vkGetInstanceProcAddr = nullptr;
 static PFN_vkCreateDevice True_vkCreateDevice = nullptr;
 static PFN_vkGetDeviceProcAddr True_vkGetDeviceProcAddr = nullptr;
+
+// Direct hook trampolines for late-injected hooks (when game cached pointers before us)
+static PFN_vkQueuePresentKHR True_vkQueuePresentKHR_Direct = nullptr;
+static PFN_vkQueueSubmit True_vkQueueSubmit_Direct = nullptr;
+static std::atomic<bool> s_lateHooksInstalled{false};
 
 static VkInstance g_vulkanInstance = nullptr;
 
@@ -116,16 +122,99 @@ VKAPI_ATTR void VKAPI_CALL Hooked_vkGetDeviceQueue(
     }
 }
 
+// Forward declarations for hooks used by InstallLateDeviceHooks
+VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo);
+VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence);
+
+// Install direct MinHook hooks on vkQueuePresentKHR/vkQueueSubmit at the driver level.
+// This is needed because the game may have cached these function pointers before our
+// DLL was injected, so the dispatch table intercept via vkGetDeviceProcAddr won't catch them.
+static void InstallLateDeviceHooks(VkDevice device) {
+    if (s_lateHooksInstalled.exchange(true)) return; // only once
+
+    LOG_INFO("InstallLateDeviceHooks: Installing direct hooks for device %p", device);
+
+    // Ensure device is registered in dispatch table (may have been missed if vkCreateDevice wasn't hooked)
+    auto& dispatchTable = VulkanDispatchTable::Get();
+    if (!dispatchTable.GetDeviceDispatch(device)) {
+        LOG_WARN("InstallLateDeviceHooks: Device not in dispatch table, registering now");
+        dispatchTable.RegisterDevice(device, VK_NULL_HANDLE);
+    }
+
+    // Ensure device is registered in lifecycle manager (critical - without this, snapshots are empty)
+    auto& lifecycle = VulkanLifecycleManager::Get();
+    if (!lifecycle.GetCurrentDevice()) {
+        LOG_WARN("InstallLateDeviceHooks: Device not in lifecycle manager, registering now");
+        lifecycle.OnDeviceCreated(VK_NULL_HANDLE, device, nullptr);
+    }
+
+    // Get the REAL vkQueuePresentKHR address from the device's dispatch chain
+    PFN_vkGetDeviceProcAddr gdpa = True_vkGetDeviceProcAddr;
+    if (!gdpa) {
+        HMODULE vk = GetModuleHandleA("vulkan-1.dll");
+        if (vk) gdpa = (PFN_vkGetDeviceProcAddr)GetProcAddress(vk, "vkGetDeviceProcAddr");
+    }
+
+    if (gdpa) {
+        // Hook vkQueuePresentKHR directly
+        PFN_vkQueuePresentKHR realPresent = (PFN_vkQueuePresentKHR)gdpa(device, "vkQueuePresentKHR");
+        if (realPresent) {
+            MH_STATUS status = MH_CreateHook(
+                (LPVOID)realPresent,
+                (LPVOID)Hooked_vkQueuePresentKHR,
+                reinterpret_cast<LPVOID*>(&True_vkQueuePresentKHR_Direct));
+            if (status == MH_OK) {
+                MH_EnableHook((LPVOID)realPresent);
+                LOG_INFO("InstallLateDeviceHooks: Direct hook on vkQueuePresentKHR SUCCESS (addr=%p)", realPresent);
+            } else {
+                LOG_ERROR("InstallLateDeviceHooks: Failed to hook vkQueuePresentKHR (status=%d)", status);
+            }
+        } else {
+            LOG_ERROR("InstallLateDeviceHooks: vkQueuePresentKHR not found via GetDeviceProcAddr");
+        }
+
+        // Hook vkQueueSubmit directly
+        PFN_vkQueueSubmit realSubmit = (PFN_vkQueueSubmit)gdpa(device, "vkQueueSubmit");
+        if (realSubmit) {
+            MH_STATUS status = MH_CreateHook(
+                (LPVOID)realSubmit,
+                (LPVOID)Hooked_vkQueueSubmit,
+                reinterpret_cast<LPVOID*>(&True_vkQueueSubmit_Direct));
+            if (status == MH_OK) {
+                MH_EnableHook((LPVOID)realSubmit);
+                LOG_INFO("InstallLateDeviceHooks: Direct hook on vkQueueSubmit SUCCESS (addr=%p)", realSubmit);
+            } else {
+                LOG_ERROR("InstallLateDeviceHooks: Failed to hook vkQueueSubmit (status=%d)", status);
+            }
+        }
+    } else {
+        LOG_ERROR("InstallLateDeviceHooks: Could not get vkGetDeviceProcAddr!");
+    }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkCreateSwapchainKHR(
     VkDevice device,
     const VkSwapchainCreateInfoKHR* pCreateInfo,
     const VkAllocationCallbacks* pAllocator,
     VkSwapchainKHR* pSwapchain)
 {
-    auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
-    if (!dt || !dt->CreateSwapchainKHR) return VK_ERROR_INITIALIZATION_FAILED;
+    LOG_INFO("Hooked_vkCreateSwapchainKHR called for device %p", device);
 
-    VkResult result = dt->CreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
+    // Install late hooks on first swapchain creation (this is our first reliable
+    // interception point when the game created its device before our injection)
+    InstallLateDeviceHooks(device);
+
+    VkResult result = VK_ERROR_INITIALIZATION_FAILED;
+    auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
+    if (dt && dt->CreateSwapchainKHR) {
+        result = dt->CreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
+    } else {
+        LOG_ERROR("Hooked_vkCreateSwapchainKHR: dispatch table unavailable, no fallback!");
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
+
+    LOG_INFO("Hooked_vkCreateSwapchainKHR result: %d", result);
+
     if (result == VK_SUCCESS && pSwapchain && *pSwapchain) {
         VulkanLifecycleManager::Get().OnSwapchainCreated(device, *pSwapchain, pCreateInfo);
     }
@@ -174,9 +263,13 @@ VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkQueueSubmit(
     // Collect depth candidates from this submit's render passes
     VulkanDepthCandidateCollector::Get().CollectCandidates(device);
 
+    // Use direct trampoline if available (late injection), otherwise dispatch table
+    if (True_vkQueueSubmit_Direct) {
+        return True_vkQueueSubmit_Direct(queue, submitCount, pSubmits, fence);
+    }
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
     if (dt && dt->QueueSubmit) {
-        dt->QueueSubmit(queue, submitCount, pSubmits, fence);
+        return dt->QueueSubmit(queue, submitCount, pSubmits, fence);
     }
     return VK_SUCCESS;
 }
@@ -185,23 +278,49 @@ VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkQueuePresentKHR(
     VkQueue queue,
     const VkPresentInfoKHR* pPresentInfo)
 {
-    // Generate snapshot and send to coordinator
-    RenderFrameSnapshot snapshot = VulkanLifecycleManager::Get().CreateSnapshot(queue);
+    LOG_INFO("Hooked_vkQueuePresentKHR CALLED (queue=%p)", queue);
 
-    std::string error;
-    if (VulkanSnapshotValidator::Validate(snapshot, error)) {
-        FrameCoordinator::Get().OnPresentBegin(snapshot);
-        // ... (The stereo rendering happens inside FrameCoordinator if state is valid) ...
-        FrameCoordinator::Get().OnPresentEnd();
-    } else {
-        std::cerr << "[VK] Snapshot validation failed: " << error << std::endl;
+    auto device = VulkanQueueManager::Get().GetDevice();
+
+    // Register queue if not already tracked
+    if (!device && pPresentInfo && pPresentInfo->swapchainCount > 0) {
+        // Try to find device from lifecycle manager
+        device = (VkDevice)VulkanLifecycleManager::Get().GetCurrentDevice();
+        if (device) {
+            VulkanQueueManager::Get().RegisterQueue(device, 0, 0, queue);
+            LOG_INFO("Hooked_vkQueuePresentKHR: Late-registered queue %p for device %p", queue, device);
+        }
     }
 
-    auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(VulkanQueueManager::Get().GetDevice());
+    // Only do VR work if we have a valid device
+    if (device) {
+        RenderFrameSnapshot snapshot = VulkanLifecycleManager::Get().CreateSnapshot(queue);
+        std::string error;
+        if (VulkanSnapshotValidator::Validate(snapshot, error)) {
+            FrameCoordinator::Get().OnPresentBegin(snapshot);
+            FrameCoordinator::Get().OnPresentEnd();
+        } else {
+            static int logCount = 0;
+            if (logCount < 50) {
+                LOG_WARN("Hooked_vkQueuePresentKHR: Snapshot validation failed: %s", error.c_str());
+                logCount++;
+            }
+        }
+
+        VulkanDepthCandidateCollector::Get().CollectCandidates(device);
+    }
+
+    // Always forward the present call using the direct trampoline (late injection)
+    if (True_vkQueuePresentKHR_Direct) {
+        return True_vkQueuePresentKHR_Direct(queue, pPresentInfo);
+    }
+    // Fallback to dispatch table
+    auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
     if (dt && dt->QueuePresentKHR) {
         return dt->QueuePresentKHR(queue, pPresentInfo);
     }
-    return VK_SUCCESS; 
+    // No fallback available, return success to avoid crashing
+    return VK_SUCCESS;
 }
 
 VKAPI_ATTR void VKAPI_CALL Hooked_vkDestroySurfaceKHR(
@@ -531,6 +650,27 @@ void InstallVulkanHooks() {
             VulkanDispatchTable::Get().InitOriginalGetDeviceProcAddr(True_vkGetDeviceProcAddr);
         } else {
             LOG_ERROR("InstallVulkanHooks: Failed to create hook for vkGetDeviceProcAddr");
+        }
+    }
+
+    auto realCreateSwapchain = (PFN_vkCreateSwapchainKHR)GetProcAddress(vulkanModule, "vkCreateSwapchainKHR");
+    if (realCreateSwapchain) {
+        if (MH_CreateHook((LPVOID)realCreateSwapchain, (LPVOID)Hooked_vkCreateSwapchainKHR, nullptr) == MH_OK) {
+            LOG_INFO("InstallVulkanHooks: Successfully created hook for exported vkCreateSwapchainKHR");
+        }
+    }
+
+    auto realQueuePresent = (PFN_vkQueuePresentKHR)GetProcAddress(vulkanModule, "vkQueuePresentKHR");
+    if (realQueuePresent) {
+        if (MH_CreateHook((LPVOID)realQueuePresent, (LPVOID)Hooked_vkQueuePresentKHR, reinterpret_cast<LPVOID*>(&True_vkQueuePresentKHR_Direct)) == MH_OK) {
+            LOG_INFO("InstallVulkanHooks: Successfully created hook for exported vkQueuePresentKHR");
+        }
+    }
+
+    auto realQueueSubmit = (PFN_vkQueueSubmit)GetProcAddress(vulkanModule, "vkQueueSubmit");
+    if (realQueueSubmit) {
+        if (MH_CreateHook((LPVOID)realQueueSubmit, (LPVOID)Hooked_vkQueueSubmit, reinterpret_cast<LPVOID*>(&True_vkQueueSubmit_Direct)) == MH_OK) {
+            LOG_INFO("InstallVulkanHooks: Successfully created hook for exported vkQueueSubmit");
         }
     }
 }

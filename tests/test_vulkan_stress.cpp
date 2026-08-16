@@ -127,6 +127,7 @@ protected:
         // can resolve their Vulkan function pointers. Without this, every subsystem
         // call to GetDeviceDispatch() returns nullptr and the entire render path is dead.
         VulkanDispatchTable::Get().InitOriginalGetInstanceProcAddr(vkGetInstanceProcAddr);
+        VulkanDispatchTable::Get().InitOriginalGetDeviceProcAddr(vkGetDeviceProcAddr);
         VulkanDispatchTable::Get().RegisterInstance(instance);
         VulkanDispatchTable::Get().RegisterDevice(device, instance);
     }

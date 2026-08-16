@@ -3,10 +3,15 @@
 #include <atomic>
 #include <mutex>
 #include <iostream>
-#include "../rendering/backends/vulkan_renderer.h"
 #include "../rendering/stereo_pipeline.h"
 #include "../core/logger.h"
 #include "vulkan_hook.h"
+#include "../core/vulkan_dispatch_table.h"
+#include "../core/frame_coordinator.h"
+#include "../core/vulkan_lifecycle_manager.h"
+#include "../core/vulkan_queue_manager.h"
+#include "../core/vulkan_snapshot_validator.h"
+#include "../core/vulkan_depth_candidate_collector.h"
 
 namespace vrinject {
 namespace vulkan {
@@ -33,10 +38,9 @@ bool IsLayerActive()  { return s_layerActive.load(std::memory_order_acquire); }
 
 namespace vrinject {
     namespace DX11Hook {
-        // extern StereoPipeline g_stereoPipeline; // REMOVED FOR SPRINT 3.1
+        // extern StereoPipeline g_stereoPipeline; // VulkanRenderer is deprecated in favor of FrameCoordinator + VulkanGraphicsBackend
     }
 }
-vrinject::VulkanRenderer g_vkRenderer;
 
 static std::once_flag s_vkInitFlag;
 
@@ -114,6 +118,13 @@ VKAPI_ATTR VkResult VKAPI_CALL VRInject_vkCreateInstance(const VkInstanceCreateI
             g_instanceDispatch[key] = gpa;
         }
         g_vulkanInstance.store(*pInstance, std::memory_order_release);
+        
+        vrinject::vulkan::VulkanDispatchTable::Get().InitOriginalGetInstanceProcAddr(gpa);
+        vrinject::vulkan::VulkanDispatchTable::Get().RegisterInstance(*pInstance);
+
+        uint32_t apiVersion = pCreateInfo && pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : 0;
+        vrinject::vulkan::VulkanLifecycleManager::Get().OnInstanceCreated(*pInstance, apiVersion);
+
         LOG_INFO("Vulkan Layer: vkCreateInstance intercepted");
     }
     return res;
@@ -164,6 +175,11 @@ VKAPI_ATTR VkResult VKAPI_CALL VRInject_vkCreateDevice(VkPhysicalDevice physical
             g_deviceToPhysicalDevice[*pDevice] = physicalDevice;
         }
 
+        vrinject::vulkan::VulkanDispatchTable::Get().InitOriginalGetDeviceProcAddr(gdpa);
+        vrinject::vulkan::VulkanDispatchTable::Get().RegisterDevice(*pDevice, g_vulkanInstance.load(std::memory_order_acquire));
+
+        vrinject::vulkan::VulkanLifecycleManager::Get().OnDeviceCreated(physicalDevice, *pDevice, pCreateInfo);
+
         LOG_INFO("Vulkan Layer: vkCreateDevice intercepted");
     }
     return res;
@@ -178,7 +194,11 @@ VKAPI_ATTR VkResult VKAPI_CALL VRInject_vkCreateSwapchainKHR(VkDevice device, co
         if (pSwapchain) *pSwapchain = VK_NULL_HANDLE;
         return VK_ERROR_INITIALIZATION_FAILED;
     }
-    return nextFunc(device, pCreateInfo, pAllocator, pSwapchain);
+    VkResult res = nextFunc(device, pCreateInfo, pAllocator, pSwapchain);
+    if (res == VK_SUCCESS && pSwapchain && *pSwapchain) {
+        vrinject::vulkan::VulkanLifecycleManager::Get().OnSwapchainCreated(device, *pSwapchain, pCreateInfo);
+    }
+    return res;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL VRInject_vkGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages) {
@@ -231,31 +251,21 @@ VKAPI_ATTR VkResult VKAPI_CALL VRInject_QueuePresentKHR(VkQueue queue, const VkP
     }
 
     if (device != VK_NULL_HANDLE) {
-        std::call_once(s_vkInitFlag, [&]() {
-            g_vkRenderer.SetVulkanContext(g_vulkanInstance.load(std::memory_order_acquire), physicalDevice);
-            g_vkRenderer.Initialize(device, queue);
-            // vrinject::DX11Hook::g_stereoPipeline.GetOpenXRManager()->SetRenderer(&g_vkRenderer); // REMOVED FOR SPRINT 3.1
-            LOG_INFO("Vulkan backend initialized via IRenderer (Implicit Layer)");
-        });
-    }
-
-    if (pPresentInfo && pPresentInfo->swapchainCount > 0) {
-        VkSwapchainKHR swapchain = pPresentInfo->pSwapchains[0];
-        uint32_t imageIndex = pPresentInfo->pImageIndices[0];
+        vrinject::vulkan::VulkanQueueManager::Get().RegisterQueue(device, 0, 0, queue);
         
-        VkImage backbuffer = VK_NULL_HANDLE;
-        {
-            std::lock_guard<std::mutex> lock(g_swapchainMutex);
-            auto it = g_swapchainImages.find(swapchain);
-            if (it != g_swapchainImages.end() && imageIndex < it->second.size()) {
-                backbuffer = it->second[imageIndex];
+        vrinject::RenderFrameSnapshot snapshot = vrinject::vulkan::VulkanLifecycleManager::Get().CreateSnapshot(queue);
+        std::string error;
+        if (vrinject::vulkan::VulkanSnapshotValidator::Validate(snapshot, error)) {
+            vrinject::FrameCoordinator::Get().OnPresentBegin(snapshot);
+            vrinject::FrameCoordinator::Get().OnPresentEnd();
+        } else {
+            static int logCount = 0;
+            if (logCount < 50) {
+                LOG_WARN("Vulkan Layer: Snapshot validation failed: %s", error.c_str());
+                logCount++;
             }
         }
-        
-        if (backbuffer != VK_NULL_HANDLE) {
-            // We now have the Vulkan backbuffer! 
-            // In a real implementation, we would now transition this image and run stereoscopic split.
-        }
+        vrinject::vulkan::VulkanDepthCandidateCollector::Get().CollectCandidates(device);
     }
 
     auto nextFunc = LookupNext(g_nextQueuePresent, GetDispatchKey(queue));

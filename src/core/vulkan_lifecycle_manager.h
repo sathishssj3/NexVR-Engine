@@ -29,6 +29,7 @@ public:
     void ReportDeviceLost();
 
     RenderState GetState() const { return m_currentState; }
+    VkDevice GetCurrentDevice() const { return m_currentDevice; }
 
 private:
     VulkanLifecycleManager() = default;

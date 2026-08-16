@@ -79,7 +79,7 @@ void VulkanDispatchTable::UnregisterInstance(VkInstance instance) {
 }
 
 void VulkanDispatchTable::RegisterDevice(VkDevice device, VkInstance instance) {
-    if (!device || !instance || !m_originalGetDeviceProcAddr) return;
+    if (!device || !m_originalGetDeviceProcAddr) return;
 
     PFN_vkGetDeviceProcAddr getDeviceProcAddr = m_originalGetDeviceProcAddr;
 
@@ -168,7 +168,9 @@ void VulkanDispatchTable::RegisterDevice(VkDevice device, VkInstance instance) {
 
     std::unique_lock lock(m_mutex);
     m_deviceTables[device] = table;
-    m_deviceToInstance[device] = instance;
+    if (instance) {
+        m_deviceToInstance[device] = instance;
+    }
 }
 
 void VulkanDispatchTable::UnregisterDevice(VkDevice device) {
@@ -198,10 +200,6 @@ VkInstance VulkanDispatchTable::GetInstanceForDevice(VkDevice device) {
 PFN_vkVoidFunction VKAPI_CALL VulkanDispatchTable::Hooked_vkGetInstanceProcAddr(VkInstance instance, const char* pName) {
     if (!pName) return nullptr;
 
-    // SAFE MODE: Pure pass-through to avoid crashing games that created
-    // their Vulkan instance/device before our DLL was injected.
-    // We only intercept vkCreateInstance and vkCreateDevice so we can
-    // register future devices if the game recreates them.
     auto& dt = Get();
 
     if (strcmp(pName, "vkGetInstanceProcAddr") == 0) return reinterpret_cast<PFN_vkVoidFunction>(Hooked_vkGetInstanceProcAddr);
@@ -221,9 +219,17 @@ PFN_vkVoidFunction VKAPI_CALL VulkanDispatchTable::Hooked_vkGetDeviceProcAddr(Vk
 
     auto& dt = Get();
 
-    // SAFE MODE: Pure pass-through. Only intercept our own entry point.
-    // All other functions go directly to the original driver.
     if (strcmp(pName, "vkGetDeviceProcAddr") == 0) return reinterpret_cast<PFN_vkVoidFunction>(Hooked_vkGetDeviceProcAddr);
+
+    if (device && !dt.GetDeviceDispatch(device) && dt.m_originalGetDeviceProcAddr) {
+        dt.RegisterDevice(device, VK_NULL_HANDLE);
+    }
+
+    if (strcmp(pName, "vkCreateSwapchainKHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkCreateSwapchainKHR);
+    if (strcmp(pName, "vkDestroySwapchainKHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkDestroySwapchainKHR);
+    if (strcmp(pName, "vkAcquireNextImageKHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkAcquireNextImageKHR);
+    if (strcmp(pName, "vkQueueSubmit") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkQueueSubmit);
+    if (strcmp(pName, "vkQueuePresentKHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(hooks::Hooked_vkQueuePresentKHR);
 
     // Pass through everything to the original
     if (dt.m_originalGetDeviceProcAddr) {

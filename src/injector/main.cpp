@@ -203,36 +203,49 @@ bool InjectDll(DWORD pid, const std::string& dllPath) {
     }
 
     PrintInfo("Creating remote thread ...");
-    HANDLE hThread = ::CreateRemoteThread(hProcess, nullptr, 0,
-                                          pLoadLibrary, remoteMem,
-                                          0, nullptr);
-    if (!hThread) {
-        PrintErr("CreateRemoteThread failed: %s", LastErrorMessage().c_str());
-        ::VirtualFreeEx(hProcess, remoteMem, 0, MEM_RELEASE);
-        ::CloseHandle(hProcess);
-        return false;
-    }
-
-    PrintInfo("Waiting for remote thread to complete ...");
-    DWORD waitResult = ::WaitForSingleObject(hThread, 10000); 
-
+    
     bool success = false;
-    if (waitResult == WAIT_OBJECT_0) {
-        DWORD exitCode = 0;
-        ::GetExitCodeThread(hThread, &exitCode);
-        if (exitCode != 0) {
-            PrintOK("DLL loaded successfully! Remote HMODULE = 0x%08lX", exitCode);
-            success = true;
-        } else {
-            PrintErr("LoadLibraryA returned NULL in the remote process.");
+    for (int attempt = 1; attempt <= 10; ++attempt) {
+        HANDLE hThread = ::CreateRemoteThread(hProcess, nullptr, 0,
+                                              pLoadLibrary, remoteMem,
+                                              0, nullptr);
+        if (!hThread) {
+            PrintErr("CreateRemoteThread failed: %s", LastErrorMessage().c_str());
+            break;
         }
-    } else if (waitResult == WAIT_TIMEOUT) {
-        PrintErr("Remote thread timed out (10 s). The target may be hung.");
-    } else {
-        PrintErr("WaitForSingleObject failed: %s", LastErrorMessage().c_str());
+
+        PrintInfo("Waiting for remote thread to complete (Attempt %d/10)...", attempt);
+        DWORD waitResult = ::WaitForSingleObject(hThread, 10000); 
+
+        if (waitResult == WAIT_OBJECT_0) {
+            DWORD exitCode = 0;
+            ::GetExitCodeThread(hThread, &exitCode);
+            if (exitCode != 0) {
+                PrintOK("DLL loaded successfully! Remote HMODULE = 0x%08lX", exitCode);
+                success = true;
+                ::CloseHandle(hThread);
+                break;
+            } else {
+                if (attempt < 10) {
+                    PrintWarn("LoadLibraryA returned NULL. Retrying in 500ms... (AV lock suspected)");
+                    ::Sleep(500);
+                } else {
+                    PrintErr("LoadLibraryA returned NULL in the remote process after 10 attempts.");
+                }
+            }
+        } else if (waitResult == WAIT_TIMEOUT) {
+            PrintErr("Remote thread timed out (10 s). The target may be hung.");
+            ::CloseHandle(hThread);
+            break;
+        } else {
+            PrintErr("WaitForSingleObject failed: %s", LastErrorMessage().c_str());
+            ::CloseHandle(hThread);
+            break;
+        }
+
+        ::CloseHandle(hThread);
     }
 
-    ::CloseHandle(hThread);
     ::VirtualFreeEx(hProcess, remoteMem, 0, MEM_RELEASE);
     ::CloseHandle(hProcess);
 
@@ -284,6 +297,11 @@ int main(int argc, char* argv[]) {
                 }
             }
         }
+    }
+
+    if (!copySrc.empty() && !copyDst.empty()) {
+        PrintInfo("Sleeping for 1000ms to allow AV to release file locks...");
+        ::Sleep(1000);
     }
 
     // S3.3: Origin Restriction (Environment variable token and parent process check)

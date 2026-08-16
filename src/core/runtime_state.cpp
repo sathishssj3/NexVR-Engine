@@ -82,7 +82,9 @@ void RuntimeState::BackgroundInitialize() {
     LOG_INFO("Waiting for remote injection thread to exit...");
     Sleep(1000); // Prevent MH_EnableHook from deadlocking against the exiting injection thread
 
+    LOG_INFO("About to call HookManager::InitializeHooks()...");
     bool success = HookManager::Get().InitializeHooks();
+    LOG_INFO("HookManager::InitializeHooks() returned: %s", success ? "true" : "false");
     
     if (success) {
         DiagnosticContext::Get().PostEvent(DiagnosticLevel::Info, "Runtime", "Initialization complete");
