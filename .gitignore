@@ -86,3 +86,7 @@ models/
 
 # Vendor headers fetched at build time
 openvr_capi.h
+# ML model weights and build artifacts (untracked; see docs/brain_artifacts/MASTER_PROMPT_TO_100.md T6)
+depth_inpainter.onnx.data
+dummy.cpp
+compile_commands.json

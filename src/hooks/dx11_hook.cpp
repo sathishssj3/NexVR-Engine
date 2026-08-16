@@ -1,4 +1,5 @@
 #include "dx11_hook.h"
+#include <system_error>
 #include <dxgi1_2.h>
 #include "MinHook.h"
 #include <mutex>
@@ -112,10 +113,12 @@ HRESULT ProcessPresent(SwapChainType* pSwapChain, OriginalFunc originalFunc, Arg
             VerifyHookIntegrity();
         }
 
+    } catch (const std::system_error& e) {
+        LOG_ERROR("DX11Hook: ProcessPresent system exception: %s (code: %d)", e.what(), e.code().value());
     } catch (const std::exception& e) {
         LOG_ERROR("DX11Hook: ProcessPresent exception caught: %s", e.what());
     } catch (...) {
-        LOG_ERROR("DX11Hook: ProcessPresent unknown exception caught");
+        LOG_ERROR("DX11Hook: ProcessPresent unknown exception caught. Check VEH observer logs for SEH code.");
     }
 
     return hr;

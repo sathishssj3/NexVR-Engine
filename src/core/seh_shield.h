@@ -74,13 +74,12 @@ inline LONG WINAPI VrinjectVehHandler(PEXCEPTION_POINTERS pExceptionInfo) {
 
     if (base != 0 && end != 0 && crashAddr >= base && crashAddr < end) {
         DWORD code = pExceptionInfo->ExceptionRecord->ExceptionCode;
-        LOG_ERROR("[VEH SHIELD] Intercepted exception 0x%08X inside vrinject.dll at %p. Host process crash prevented!",
+        LOG_ERROR("[VEH OBSERVER] Exception 0x%08X observed inside vrinject.dll at %p (not handled).",
                   code, reinterpret_cast<void*>(crashAddr));
 
-        // Skip or safely handle the instruction if possible
         if (code == EXCEPTION_ACCESS_VIOLATION || code == EXCEPTION_ARRAY_BOUNDS_EXCEEDED || code == EXCEPTION_DATATYPE_MISALIGNMENT) {
-            // For access violations in vrinject, catch and safely ignore or return execution
-            return EXCEPTION_CONTINUE_SEARCH; // Let SEH __except blocks catch it first
+            // Pass to SEH __except blocks or default handler
+            return EXCEPTION_CONTINUE_SEARCH;
         }
     }
 

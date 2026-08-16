@@ -1,4 +1,5 @@
 #pragma once
+#include <system_error>
 // ============================================================================
 // vrinject::BaseHook – Base class for DX hook implementations
 //
@@ -208,10 +209,12 @@ protected:
             // Call the original function (would be handled by derived class)
             return originalFunc(pSwapChain, SyncInterval, Flags,
                               reinterpret_cast<const DXGI_PRESENT_PARAMETERS*>(pPresentParameters));
+        } catch (const std::system_error& e) {
+            LOG_ERROR("Present system exception: %s (code: %d)", e.what(), e.code().value());
         } catch (const std::exception& e) {
             LOG_ERROR("Present exception caught: %s", e.what());
         } catch (...) {
-            LOG_ERROR("Present unknown exception caught");
+            LOG_ERROR("Present unknown exception caught. Check VEH observer logs for SEH code.");
         }
 
         // Fallback to original function

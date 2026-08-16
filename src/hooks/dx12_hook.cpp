@@ -1,4 +1,5 @@
 #include "dx12_hook.h"
+#include <system_error>
 #include "dxgi_factory_hook.h"
 #include "../core/logger.h"
 #include "../core/seh_shield.h"
@@ -205,10 +206,12 @@ HRESULT ProcessPresentDX12(SwapChainType* pSwapChain, OriginalFunc originalFunc,
             VerifyHookIntegrityDX12();
         }
 
+    } catch (const std::system_error& e) {
+        LOG_ERROR("DX12Hook: ProcessPresent system exception: %s (code: %d)", e.what(), e.code().value());
     } catch (const std::exception& e) {
         LOG_ERROR("DX12Hook: ProcessPresent exception caught: %s", e.what());
     } catch (...) {
-        LOG_ERROR("DX12Hook: ProcessPresent unknown exception caught");
+        LOG_ERROR("DX12Hook: ProcessPresent unknown exception caught. Check VEH observer logs for SEH code.");
     }
 
     return hr;

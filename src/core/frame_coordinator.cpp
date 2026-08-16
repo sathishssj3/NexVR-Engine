@@ -1,4 +1,5 @@
 #include "frame_coordinator.h"
+#include <system_error>
 #include "../rendering/dx11_graphics_backend.h"
 #include "../rendering/dx12_graphics_backend.h"
 #include "../rendering/stereo_pipeline.h"
@@ -142,10 +143,12 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
       depthSnapshot = DepthLockManager::Get().GetSnapshot();
       m_stateMonitor.UpdateDepthHealth(depthSnapshot.IsValid());
     }
+  } catch (const std::system_error& e) {
+    LOG_WARN("FrameCoordinator: Camera/Depth discovery system exception: %s (code: %d) (continuing to OpenXR)", e.what(), e.code().value());
   } catch (const std::exception& e) {
     LOG_WARN("FrameCoordinator: Camera/Depth discovery exception: %s (continuing to OpenXR)", e.what());
   } catch (...) {
-    LOG_WARN("FrameCoordinator: Camera/Depth discovery unknown exception (continuing to OpenXR)");
+    LOG_WARN("FrameCoordinator: Camera/Depth discovery unknown exception. Check VEH observer logs for SEH code. (continuing to OpenXR)");
   }
 
   // ==============================================

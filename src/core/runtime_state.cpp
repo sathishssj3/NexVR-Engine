@@ -5,6 +5,7 @@
 #include "core/drm_manager.h"
 #include <windows.h>
 #include <shlobj.h>
+#include <chrono>
 
 namespace vrinject {
 
@@ -35,6 +36,13 @@ void RuntimeState::OnDllProcessDetach() {
     TransitionTo(RuntimePhase::Stopping);
 
     std::thread teardownThread(&RuntimeState::BackgroundTeardown, this);
+    
+    // R5: Bounded wait to prevent DLL unloading while teardown is running
+    std::unique_lock<std::mutex> lock(m_stateMutex);
+    m_stateCv.wait_for(lock, std::chrono::milliseconds(100), [this]() {
+        return m_phase.load() == RuntimePhase::Stopped;
+    });
+    
     teardownThread.detach();
 }
 
