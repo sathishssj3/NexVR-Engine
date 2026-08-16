@@ -101,6 +101,10 @@ void DX11GraphicsBackend::RenderStereo(
         height
     );
     
+    if (!m_resourceManager->Initialize(width, height, DXGI_FORMAT_R8G8B8A8_UNORM)) {
+        return;
+    }
+
     // The compute shader samples the game's colour and depth. Those live behind
     // the resource identities the lock managers captured this frame: colour is
     // the swapchain backbuffer stamped in by FrameCoordinator, depth is the
