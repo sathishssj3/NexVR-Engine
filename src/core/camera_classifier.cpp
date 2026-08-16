@@ -1,4 +1,6 @@
 #include "camera_classifier.h"
+#include "logger.h"
+#include <atomic>
 #include <cmath>
 #include <cstring>
 
@@ -111,6 +113,31 @@ bool CameraClassifier::TryCreateCandidate(uint64_t id, void* cbAddress, const Ma
     outCandidate.reversedZ = reverseZ;
     outCandidate.valid = true;
     outCandidate.confidence = 0.5f; // Baseline confidence for passing projection test
+
+    // Handedness probe. sign(m[2][3]) is the one bit that says whether the game
+    // uses +Z forward (left-handed, DX default) or -Z forward (right-handed,
+    // GL/OpenXR default). IsPerspectiveProjection accepts either at :25 and
+    // stores neither, and no field on CameraCandidate/CameraSnapshot records it -
+    // so 6DOF head-pose composition currently has no way to know whether the
+    // OpenXR pose needs a Z-flip before it is combined with the game view.
+    // Getting that wrong inverts yaw and roll, which is acutely nauseating and
+    // invisible in every log, so it must be measured in a real game rather than
+    // guessed. Logged from a live title, one line settles it.
+    //
+    // Rate-limited: this runs on the render thread for every accepted candidate.
+    static std::atomic<int> s_probesLogged{0};
+    if (s_probesLogged.fetch_add(1, std::memory_order_relaxed) < 16) {
+        const float m23 = M(m, 2, 3, rowMajor);
+        const bool isVP = (std::abs(m30) > 0.001f || std::abs(m31) > 0.001f);
+        LOG_INFO("CameraProbe: id=%llu m23=%+.4f handed=%s rowMajor=%d reverseZ=%d kind=%s m00=%+.4f",
+                 (unsigned long long)id,
+                 m23,
+                 (m23 > 0.0f) ? "LEFT(+Z fwd)" : "RIGHT(-Z fwd)",
+                 rowMajor ? 1 : 0,
+                 reverseZ ? 1 : 0,
+                 isVP ? "ViewProjection" : "Projection",
+                 M(m, 0, 0, rowMajor));
+    }
 
     return true;
 }
