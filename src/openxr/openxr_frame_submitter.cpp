@@ -106,19 +106,37 @@ bool OpenXRFrameSubmitter::SubmitStereoTextures(
         {XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW}
     };
 
+    // imageRect declares how much of the swapchain image the compositor samples.
+    // This was a literal 100x100, so the runtime stretched the top-left 100x100
+    // texels of each eye across the whole frustum. DX12 (:243-250) and Vulkan
+    // (:368-375) already pass real dimensions; only DX11 was wrong. Take them
+    // from the texture itself - it is the exact resource the compositor reads,
+    // and OpenXRSwapchainManager exposes no dimension accessor.
+    auto extentOf = [](ID3D11Texture2D* image) -> XrExtent2Di {
+        if (!image) return XrExtent2Di{0, 0};
+        D3D11_TEXTURE2D_DESC desc = {};
+        image->GetDesc(&desc);
+        return XrExtent2Di{static_cast<int32_t>(desc.Width), static_cast<int32_t>(desc.Height)};
+    };
+
+    // pose stays identity deliberately. The renderer is head-agnostic
+    // (StereoCameraGenerator takes no pose input), so an identity pose declares a
+    // world-locked panel at the reference-space origin - the honest presentation
+    // of a head-agnostic render. Declaring a real XrView.pose here while the eye
+    // matrices ignore it would head-lock the image and double-apply rotation.
+    // Flip this only in the same commit that makes the render consume the pose.
+
     // Left Eye
     projectionViews[0].pose.orientation.w = 1.0f;
     projectionViews[0].fov = fov;
     projectionViews[0].subImage.swapchain = swapchainManager->GetLeftSwapchain();
-    projectionViews[0].subImage.imageRect.extent.width = swapchainManager->GetLeftSwapchainImage(0) ? 100 : 0; // Need actual width
-    projectionViews[0].subImage.imageRect.extent.height = swapchainManager->GetLeftSwapchainImage(0) ? 100 : 0; // Need actual height
-    
+    projectionViews[0].subImage.imageRect.extent = extentOf(swapchainManager->GetLeftSwapchainImage(0));
+
     // Right Eye
     projectionViews[1].pose.orientation.w = 1.0f;
     projectionViews[1].fov = fov;
     projectionViews[1].subImage.swapchain = swapchainManager->GetRightSwapchain();
-    projectionViews[1].subImage.imageRect.extent.width = swapchainManager->GetRightSwapchainImage(0) ? 100 : 0;
-    projectionViews[1].subImage.imageRect.extent.height = swapchainManager->GetRightSwapchainImage(0) ? 100 : 0;
+    projectionViews[1].subImage.imageRect.extent = extentOf(swapchainManager->GetRightSwapchainImage(0));
 
     XrCompositionLayerProjection projectionLayer{XR_TYPE_COMPOSITION_LAYER_PROJECTION};
     projectionLayer.space = referenceSpace;
