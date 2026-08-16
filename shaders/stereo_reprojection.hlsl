@@ -61,7 +61,7 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
     leftClip.xyz /= leftClip.w;
     int2 leftPixel = int2((leftClip.x * 0.5f + 0.5f) * Width, (1.0f - (leftClip.y * 0.5f + 0.5f)) * Height);
     
-    if (leftPixel.x >= 0 && leftPixel.x < Width && leftPixel.y >= 0 && leftPixel.y < Height)
+    if ((uint)leftPixel.x < Width && (uint)leftPixel.y < Height)
     {
         // InterlockedMin depth could be used if doing true forward scattering, 
         // but for Sprint 3.5 we'll just write directly to demonstrate the baseline works.
@@ -75,7 +75,7 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
     rightClip.xyz /= rightClip.w;
     int2 rightPixel = int2((rightClip.x * 0.5f + 0.5f) * Width, (1.0f - (rightClip.y * 0.5f + 0.5f)) * Height);
     
-    if (rightPixel.x >= 0 && rightPixel.x < Width && rightPixel.y >= 0 && rightPixel.y < Height)
+    if ((uint)rightPixel.x < Width && (uint)rightPixel.y < Height)
     {
         OutRightEye[rightPixel] = color;
     }
