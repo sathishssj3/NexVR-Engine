@@ -68,29 +68,38 @@ bool HookManager::Install() {
     AudioHook::Initialize();
     // AudioHook does not have a shutdown currently
 
-    DXGIFactoryHook::Initialize();
-    m_rollbackStack.push_back([]() { DXGIFactoryHook::Shutdown(); });
-    
-    if (!DX11Hook::Initialize()) {
-        LOG_WARN("DX11Hook initialization failed.");
-    } else {
-        m_rollbackStack.push_back([]() { DX11Hook::Shutdown(); });
-    }
-    
-    if (!DX12Hook::Initialize()) {
-        LOG_WARN("DX12Hook initialization failed.");
-    } else {
-        m_rollbackStack.push_back([]() { DX12Hook::Shutdown(); });
-    }
-
-    // When the loader has already inserted us as a Vulkan layer we are on the dispatch
-    // chain properly and must NOT also detour vulkan-1.dll's exported symbols. Doing both
-    // corrupts the loader's chain and faults with 0xC0000409 during swapchain creation.
-    // The MinHook path stays for late injection into an already-running process, where no
-    // layer is present.
+    // Backend election. When the loader has inserted us as a Vulkan layer we are already on
+    // the dispatch chain, and we must not detour ANY other presentation path in the process.
+    //
+    // Two distinct conflicts, both observed in No Man's Sky:
+    //   1. MinHook detours on vulkan-1.dll's exported symbols corrupt the loader's chain.
+    //   2. VK_LAYER_NV_present - NVIDIA's own layer, inserted below us - presents Vulkan to
+    //      the desktop through an internal DXGI swapchain. DXGIFactoryHook captures that
+    //      swapchain and its ID3D12CommandQueue, DX11Hook detours its Present, and the game
+    //      then reports backend=2 (DX12) when it is really Vulkan. We end up detouring the
+    //      driver's own presentation path.
+    //
+    // A Vulkan game has nothing for the D3D hooks to do, so skipping them costs nothing and
+    // removes both conflicts. The D3D path stays for genuine D3D titles and for late
+    // injection into a running process, where no layer is present.
     if (vulkan::hooks::IsLayerActive()) {
-        LOG_INFO("HookManager: Vulkan layer active - skipping MinHook Vulkan detours.");
+        LOG_INFO("HookManager: Vulkan layer active - skipping DXGI/DX11/DX12 and MinHook Vulkan detours.");
     } else {
+        DXGIFactoryHook::Initialize();
+        m_rollbackStack.push_back([]() { DXGIFactoryHook::Shutdown(); });
+
+        if (!DX11Hook::Initialize()) {
+            LOG_WARN("DX11Hook initialization failed.");
+        } else {
+            m_rollbackStack.push_back([]() { DX11Hook::Shutdown(); });
+        }
+
+        if (!DX12Hook::Initialize()) {
+            LOG_WARN("DX12Hook initialization failed.");
+        } else {
+            m_rollbackStack.push_back([]() { DX12Hook::Shutdown(); });
+        }
+
         vulkan::hooks::InstallVulkanHooks();
         m_rollbackStack.push_back([]() { vulkan::hooks::RemoveVulkanHooks(); });
         LOG_INFO("HookManager: Vulkan hooks installed successfully.");
