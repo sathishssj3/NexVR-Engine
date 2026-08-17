@@ -38,10 +38,10 @@ test.describe('Native asset packaging regression tests', () => {
   });
 
   test('packaging paths match CMake bin output directory', () => {
-    const cmake = readRepoFile('CMakeLists.txt');
+    const cmakeCompilerFlags = readRepoFile('cmake', 'CompilerFlags.cmake');
     const builderConfig = readRepoFile('launcher', 'electron-builder.config.js');
 
-    expect(cmake).toContain('set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)');
+    expect(cmakeCompilerFlags).toContain('set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)');
     expect(builderConfig).toContain("from: '../build/bin/vrinject.dll'");
     expect(builderConfig).toContain("from: '../build/bin/vr-inject-cli.exe'");
   });

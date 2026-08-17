@@ -6,7 +6,7 @@
 
 namespace vrinject {
 
-struct CompatibilityScore {
+struct SprintCompatibilityScore {
     std::string Title;
     std::string Engine; // Detected engine string e.g. "UE4", "Unity"
     float EngineDetectionConfidence; // 0.0 to 1.0
@@ -28,24 +28,19 @@ struct CompatibilityScore {
 
 class SprintCompatibilityLogger {
 public:
-    static SprintCompatibilityLogger& Get() {
-        static SprintCompatibilityLogger instance;
-        return instance;
-    }
-    
     // Initialize file (write JSON array start)
     void Initialize(const std::string& logFilePath = "sprint59_compatibility_matrix.json");
     
     // Write a structured entry
-    void LogScore(const CompatibilityScore& score);
+    void LogScore(const SprintCompatibilityScore& score);
     
     // Finalize file (close JSON array)
     void Shutdown();
 
-private:
     SprintCompatibilityLogger();
     ~SprintCompatibilityLogger();
-    
+
+private:
     std::mutex m_mutex;
     std::ofstream m_file;
     bool m_isFirstEntry;

@@ -24,7 +24,7 @@ void SprintCompatibilityLogger::Initialize(const std::string& logFilePath) {
     }
 }
 
-void SprintCompatibilityLogger::LogScore(const CompatibilityScore& score) {
+void SprintCompatibilityLogger::LogScore(const SprintCompatibilityScore& score) {
     std::lock_guard<std::mutex> lock(m_mutex);
     if (!m_initialized) return;
 

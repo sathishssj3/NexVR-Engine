@@ -2,6 +2,7 @@
 #include "memory_scanner/page_scanner.h"
 #include "core/seh_shield.h"
 #include "core/engine_detector.h"
+#include "core/subsystem_context.h"
 #include <cmath>
 #include <algorithm>
 
@@ -34,11 +35,11 @@ bool CameraDeltaTracker::SafeReadMatrix(uint8_t* address, bool isDouble, Matrix4
 
 void CameraDeltaTracker::PollAndTrackCandidates() {
     // Determine engine type once (Gap 3 Disambiguation)
-    // Assume EngineDetector::Get().GetEngineType() exists and returns an enum. 
+    // Assume SubsystemContext::Get().GetEngineDetector()->GetEngineType() exists and returns an enum. 
     // We'll hardcode checking against UE5 for now or use a heuristic if detector unavailable.
-    m_isEngineUE5 = (EngineDetector::Get().GetEngineType() == EngineType::UnrealEngine5);
+    m_isEngineUE5 = (SubsystemContext::Get().GetEngineDetector()->GetEngineType() == EngineType::UnrealEngine5);
 
-    auto newPointers = PageScanner::Get().GetCandidateStaticPointers();
+    auto newPointers = SubsystemContext::Get().GetPageScanner()->GetCandidateStaticPointers();
     
     for (uint8_t* ptr : newPointers) {
         if (m_candidates.find(ptr) == m_candidates.end()) {

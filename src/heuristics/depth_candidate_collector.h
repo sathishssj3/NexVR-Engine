@@ -8,10 +8,8 @@ namespace vrinject {
 
 class DepthCandidateCollector {
 public:
-    static DepthCandidateCollector& Get() {
-        static DepthCandidateCollector instance;
-        return instance;
-    }
+    DepthCandidateCollector() = default;
+    ~DepthCandidateCollector() = default;
 
     void OnDepthSurfaceCreated(void* resourcePointer, uint32_t width, uint32_t height, uint32_t format, uint32_t sampleCount, uint32_t arraySize, uint32_t mipLevels, uint32_t generation);
     void OnDepthSurfaceReleased(void* resourcePointer);
@@ -27,8 +25,6 @@ public:
     void Clear();
 
 private:
-    DepthCandidateCollector() = default;
-    ~DepthCandidateCollector() = default;
 
     mutable std::mutex m_mutex;
     std::unordered_map<DepthResourceIdentity, DepthCandidate> m_candidates;

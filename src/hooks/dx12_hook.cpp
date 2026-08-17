@@ -7,6 +7,9 @@
 // removed openxr_manager.h
 #include "rendering/backends/dx12_renderer.h"
 #include "core/config_manager.h"
+#include "core/diagnostic_context.h"
+#include "core/subsystem_context.h"
+#include "heuristics/camera_lock_manager.h"
 #include "hooks/input_hook.h"
 #include "core/overlay_manager.h"
 #include "rendering/dx12/imgui_dx12_integration.h"
@@ -116,7 +119,7 @@ void __stdcall hkUnmap(ID3D12Resource* pResource, UINT Subresource, const D3D12_
             __try {
                 D3D12_RESOURCE_DESC desc = pResource->GetDesc();
                 if (desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER) {
-                    engine_scanners::UniversalScanner::Get().ProcessConstantBuffer(pData, static_cast<size_t>(desc.Width));
+                    SubsystemContext::Get().GetUniversalScanner()->ProcessConstantBuffer(pData, static_cast<size_t>(desc.Width));
                 }
             } __except (EXCEPTION_EXECUTE_HANDLER) {}
         }
@@ -199,7 +202,7 @@ HRESULT ProcessPresentDX12(SwapChainType* pSwapChain, OriginalFunc originalFunc,
         RenderFrameSnapshot snapshot = Dx12LifecycleManager::Get().ProcessPresent(pSwapChain, pQueue, hr);
 
         // Exception-safe RAII frame lifecycle
-        ScopedFrame frame(FrameCoordinator::Get(), snapshot);
+        ScopedFrame frame(*SubsystemContext::Get().GetFrameCoordinator(), snapshot);
 
         static int s_frameCount = 0;
         if (++s_frameCount % 600 == 0) {
@@ -280,7 +283,7 @@ void __stdcall hkExecuteCommandLists(ID3D12CommandQueue* pCommandQueue, UINT Num
                 if (pResource && pData) {
                     D3D12_RESOURCE_DESC desc = pResource->GetDesc();
                     if (desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER) {
-                        engine_scanners::UniversalScanner::Get().ProcessConstantBuffer(pData, static_cast<size_t>(desc.Width));
+                        SubsystemContext::Get().GetUniversalScanner()->ProcessConstantBuffer(pData, static_cast<size_t>(desc.Width));
                     }
                 }
             }
@@ -309,7 +312,7 @@ void __stdcall hkOMSetRenderTargets(ID3D12GraphicsCommandList* pCommandList, UIN
         GraphicsResourceIdentity identity;
         if (Dx12DescriptorTracker::Get().ResolveDescriptor(*pDepthStencilDescriptor, identity)) {
             // Forward identity to collector.
-            DepthCandidateCollector::Get().OnOMSetRenderTargets(identity);
+            SubsystemContext::Get().GetDepthCandidateCollector()->OnOMSetRenderTargets(identity);
         }
     }
     if (OriginalOMSetRenderTargets) {
@@ -321,7 +324,7 @@ void __stdcall hkClearDepthStencilView(ID3D12GraphicsCommandList* pCommandList, 
     if (DepthStencilView.ptr != 0) {
         GraphicsResourceIdentity identity;
         if (Dx12DescriptorTracker::Get().ResolveDescriptor(DepthStencilView, identity)) {
-            DepthCandidateCollector::Get().OnClearDepthStencilView(identity, Depth);
+            SubsystemContext::Get().GetDepthCandidateCollector()->OnClearDepthStencilView(identity, Depth);
         }
     }
     if (OriginalClearDepthStencilView) {

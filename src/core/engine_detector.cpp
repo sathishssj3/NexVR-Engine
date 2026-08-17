@@ -1,7 +1,7 @@
 #include "core/engine_detector.h"
 #include "core/logger.h"
 #include "core/engine_scanners/universal_scanner.h"
-
+#include "core/subsystem_context.h"
 #include <TlHelp32.h>
 #include <algorithm>
 #include <cctype>
@@ -96,7 +96,7 @@ void EngineDetector::Detect() {
     m_detection.versionString = "Unknown/custom";
     m_detection.tuning = TuningFor(EngineType::Unknown);
     ApplyDetection(m_detection);
-    engine_scanners::UniversalScanner::Get().Initialize();
+    SubsystemContext::Get().GetUniversalScanner()->Initialize();
 }
 
 EngineDetection EngineDetector::DetectFromModuleNames(const std::vector<std::string>& moduleNames) {

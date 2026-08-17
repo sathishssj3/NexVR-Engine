@@ -18,10 +18,8 @@ enum class CameraLockState {
 
 class CameraLockManager {
 public:
-    static CameraLockManager& Get() {
-        static CameraLockManager instance;
-        return instance;
-    }
+    CameraLockManager() = default;
+    ~CameraLockManager() = default;
 
     void Update(const CameraCandidate& bestCandidate, uint64_t currentFrame);
 
@@ -39,7 +37,6 @@ public:
     void Reset();
 
 private:
-    CameraLockManager() = default;
 
     CameraLockState m_state = CameraLockState::UNLOCKED;
     CameraSnapshot m_snapshot = {};

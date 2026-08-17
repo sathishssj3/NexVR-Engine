@@ -1,8 +1,11 @@
 #include "rendering/vulkan/vulkan_camera_extractor.h"
 #include "rendering/vulkan/vulkan_buffer_resolver.h"
 #include "rendering/vulkan/vulkan_descriptor_tracker.h"
-#include "heuristics/candidate_collector.h"
+#include "core/logger.h"
+#include "core/subsystem_context.h"
 #include "heuristics/camera_classifier.h"
+#include "heuristics/candidate_collector.h"
+#include "heuristics/camera_validator.h"
 #include "core/math_types.h"
 
 namespace vrinject {
@@ -125,7 +128,7 @@ void VulkanCameraExtractor::Extract(VkDevice device, uint32_t submitCount, const
 
                             CameraCandidate candidate;
                             if (CameraClassifier::TryCreateCandidate(id, bufInfo.mappedPointer, matrices[m], candidate)) {
-                                CandidateCollector::Get().SubmitCandidate(candidate);
+                                SubsystemContext::Get().GetCandidateCollector()->SubmitCandidate(candidate);
                             }
                         }
                     }

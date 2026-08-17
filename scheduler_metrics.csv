@@ -1,0 +1,4 @@
+Backend,InferenceThroughput(jobs/s)
+Vulkan,90
+DirectX 12,90
+DirectX 11,90

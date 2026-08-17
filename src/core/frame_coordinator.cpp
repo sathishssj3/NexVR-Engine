@@ -17,6 +17,8 @@
 #include "heuristics/depth_candidate_collector.h"
 #include "heuristics/depth_delta_tracker.h"
 #include "heuristics/depth_lock_manager.h"
+#include "core/diagnostic_context.h"
+#include "core/subsystem_context.h"
 #include "core/engine_detector.h"
 
 
@@ -55,8 +57,8 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
     m_stateMonitor.UpdateDx11Health(validation.status ==
                                     Dx11ValidationStatus::VALID);
     if (validation.status != Dx11ValidationStatus::VALID) {
-      CameraLockManager::Get().Reset();
-      DepthLockManager::Get().OnDeviceLost();
+      SubsystemContext::Get().GetCameraLockManager()->Reset();
+      SubsystemContext::Get().GetDepthLockManager()->OnDeviceLost();
       return;
     }
   } else if (m_currentSnapshot.backend == GraphicsBackend::DX12) {
@@ -67,12 +69,12 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
   }
 
   if (!m_engineDetected) {
-    EngineDetector::Get().Detect();
+    SubsystemContext::Get().GetEngineDetector()->Detect();
     m_engineDetected = true;
     
     // Phase 6: Initialize dynamic memory scanner
-    if (PageScanner::Get().Initialize()) {
-        PageScanner::Get().StartDynamicScan(90.0f); // Default 90 FOV
+    if (SubsystemContext::Get().GetPageScanner()->Initialize()) {
+        SubsystemContext::Get().GetPageScanner()->StartDynamicScan(90.0f); // Default 90 FOV
     }
   }
 
@@ -93,7 +95,7 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
     std::vector<CameraCandidate> candidates;
     {
       ScopedCpuTimer camTimer(&m_cpuProfiler, CpuSegment::CameraDiscovery);
-      candidates = CandidateCollector::Get().GetAndClearCandidates();
+      candidates = SubsystemContext::Get().GetCandidateCollector()->GetAndClearCandidates();
 
       for (auto &c : candidates) {
         c.temporalScore = 0.5f;
@@ -130,16 +132,16 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
       // DepthLockManager::OnFrameEnd() is handed its resource context below. A
       // CameraCandidate carries only matrices, so without this the snapshot's
       // resourceIdentity stays null and CameraSnapshot::IsValid() can never be true.
-      CameraLockManager::Get().SetResourceContext(m_currentSnapshot.BackBufferIdentity());
+      SubsystemContext::Get().GetCameraLockManager()->SetResourceContext(m_currentSnapshot.BackBufferIdentity());
 
       if (hasBest) {
-        CameraLockManager::Get().Update(bestCandidate, m_globalFrameCounter);
+        SubsystemContext::Get().GetCameraLockManager()->Update(bestCandidate, m_globalFrameCounter);
       } else {
         CameraCandidate empty = {};
-        CameraLockManager::Get().Update(empty, m_globalFrameCounter);
+        SubsystemContext::Get().GetCameraLockManager()->Update(empty, m_globalFrameCounter);
       }
 
-      camSnapshot = CameraLockManager::Get().GetSnapshot();
+      camSnapshot = SubsystemContext::Get().GetCameraLockManager()->GetSnapshot();
       m_stateMonitor.UpdateCameraHealth(camSnapshot.IsValid());
     }
 
@@ -150,23 +152,23 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
       ScopedCpuTimer depthTimer(&m_cpuProfiler, CpuSegment::DepthDiscovery);
 
       if (m_currentSnapshot.backend == GraphicsBackend::DX11) {
-        DepthCandidateCollector::Get().OnFrameEnd(m_globalFrameCounter);
-        DepthLockManager::Get().OnFrameEnd(
+        SubsystemContext::Get().GetDepthCandidateCollector()->OnFrameEnd(m_globalFrameCounter);
+        SubsystemContext::Get().GetDepthLockManager()->OnFrameEnd(
             m_globalFrameCounter,
             (uint32_t)Dx11LifecycleManager::Get().GetEpoch().deviceGeneration,
             (uint32_t)Dx11LifecycleManager::Get().GetEpoch().swapchainGeneration,
             m_currentSnapshot.width, m_currentSnapshot.height);
       } else {
         // DX12/Vulkan: skip DX11 depth discovery for now
-        DepthCandidateCollector::Get().OnFrameEnd(m_globalFrameCounter);
-        DepthLockManager::Get().OnFrameEnd(
+        SubsystemContext::Get().GetDepthCandidateCollector()->OnFrameEnd(m_globalFrameCounter);
+        SubsystemContext::Get().GetDepthLockManager()->OnFrameEnd(
             m_globalFrameCounter,
             (uint32_t)m_currentSnapshot.epoch.deviceGeneration,
             (uint32_t)m_currentSnapshot.epoch.swapchainGeneration,
             m_currentSnapshot.width, m_currentSnapshot.height);
       }
 
-      depthSnapshot = DepthLockManager::Get().GetSnapshot();
+      depthSnapshot = SubsystemContext::Get().GetDepthLockManager()->GetSnapshot();
       m_stateMonitor.UpdateDepthHealth(depthSnapshot.IsValid());
     }
   } catch (const std::system_error& e) {
@@ -265,7 +267,7 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
 
   m_lastCompatibility = CompatibilityScorer::Evaluate(
       camSnapshot, depthSnapshot, m_currentSnapshot.backend,
-      EngineDetector::Get().GetDetection());
+      SubsystemContext::Get().GetEngineDetector()->GetDetection());
 
   if (!m_lastCompatibility.shouldAttemptStereo) {
     CompatibilityScorer::PostDiagnostic(m_lastCompatibility);

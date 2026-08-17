@@ -7,10 +7,7 @@ namespace vrinject {
 
 class CandidateCollector {
 public:
-    static CandidateCollector& Get() {
-        static CandidateCollector instance;
-        return instance;
-    }
+    CandidateCollector() = default;
 
     // Generic push mechanism (for Vulkan, DX12, etc.)
     void SubmitCandidate(const CameraCandidate& candidate);
@@ -22,7 +19,6 @@ public:
     std::vector<CameraCandidate> GetAndClearCandidates();
 
 private:
-    CandidateCollector() = default;
     
     std::vector<CameraCandidate> m_frameCandidates;
     // We would use a lock-free queue in production, but for now a simple pre-allocated vector or spinlock

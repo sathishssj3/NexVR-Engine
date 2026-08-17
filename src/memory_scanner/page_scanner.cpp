@@ -1,6 +1,7 @@
 #include "memory_scanner/page_scanner.h"
 #include "memory_scanner/pointer_chain_resolver.h"
 #include "core/logger.h"
+#include "core/subsystem_context.h"
 #include "core/seh_shield.h"
 #include <Psapi.h>
 #include <chrono>
@@ -17,7 +18,7 @@ bool PageScanner::Initialize() {
     }
     m_mainModuleBase = info.baseAddress;
     m_mainModuleSize = info.size;
-    PointerChainResolver::Get().SetModuleBounds(m_mainModuleBase, m_mainModuleSize);
+    SubsystemContext::Get().GetPointerChainResolver()->SetModuleBounds(m_mainModuleBase, m_mainModuleSize);
     LOG_INFO("PageScanner initialized. Base: %p, Size: %zx", m_mainModuleBase, m_mainModuleSize);
     return true;
 }
@@ -118,7 +119,7 @@ void PageScanner::ScanDynamicHeaps() {
                             if (IsValidProjectionMatrixFloat(fmat, m_targetFov)) {
                                 floatCandidates++;
                                 uint8_t* actualAddr = p + i;
-                                uint8_t* staticPtr = PointerChainResolver::Get().ResolvePointerChain(actualAddr);
+                                uint8_t* staticPtr = SubsystemContext::Get().GetPointerChainResolver()->ResolvePointerChain(actualAddr);
                                 if (staticPtr) newCandidates.push_back(staticPtr);
                             }
                             
@@ -127,7 +128,7 @@ void PageScanner::ScanDynamicHeaps() {
                                 if (IsValidProjectionMatrixDouble(dmat, m_targetFov)) {
                                     doubleCandidates++;
                                     uint8_t* actualAddr = p + i;
-                                    uint8_t* staticPtr = PointerChainResolver::Get().ResolvePointerChain(actualAddr);
+                                    uint8_t* staticPtr = SubsystemContext::Get().GetPointerChainResolver()->ResolvePointerChain(actualAddr);
                                     if (staticPtr) newCandidates.push_back(staticPtr);
                                 }
                             }

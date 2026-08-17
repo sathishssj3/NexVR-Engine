@@ -162,13 +162,14 @@ bool OpenXRFrameSubmitter::ReleaseAndEndDX11(
     projectionViews[1].subImage.swapchain = swapchainManager->GetRightSwapchain();
     projectionViews[1].subImage.imageRect.extent = extentOf(rightDest);
 
-    XrCompositionLayerProjection projectionLayer{XR_TYPE_COMPOSITION_LAYER_PROJECTION};
-    projectionLayer.space = referenceSpace;
-    projectionLayer.viewCount = 2;
-    projectionLayer.views = projectionViews;
+    XrCompositionLayerProjection layer{XR_TYPE_COMPOSITION_LAYER_PROJECTION};
+    layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
+    layer.space = referenceSpace;
+    layer.viewCount = 2;
+    layer.views = projectionViews;
 
     const XrCompositionLayerBaseHeader* const layers[] = {
-        reinterpret_cast<const XrCompositionLayerBaseHeader*>(&projectionLayer)
+        reinterpret_cast<const XrCompositionLayerBaseHeader*>(&layer)
     };
 
     XrFrameEndInfo endInfo{XR_TYPE_FRAME_END_INFO};
@@ -178,6 +179,7 @@ bool OpenXRFrameSubmitter::ReleaseAndEndDX11(
     endInfo.layers = layers;
 
     XrResult res = xrEndFrame(session, &endInfo);
+    return res == XR_SUCCESS;
     if (XR_FAILED(res)) {
         if (healthMonitor_) healthMonitor_->RecordFrameDropped();
         return false;

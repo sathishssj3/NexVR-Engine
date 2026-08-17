@@ -99,7 +99,7 @@ void VulkanResourceTracker::TrackMappedMemory(VkDevice device, VkDeviceMemory me
     m_mappedMemory[{device, memory}] = info;
     
     // In the future, this is where we would notify the UniversalScanner
-    // UniversalScanner::Get().RegisterMemoryRegion(hostPointer, size);
+    // SubsystemContext::Get().GetUniversalScanner()->RegisterMemoryRegion(hostPointer, size);
 }
 
 void VulkanResourceTracker::UntrackMappedMemory(VkDevice device, VkDeviceMemory memory) {
@@ -108,7 +108,7 @@ void VulkanResourceTracker::UntrackMappedMemory(VkDevice device, VkDeviceMemory 
     std::unique_lock<std::shared_mutex> lock(m_mutex);
     auto it = m_mappedMemory.find({device, memory});
     if (it != m_mappedMemory.end()) {
-        // UniversalScanner::Get().UnregisterMemoryRegion(it->second.hostPointer);
+        // SubsystemContext::Get().GetUniversalScanner()->UnregisterMemoryRegion(it->second.hostPointer);
         m_mappedMemory.erase(it);
     }
 }

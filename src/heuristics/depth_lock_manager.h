@@ -19,10 +19,8 @@ enum class DepthLockState {
 
 class DepthLockManager {
 public:
-    static DepthLockManager& Get() {
-        static DepthLockManager instance;
-        return instance;
-    }
+    DepthLockManager() = default;
+    ~DepthLockManager() = default;
 
     void OnFrameEnd(uint64_t frameNumber, uint32_t deviceGeneration, uint32_t swapchainGeneration, uint32_t swapchainWidth, uint32_t swapchainHeight);
     
@@ -32,8 +30,6 @@ public:
     void OnDeviceLost();
 
 private:
-    DepthLockManager() = default;
-    ~DepthLockManager() = default;
 
     DepthLockState m_state = DepthLockState::UNLOCKED;
     DepthSnapshot m_snapshot;

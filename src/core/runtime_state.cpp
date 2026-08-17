@@ -37,15 +37,12 @@ void RuntimeState::OnDllProcessAttach(void* hModule) {
 void RuntimeState::OnDllProcessDetach() {
     TransitionTo(RuntimePhase::Stopping);
 
-    std::thread teardownThread(&RuntimeState::BackgroundTeardown, this);
-    
     // R5: Bounded wait to prevent DLL unloading while teardown is running
+    // The existing m_workerThread will wake up, run teardown, and transition to Stopped.
     std::unique_lock<std::mutex> lock(m_stateMutex);
     m_stateCv.wait_for(lock, std::chrono::milliseconds(100), [this]() {
         return m_phase.load() == RuntimePhase::Stopped;
     });
-    
-    teardownThread.detach();
 }
 
 void RuntimeState::BackgroundInitialize() {
@@ -86,7 +83,7 @@ void RuntimeState::BackgroundInitialize() {
     LOG_INFO("VRInject Framework v0.1 - Initializing");
     LOG_INFO("========================================");
     
-    DiagnosticContext::Get().PostEvent(DiagnosticLevel::Info, "Runtime", "Starting background initialization");
+    SubsystemContext::Get().GetDiagnosticContext()->PostEvent(DiagnosticLevel::Info, "Runtime", "Starting background initialization");
     
     if (!TrialManager::GetInstance().InitializeTrial()) {
         LOG_ERROR("Trial validation failed - shutting down");
@@ -102,23 +99,34 @@ void RuntimeState::BackgroundInitialize() {
     LOG_INFO("HookManager::InitializeHooks() returned: %s", success ? "true" : "false");
     
     if (success) {
-        DiagnosticContext::Get().PostEvent(DiagnosticLevel::Info, "Runtime", "Initialization complete");
+        SubsystemContext::Get().GetDiagnosticContext()->PostEvent(DiagnosticLevel::Info, "Runtime", "Initialization complete");
         TransitionTo(RuntimePhase::Running);
     } else {
-        DiagnosticContext::Get().PostEvent(DiagnosticLevel::Error, "Runtime", "Initialization failed");
+        SubsystemContext::Get().GetDiagnosticContext()->PostEvent(DiagnosticLevel::Error, "Runtime", "Initialization failed");
         TransitionTo(RuntimePhase::Error);
     }
+
+    // R5: Park the existing worker thread here, waiting for OnDllProcessDetach to set Stopping
+    {
+        std::unique_lock<std::mutex> lock(m_stateMutex);
+        m_stateCv.wait(lock, [this]() {
+            return m_phase.load() == RuntimePhase::Stopping || m_phase.load() == RuntimePhase::Stopped;
+        });
+    }
+
+    // Perform teardown on the original worker thread
+    BackgroundTeardown();
 }
 
 void RuntimeState::BackgroundTeardown() {
-    DiagnosticContext::Get().PostEvent(DiagnosticLevel::Info, "Runtime", "Starting background teardown");
+    SubsystemContext::Get().GetDiagnosticContext()->PostEvent(DiagnosticLevel::Info, "Runtime", "Starting background teardown");
     
     HookManager::Get().ShutdownHooks();
     seh::UnregisterVehShield();
     
     SubsystemContext::Get().Shutdown();
 
-    DiagnosticContext::Get().PostEvent(DiagnosticLevel::Info, "Runtime", "Teardown complete");
+    SubsystemContext::Get().GetDiagnosticContext()->PostEvent(DiagnosticLevel::Info, "Runtime", "Teardown complete");
     TransitionTo(RuntimePhase::Stopped);
 }
 

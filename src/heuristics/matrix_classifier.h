@@ -20,11 +20,6 @@ struct MatrixCandidate {
 
 class MatrixClassifier {
 public:
-    static MatrixClassifier& Get() {
-        static MatrixClassifier instance;
-        return instance;
-    }
-
     // Called every time a constant buffer is written
     void OnConstantBufferUpdate(
         const void* pData,
@@ -51,9 +46,9 @@ public:
     // Thread safety — render thread vs OpenXR thread
     mutable std::mutex m_mutex;
 
-private:
     MatrixClassifier() = default;
 
+private:
     std::vector<MatrixCandidate> m_candidates;
     void*    m_lockedAddress  = nullptr;
     uint32_t m_frameCount     = 0;

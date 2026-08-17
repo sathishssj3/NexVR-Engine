@@ -14,15 +14,12 @@ namespace vrinject {
 
 class SignatureScanner {
 public:
-    static SignatureScanner& Get() {
-        static SignatureScanner instance;
-        return instance;
-    }
 
     uint8_t* ScanSignature(const std::string& pattern, const std::string& moduleName = "");
 
-private:
     SignatureScanner() = default;
+
+private:
 
     struct ModuleInfo {
         uint8_t* baseAddress = nullptr;

@@ -21,10 +21,7 @@ namespace vrinject {
 
 class FrameCoordinator {
 public:
-    static FrameCoordinator& Get() {
-        static FrameCoordinator instance;
-        return instance;
-    }
+    FrameCoordinator() = default;
 
     void OnPresentBegin(const RenderFrameSnapshot& snapshot);
     void OnPresentEnd();
@@ -33,7 +30,6 @@ public:
     IGraphicsBackend* GetGraphicsBackend() { return m_graphicsBackend.get(); }
 
 private:
-    FrameCoordinator() = default;
     
     RenderFrameSnapshot m_currentSnapshot;
     bool m_frameActive = false;

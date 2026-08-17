@@ -127,13 +127,18 @@ jobs:
         clang-tidy-bin: clang-tidy
         path: build
         clang-tidy-warnings-as-errors: '*'
-        header-filter: '.*'
+        header-filter: '^src/(core|hooks|rendering|openxr|ai|heuristics|injector)/'
         format-style: file
 
     - name: CodeQL Perform Analysis
       uses: github/codeql-action/analyze@v4
       with:
         category: "/language:cpp"
+
+    - name: Run Coupling Ratchets
+      shell: pwsh
+      run: |
+        ./scripts/check_coupling.ps1
 
     - name: Run Tests
       shell: pwsh

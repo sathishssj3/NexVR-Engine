@@ -155,7 +155,7 @@ void Dx12LifecycleManager::HandleDeviceLoss(HRESULT presentResult) {
     if (m_deviceResources.device) {
         HRESULT removeReason = m_deviceResources.device->GetDeviceRemovedReason();
         LOG_ERROR("Dx12LifecycleManager: GetDeviceRemovedReason(): 0x%X", removeReason);
-        DiagnosticContext::Get().PostEvent(DiagnosticLevel::Critical, "DX12Lifecycle", "Graphics device lost");
+        SubsystemContext::Get().GetDiagnosticContext()->PostEvent(DiagnosticLevel::Critical, "DX12Lifecycle", "Graphics device lost");
     }
 
     m_state.store(RenderState::DEVICE_REMOVED, std::memory_order_release);
@@ -182,7 +182,7 @@ bool Dx12LifecycleManager::Recover() {
 
 void Dx12LifecycleManager::Degrade(const char* reason) {
     LOG_ERROR("Dx12LifecycleManager: Degrading NexVR Features. Reason: %s", reason);
-    DiagnosticContext::Get().PostEvent(DiagnosticLevel::Warning, "DX12Lifecycle", reason);
+    SubsystemContext::Get().GetDiagnosticContext()->PostEvent(DiagnosticLevel::Warning, "DX12Lifecycle", reason);
     m_state.store(RenderState::DEGRADED, std::memory_order_release);
 }
 

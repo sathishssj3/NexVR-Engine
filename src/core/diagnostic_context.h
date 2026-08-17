@@ -36,11 +36,6 @@ struct DiagnosticEvent {
 
 class DiagnosticContext {
 public:
-    static DiagnosticContext& Get() {
-        static DiagnosticContext instance;
-        return instance;
-    }
-
     // Must be strictly non-blocking. No locks, no dynamic allocations.
     void PostEvent(DiagnosticLevel level, const char* subsystem, const char* message);
     
@@ -48,10 +43,10 @@ public:
     void StartWorker();
     void StopWorker();
 
-private:
     DiagnosticContext();
     ~DiagnosticContext();
 
+private:
     void WorkerThread();
 
     static constexpr size_t QUEUE_SIZE = 1024;

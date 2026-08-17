@@ -6,10 +6,6 @@ namespace vrinject {
 
 class PointerChainResolver {
 public:
-    static PointerChainResolver& Get() {
-        static PointerChainResolver instance;
-        return instance;
-    }
 
     // Resolves a relative instruction pointer (RIP) to an absolute address
     uint8_t* ResolveRIP(uint8_t* instructionAddress, uint32_t instructionSize, uint32_t offsetFromInstructionEnd);
@@ -20,8 +16,9 @@ public:
     // Sets the main module bounds to restrict static pointer searches
     void SetModuleBounds(uint8_t* base, size_t size);
 
-private:
     PointerChainResolver() = default;
+
+private:
 
     uint8_t* m_mainModuleBase = nullptr;
     size_t m_mainModuleSize = 0;

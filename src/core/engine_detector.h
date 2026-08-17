@@ -32,10 +32,7 @@ struct EngineDetection {
 
 class EngineDetector {
 public:
-    static EngineDetector& Get() {
-        static EngineDetector instance;
-        return instance;
-    }
+    EngineDetector() = default;
 
     void Detect();
     EngineType GetEngineType() const { return m_engineType; }
@@ -45,7 +42,6 @@ public:
     static EngineDetection DetectFromModuleNames(const std::vector<std::string>& moduleNames);
 
 private:
-    EngineDetector() = default;
     
     bool CheckForUnrealWindow();
     bool ScanForUnrealSignatures();

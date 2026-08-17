@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "core/diagnostic_context.h"
+#include "core/subsystem_context.h"
 #include <thread>
 #include <vector>
 
@@ -8,9 +9,15 @@ using namespace vrinject;
 class DiagnosticContextTest : public ::testing::Test {
 protected:
     void SetUp() override {
+        SubsystemContext::Get().Initialize(nullptr, nullptr);
         // Stats are global and persistent, so we just capture baseline
-        m_startStats = DiagnosticContext::Get().GetStats();
+        m_startStats = SubsystemContext::Get().GetDiagnosticContext()->GetStats();
     }
+    
+    void TearDown() override {
+        SubsystemContext::Get().Shutdown();
+    }
+    
     DiagnosticQueueStats m_startStats;
 };
 
@@ -22,7 +29,7 @@ TEST_F(DiagnosticContextTest, ThreadSafeEventPosting) {
     for (int i = 0; i < num_threads; ++i) {
         threads.emplace_back([i, events_per_thread]() {
             for (int j = 0; j < events_per_thread; ++j) {
-                DiagnosticContext::Get().PostEvent(DiagnosticLevel::Info, "TestSubsystem", "Message from thread");
+                SubsystemContext::Get().GetDiagnosticContext()->PostEvent(DiagnosticLevel::Info, "TestSubsystem", "Message from thread");
             }
         });
     }
@@ -31,7 +38,7 @@ TEST_F(DiagnosticContextTest, ThreadSafeEventPosting) {
         t.join();
     }
 
-    auto endStats = DiagnosticContext::Get().GetStats();
+    auto endStats = SubsystemContext::Get().GetDiagnosticContext()->GetStats();
     uint64_t newEnqueued = endStats.eventsEnqueued - m_startStats.eventsEnqueued;
     uint64_t newDropped = endStats.eventsDropped - m_startStats.eventsDropped;
     
@@ -42,7 +49,7 @@ TEST_F(DiagnosticContextTest, DispatchOverheadProfile) {
     const int num_events = 100000;
     auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < num_events; ++i) {
-        DiagnosticContext::Get().PostEvent(DiagnosticLevel::Info, "PerfTest", "Benchmarking dispatch");
+        SubsystemContext::Get().GetDiagnosticContext()->PostEvent(DiagnosticLevel::Info, "PerfTest", "Benchmarking dispatch");
     }
     auto end = std::chrono::high_resolution_clock::now();
     auto duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();

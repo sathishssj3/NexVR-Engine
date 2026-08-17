@@ -1,0 +1,4 @@
+---
+Checks: '-*,modernize-*,readability-*,performance-*,bugprone-*,clang-analyzer-*,cert-*'
+WarningsAsErrors: '*'
+...

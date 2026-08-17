@@ -3,6 +3,7 @@
 #include "rendering/dx11/dx11_graphics_backend.h"
 #include "heuristics/camera_lock_manager.h"
 #include "heuristics/depth_lock_manager.h"
+#include "core/subsystem_context.h"
 #include "core/performance_profiler.h"
 #include "core/gpu_profiler.h"
 #include "core/runtime_state_monitor.h"
@@ -48,11 +49,11 @@ bool DX11GraphicsBackend::Healthy() const {
 }
 
 CameraSnapshot DX11GraphicsBackend::GetCamera() {
-    return CameraLockManager::Get().GetSnapshot();
+    return SubsystemContext::Get().GetCameraLockManager()->GetSnapshot();
 }
 
 DepthSnapshot DX11GraphicsBackend::GetDepth() {
-    return DepthLockManager::Get().GetSnapshot();
+    return SubsystemContext::Get().GetDepthLockManager()->GetSnapshot();
 }
 
 void* DX11GraphicsBackend::GetLeftEyeTexture() {

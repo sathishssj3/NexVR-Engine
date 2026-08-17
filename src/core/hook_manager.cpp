@@ -9,6 +9,7 @@
 #include "hooks/audio_hook.h"
 #include <MinHook.h>
 #include "core/diagnostic_context.h"
+#include "core/subsystem_context.h"
 #include "core/iat_hook.h"
 
 namespace vrinject {
@@ -126,8 +127,8 @@ bool HookManager::Install() {
         }
     });
 
-    EngineDetector::Get().Detect();
-    EngineType type = EngineDetector::Get().GetEngineType();
+    SubsystemContext::Get().GetEngineDetector()->Detect();
+    EngineType type = SubsystemContext::Get().GetEngineDetector()->GetEngineType();
 
     LOG_INFO("HookManager: Initializing engine-specific hooks...");
 

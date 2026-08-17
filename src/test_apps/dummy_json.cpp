@@ -1,9 +1,10 @@
 #include "core/sprint_compatibility_logger.h"
+#include "core/subsystem_context.h"
 #include <iostream>
-
 int main() {
-    vrinject::SprintCompatibilityLogger::Get().Initialize("sprint59_test.json");
-    vrinject::CompatibilityScore score;
+    vrinject::SubsystemContext::Get().Initialize(nullptr, nullptr);
+    vrinject::SubsystemContext::Get().GetSprintCompatibilityLogger()->Initialize("sprint59_test.json");
+    vrinject::SprintCompatibilityScore score;
     score.Title = "Synthetic Test App";
     score.Engine = "TrivialEngine (Mock)";
     score.EngineDetectionConfidence = 0.99f;
@@ -17,8 +18,8 @@ int main() {
     score.ActualCpuTimeMs = 0.15;
     score.FailureReason = "None";
 
-    vrinject::SprintCompatibilityLogger::Get().LogScore(score);
-    vrinject::SprintCompatibilityLogger::Get().Shutdown();
+    vrinject::SubsystemContext::Get().GetSprintCompatibilityLogger()->LogScore(score);
+    vrinject::SubsystemContext::Get().GetSprintCompatibilityLogger()->Shutdown();
     std::cout << "JSON Log written." << std::endl;
     return 0;
 }

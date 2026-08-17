@@ -1,9 +1,10 @@
-
 #include "rendering/vulkan/vk_layer.h"
 #include <atomic>
 #include <mutex>
 #include <iostream>
 #include "rendering/stereo/stereo_pipeline.h"
+#include "core/diagnostic_context.h"
+#include "core/subsystem_context.h"
 #include "core/logger.h"
 #include "hooks/vulkan_hook.h"
 #include "rendering/vulkan/vulkan_dispatch_table.h"
@@ -256,8 +257,8 @@ VKAPI_ATTR VkResult VKAPI_CALL VRInject_QueuePresentKHR(VkQueue queue, const VkP
         vrinject::RenderFrameSnapshot snapshot = vrinject::vulkan::VulkanLifecycleManager::Get().CreateSnapshot(queue);
         std::string error;
         if (vrinject::vulkan::VulkanSnapshotValidator::Validate(snapshot, error)) {
-            vrinject::FrameCoordinator::Get().OnPresentBegin(snapshot);
-            vrinject::FrameCoordinator::Get().OnPresentEnd();
+            vrinject::SubsystemContext::Get().GetFrameCoordinator()->OnPresentBegin(snapshot);
+            vrinject::SubsystemContext::Get().GetFrameCoordinator()->OnPresentEnd();
         } else {
             static int logCount = 0;
             if (logCount < 50) {

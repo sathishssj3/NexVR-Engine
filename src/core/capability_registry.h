@@ -24,10 +24,7 @@ inline CapabilityFlag operator&(CapabilityFlag a, CapabilityFlag b) {
 
 class CapabilityRegistry {
 public:
-    static CapabilityRegistry& Get() {
-        static CapabilityRegistry instance;
-        return instance;
-    }
+    CapabilityRegistry() : m_capabilities(0) {}
 
     void RegisterCapability(CapabilityFlag flag) {
         m_capabilities.fetch_or(static_cast<uint32_t>(flag), std::memory_order_relaxed);
@@ -46,7 +43,6 @@ public:
     }
 
 private:
-    CapabilityRegistry() : m_capabilities(0) {}
     std::atomic<uint32_t> m_capabilities;
 };
 

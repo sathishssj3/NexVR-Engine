@@ -15,10 +15,13 @@
 #include "core/config_manager.h"
 #include "rendering/dx11/dx11_lifecycle_manager.h"
 #include "rendering/dx12/dx12_lifecycle_manager.h"
+#include "core/diagnostic_context.h"
+#include "core/subsystem_context.h"
 #include "core/frame_coordinator.h"
 #include "heuristics/candidate_collector.h"
 #include "heuristics/depth_candidate_collector.h"
 #include "heuristics/depth_lock_manager.h"
+#include "heuristics/camera_lock_manager.h"
 #include "hooks/dxgi_factory_hook.h"
 extern HMODULE g_hModule; // Declared in dllmain.cpp
 
@@ -106,7 +109,7 @@ HRESULT ProcessPresent(SwapChainType* pSwapChain, OriginalFunc originalFunc, Arg
         }
 
         // Exception-safe RAII frame lifecycle
-        ScopedFrame frame(FrameCoordinator::Get(), snapshot);
+        ScopedFrame frame(*SubsystemContext::Get().GetFrameCoordinator(), snapshot);
 
         // Periodically verify hook integrity to prevent external unhooking (e.g. by anti-cheats or overlays)
         static int s_frameCount = 0;
@@ -150,7 +153,7 @@ HRESULT __stdcall hkCreateTexture2D(ID3D11Device* pDevice, const D3D11_TEXTURE2D
     if (SUCCEEDED(hr) && ppTexture2D && *ppTexture2D && pDesc) {
         if (pDesc->BindFlags & D3D11_BIND_DEPTH_STENCIL) {
             uint32_t gen = s_globalTextureGeneration.fetch_add(1, std::memory_order_relaxed);
-            DepthCandidateCollector::Get().OnDepthSurfaceCreated(
+            SubsystemContext::Get().GetDepthCandidateCollector()->OnDepthSurfaceCreated(
                 *ppTexture2D, pDesc->Width, pDesc->Height, pDesc->Format, 
                 pDesc->SampleDesc.Count, pDesc->ArraySize, pDesc->MipLevels, gen);
         }
@@ -163,7 +166,7 @@ void __stdcall hkOMSetRenderTargets(ID3D11DeviceContext* pContext, UINT NumViews
         ID3D11Resource* pResource = nullptr;
         pDepthStencilView->GetResource(&pResource);
         if (pResource) {
-            DepthCandidateCollector::Get().OnOMSetRenderTargets(pResource);
+            SubsystemContext::Get().GetDepthCandidateCollector()->OnOMSetRenderTargets(pResource);
             pResource->Release(); // GetResource adds a ref
         }
     }
@@ -177,7 +180,7 @@ void __stdcall hkClearDepthStencilView(ID3D11DeviceContext* pContext, ID3D11Dept
         ID3D11Resource* pResource = nullptr;
         pDepthStencilView->GetResource(&pResource);
         if (pResource) {
-            DepthCandidateCollector::Get().OnClearDepthStencilView(pResource, Depth);
+            SubsystemContext::Get().GetDepthCandidateCollector()->OnClearDepthStencilView(pResource, Depth);
             pResource->Release();
         }
     }
@@ -195,7 +198,9 @@ void __stdcall hkUpdateSubresource(ID3D11DeviceContext* pContext, ID3D11Resource
             D3D11_BUFFER_DESC desc;
             pBuffer->GetDesc(&desc);
             if (desc.BindFlags & D3D11_BIND_CONSTANT_BUFFER) {
-                CandidateCollector::Get().OnConstantBufferUpdate(pBuffer, pSrcData, desc.ByteWidth);
+                if (desc.ByteWidth >= sizeof(vrinject::Matrix4x4)) {
+                    SubsystemContext::Get().GetCandidateCollector()->OnConstantBufferUpdate(pBuffer, pSrcData, desc.ByteWidth);
+                }
             }
         }
     }

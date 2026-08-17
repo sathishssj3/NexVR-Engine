@@ -2,6 +2,7 @@
 #include "heuristics/camera_lock_manager.h"
 #include "heuristics/depth_lock_manager.h"
 #include "core/performance_profiler.h"
+#include "core/subsystem_context.h"
 #include "core/gpu_profiler.h"
 #include "core/runtime_state_monitor.h"
 #include "rendering/stereo/stereo_pipeline.h"
@@ -100,11 +101,11 @@ bool DX12GraphicsBackend::Healthy() const {
 
 CameraSnapshot DX12GraphicsBackend::GetCamera() {
     // Rely on core logic, which has DX12 hooked versions updating it
-    return CameraLockManager::Get().GetSnapshot();
+    return SubsystemContext::Get().GetCameraLockManager()->GetSnapshot();
 }
 
 DepthSnapshot DX12GraphicsBackend::GetDepth() {
-    return DepthLockManager::Get().GetSnapshot();
+    return SubsystemContext::Get().GetDepthLockManager()->GetSnapshot();
 }
 
 void DX12GraphicsBackend::RenderStereo(const RenderFrameSnapshot& frameSnapshot, const CameraSnapshot& camSnapshot, const DepthSnapshot& depthSnapshot, const StereoParams& params, void* uiMaskHandle) {

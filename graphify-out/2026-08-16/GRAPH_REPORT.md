@@ -1,16 +1,16 @@
 # Graph Report - vr-inject  (2026-08-16)
 
 ## Corpus Check
-- 597 files · ~3,050,748 words
+- 598 files · ~3,051,629 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 9300 nodes · 12778 edges · 637 communities (614 shown, 23 thin omitted)
+- 9301 nodes · 12779 edges · 631 communities (608 shown, 23 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 239 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `5966950f`
+- Built from commit: `cc49c71f`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -74,16 +74,16 @@
 - DX12FenceManager
 - required
 - ImFontBaked
-- type
+- ID3D11Device
 - definitions
 - VulkanCommandManager
 - PerformanceProfiler
 - hook_manager.cpp
-- UINT
-- TEST_F
+- ProcessPresentDX12
+- vulkan_hook.h
 - FrameCoordinator
 - ai_matrix_classifier/matrix_classifier.h
-- GpuProfiler
+- ID3D11DeviceContext
 - Build
 - DepthReprojector
 - VulkanMemoryBudgetSnapshot
@@ -104,17 +104,17 @@
 - InputManager
 - definitions
 - Dx12SwapchainResources
-- RenderFrameSnapshot
+- file_api/schema_index.json
 - ProcessPresent
 - definitions
 - ~ImVector
 - Attack Surface, Mitigations, and Attacker Stories
-- base_hook.h
+- ImVec4
 - ResolvedBufferInfo
 - ImGuiPayload
 - OpenXRFrameSubmitter
 - IGraphicsBackend
-- dx11_hook.cpp
+- dx12_hook.cpp
 - CameraSnapshot
 - VRConfig
 - DepthCandidate
@@ -151,13 +151,13 @@
 - EngineDetector
 - DescriptorBinding
 - VulkanRenderPassTracker
-- vulkan_lifecycle_manager.cpp
+- LoggerTest
 - AdaptiveQualityController
 - NexVR Engine: Comprehensive Project Memory
-- Dx11ValidationResult
+- TryGetTimings
 - BackendProfiler
 - SelectQueueFamily
-- ID3D11DeviceContext
+- StereoRenderer
 - vulkan_dispatch_table.cpp
 - DX12AIBackend
 - TensorBridge
@@ -213,7 +213,7 @@
 - WindowProc
 - required
 - TEST
-- hkClearDepthStencilView
+- UINT
 - NexVR Engine — Architecture & Performance Baseline (v2.1)
 - Stereoscopic 3D Implementation Plan (Non-Destructive)
 - RuntimeHealthReport
@@ -223,7 +223,7 @@
 - enum
 - enum
 - properties
-- ID3D11Device
+- ID3D11Buffer
 - FrameTimingSnapshot
 - WindowProc
 - required
@@ -248,14 +248,14 @@
 - name
 - motion_predictor.cpp
 - Classify
-- hkOMSetRenderTargets
+- hkCopyDescriptorsSimple
 - NexVR Engine - Production Scorecard Audit & Release Checklist
 - TEST_F
 - Validate
 - value
 - GetFramebufferRecord
 - definitions
-- minimum
+- type
 - TestModel
 - TestUISynthesizerModel
 - Third-Party Licenses
@@ -265,7 +265,7 @@
 - Data Collection
 - value
 - NexVR Engine — Commercial Game & Platform Compatibility Matrix
-- TEST_F
+- VulkanLifecycleTest
 - TEST
 - TEST
 - properties
@@ -273,7 +273,7 @@
 - gen_icon.js
 - inject_game.mjs
 - ai_backend.h
-- AdaptiveQualitySettings
+- cmake/version-schema.json
 - properties
 - type
 - 8841c8b524587a9aee211c0ac198f604/version-schema.json
@@ -349,7 +349,7 @@
 - versionV1_0
 - properties
 - properties
-- environment
+- cacheVariables
 - ^client-[^/]+$
 - generator
 - path
@@ -363,7 +363,7 @@
 - paths
 - index
 - toolchains
-- frame_timing_manager.h
+- Hooked_vkQueuePresentKHR
 - enum
 - enum
 - properties
@@ -391,12 +391,12 @@
 - testPresetsFilterExcludeFixturesV2
 - properties
 - 2. Stage-by-Stage Specification
-- TEST
+- parentIndex
 - paths
 - major
 - definitions
 - paths
-- file_api/schema_index.json
+- cmake
 - properties
 - properties
 - folder
@@ -429,7 +429,7 @@
 - configurationDirectoryItemMinimumCMakeVersion
 - properties
 - eda7e22f7a80461c5ca4341d0cec4b65/schema_cmakeFiles.json
-- cmake/version-schema.json
+- properties
 - version
 - file_api/schema_cache.json
 - file_api/schema_cmakeFiles.json
@@ -453,7 +453,7 @@
 - program
 - required
 - enum
-- kindJsonFile
+- replyError
 - paths
 - enum
 - testPresetsFilterIncludeIndexAsObjectV10
@@ -472,9 +472,9 @@
 - properties
 - major
 - backtraceGraph
-- cmake
+- required
 - debuggerV2_8
-- DiagnosticQueueStats
+- hkMap
 - presets/schema.json
 - buildPresetsItemsV2
 - VulkanImageInfo
@@ -494,7 +494,7 @@
 - TEST
 - backtrace
 - enum
-- frame_coordinator.cpp
+- camera_ranking_engine.h
 - required
 - cmakeMinimumRequiredV10
 - cmakeMinimumRequiredV1
@@ -518,11 +518,11 @@
 - installerPaths
 - required
 - ImFontAtlasRect
-- sourceFileExtensions
+- main
 - $schema
 - file_api/schema_directory.json
 - installerPaths
-- file_api/schema_target.json
+- TEST
 - cmakeMinimumRequiredV10
 - cmakeMinimumRequiredV1
 - configurePresetsDebugV10
@@ -538,7 +538,7 @@
 - testPresetsExecutionV11
 - testPresetsExecutionV2
 - testPresetsFilterExcludeV10
-- fault_injector.cpp
+- Clear
 - config
 - config
 - kind
@@ -548,17 +548,16 @@
 - installerTargetIndex
 - doctools.js
 - sphinx_highlight.js
-- CompatibilityScore
+- Hooked_vkCmdClearDepthStencilImage
 - installerItemTypesV2_4
 - installerItemTypesV2_5
 - installerTargetIndex
 - kind
-- vulkan_descriptor_tracker.cpp
+- name
 - VulkanMappedMemory
 - VulkanBufferInfo
 - call_mod
 - ExportImportList
-- Dx12DeviceResources
 - value
 - VulkanResourceTracker
 - relative
@@ -575,30 +574,24 @@
 - Squish4RunTestCase.sh
 - SquishRunTestCase.sh
 - program
-- id
 - StereoViewport
 - matrix_harness.cpp
 - kindJsonFile
-- condition
 - reverse_z_detector.h
-- projectIndex
 - Quaternion
 - VkDevice
 - NexVR Engine — CTest Suite Execution Report
 - $schema
 - testPresetsFilterExcludeV10
 - testPresetsFilterExcludeV2
-- configurationDirectoryItemAbstractTargetIndexesV2_9
 - testPresetsFilterExcludeV2
-- profile_harness.cpp
 - value
 - TEST
-- CreateSnapshot
 
 ## God Nodes (most connected - your core abstractions)
 1. `DeviceDispatchTable` - 141 edges
 2. `ImGuiIO` - 128 edges
-3. `VulkanDispatchTable` - 101 edges
+3. `VulkanDispatchTable` - 102 edges
 4. `ImDrawList` - 101 edges
 5. `mutex_` - 86 edges
 6. `definitions` - 76 edges
@@ -622,7 +615,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (637 total, 23 thin omitted)
+## Communities (631 total, 23 thin omitted)
 
 ### Community 0 - "Core Vulkan Dispatch Table Devicedi..."
 Cohesion: 0.01
@@ -646,7 +639,7 @@ Nodes (42): defaultVRConfig, execFileAsync, activeGameId, activeTargetExeName, a
 
 ### Community 5 - "imgui.h"
 Cohesion: 0.04
-Nodes (42): IM_MSVC_RUNTIME_CHECKS_OFF, IM_MSVC_RUNTIME_CHECKS_RESTORE, IMGUI_API, begin(), clear_delete(), clear_destruct(), contains(), end() (+34 more)
+Nodes (46): IM_MSVC_RUNTIME_CHECKS_OFF, IM_MSVC_RUNTIME_CHECKS_RESTORE, IMGUI_API, begin(), clear_delete(), clear_destruct(), contains(), end() (+38 more)
 
 ### Community 6 - "ImFontAtlas"
 Cohesion: 0.04
@@ -657,12 +650,12 @@ Cohesion: 0.04
 Nodes (44): DX12Renderer, m_allocatorFenceValues, m_cmdAlloc, m_cmdList, m_currentFenceValue, m_descriptorCount, m_device, m_fenceValues (+36 more)
 
 ### Community 8 - "mutex_"
-Cohesion: 0.10
-Nodes (6): unordered_map, OnFrameCallbackDX12, vector, shared_mutex, SetOnFrameCallback(), mutex_
+Cohesion: 0.07
+Nodes (13): unordered_map, CameraDeltaTrackerTest, vector, Matrix4x4, shared_mutex, mutex_, StereoParams, XMFLOAT4X4 (+5 more)
 
 ### Community 9 - "VulkanLifecycleManager"
-Cohesion: 0.08
-Nodes (25): RenderState, VkDevice, VkFormat, VkInstance, VkPhysicalDevice, VkSurfaceKHR, VkSwapchainKHR, VulkanLifecycleManager (+17 more)
+Cohesion: 0.06
+Nodes (44): RenderState, VkDevice, VkDeviceCreateInfo, VkInstance, VkPhysicalDevice, VkQueue, VkSurfaceKHR, VkSwapchainCreateInfoKHR (+36 more)
 
 ### Community 10 - "DX12DescriptorAllocation"
 Cohesion: 0.33
@@ -685,8 +678,8 @@ Cohesion: 0.08
 Nodes (26): ImDrawFlags, ImGuiViewportFlags, ImU32, ImVec2, AddPolyline(), AddRect(), ImDrawVert, col (+18 more)
 
 ### Community 15 - "NeuralInpainter"
-Cohesion: 0.07
-Nodes (30): ID3D11PixelShader, ID3D11VertexShader, ID3D11ShaderResourceView, string, ComPtr, ID3D11RenderTargetView, ID3D11ShaderResourceView, ID3D11Texture2D (+22 more)
+Cohesion: 0.08
+Nodes (24): ID3D11PixelShader, ID3D11VertexShader, ComPtr, ID3D11RenderTargetView, ID3D11ShaderResourceView, ID3D11Texture2D, ID3D11UnorderedAccessView, UINT (+16 more)
 
 ### Community 16 - "package.json"
 Cohesion: 0.05
@@ -698,7 +691,7 @@ Nodes (32): VkDevice, VkPhysicalDevice, VkQueue, vector, VkDevice, VkPhysicalDev
 
 ### Community 18 - "vulkan_graphics_backend.cpp"
 Cohesion: 0.09
-Nodes (30): Render10kFramesFullRenderCopyPath, VkImage, BeginAndAcquireVulkan, StereoParams, StereoRendererState, VkDevice, VkImage, VkMemoryPropertyFlags (+22 more)
+Nodes (30): Render10kFramesFullRenderCopyPath, Shutdown, StereoParams, StereoRendererState, VkDevice, VkImage, VkMemoryPropertyFlags, VkPhysicalDevice (+22 more)
 
 ### Community 19 - "VulkanPipelineCache"
 Cohesion: 0.07
@@ -733,28 +726,28 @@ Cohesion: 0.08
 Nodes (31): ComputeShaderHashSHA256(), VkMemoryPropertyFlags, wstring, VkCommandBuffer, VkCommandPool, VkDescriptorPool, VkDevice, VkInstance (+23 more)
 
 ### Community 27 - "vulkan_snapshot_validator.cpp"
-Cohesion: 0.23
-Nodes (15): DepthValidationResult, FrameTimingSnapshot, Matrix4x4, string, Determinant(), IsMatrixValid(), IsNaNOrInf(), VulkanSnapshotValidator (+7 more)
+Cohesion: 0.20
+Nodes (17): DepthValidationResult, FrameTimingSnapshot, Matrix4x4, string, Determinant(), IsMatrixValid(), IsNaNOrInf(), VulkanSnapshotValidator (+9 more)
 
 ### Community 28 - "VulkanDispatchTable"
-Cohesion: 0.05
-Nodes (92): PFN_vkGetInstanceProcAddr, shared_mutex, unordered_map, VkDevice, VkInstance, VulkanDispatchTable, m_deviceTables, m_deviceToInstance (+84 more)
+Cohesion: 0.06
+Nodes (82): PFN_vkGetInstanceProcAddr, shared_mutex, unordered_map, VkDevice, VkInstance, VulkanDispatchTable, m_deviceTables, m_deviceToInstance (+74 more)
 
 ### Community 29 - "OpenXRSwapchainManager"
 Cohesion: 0.08
 Nodes (33): GraphicsBackend, ID3D11Texture2D, ID3D12Resource, VkImage, XrSession, XrSwapchain, vector, XrSwapchain (+25 more)
 
 ### Community 30 - "DiagnosticContext"
-Cohesion: 0.13
-Nodes (19): DiagnosticLevel, DiagnosticContext, DiagnosticContext::DiagnosticContext(), m_enqueueFailures, m_eventsDropped, m_eventsEnqueued, m_head, m_queue (+11 more)
+Cohesion: 0.07
+Nodes (32): DispatchOverheadProfile, DiagnosticLevel, DiagnosticContext, DiagnosticContext::DiagnosticContext(), GetStats, m_enqueueFailures, m_eventsDropped, m_eventsEnqueued (+24 more)
 
 ### Community 31 - "required"
-Cohesion: 0.04
-Nodes (73): description, items, type, items, items, type, items, type (+65 more)
+Cohesion: 0.03
+Nodes (82): description, items, type, items, items, type, items, type (+74 more)
 
 ### Community 32 - "StereoResourceManager"
-Cohesion: 0.08
-Nodes (23): ComPtr, DXGI_FORMAT, ID3D11ComputeShader, ID3D11ShaderResourceView, ID3D11Texture2D, ID3D11UnorderedAccessView, StereoResourceManager, constantBuffer_ (+15 more)
+Cohesion: 0.09
+Nodes (20): ComPtr, DXGI_FORMAT, ID3D11ComputeShader, ID3D11ShaderResourceView, ID3D11UnorderedAccessView, StereoResourceManager, constantBuffer_, device_ (+12 more)
 
 ### Community 33 - "VulkanDescriptorManager"
 Cohesion: 0.07
@@ -765,8 +758,8 @@ Cohesion: 0.09
 Nodes (30): vector, VkAccessFlags, VkCommandBuffer, VkDevice, VkImage, VkImageLayout, VkPipelineStageFlags, atomic (+22 more)
 
 ### Community 35 - "frame_coordinator.h"
-Cohesion: 0.19
-Nodes (4): InitializationAndShutdown, OpenXRLifecycleTest, array, TEST()
+Cohesion: 0.11
+Nodes (14): CompatibilityReadiness, InitializationAndShutdown, OpenXRLifecycleTest, CompatibilityReason, message, signal, CompatibilityScore, readiness (+6 more)
 
 ### Community 36 - "vulkan_layer.cpp"
 Cohesion: 0.11
@@ -777,8 +770,8 @@ Cohesion: 0.07
 Nodes (27): 1. Project Mission And Core Technology, 2. Codebase Architecture, 3. Audit And Stability Resolutions, 4. Current Milestone: Advanced Heuristic Memory Scanning, 5. Next-Generation AI And Rendering Roadmap, 6. Working Rules For Future Edits, 7. Anti-Cheat & AV Posture Tier List, NexVR Engine Project Memory (+19 more)
 
 ### Community 38 - "ImGuiPlatformIO"
-Cohesion: 0.05
-Nodes (40): ImDrawCallback, ImColor, ImDrawCmd, ClipRect, ElemCount, IdxOffset, TexRef, UserCallback (+32 more)
+Cohesion: 0.07
+Nodes (26): ImDrawCallback, ImDrawCmd, ClipRect, ElemCount, IdxOffset, TexRef, UserCallback, UserCallbackData (+18 more)
 
 ### Community 39 - "MatrixClassifier"
 Cohesion: 0.11
@@ -797,8 +790,8 @@ Cohesion: 0.09
 Nodes (26): ProducesImmutableFrameGraphSnapshot, CopyName(), FrameGraphEventType, FrameGraphEvent, barrierCount, gpuMs, name, type (+18 more)
 
 ### Community 43 - "Dx12LifecycleManager"
-Cohesion: 0.12
-Nodes (23): HRESULT, ID3D12CommandQueue, IDXGISwapChain, Dx12LifecycleManager, CreateSnapshot, Degrade, Discover, HandleDeviceLoss (+15 more)
+Cohesion: 0.08
+Nodes (30): HRESULT, ID3D12CommandQueue, IDXGISwapChain, Dx12DeviceResources, commandQueue, device, Dx12LifecycleManager, CreateSnapshot (+22 more)
 
 ### Community 44 - "ComfortGuard"
 Cohesion: 0.08
@@ -830,7 +823,7 @@ Nodes (20): ResolvedAPIs, HMODULE, UnityScanner, FindCameraMethods_IL2CPP, FindC
 
 ### Community 51 - "Dx11LifecycleManager"
 Cohesion: 0.12
-Nodes (23): HRESULT, IDXGISwapChain, Dx11LifecycleManager, CreateSnapshot, Degrade, Discover, HandleDeviceLoss, m_deviceResources (+15 more)
+Nodes (24): HRESULT, IDXGISwapChain, Dx11LifecycleManager, CreateSnapshot, Degrade, Discover, HandleDeviceLoss, m_deviceResources (+16 more)
 
 ### Community 52 - "RuntimeStateMonitor"
 Cohesion: 0.12
@@ -854,15 +847,15 @@ Nodes (23): DeferredResource, ComPtr, ID3D12CommandQueue, ID3D12Device, IUnknown
 
 ### Community 57 - "required"
 Cohesion: 0.04
-Nodes (54): description, items, type, items, type, items, type, items (+46 more)
+Nodes (80): description, items, type, description, items, type, items, items (+72 more)
 
 ### Community 58 - "ImFontBaked"
 Cohesion: 0.08
 Nodes (25): ImU16, ImFontBaked, Ascent, BakedId, ClearOutputData, Descent, FallbackAdvanceX, FallbackGlyphIndex (+17 more)
 
-### Community 59 - "type"
-Cohesion: 0.08
-Nodes (29): description, items, type, items, items, type, items, type (+21 more)
+### Community 59 - "ID3D11Device"
+Cohesion: 0.14
+Nodes (12): D3D11_SUBRESOURCE_DATA, D3D11_TEXTURE2D_DESC, Initialize, ID3D11Texture2D, hkCreateTexture2D(), ID3D11Device, ID3D11ShaderResourceView, string (+4 more)
 
 ### Community 60 - "definitions"
 Cohesion: 0.03
@@ -880,29 +873,29 @@ Nodes (20): BasicTiming, PerformanceProfilerTest, SegmentData, CpuSegment, array
 Cohesion: 0.15
 Nodes (21): ConcurrentInitializeAndShutdown, FailureInjectionRollback, function, HookPhase, InitializeHooksIdempotency, recursive_mutex, vector, HookManager (+13 more)
 
-### Community 64 - "UINT"
-Cohesion: 0.12
-Nodes (24): D3D12_RANGE, ID3D12CommandList, IDXGISwapChain3, DXGI_FORMAT, DXGI_PRESENT_PARAMETERS, HRESULT, ID3D12CommandQueue, ID3D12Resource (+16 more)
+### Community 64 - "ProcessPresentDX12"
+Cohesion: 0.17
+Nodes (15): IDXGISwapChain3, DXGI_FORMAT, DXGI_PRESENT_PARAMETERS, HRESULT, IDXGISwapChain, IDXGISwapChain1, IUnknown, OriginalFunc (+7 more)
 
-### Community 65 - "TEST_F"
-Cohesion: 0.33
+### Community 65 - "vulkan_hook.h"
+Cohesion: 0.29
 Nodes (5): DeviceLostTransition, RapidSwapchainRecreation, testing::Test, TEST_F(), VulkanFailureTest
 
 ### Community 66 - "FrameCoordinator"
-Cohesion: 0.10
-Nodes (21): OpenXRRuntimeManager, FrameCoordinator, m_cpuProfiler, m_currentSnapshot, m_dashboard, m_engineDetected, m_frameActive, m_globalFrameCounter (+13 more)
+Cohesion: 0.05
+Nodes (40): OpenXRRuntimeManager, FrameCoordinator, m_cpuProfiler, m_currentSnapshot, m_dashboard, m_engineDetected, m_frameActive, m_globalFrameCounter (+32 more)
 
 ### Community 67 - "ai_matrix_classifier/matrix_classifier.h"
 Cohesion: 0.12
 Nodes (19): vector, main(), ReadMockConstantBuffer(), pair, vector, Env, MatrixType, unique_ptr (+11 more)
 
-### Community 68 - "GpuProfiler"
-Cohesion: 0.09
-Nodes (28): BasicInstantiation, FrameQuerySet, GpuProfilerTest, GpuSegment, ID3D11Query, array, static_cast, GpuProfiler (+20 more)
+### Community 68 - "ID3D11DeviceContext"
+Cohesion: 0.14
+Nodes (20): FrameQuerySet, GpuSegment, ID3D11Query, GpuProfiler, BeginFrame, BeginSegment, EndFrame, EndSegment (+12 more)
 
 ### Community 69 - "Build"
-Cohesion: 0.12
-Nodes (19): InverseMath, ProjectionShift, Matrix4x4, Multiply(), StereoCameraGenerator, Generate, Matrix4x4, InverseMatrix() (+11 more)
+Cohesion: 0.13
+Nodes (17): InverseMath, ProjectionShift, Matrix4x4, Multiply(), StereoCameraGenerator, Generate, Matrix4x4, InverseMatrix() (+9 more)
 
 ### Community 70 - "DepthReprojector"
 Cohesion: 0.09
@@ -921,8 +914,8 @@ Cohesion: 0.12
 Nodes (17): Camera_get_main_t, Camera_set_projectionMatrix_t, Camera_set_worldToCameraMatrix_t, Matrix4x4, Matrix4x4, m, UnityHook, DetourGetMain (+9 more)
 
 ### Community 74 - "DX12ResourceStateTracker"
-Cohesion: 0.15
-Nodes (21): D3D12_RESOURCE_BARRIER, D3D12_RESOURCE_STATES, Shutdown, ID3D12GraphicsCommandList, ID3D12Resource, UINT, DX12ResourceStateTracker, Clear (+13 more)
+Cohesion: 0.16
+Nodes (20): D3D12_RESOURCE_BARRIER, D3D12_RESOURCE_STATES, ID3D12GraphicsCommandList, ID3D12Resource, UINT, DX12ResourceStateTracker, Clear, FlushBarriers (+12 more)
 
 ### Community 75 - "VulkanImageStateTracker"
 Cohesion: 0.08
@@ -945,16 +938,16 @@ Cohesion: 0.14
 Nodes (20): D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_DEPTH_STENCIL_VIEW_DESC, ID3D12Resource, SIZE_T, Dx12DescriptorTracker, Clear, CopyDescriptor, InvalidateRange (+12 more)
 
 ### Community 80 - "Dx11LifecycleManagerTest"
-Cohesion: 0.15
-Nodes (13): DegradesAfterBudgetExhausted, FaultInjectorDeviceRemoved, InitialStateIsUninitialized, ProcessPresentTransitionsToActive, ReinitializesAfterDeviceRemoved, ComPtr, IDXGISwapChain, testing::Test (+5 more)
+Cohesion: 0.10
+Nodes (22): DegradesAfterBudgetExhausted, Dx11ValidationStatus, FaultInjectorDeviceRemoved, InitialStateIsUninitialized, ProcessPresentTransitionsToActive, ReinitializesAfterDeviceRemoved, Dx11ResourceValidator, IsDeviceLost (+14 more)
 
 ### Community 81 - "OpenXRHealthMonitor"
 Cohesion: 0.09
 Nodes (8): OpenXRHealthMonitor, acquireTimeouts_, averageSubmitLatencyMs_, framesDropped_, framesSubmitted_, runtimeRestarts_, sessionLosses_, swapchainRecreations_
 
 ### Community 82 - "DX11GraphicsBackend"
-Cohesion: 0.15
-Nodes (16): StereoRendererState, DX11GraphicsBackend, GetCamera, GetLeftEyeTexture, GetRightEyeTexture, GetState, Healthy, Initialize (+8 more)
+Cohesion: 0.14
+Nodes (18): StereoParams, StereoRendererState, DX11GraphicsBackend, GetCamera, GetLeftEyeTexture, GetRightEyeTexture, GetState, Healthy (+10 more)
 
 ### Community 83 - "DX12PipelineStateCache"
 Cohesion: 0.14
@@ -977,12 +970,12 @@ Cohesion: 0.03
 Nodes (65): anyOf, allOf, allOf, description, type, anyOf, anyOf, description (+57 more)
 
 ### Community 88 - "Dx12SwapchainResources"
-Cohesion: 0.14
-Nodes (11): Dx12SwapchainResources, backBuffer, format, fullscreen, height, swapChain, width, DXGI_FORMAT (+3 more)
+Cohesion: 0.18
+Nodes (10): Dx12SwapchainResources, backBuffer, format, fullscreen, height, swapChain, width, DXGI_FORMAT (+2 more)
 
-### Community 89 - "RenderFrameSnapshot"
-Cohesion: 0.10
-Nodes (19): GraphicsBackend, RenderState, RenderFrameSnapshot, apiVersion, backBuffer, backend, driverVersion, epoch (+11 more)
+### Community 89 - "file_api/schema_index.json"
+Cohesion: 0.15
+Nodes (12): definitions, kindJsonFile, description, type, type, additionalProperties, properties, type (+4 more)
 
 ### Community 90 - "ProcessPresent"
 Cohesion: 0.11
@@ -1000,9 +993,9 @@ Nodes (21): ImGuiTextRange, ImDrawChannel, _CmdBuffer, _IdxBuffer, ImDrawListSpl
 Cohesion: 0.11
 Nodes (18): Attack Surface, Mitigations, and Attacker Stories, Build and supply chain, Critical, Electron and IPC, Files, configuration, diagnostics, and privacy, High, Injected runtime and concurrency, Input ownership (+10 more)
 
-### Community 94 - "base_hook.h"
-Cohesion: 0.10
-Nodes (14): LONG, PEXCEPTION_POINTERS, PresentFunc, CreateAndEnableHook(), CreateHook(), FrameResources, HRESULT, SwapChainType (+6 more)
+### Community 94 - "ImVec4"
+Cohesion: 0.18
+Nodes (10): ImColor, ImDrawCmdHeader, ClipRect, TexRef, VtxOffset, ImVec4, w, x (+2 more)
 
 ### Community 95 - "ResolvedBufferInfo"
 Cohesion: 0.11
@@ -1013,24 +1006,24 @@ Cohesion: 0.08
 Nodes (16): ImWchar, Clear, ImFontGlyphRangesBuilder, AddRanges, AddText, BuildRanges, UsedChars, ImGuiPayload (+8 more)
 
 ### Community 97 - "OpenXRFrameSubmitter"
-Cohesion: 0.16
-Nodes (14): ID3D11Texture2D, ID3D12Resource, XrSession, XrSpace, OpenXRFrameSubmitter, BeginAndAcquireDX12, currentFrameState_, healthMonitor_ (+6 more)
+Cohesion: 0.15
+Nodes (16): ID3D11Texture2D, ID3D12Resource, VkImage, XrSession, XrSpace, OpenXRFrameSubmitter, BeginAndAcquireDX12, BeginAndAcquireVulkan (+8 more)
 
 ### Community 98 - "IGraphicsBackend"
 Cohesion: 0.14
 Nodes (12): IGraphicsBackend, GetAPI, GetCamera, GetDepth, GetLeftEyeTexture, GetRightEyeTexture, GetState, Healthy (+4 more)
 
-### Community 99 - "dx11_hook.cpp"
-Cohesion: 0.07
-Nodes (28): AIPipeline, AIJob, frameId, AIScheduler, AIScheduler::AIScheduler(), IsJobReady, m_backend, m_completedFrameId (+20 more)
+### Community 99 - "dx12_hook.cpp"
+Cohesion: 0.04
+Nodes (38): AIPipeline, LONG, OnFrameCallbackDX12, PEXCEPTION_POINTERS, AIJob, frameId, AIScheduler, AIScheduler::AIScheduler() (+30 more)
 
 ### Community 100 - "CameraSnapshot"
-Cohesion: 0.13
-Nodes (17): CameraSnapshot, confidence, frame, position, projection, resourceIdentity, reversedZ, rotation (+9 more)
+Cohesion: 0.14
+Nodes (16): CameraSnapshot, confidence, frame, position, projection, resourceIdentity, reversedZ, rotation (+8 more)
 
 ### Community 101 - "VRConfig"
-Cohesion: 0.04
-Nodes (48): ConfigJsonParseErrorHandling, ConfigLoadDefaultWhenMissing, ConfigLoadFromFile, ConfigMotionAimSensitivityClamping, ConfigSaveAndLoad, ConfigManager, Load, m_config (+40 more)
+Cohesion: 0.06
+Nodes (35): ConfigJsonParseErrorHandling, ConfigLoadDefaultWhenMissing, ConfigLoadFromFile, ConfigMotionAimSensitivityClamping, ConfigSaveAndLoad, ConfigManager, Load, m_config (+27 more)
 
 ### Community 102 - "DepthCandidate"
 Cohesion: 0.08
@@ -1041,8 +1034,8 @@ Cohesion: 0.11
 Nodes (18): Vector3, x, y, z, Matrix4x4, StereoShaderConstants, height, inverseViewProj (+10 more)
 
 ### Community 104 - "VulkanDescriptorTracker"
-Cohesion: 0.14
-Nodes (17): pair, shared_mutex, unordered_map, vector, VkDescriptorPool, VkDescriptorSet, VkDevice, VulkanDescriptorSetInfo (+9 more)
+Cohesion: 0.12
+Nodes (26): VkDescriptorPool, VkDescriptorSet, VkDevice, VkWriteDescriptorSet, pair, shared_mutex, unordered_map, vector (+18 more)
 
 ### Community 105 - "RenderPassRecord"
 Cohesion: 0.11
@@ -1149,12 +1142,12 @@ Cohesion: 0.12
 Nodes (17): DepthResourceIdentity, TemporalDepthFilter, GetLockedDepth, m_acquiringIdentity, m_acquisitionCount, m_config, m_currentConfidence, m_isLocked (+9 more)
 
 ### Community 131 - "VulkanStressTest"
-Cohesion: 0.10
-Nodes (16): Clear, testing::Test, VulkanDeviceLostTest, testing::Test, VkDevice, VkInstance, VkPhysicalDevice, VkQueue (+8 more)
+Cohesion: 0.15
+Nodes (13): testing::Test, VkDevice, VkInstance, VkPhysicalDevice, VkQueue, VulkanStressTest, debugMessenger, device (+5 more)
 
 ### Community 132 - "CameraCandidate"
 Cohesion: 0.10
-Nodes (21): CameraCandidate, confidence, constantBuffer, firstSeenFrame, id, lastSeenFrame, projection, reversedZ (+13 more)
+Nodes (22): CameraCandidate, confidence, constantBuffer, firstSeenFrame, id, lastSeenFrame, projection, reversedZ (+14 more)
 
 ### Community 133 - "EngineDetector"
 Cohesion: 0.06
@@ -1168,21 +1161,21 @@ Nodes (15): DescriptorBinding, binding, buffer, descriptorType, imageLayout, ima
 Cohesion: 0.19
 Nodes (14): VkCommandBuffer, VkDevice, VkRenderingInfo, VkRenderPassBeginInfo, shared_mutex, unordered_map, VkCommandBuffer, VulkanRenderPassTracker (+6 more)
 
-### Community 136 - "vulkan_lifecycle_manager.cpp"
-Cohesion: 0.20
-Nodes (17): RenderState, VkDevice, VkDeviceCreateInfo, VkInstance, VkPhysicalDevice, VkSurfaceKHR, VkSwapchainCreateInfoKHR, VkSwapchainKHR (+9 more)
+### Community 136 - "LoggerTest"
+Cohesion: 0.18
+Nodes (9): LoggerDifferentLevels, LoggerInitialization, LoggerLogging, LoggerPathFiltering, path, testing::Test, LoggerTest, logFile (+1 more)
 
 ### Community 137 - "AdaptiveQualityController"
-Cohesion: 0.25
-Nodes (13): AdaptiveQualityController, AdaptiveQualityController::AdaptiveQualityController(), ApplyLevel, m_headroomFrames, m_overBudgetFrames, m_settings, Reset, StepDown (+5 more)
+Cohesion: 0.15
+Nodes (20): AdaptiveQualityController, AdaptiveQualityController::AdaptiveQualityController(), ApplyLevel, m_headroomFrames, m_overBudgetFrames, m_settings, Reset, StepDown (+12 more)
 
 ### Community 139 - "NexVR Engine: Comprehensive Project Memory"
 Cohesion: 0.14
 Nodes (13): 10. Known Issues / Compatibility & Anti-Cheat Posture, 1. Project Mission & Core Technology, 2. Architecture & Subsystems, 3. Folder Structure, 4. Coding Standards & Naming, 5. Performance Budgets, 6. Testing Requirements, 7. Resolution Log & Completed Sprints (+5 more)
 
-### Community 140 - "Dx11ValidationResult"
-Cohesion: 0.24
-Nodes (9): Dx11ValidationStatus, Dx11ResourceValidator, IsDeviceLost, Validate, Dx11ValidationResult, actualEpoch, expectedEpoch, recoverable (+1 more)
+### Community 140 - "TryGetTimings"
+Cohesion: 0.20
+Nodes (9): BasicInstantiation, GpuProfilerTest, array, static_cast, TryGetTimings, GpuTimingResult, ms, valid (+1 more)
 
 ### Community 141 - "BackendProfiler"
 Cohesion: 0.30
@@ -1192,9 +1185,9 @@ Nodes (10): Entry, BackendProfiler, ExportBackendComparison, ExportLatencyTrace,
 Cohesion: 0.18
 Nodes (11): FallsBackToGraphicsQueueWithoutDedicatedCompute, SelectsDedicatedComputeQueueWhenAvailable, vector, VkQueueFamilyProperties, VulkanAsyncScheduler, SelectQueueFamily, VulkanAsyncSchedulerConfig, asyncComputeAvailable (+3 more)
 
-### Community 143 - "ID3D11DeviceContext"
-Cohesion: 0.19
-Nodes (10): MidFrameLossResistance, ID3D11DeviceContext, ID3D11ShaderResourceView, StereoRendererState, StereoRenderer, RenderStereoFrame, state_, UpdateConstantBuffer (+2 more)
+### Community 143 - "StereoRenderer"
+Cohesion: 0.22
+Nodes (9): MidFrameLossResistance, ID3D11ShaderResourceView, StereoRendererState, StereoRenderer, RenderStereoFrame, state_, UpdateConstantBuffer, StateMachine (+1 more)
 
 ### Community 144 - "vulkan_dispatch_table.cpp"
 Cohesion: 0.25
@@ -1221,8 +1214,8 @@ Cohesion: 0.08
 Nodes (24): FMatrix, M, FMinimalViewInfo, AspectRatio, DesiredFOV, FOV, Location, OrthoFarClipPlane (+16 more)
 
 ### Community 150 - "ImGuiDX12Integration"
-Cohesion: 0.10
-Nodes (20): Shutdown(), DXGI_FORMAT, ID3D12CommandQueue, ID3D12Device, ID3D12Resource, ComPtr, ID3D12CommandAllocator, ID3D12DescriptorHeap (+12 more)
+Cohesion: 0.06
+Nodes (32): HWND, LPARAM, UINT, WPARAM, HWND, OverlayManager, HandleWndProc, Initialize (+24 more)
 
 ### Community 151 - "IRenderer"
 Cohesion: 0.15
@@ -1289,16 +1282,16 @@ Cohesion: 0.05
 Nodes (43): additionalProperties, description, $comment, definitions, versionMajorOnly, versionObject, description, properties (+35 more)
 
 ### Community 167 - "definitions"
-Cohesion: 0.05
-Nodes (41): description, type, description, type, definitions, abstractV2_9, compileGroupsDefines, compileGroupsLanguage (+33 more)
+Cohesion: 0.04
+Nodes (45): description, type, description, type, definitions, abstractV2_9, compileGroupsDefines, compileGroupsLanguage (+37 more)
 
 ### Community 168 - "FrameResourcesDX12"
 Cohesion: 0.15
 Nodes (12): FrameResourcesDX12, commandQueue, device, height, swapChain, valid, width, GetCurrentFrame() (+4 more)
 
 ### Community 169 - "FrameTimingManager"
-Cohesion: 0.15
-Nodes (13): FrameTimingManager, m_cpuSamples, m_droppedFrames, m_frameIndex, m_gpuSamples, m_nextSample, m_predictionSamples, m_sampleCount (+5 more)
+Cohesion: 0.09
+Nodes (22): ComputesRollingTimingSnapshot, RejectsNegativeInputsByClampingToZero, array, FrameTimingSnapshot, WINDOW_SIZE, FrameTimingManager, Average, m_cpuSamples (+14 more)
 
 ### Community 170 - "NexVR Engine — Claude Code Guide"
 Cohesion: 0.14
@@ -1369,8 +1362,8 @@ Cohesion: 0.05
 Nodes (41): additionalProperties, description, description, items, type, uniqueItems, enum, type (+33 more)
 
 ### Community 187 - "logger.h"
-Cohesion: 0.08
-Nodes (24): LoggerDifferentLevels, LoggerInitialization, LoggerLogging, LoggerPathFiltering, DiagnosticEvent, Level, Message, Subsystem (+16 more)
+Cohesion: 0.10
+Nodes (22): PresentFunc, CreateAndEnableHook(), CreateHook(), FrameResources, HRESULT, SwapChainType, T, UINT (+14 more)
 
 ### Community 188 - "StereoFrameContext"
 Cohesion: 0.13
@@ -1386,7 +1379,7 @@ Nodes (11): FSceneView, Pad, FSceneViewFamily, Pad_0000, Views, T, TArray, Array
 
 ### Community 191 - "definitions"
 Cohesion: 0.05
-Nodes (44): description, type, description, type, description, type, definitions, abstractV2_9 (+36 more)
+Nodes (41): description, type, description, type, definitions, abstractV2_9, compileGroupsDefines, compileGroupsLanguage (+33 more)
 
 ### Community 192 - "description"
 Cohesion: 0.08
@@ -1394,7 +1387,7 @@ Nodes (40): description, items, type, description, items, type, description, ite
 
 ### Community 193 - "required"
 Cohesion: 0.07
-Nodes (37): items, type, items, type, items, type, items, type (+29 more)
+Nodes (40): items, type, items, type, items, type, items, type (+32 more)
 
 ### Community 194 - "Render"
 Cohesion: 0.09
@@ -1409,16 +1402,16 @@ Cohesion: 0.20
 Nodes (10): HINSTANCE, HWND, LPARAM, LPSTR, LRESULT, UINT, WPARAM, ParseArgs() (+2 more)
 
 ### Community 197 - "required"
-Cohesion: 0.07
-Nodes (37): items, type, items, type, items, type, items, type (+29 more)
+Cohesion: 0.08
+Nodes (30): items, type, items, type, items, type, items, items (+22 more)
 
 ### Community 198 - "TEST"
 Cohesion: 0.22
 Nodes (9): CrossBackendAI, GenerateTelemetry, HighFPS_QueueStress, LongDuration_MemoryStability, NegativeTests, unique_ptr, vector, CreateAllBackends() (+1 more)
 
-### Community 199 - "hkClearDepthStencilView"
-Cohesion: 0.25
-Nodes (8): D3D12_CLEAR_FLAGS, D3D12_RECT, INT, FLOAT, ID3D12GraphicsCommandList, UINT8, hkClearDepthStencilView(), hkDrawIndexedInstanced()
+### Community 199 - "UINT"
+Cohesion: 0.16
+Nodes (14): D3D12_CLEAR_FLAGS, D3D12_RECT, ID3D12CommandList, INT, BOOL, FLOAT, ID3D12CommandQueue, ID3D12GraphicsCommandList (+6 more)
 
 ### Community 200 - "NexVR Engine — Architecture & Performance Baseline (v2.1)"
 Cohesion: 0.18
@@ -1453,12 +1446,12 @@ Cohesion: 0.06
 Nodes (38): description, items, type, description, items, type, uniqueItems, enum (+30 more)
 
 ### Community 208 - "properties"
-Cohesion: 0.05
-Nodes (37): description, items, type, description, items, minItems, type, description (+29 more)
+Cohesion: 0.06
+Nodes (38): description, items, type, description, items, minItems, type, description (+30 more)
 
-### Community 209 - "ID3D11Device"
-Cohesion: 0.14
-Nodes (13): D3D11_SUBRESOURCE_DATA, D3D11_TEXTURE2D_DESC, OnConstantBufferUpdate, Initialize, ID3D11Texture2D, hkCreateTexture2D(), ID3D11Buffer, ID3D11Device (+5 more)
+### Community 209 - "ID3D11Buffer"
+Cohesion: 0.29
+Nodes (6): ID3D11Buffer, ID3D11SamplerState, ImGui_ImplDX11_RenderState, Device, DeviceContext, VertexConstantBuffer
 
 ### Community 210 - "FrameTimingSnapshot"
 Cohesion: 0.20
@@ -1477,12 +1470,12 @@ Cohesion: 0.07
 Nodes (37): properties, description, items, type, installerExportTargets, installerFileSetDirectoriesV2_4, installersV2_0, installersV2_4 (+29 more)
 
 ### Community 214 - "properties"
-Cohesion: 0.06
-Nodes (37): description, items, minItems, type, description, type, $ref, id (+29 more)
+Cohesion: 0.05
+Nodes (40): description, items, minItems, type, description, type, $ref, id (+32 more)
 
 ### Community 215 - "properties"
-Cohesion: 0.07
-Nodes (29): $ref, $ref, description, minimum, type, $ref, description, type (+21 more)
+Cohesion: 0.06
+Nodes (34): $ref, $ref, description, minimum, type, $ref, description, type (+26 more)
 
 ### Community 216 - "properties"
 Cohesion: 0.09
@@ -1541,8 +1534,8 @@ Cohesion: 0.36
 Nodes (8): VkBufferMemoryBarrier, VkDependencyFlags, VkEvent, VkImageMemoryBarrier, VkMemoryBarrier, VkPipelineStageFlags, Hooked_vkCmdPipelineBarrier(), Hooked_vkCmdWaitEvents()
 
 ### Community 230 - "properties"
-Cohesion: 0.08
-Nodes (31): $ref, $ref, description, type, additionalProperties, description, properties, propertyNames (+23 more)
+Cohesion: 0.09
+Nodes (28): $ref, description, type, properties, properties, $ref, properties, properties (+20 more)
 
 ### Community 231 - "name"
 Cohesion: 0.08
@@ -1556,9 +1549,9 @@ Nodes (8): ConjugateQuaternion(), time_point, XrPosef, XrQuaternionf, ComputeAim
 Cohesion: 0.43
 Nodes (4): ClassifiesFormatsCorrectly, DepthClassifier, Classify, TEST()
 
-### Community 234 - "hkOMSetRenderTargets"
-Cohesion: 0.31
-Nodes (9): D3D12_DESCRIPTOR_HEAP_TYPE, BOOL, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_DEPTH_STENCIL_VIEW_DESC, ID3D12Device, hkCopyDescriptors(), hkCopyDescriptorsSimple(), hkCreateDepthStencilView() (+1 more)
+### Community 234 - "hkCopyDescriptorsSimple"
+Cohesion: 0.43
+Nodes (7): D3D12_DESCRIPTOR_HEAP_TYPE, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_DEPTH_STENCIL_VIEW_DESC, ID3D12Device, hkCopyDescriptors(), hkCopyDescriptorsSimple(), hkCreateDepthStencilView()
 
 ### Community 235 - "NexVR Engine - Production Scorecard Audit & Release Checklist"
 Cohesion: 0.29
@@ -1584,9 +1577,9 @@ Nodes (6): VkDevice, VkFramebuffer, VkFramebufferCreateInfo, GetFramebufferRecor
 Cohesion: 0.07
 Nodes (27): description, type, description, type, description, minimum, type, description (+19 more)
 
-### Community 241 - "minimum"
+### Community 241 - "type"
 Cohesion: 0.07
-Nodes (28): description, items, $ref, type, description, items, $ref, type (+20 more)
+Nodes (32): items, description, items, $ref, type, description, items, type (+24 more)
 
 ### Community 242 - "TestModel"
 Cohesion: 0.38
@@ -1602,7 +1595,7 @@ Nodes (6): Dear ImGui, DirectML, MinHook, ONNX Runtime, OpenXR Loader, Third-Par
 
 ### Community 245 - "definitions"
 Cohesion: 0.07
-Nodes (27): description, type, description, type, description, minimum, type, description (+19 more)
+Nodes (30): description, type, description, type, description, minimum, type, description (+22 more)
 
 ### Community 246 - "morph-route.mjs"
 Cohesion: 0.53
@@ -1623,10 +1616,6 @@ Nodes (27): properties, properties, required, properties, configurePresetsArchit
 ### Community 250 - "NexVR Engine — Commercial Game & Platform Compatibility Matrix"
 Cohesion: 0.33
 Nodes (5): 1. Verified PC Games Matrix, 2. Hardware & Driver Compatibility, 3. OpenXR Headset & Runtime Support, 4. Anti-Cheat Posture Tier Matrix, NexVR Engine — Commercial Game & Platform Compatibility Matrix
-
-### Community 251 - "TEST_F"
-Cohesion: 0.40
-Nodes (4): TestLifecycleTransitions, testing::Test, TEST_F(), VulkanLifecycleTest
 
 ### Community 252 - "TEST"
 Cohesion: 0.33
@@ -1656,17 +1645,17 @@ Nodes (4): cliTarget, __dirname, dllTarget, processNameLower
 Cohesion: 0.33
 Nodes (5): MemoryUsage, modelBytes, temporaryBytes, tensorBytes, totalBytes
 
-### Community 259 - "AdaptiveQualitySettings"
-Cohesion: 0.25
-Nodes (7): AdaptiveQualitySettings, emergency2DRecommended, level, reconstructionRadius, renderScale, warpQuality, AdaptiveQualityLevel
+### Community 259 - "cmake/version-schema.json"
+Cohesion: 0.29
+Nodes (6): additionalProperties, dependencies, program, required, $schema, type
 
 ### Community 260 - "properties"
 Cohesion: 0.08
 Nodes (25): description, type, description, type, description, type, description, type (+17 more)
 
 ### Community 261 - "type"
-Cohesion: 0.11
-Nodes (21): additionalProperties, properties, type, compilerImplicit, description, items, type, type (+13 more)
+Cohesion: 0.09
+Nodes (25): additionalProperties, properties, type, compilerImplicit, sourceFileExtensions, description, items, type (+17 more)
 
 ### Community 262 - "8841c8b524587a9aee211c0ac198f604/version-schema.json"
 Cohesion: 0.29
@@ -1693,8 +1682,8 @@ Cohesion: 0.40
 Nodes (4): cp, lines, out, parts
 
 ### Community 268 - "properties"
-Cohesion: 0.07
-Nodes (29): $ref, $ref, description, minimum, type, $ref, description, type (+21 more)
+Cohesion: 0.06
+Nodes (31): description, $ref, type, $ref, items, type, configurationProjectsV2_9, $ref (+23 more)
 
 ### Community 269 - "ImDrawData"
 Cohesion: 0.13
@@ -1713,8 +1702,8 @@ Cohesion: 0.40
 Nodes (5): ImGuiKeyData, AnalogValue, Down, DownDuration, DownDurationPrev
 
 ### Community 273 - "definitions"
-Cohesion: 0.09
-Nodes (23): description, type, description, type, description, type, description, type (+15 more)
+Cohesion: 0.11
+Nodes (19): description, type, description, type, description, type, description, type (+11 more)
 
 ### Community 274 - "VulkanDebugCallback"
 Cohesion: 0.40
@@ -1849,8 +1838,8 @@ Cohesion: 0.22
 Nodes (10): ID3D12CommandQueue, ID3D12Device, VkDevice, VkInstance, VkPhysicalDevice, CheckVulkanGraphicsRequirements, CreateReferenceSpace, CreateSession (+2 more)
 
 ### Community 318 - "type"
-Cohesion: 0.11
-Nodes (21): additionalProperties, properties, type, compilerImplicit, description, items, type, type (+13 more)
+Cohesion: 0.09
+Nodes (25): additionalProperties, properties, type, compilerImplicit, sourceFileExtensions, description, items, type (+17 more)
 
 ### Community 321 - "ImGuiListClipper"
 Cohesion: 0.11
@@ -1920,9 +1909,9 @@ Nodes (17): additionalProperties, properties, additionalProperties, properties, 
 Cohesion: 0.16
 Nodes (17): additionalProperties, properties, additionalProperties, properties, additionalProperties, properties, $ref, codemodelV2_0 (+9 more)
 
-### Community 339 - "environment"
-Cohesion: 0.25
-Nodes (8): anyOf, properties, configureBuildTestPackagePresetsEnvironmentProperty, additionalProperties, description, properties, type, environment
+### Community 339 - "cacheVariables"
+Cohesion: 0.12
+Nodes (17): anyOf, $ref, additionalProperties, description, properties, propertyNames, type, properties (+9 more)
 
 ### Community 340 - "^client-[^/]+$"
 Cohesion: 0.15
@@ -1976,9 +1965,9 @@ Nodes (15): installerCxxModuleBmiTargetV2_5, installerFileSetTargetV2_4, descrip
 Cohesion: 0.15
 Nodes (15): toolchainsObjV1_0, toolchainsObjV1_1, $ref, kind, toolchains, version, description, type (+7 more)
 
-### Community 353 - "frame_timing_manager.h"
-Cohesion: 0.29
-Nodes (4): array, WINDOW_SIZE, Average, Reset
+### Community 353 - "Hooked_vkQueuePresentKHR"
+Cohesion: 0.33
+Nodes (6): VkFence, VkPresentInfoKHR, VkQueue, VkSubmitInfo, Hooked_vkQueuePresentKHR(), Hooked_vkQueueSubmit()
 
 ### Community 354 - "enum"
 Cohesion: 0.15
@@ -2001,8 +1990,8 @@ Cohesion: 0.15
 Nodes (14): properties, buildPresetsItemsV4, after-timeout, expand, off, on, only, until-fail (+6 more)
 
 ### Community 359 - "properties"
-Cohesion: 0.21
-Nodes (13): items, additionalProperties, properties, type, description, type, description, items (+5 more)
+Cohesion: 0.29
+Nodes (10): items, additionalProperties, properties, type, description, items, properties, type (+2 more)
 
 ### Community 360 - "testPresetsFilterExcludeFixturesV2"
 Cohesion: 0.15
@@ -2013,8 +2002,8 @@ Cohesion: 0.15
 Nodes (13): testPresetsFilterIncludeIndexAsObjectV2, description, type, end, start, stride, description, type (+5 more)
 
 ### Community 362 - "5d7d7905d28b03cecc567fe68c785594/schema_index.json"
-Cohesion: 0.22
-Nodes (8): definitions, $ref, items, type, properties, objects, $schema, type
+Cohesion: 0.15
+Nodes (12): definitions, $ref, cmake, objects, reply, items, type, properties (+4 more)
 
 ### Community 363 - "properties"
 Cohesion: 0.15
@@ -2088,29 +2077,29 @@ Nodes (13): testPresetsFilterIncludeIndexAsObjectV2, description, type, end, sta
 Cohesion: 0.15
 Nodes (12): 1. Golden Pipeline Overview, 2. Stage-by-Stage Specification, 3. Immutable Architectural Invariants, NexVR Engine — Golden Pipeline Architecture Contract, Stage 1: Process Injection & Zero-Loader-Lock Bootstrap, Stage 2: Hook Installation & Transactional Detours, Stage 3: Graphics Backend Detection & Initialization, Stage 4: Swapchain Interception & Backbuffer Extraction (+4 more)
 
-### Community 381 - "TEST"
-Cohesion: 0.33
-Nodes (5): ComputesRollingTimingSnapshot, RejectsNegativeInputsByClampingToZero, FrameTimingSnapshot, Update, TEST()
+### Community 381 - "parentIndex"
+Cohesion: 0.40
+Nodes (5): description, minimum, $ref, type, parentIndex
 
 ### Community 382 - "paths"
-Cohesion: 0.13
-Nodes (15): description, $ref, type, paths, build, source, additionalProperties, properties (+7 more)
+Cohesion: 0.17
+Nodes (12): description, $ref, type, paths, additionalProperties, properties, type, build (+4 more)
 
 ### Community 383 - "major"
 Cohesion: 0.29
 Nodes (7): const, description, const, description, major, minor, properties
 
 ### Community 384 - "definitions"
-Cohesion: 0.20
-Nodes (10): additionalProperties, definitions, cmakeFilesV1_1, globsDependentV1_1, kind, description, type, const (+2 more)
+Cohesion: 0.17
+Nodes (12): additionalProperties, definitions, cmakeFilesV1_1, globsDependentV1_1, inputs, kind, description, type (+4 more)
 
 ### Community 385 - "paths"
-Cohesion: 0.13
-Nodes (15): description, $ref, type, paths, build, source, additionalProperties, properties (+7 more)
+Cohesion: 0.17
+Nodes (12): description, $ref, type, paths, additionalProperties, properties, type, build (+4 more)
 
-### Community 386 - "file_api/schema_index.json"
-Cohesion: 0.25
-Nodes (7): $ref, items, type, properties, objects, $schema, type
+### Community 386 - "cmake"
+Cohesion: 0.22
+Nodes (9): description, properties, type, $ref, items, type, properties, cmake (+1 more)
 
 ### Community 387 - "properties"
 Cohesion: 0.18
@@ -2133,16 +2122,16 @@ Cohesion: 0.18
 Nodes (11): properties, required, type, description, items, type, commands, files (+3 more)
 
 ### Community 392 - "items"
-Cohesion: 0.22
-Nodes (11): inputs, items, items, type, additionalProperties, required, type, expression (+3 more)
+Cohesion: 0.28
+Nodes (9): items, items, additionalProperties, required, type, expression, path, paths (+1 more)
 
 ### Community 393 - "properties"
 Cohesion: 0.18
 Nodes (11): properties, required, type, description, items, type, commands, files (+3 more)
 
 ### Community 394 - "items"
-Cohesion: 0.22
-Nodes (11): inputs, items, items, type, additionalProperties, required, type, expression (+3 more)
+Cohesion: 0.28
+Nodes (9): items, items, additionalProperties, required, type, expression, path, paths (+1 more)
 
 ### Community 395 - "folder"
 Cohesion: 0.20
@@ -2173,8 +2162,8 @@ Cohesion: 0.20
 Nodes (10): description, type, description, type, properties, cpack, ctest, root (+2 more)
 
 ### Community 402 - "version"
-Cohesion: 0.12
-Nodes (16): isDirty, major, minor, patch, string, description, type, type (+8 more)
+Cohesion: 0.20
+Nodes (10): isDirty, major, minor, patch, string, version, additionalProperties, description (+2 more)
 
 ### Community 403 - "897df675c56f49750054a0cd0981e6b5/schema_codemodel.json"
 Cohesion: 0.20
@@ -2189,8 +2178,8 @@ Cohesion: 0.20
 Nodes (10): required, backtrace, file, name, items, type, nodes, tests (+2 more)
 
 ### Community 406 - "definitions"
-Cohesion: 0.20
-Nodes (10): additionalProperties, definitions, cmakeFilesV1_1, globsDependentV1_1, kind, description, type, const (+2 more)
+Cohesion: 0.17
+Nodes (12): additionalProperties, definitions, cmakeFilesV1_1, globsDependentV1_1, inputs, kind, description, type (+4 more)
 
 ### Community 407 - "type"
 Cohesion: 0.20
@@ -2201,8 +2190,8 @@ Cohesion: 0.20
 Nodes (9): description, configurations, kind, paths, version, oneOf, required, $schema (+1 more)
 
 ### Community 409 - "version"
-Cohesion: 0.12
-Nodes (16): isDirty, major, minor, patch, string, description, type, type (+8 more)
+Cohesion: 0.20
+Nodes (10): isDirty, major, minor, patch, string, version, additionalProperties, description (+2 more)
 
 ### Community 410 - "properties"
 Cohesion: 0.20
@@ -2240,9 +2229,9 @@ Nodes (9): major, minor, const, type, properties, kind, version, required (+1 mo
 Cohesion: 0.22
 Nodes (8): description, inputs, kind, version, oneOf, required, $schema, type
 
-### Community 419 - "cmake/version-schema.json"
-Cohesion: 0.22
-Nodes (8): additionalProperties, additionalItems, type, type, properties, dependencies, $schema, type
+### Community 419 - "properties"
+Cohesion: 0.40
+Nodes (5): additionalItems, type, type, properties, dependencies
 
 ### Community 420 - "version"
 Cohesion: 0.22
@@ -2289,8 +2278,8 @@ Cohesion: 0.25
 Nodes (8): replyError, type, error, error, additionalProperties, properties, required, type
 
 ### Community 432 - "paths"
-Cohesion: 0.17
-Nodes (12): cmake, cpack, ctest, objects, reply, root, additionalProperties, description (+4 more)
+Cohesion: 0.25
+Nodes (8): cpack, ctest, root, additionalProperties, description, required, type, paths
 
 ### Community 433 - "items"
 Cohesion: 0.25
@@ -2317,8 +2306,8 @@ Cohesion: 0.25
 Nodes (8): items, additionalProperties, description, properties, type, via, description, type
 
 ### Community 439 - "required"
-Cohesion: 0.25
-Nodes (8): required, dependencies, name, program, type, version, required, required
+Cohesion: 0.40
+Nodes (5): required, name, type, version, required
 
 ### Community 440 - "program"
 Cohesion: 0.25
@@ -2332,9 +2321,9 @@ Nodes (7): backtraceGraph, kind, tests, version, required, $schema, type
 Cohesion: 0.25
 Nodes (8): enum, code, directory, export, importedRuntimeArtifacts, runtimeDependencySet, script, target
 
-### Community 443 - "kindJsonFile"
-Cohesion: 0.13
-Nodes (15): definitions, kindJsonFile, replyError, type, error, jsonFile, kind, additionalProperties (+7 more)
+### Community 443 - "replyError"
+Cohesion: 0.25
+Nodes (8): replyError, type, error, error, additionalProperties, properties, required, type
 
 ### Community 444 - "paths"
 Cohesion: 0.17
@@ -2408,17 +2397,17 @@ Nodes (7): const, type, const, type, major, minor, properties
 Cohesion: 0.29
 Nodes (7): additionalProperties, required, type, backtraceGraph, commands, files, nodes
 
-### Community 462 - "cmake"
-Cohesion: 0.25
-Nodes (8): description, properties, required, type, generator, paths, version, cmake
+### Community 462 - "required"
+Cohesion: 0.29
+Nodes (7): required, generator, jsonFile, kind, paths, version, required
 
 ### Community 463 - "debuggerV2_8"
 Cohesion: 0.29
 Nodes (7): additionalProperties, properties, type, debuggerV2_8, workingDirectory, description, type
 
-### Community 464 - "DiagnosticQueueStats"
-Cohesion: 0.14
-Nodes (13): DispatchOverheadProfile, GetStats, DiagnosticQueueStats, enqueueFailures, eventsDropped, eventsEnqueued, queueHighWatermark, workerWakeups (+5 more)
+### Community 464 - "hkMap"
+Cohesion: 0.60
+Nodes (5): D3D12_RANGE, ID3D12Resource, hkMap(), hkUnmap(), PopMappedResourcePtr()
 
 ### Community 465 - "presets/schema.json"
 Cohesion: 0.29
@@ -2496,9 +2485,9 @@ Nodes (6): description, minimum, $ref, type, backtrace, backtrace
 Cohesion: 0.33
 Nodes (6): INTERFACE, PRIVATE, PUBLIC, visibility, enum, type
 
-### Community 484 - "frame_coordinator.cpp"
-Cohesion: 0.08
-Nodes (12): CameraDeltaTrackerTest, DX12StereoRendererTest, Initialization, CameraRankingEngine, RankCandidates, vector, Matrix4x4, StereoParams (+4 more)
+### Community 484 - "camera_ranking_engine.h"
+Cohesion: 0.50
+Nodes (3): CameraRankingEngine, RankCandidates, vector
 
 ### Community 485 - "required"
 Cohesion: 0.40
@@ -2537,7 +2526,7 @@ Cohesion: 0.40
 Nodes (5): allOf, description, type, unevaluatedProperties, configurePresetsTraceV7
 
 ### Community 494 - "string"
-Cohesion: 0.15
+Cohesion: 0.12
 Nodes (6): string, FrameTimingSnapshot, DWORD, wstring, InjectDLL(), main()
 
 ### Community 495 - "configurePresetsWarningsV1"
@@ -2592,9 +2581,9 @@ Nodes (5): required, name, properties, type, value
 Cohesion: 0.15
 Nodes (12): AddCustomRectRegular(), CalcCustomRectUV(), GetCustomRectByIndex(), GetCustomRect, ImFontAtlasRectId, ImFontAtlasRect, h, uv0 (+4 more)
 
-### Community 508 - "sourceFileExtensions"
+### Community 508 - "main"
 Cohesion: 0.50
-Nodes (4): sourceFileExtensions, description, items, type
+Nodes (3): ID3D11Texture2D, main(), SaveBMP()
 
 ### Community 509 - "$schema"
 Cohesion: 0.50
@@ -2608,9 +2597,9 @@ Nodes (4): description, oneOf, $schema, type
 Cohesion: 0.40
 Nodes (5): installerPaths, description, items, type, oneOf
 
-### Community 512 - "file_api/schema_target.json"
-Cohesion: 0.40
-Nodes (4): description, oneOf, $schema, type
+### Community 512 - "TEST"
+Cohesion: 0.50
+Nodes (3): DX12StereoRendererTest, Initialization, TEST()
 
 ### Community 513 - "cmakeMinimumRequiredV10"
 Cohesion: 0.40
@@ -2672,9 +2661,9 @@ Nodes (5): testPresetsExecutionV2, allOf, description, type, unevaluatedProperti
 Cohesion: 0.50
 Nodes (4): testPresetsFilterExcludeV10, allOf, description, type
 
-### Community 529 - "fault_injector.cpp"
-Cohesion: 0.29
-Nodes (9): DeviceLostTransitionAndRecovery, Dx11FaultPoint, FaultInjector, InjectFault, InjectVulkanFault, ShouldFail, ShouldVulkanFail, TEST_F() (+1 more)
+### Community 529 - "Clear"
+Cohesion: 0.15
+Nodes (11): DeviceLostTransitionAndRecovery, Dx11FaultPoint, FaultInjector, Clear, InjectFault, InjectVulkanFault, ShouldVulkanFail, testing::Test (+3 more)
 
 ### Community 530 - "config"
 Cohesion: 0.67
@@ -2708,9 +2697,9 @@ Nodes (4): installerTargetIndex, description, minimum, type
 Cohesion: 0.67
 Nodes (3): _highlight(), _highlightText(), SphinxHighlight
 
-### Community 539 - "CompatibilityScore"
-Cohesion: 0.20
-Nodes (10): CompatibilityReadiness, CompatibilityReason, message, signal, CompatibilityScore, readiness, reasonCount, reasons (+2 more)
+### Community 539 - "Hooked_vkCmdClearDepthStencilImage"
+Cohesion: 0.50
+Nodes (4): VkImageLayout, VkImageSubresourceRange, Hooked_vkCmdClearDepthStencilImage(), VkClearDepthStencilValue
 
 ### Community 540 - "installerItemTypesV2_4"
 Cohesion: 0.50
@@ -2728,9 +2717,9 @@ Nodes (4): installerTargetIndex, description, minimum, type
 Cohesion: 0.50
 Nodes (4): kind, const, description, type
 
-### Community 544 - "vulkan_descriptor_tracker.cpp"
-Cohesion: 0.38
-Nodes (9): VkDescriptorPool, VkDescriptorSet, VkDevice, VkWriteDescriptorSet, GetDescriptorSetInfo, ResetDescriptorPool, TrackDescriptorSets, UntrackDescriptorSets (+1 more)
+### Community 544 - "name"
+Cohesion: 0.67
+Nodes (3): description, type, name
 
 ### Community 545 - "VulkanMappedMemory"
 Cohesion: 0.20
@@ -2747,10 +2736,6 @@ Nodes (3): call_mod(), my_module, mymodule
 ### Community 548 - "ExportImportList"
 Cohesion: 0.83
 Nodes (3): ExportImportList script, die(), IsBitcode()
-
-### Community 549 - "Dx12DeviceResources"
-Cohesion: 0.25
-Nodes (6): Dx12DeviceResources, commandQueue, device, ComPtr, ID3D12CommandQueue, ID3D12Device
 
 ### Community 550 - "value"
 Cohesion: 0.67
@@ -2776,10 +2761,6 @@ Nodes (8): description, properties, required, type, generator, paths, version, c
 Cohesion: 0.25
 Nodes (8): description, type, additionalProperties, description, properties, type, name, program
 
-### Community 618 - "id"
-Cohesion: 0.33
-Nodes (7): id, properties, type, description, type, fromDependency, id
-
 ### Community 619 - "StereoViewport"
 Cohesion: 0.29
 Nodes (7): StereoViewport, height, maxDepth, minDepth, topLeftX, topLeftY, width
@@ -2789,20 +2770,12 @@ Cohesion: 0.52
 Nodes (6): GenerateColMajorProj(), GenerateCombinedVP(), GenerateNoise(), GenerateReversedZProj(), GenerateRowMajorProj(), main()
 
 ### Community 621 - "kindJsonFile"
-Cohesion: 0.33
-Nodes (6): kindJsonFile, jsonFile, kind, additionalProperties, required, type
-
-### Community 622 - "condition"
-Cohesion: 0.33
-Nodes (6): properties, properties, $ref, buildPresetsAdditionalPropertiesV10, buildPresetsAdditionalPropertiesV3, condition
+Cohesion: 0.17
+Nodes (12): kindJsonFile, jsonFile, kind, description, type, type, additionalProperties, properties (+4 more)
 
 ### Community 623 - "reverse_z_detector.h"
 Cohesion: 0.40
 Nodes (3): DepthConvention, ReverseZDetector, Detect
-
-### Community 624 - "projectIndex"
-Cohesion: 0.40
-Nodes (5): description, minimum, $ref, type, projectIndex
 
 ### Community 625 - "Quaternion"
 Cohesion: 0.40
@@ -2828,17 +2801,9 @@ Nodes (4): testPresetsFilterExcludeV10, allOf, description, type
 Cohesion: 0.50
 Nodes (4): testPresetsFilterExcludeV2, allOf, description, type
 
-### Community 631 - "configurationDirectoryItemAbstractTargetIndexesV2_9"
-Cohesion: 0.50
-Nodes (4): description, items, type, configurationDirectoryItemAbstractTargetIndexesV2_9
-
 ### Community 632 - "testPresetsFilterExcludeV2"
 Cohesion: 0.50
 Nodes (4): testPresetsFilterExcludeV2, allOf, description, type
-
-### Community 633 - "profile_harness.cpp"
-Cohesion: 0.67
-Nodes (3): XMFLOAT4X4, GenerateProjMatrix(), main()
 
 ### Community 634 - "value"
 Cohesion: 0.67
@@ -2856,11 +2821,11 @@ Nodes (3): DetectsAndRejectsStaleQueueHandles, TEST(), VulkanQueueGenerationTest
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `mutex_` connect `mutex_` to `TemporalDepthFilter`, `VulkanGraphicsBackend`, `DX12Renderer`, `VulkanLifecycleManager`, `VulkanQueueManager`, `VulkanPipelineCache`, `VulkanStereoResourceManager`, `DX12StereoResourceManager`, `InputHook`, `DX12GraphicsBackend`, `SprintCompatibilityLogger`, `VulkanDescriptorManager`, `VulkanResourceStateTracker`, `frame_coordinator.h`, `vulkan_layer.cpp`, `MatrixClassifier`, `Dx12LifecycleManager`, `AiModelLoader`, `MemoryScanner`, `Dx11LifecycleManager`, `UniversalScanner`, `VulkanSyncManager`, `DX12FenceManager`, `logger.h`, `VulkanCommandManager`, `PerformanceProfiler`, `GpuProfiler`, `DX12ResourceStateTracker`, `DepthCandidateCollector`, `Dx12DescriptorTracker`, `OpenXRHealthMonitor`, `DX12PipelineStateCache`, `RuntimeState`, `base_hook.h`, `dx11_hook.cpp`, `frame_coordinator.cpp`, `VRConfig`, `DepthCandidate`, `DX12StereoRenderer`, `string`, `DepthSnapshot`?**
+- **Why does `mutex_` connect `mutex_` to `TemporalDepthFilter`, `VulkanGraphicsBackend`, `DX12Renderer`, `VulkanLifecycleManager`, `VulkanQueueManager`, `VulkanPipelineCache`, `VulkanStereoResourceManager`, `ImGuiDX12Integration`, `InputHook`, `DX12StereoResourceManager`, `DX12GraphicsBackend`, `SprintCompatibilityLogger`, `VulkanDescriptorManager`, `VulkanResourceStateTracker`, `frame_coordinator.h`, `vulkan_layer.cpp`, `MatrixClassifier`, `Dx12LifecycleManager`, `AiModelLoader`, `MemoryScanner`, `Dx11LifecycleManager`, `UniversalScanner`, `VulkanSyncManager`, `DX12FenceManager`, `logger.h`, `VulkanCommandManager`, `PerformanceProfiler`, `ID3D11DeviceContext`, `DX12ResourceStateTracker`, `DepthCandidateCollector`, `Dx12DescriptorTracker`, `OpenXRHealthMonitor`, `DX12PipelineStateCache`, `RuntimeState`, `dx12_hook.cpp`, `DepthCandidate`, `DX12StereoRenderer`, `string`, `DepthSnapshot`?**
   _High betweenness centrality (0.100) - this node is a cross-community bridge._
 - **Why does `DepthLockManager` connect `DepthSnapshot` to `mutex_`, `FrameCoordinator`?**
   _High betweenness centrality (0.017) - this node is a cross-community bridge._
-- **Why does `DX12Renderer` connect `DX12Renderer` to `mutex_`, `TextureHandle`, `DX11Renderer`, `dx12_renderer.cpp`, `IRenderer`?**
+- **Why does `DX12Renderer` connect `DX12Renderer` to `mutex_`, `TextureHandle`, `string`, `DX11Renderer`, `dx12_renderer.cpp`, `IRenderer`?**
   _High betweenness centrality (0.015) - this node is a cross-community bridge._
 - **What connects `ALLOWED_MODELS`, `currentMatrix`, `previousMatrix` to the rest of the system?**
   _4143 weakly-connected nodes found - possible documentation gaps or missing edges._

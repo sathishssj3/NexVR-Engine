@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 project(VRInject VERSION 0.1.0 LANGUAGES C CXX)
 
-set(CMAKE_POLICY_DEFAULT_CMP0169 OLD)
-set(CMAKE_POLICY_DEFAULT_CMP0148 OLD)
+
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -272,7 +271,13 @@ target_link_libraries(NexVRCore PRIVATE Vulkan::Vulkan openxr_loader d3d11 d3d12
 add_dependencies(NexVRCore copy_shaders_for_dx12)
 
 add_executable(test_openxr_vulkan_swapchain tests/test_openxr_vulkan_swapchain.cpp)
-target_include_directories(test_openxr_vulkan_swapchain PRIVATE ${PROJECT_SOURCE_DIR} ${GTEST_INCLUDE_DIRS} ${OPENXR_INCLUDE_DIR})
+target_include_directories(test_openxr_vulkan_swapchain PRIVATE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/src ${GTEST_INCLUDE_DIRS} ${OPENXR_INCLUDE_DIR})
 target_link_libraries(test_openxr_vulkan_swapchain PRIVATE NexVRCore Vulkan::Vulkan openxr_loader)
 
+add_executable(test_openxr_harness tests/harness/test_openxr_harness.cpp tests/harness/mock_openxr_runtime.cpp)
+target_include_directories(test_openxr_harness PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR} ${GTEST_INCLUDE_DIRS} ${OPENXR_INCLUDE_DIR} ${MINHOOK_INCLUDE_DIR} ${Vulkan_INCLUDE_DIRS})
+target_link_libraries(test_openxr_harness PRIVATE NexVRCore d3d11 gtest_main)
+add_test(NAME test_openxr_harness COMMAND test_openxr_harness)
+
 include(cmake/Testing.cmake)
+

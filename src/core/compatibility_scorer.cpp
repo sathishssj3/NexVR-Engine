@@ -1,6 +1,7 @@
 #include "core/compatibility_scorer.h"
 
 #include "core/diagnostic_context.h"
+#include "core/subsystem_context.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -95,7 +96,7 @@ void CompatibilityScorer::PostDiagnostic(const CompatibilityScore& score) {
         std::snprintf(message, sizeof(message), "score=%u stereo disabled by compatibility gate", score.score);
     }
 
-    DiagnosticContext::Get().PostEvent(
+    SubsystemContext::Get().GetDiagnosticContext()->PostEvent(
         score.readiness == CompatibilityReadiness::Degraded ? DiagnosticLevel::Warning : DiagnosticLevel::Error,
         "Compatibility",
         message);

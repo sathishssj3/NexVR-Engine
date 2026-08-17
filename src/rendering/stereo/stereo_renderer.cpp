@@ -69,6 +69,10 @@ bool StereoRenderer::RenderStereoFrame(ID3D11DeviceContext* context,
         cs = resourceManager->GetReprojectionShader(); // Fallback to standard reprojection if ASW shader is missing
     }
     
+    if (!cs) {
+        return false; // Cannot dispatch without a compute shader
+    }
+    
     context->CSSetShader(cs, nullptr, 0);
     context->CSSetConstantBuffers(0, 1, &cb);
 

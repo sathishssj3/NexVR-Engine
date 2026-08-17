@@ -1,9 +1,11 @@
 #include "heuristics/depth_lock_manager.h"
+#include "heuristics/depth_candidate_collector.h"
 #include "heuristics/depth_classifier.h"
 #include "heuristics/depth_delta_tracker.h"
 #include "heuristics/depth_validator.h"
 #include "heuristics/depth_ranking_engine.h"
 #include "heuristics/reverse_z_detector.h"
+#include "core/subsystem_context.h"
 
 namespace vrinject {
 
@@ -12,7 +14,7 @@ void DepthLockManager::OnDeviceLost() {
     m_state = DepthLockState::LOST;
     m_snapshot = DepthSnapshot();
     m_verificationFrames = 0;
-    DepthCandidateCollector::Get().Clear();
+    SubsystemContext::Get().GetDepthCandidateCollector()->Clear();
 }
 
 void DepthLockManager::OnFrameEnd(uint64_t frameNumber, uint32_t deviceGeneration, uint32_t swapchainGeneration, uint32_t swapchainWidth, uint32_t swapchainHeight) {
@@ -25,7 +27,7 @@ void DepthLockManager::OnFrameEnd(uint64_t frameNumber, uint32_t deviceGeneratio
         m_verificationFrames = 0;
     }
 
-    auto candidates = DepthCandidateCollector::Get().GetCandidatesSnapshot();
+    auto candidates = SubsystemContext::Get().GetDepthCandidateCollector()->GetCandidatesSnapshot();
     
     // Process pipeline
     for (auto& cand : candidates) {

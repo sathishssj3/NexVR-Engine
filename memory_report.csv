@@ -1,0 +1,4 @@
+Backend,ModelBytes,TensorBytes,TemporaryBytes,TotalBytes
+Vulkan,26214400,5242880,0,31457280
+DirectX 12,26214400,5242880,0,31457280
+DirectX 11,26214400,5242880,0,31457280

@@ -15,10 +15,6 @@ namespace vrinject {
 
 class PageScanner {
 public:
-    static PageScanner& Get() {
-        static PageScanner instance;
-        return instance;
-    }
 
     bool Initialize();
 
@@ -31,9 +27,10 @@ public:
     // Retrieves the latest resolved static base pointers that point (via chains) to candidates
     std::vector<uint8_t*> GetCandidateStaticPointers();
 
-private:
     PageScanner() = default;
     ~PageScanner() { StopDynamicScan(); }
+
+private:
 
     struct ModuleInfo {
         uint8_t* baseAddress = nullptr;

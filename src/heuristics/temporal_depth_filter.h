@@ -14,10 +14,7 @@ struct TemporalDepthFilterConfig {
 
 class TemporalDepthFilter {
 public:
-    static TemporalDepthFilter& Get() {
-        static TemporalDepthFilter instance;
-        return instance;
-    }
+    TemporalDepthFilter() = default;
 
     // Pass the best candidate chosen by the DepthRankingEngine for the current frame
     void Update(const DepthCandidate& bestFrameCandidate, uint64_t currentFrame);
@@ -29,7 +26,6 @@ public:
     bool GetLockedDepth(DepthCandidate& outLockedCandidate) const;
 
 private:
-    TemporalDepthFilter() = default;
 
     mutable std::mutex m_mutex;
     TemporalDepthFilterConfig m_config;

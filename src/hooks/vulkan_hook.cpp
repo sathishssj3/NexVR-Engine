@@ -15,7 +15,8 @@
 #include "rendering/vulkan/vulkan_image_view_tracker.h"
 #include "rendering/vulkan/vulkan_framebuffer_tracker.h"
 #include "rendering/vulkan/vulkan_depth_candidate_collector.h"
-#include <iostream>
+#include "core/diagnostic_context.h"
+#include "core/subsystem_context.h"
 #include "core/logger.h"
 
 #include <windows.h>
@@ -297,8 +298,8 @@ VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkQueuePresentKHR(
         RenderFrameSnapshot snapshot = VulkanLifecycleManager::Get().CreateSnapshot(queue);
         std::string error;
         if (VulkanSnapshotValidator::Validate(snapshot, error)) {
-            FrameCoordinator::Get().OnPresentBegin(snapshot);
-            FrameCoordinator::Get().OnPresentEnd();
+            SubsystemContext::Get().GetFrameCoordinator()->OnPresentBegin(snapshot);
+            SubsystemContext::Get().GetFrameCoordinator()->OnPresentEnd();
         } else {
             static int logCount = 0;
             if (logCount < 50) {

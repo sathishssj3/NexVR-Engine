@@ -1,15 +1,14 @@
 #pragma once
 #include "heuristics/camera_candidate.h"
 #include <cstdint>
+#include <string>
 
 namespace vrinject {
 
 class TemporalCameraFilter {
 public:
-    static TemporalCameraFilter& Get() {
-        static TemporalCameraFilter instance;
-        return instance;
-    }
+    TemporalCameraFilter() = default;
+    virtual ~TemporalCameraFilter() = default;
 
     // Pass the best candidate chosen by the CameraRankingEngine for the current frame
     void Update(const CameraCandidate& bestCandidate, uint64_t currentFrame);
@@ -21,8 +20,6 @@ public:
     void Reset();
 
 private:
-    TemporalCameraFilter() = default;
-
     enum class FilterState {
         SEARCHING,
         LOCKED,

@@ -12,10 +12,8 @@ namespace engine_scanners {
 // in GPU constant buffers when specific engine signatures (Unreal/Unity) fail.
 class UniversalScanner {
 public:
-    static UniversalScanner& Get() {
-        static UniversalScanner instance;
-        return instance;
-    }
+    UniversalScanner() = default;
+    ~UniversalScanner() = default;
 
     bool Initialize();
     void Shutdown();
@@ -25,8 +23,6 @@ public:
     bool ProcessConstantBuffer(void* data, size_t size);
 
 private:
-    UniversalScanner() = default;
-    ~UniversalScanner() = default;
 
     bool m_initialized = false;
     std::mutex m_mutex;
