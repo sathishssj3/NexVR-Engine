@@ -90,21 +90,21 @@ export function AboutPanel() {
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginBottom: 32, flexWrap: 'wrap' }}>
-          <button onClick={() => handleLink('https://github.com/sathishssj3/NexVR-Lab')} className="btn-glow" style={{ 
+          <button onClick={() => handleLink('https://github.com/sathishssj3/NexVR-Engine')} className="btn-glow" style={{ 
             background: 'rgba(0,240,255,0.08)', border: '1px solid rgba(0,240,255,0.25)', 
             padding: '10px 20px', borderRadius: 'var(--ag-radius-sm)', color: 'var(--ag-accent)', 
             cursor: 'pointer', fontFamily: 'var(--ag-font-mono)', fontSize: 11, letterSpacing: '1px' 
           }}>
             ◇ GITHUB
           </button>
-          <button onClick={() => handleLink('https://github.com/sathishssj3/NexVR-Lab/issues')} className="btn-glow" style={{ 
+          <button onClick={() => handleLink('https://github.com/sathishssj3/NexVR-Engine/issues')} className="btn-glow" style={{ 
             background: 'rgba(255,255,255,0.03)', border: '1px solid var(--ag-border)', 
             padding: '10px 20px', borderRadius: 'var(--ag-radius-sm)', color: 'var(--ag-text-primary)', 
             cursor: 'pointer', fontFamily: 'var(--ag-font-mono)', fontSize: 11, letterSpacing: '1px' 
           }}>
             ⚑ REPORT BUG
           </button>
-          <button onClick={() => handleLink('https://github.com/sathishssj3/NexVR-Lab/wiki')} className="btn-glow" style={{ 
+          <button onClick={() => handleLink('https://github.com/sathishssj3/NexVR-Engine/wiki')} className="btn-glow" style={{ 
             background: 'rgba(255,255,255,0.03)', border: '1px solid var(--ag-border)', 
             padding: '10px 20px', borderRadius: 'var(--ag-radius-sm)', color: 'var(--ag-text-primary)', 
             cursor: 'pointer', fontFamily: 'var(--ag-font-mono)', fontSize: 11, letterSpacing: '1px' 
