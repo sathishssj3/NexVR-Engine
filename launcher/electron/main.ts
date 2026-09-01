@@ -55,6 +55,9 @@ function createWindow() {
     height: 700,
     minWidth: 900,
     minHeight: 650,
+    center: true,
+    show: true,
+    backgroundColor: '#0a0d14',
     frame: false,
     icon: path.join(__dirname, '../../assets/icon.ico'),
     webPreferences: {
@@ -66,6 +69,9 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
     },
   });
+
+  mainWindow.center();
+  mainWindow.focus();
 
   if (isDev && process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL).catch(err => {
@@ -120,11 +126,14 @@ app.whenReady().then(() => {
 
   createWindow();
 
+  // Background check for instant engine hotfix on startup
+  setTimeout(() => {
+    checkForEngineHotfix().catch(() => {});
+  }, 2000);
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
-
-
 });
 
 app.on('window-all-closed', () => {
@@ -136,6 +145,7 @@ import './libraryManager';
 import './configManager';
 import './injectionManager';
 import './diagnosticsManager';
+import { checkForEngineHotfix } from './updateManager';
 
 // Native Window Controls Handler
 ipcMain.on('window:minimize', (event) => {

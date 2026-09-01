@@ -62,5 +62,10 @@ module.exports = {
     },
   ],
 
-  publish: null,  // No auto-update for v1.0 — add in v1.1
-}
+  publish: {
+    provider: 'github',
+    owner: 'sathishssj3',
+    repo: 'NexVR-Engine',
+    releaseType: 'release',
+  },
+};

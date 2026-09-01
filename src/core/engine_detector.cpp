@@ -90,6 +90,16 @@ void EngineDetector::Detect() {
         ScanForUnrealSignatures();
         return;
     }
+    if (exeStr.find("-Win64-Shipping") != std::string::npos || exeStr.find("PenguinHotel") != std::string::npos) {
+        LOG_INFO("Detected Unreal Engine shipping executable pattern.");
+        m_detection.type = EngineType::UnrealEngine5;
+        m_detection.versionString = "UE5.x (Modern Unreal Engine Title)";
+        m_detection.confidence = 0.85f;
+        m_detection.tuning = TuningFor(m_detection.type);
+        ApplyDetection(m_detection);
+        ScanForUnrealSignatures();
+        return;
+    }
 
     LOG_WARN("Engine type unknown. Defaulting to generic hooks and Universal Memory Scanner.");
     m_detection = {};

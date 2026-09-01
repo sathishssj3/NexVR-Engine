@@ -550,6 +550,15 @@ ipcMain.handle('library:scan', async (event): Promise<{ active: GameEntry[], wai
           if (!seenIds.has(cg.id)) {
             if (ignoredIds.includes(cg.id)) continue;
             seenIds.add(cg.id);
+            if (cg.executablePath && fs.existsSync(cg.executablePath)) {
+              const detected = inspectExeAPI(cg.executablePath);
+              if (detected !== 'Unknown') {
+                cg.api = detected;
+              }
+            }
+            if (cg.name.toLowerCase().includes('penguinhotel') && cg.installPath.toUpperCase().includes('MECCHA CHAMELEON')) {
+              cg.name = 'MECCHA CHAMELEON';
+            }
             const launcherArt = scanLauncherGameArt('epic', cg.id, cg.name) || scanLauncherGameArt('steam', cg.id, cg.name);
             if (launcherArt) {
               cg.iconBase64 = launcherArt;
@@ -601,11 +610,16 @@ ipcMain.handle('library:addCustom', async (event): Promise<{ success: boolean }>
   
   let api: 'DX11' | 'DX12' | 'Vulkan' | 'Unknown' = 'DX11';
   try {
-     const filesInInstall = fs.readdirSync(installPath);
-     const hasVulkan = filesInInstall.some(f => f.toLowerCase() === 'vulkan-1.dll' || f.toLowerCase().endsWith('.spv'));
-     const hasDX12 = filesInInstall.some(f => f.toLowerCase() === 'd3d12.dll' || f.toLowerCase() === 'd3d12core.dll');
-     if (hasVulkan) api = 'Vulkan';
-     else if (hasDX12) api = 'DX12';
+     const detected = inspectExeAPI(exePath);
+     if (detected !== 'Unknown') {
+       api = detected;
+     } else {
+       const filesInInstall = fs.readdirSync(installPath);
+       const hasVulkan = filesInInstall.some(f => f.toLowerCase() === 'vulkan-1.dll' || f.toLowerCase().endsWith('.spv'));
+       const hasDX12 = filesInInstall.some(f => f.toLowerCase() === 'd3d12.dll' || f.toLowerCase() === 'd3d12core.dll');
+       if (hasVulkan) api = 'Vulkan';
+       else if (hasDX12) api = 'DX12';
+     }
   } catch(e) {}
   
   const hasInjector = fs.existsSync(path.join(installPath, 'vrinject.dll'));
