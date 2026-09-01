@@ -79,8 +79,9 @@ launcher/test-results/
 *.zip
 build_auto/
 *.py
-test_extract/
 *.txt
+!docs/coupling_budget.txt
+
 
 # ML model binaries (large; track via Git LFS or external store if needed)
 models/

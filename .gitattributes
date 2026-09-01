@@ -5,8 +5,16 @@
 # GitHub Linguist language statistics overrides
 cmake/** linguist-vendored
 cmake/** linguist-documentation
+cmake/** linguist-detectable=false
 docs/** linguist-documentation
+docs/** linguist-detectable=false
 website/** linguist-documentation
+website/** linguist-detectable=false
 *.html linguist-documentation
+*.html linguist-detectable=false
 *.htm linguist-documentation
+*.htm linguist-detectable=false
+graphify-out/** linguist-vendored
+graphify-out/** linguist-detectable=false
+
 

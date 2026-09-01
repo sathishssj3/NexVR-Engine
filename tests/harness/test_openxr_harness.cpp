@@ -73,15 +73,44 @@ protected:
         depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
         hr = m_device->CreateTexture2D(&depthDesc, nullptr, &m_depthBuffer);
         ASSERT_TRUE(SUCCEEDED(hr));
+
+        m_hwnd = CreateWindowExA(0, "STATIC", "DummyHarness", WS_OVERLAPPEDWINDOW, 0, 0, 100, 100, nullptr, nullptr, nullptr, nullptr);
+        DXGI_SWAP_CHAIN_DESC scDesc = {};
+        scDesc.BufferCount = 1;
+        scDesc.BufferDesc.Width = 1024;
+        scDesc.BufferDesc.Height = 1024;
+        scDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        scDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+        scDesc.OutputWindow = m_hwnd;
+        scDesc.SampleDesc.Count = 1;
+        scDesc.Windowed = TRUE;
+
+        Microsoft::WRL::ComPtr<IDXGIDevice> dxgiDevice;
+        m_device.As(&dxgiDevice);
+        Microsoft::WRL::ComPtr<IDXGIAdapter> adapter;
+        if (dxgiDevice && SUCCEEDED(dxgiDevice->GetAdapter(&adapter))) {
+            Microsoft::WRL::ComPtr<IDXGIFactory> factory;
+            if (SUCCEEDED(adapter->GetParent(IID_PPV_ARGS(&factory)))) {
+                factory->CreateSwapChain(m_device.Get(), &scDesc, &m_swapchain);
+            }
+        }
     }
 
     void TearDown() override {
         MockOpenXRRuntime::Shutdown();
+        m_swapchain.Reset();
+        if (m_hwnd) {
+            DestroyWindow(m_hwnd);
+            m_hwnd = nullptr;
+        }
         m_depthBuffer.Reset();
         m_backBuffer.Reset();
         m_context.Reset();
         m_device.Reset();
     }
+
+    HWND m_hwnd = nullptr;
+    Microsoft::WRL::ComPtr<IDXGISwapChain> m_swapchain;
 
     Microsoft::WRL::ComPtr<ID3D11Device> m_device;
     Microsoft::WRL::ComPtr<ID3D11DeviceContext> m_context;
@@ -96,7 +125,7 @@ TEST_F(HeadlessHarnessTest, Stages4To8EndToEnd) {
     snapshot.backend = GraphicsBackend::DX11;
     snapshot.nativeDevice = m_device.Get();
     snapshot.nativeContext = m_context.Get();
-    snapshot.nativeSwapchain = (void*)0x9999;
+    snapshot.nativeSwapchain = m_swapchain.Get();
     snapshot.backBuffer = m_backBuffer.Get();
     snapshot.width = 1024;
     snapshot.height = 1024;

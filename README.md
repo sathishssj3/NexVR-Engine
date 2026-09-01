@@ -3,7 +3,7 @@
 <p align="center">
   <img src="assets/logo.png" width="300" style="border-radius: 50%;" alt="NexVR Engine Logo">
   <br><br>
-  <a href="https://github.com/sathishssj3/NexVR-Engine/actions/workflows/release.yml"><img src="https://img.shields.io/badge/build-passing-brightgreen?style=flat-square" alt="Build Status"></a>
+  <a href="https://github.com/sathishssj3/NexVR-Engine/actions/workflows/release.yml"><img src="https://github.com/sathishssj3/NexVR-Engine/actions/workflows/release.yml/badge.svg?branch=main" alt="CI Status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License"></a>
 </p>
 
