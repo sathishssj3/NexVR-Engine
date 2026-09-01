@@ -3,8 +3,8 @@
 <p align="center">
   <img src="assets/logo.png" width="300" style="border-radius: 50%;" alt="NexVR Engine Logo">
   <br><br>
-  <a href="https://github.com/sathishssj3/NexVR-Engine/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/sathishssj3/NexVR-Engine/release.yml?branch=main&style=flat-square" alt="Build Status"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/sathishssj3/NexVR-Engine?style=flat-square" alt="License"></a>
+  <a href="https://github.com/sathishssj3/NexVR-Lab/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/sathishssj3/NexVR-Lab/release.yml?branch=main&style=flat-square" alt="Build Status"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/sathishssj3/NexVR-Lab?style=flat-square" alt="License"></a>
 </p>
 
 > **Universal VR Injector** — Brings native OpenXR stereo rendering to flat-screen PC games by hooking into DX11, DX12, and Vulkan render pipelines.
@@ -60,7 +60,7 @@ Project context, current roadmap, and prior audit decisions are tracked in [docs
 
 ## 📦 Installation
 
-1. Download the latest **NexVR Engine Setup.exe** from the [Releases](https://github.com/sathishssj3/NexVR-Engine/releases) page.
+1. Download the latest **NexVR Engine Setup.exe** from the [Releases](https://github.com/sathishssj3/NexVR-Lab/releases) page.
 2. Run the installer — it installs to your local AppData by default.
 3. Launch **NexVR Engine** from your Start Menu.
 
@@ -108,8 +108,8 @@ Project context, current roadmap, and prior audit decisions are tracked in [docs
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/sathishssj3/NexVR-Engine.git
-cd NexVR-Engine
+git clone https://github.com/sathishssj3/NexVR-Lab.git
+cd NexVR-Lab
 
 # 2. Build the C++ engine (DLL, CLI, and injector)
 cmake -B build -S . -A x64

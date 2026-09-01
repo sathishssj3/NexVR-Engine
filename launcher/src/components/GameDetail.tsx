@@ -1,7 +1,7 @@
 import { SettingsPanel } from './SettingsPanel';
 import { SessionLog } from './SessionLog';
 
-export function GameDetail({ game, config, onConfigChange, logLines, onRemoveGame }: any) {
+export function GameDetail({ game, config, onConfigChange, logLines, onRemoveGame, onUninstallMod }: any) {
   const apiColors: Record<string, string> = {
     DX11: 'var(--ag-accent)',
     DX12: 'var(--ag-accent-success)',
@@ -36,23 +36,25 @@ export function GameDetail({ game, config, onConfigChange, logLines, onRemoveGam
         <div style={{ position: 'absolute', bottom: '-40%', left: '-20%', width: '60%', height: '120%', background: `radial-gradient(ellipse at center, ${apiColor}10, transparent 60%)`, pointerEvents: 'none', transform: 'rotate(-25deg)' }} />
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Ccircle cx=\'2\' cy=\'2\' r=\'1\' fill=\'rgba(255,255,255,0.08)\'/%3E%3C/svg%3E")', pointerEvents: 'none' }} />
         
-        {/* Title */}
-        <h1 style={{ 
-          position: 'relative', margin: '0 0 10px 0', fontSize: 40, fontWeight: 800, 
-          letterSpacing: '-0.5px', textShadow: '0 4px 20px rgba(0,0,0,0.6), 0 0 40px rgba(255,255,255,0.1)',
-          lineHeight: 1.1, fontFamily: 'var(--ag-font-display)'
-        }}>
-          {game.name}
-        </h1>
-        
-        {/* Path */}
-        <div style={{ 
-          position: 'relative', fontFamily: 'var(--ag-font-mono)', fontSize: 13, 
-          color: 'var(--ag-text-muted)', marginBottom: 20, display: 'flex', alignItems: 'center',
-          opacity: 0.9, background: 'rgba(0,0,0,0.3)', padding: '6px 12px', borderRadius: 4, width: 'fit-content'
-        }}>
-          <span style={{ color: `${apiColor}`, marginRight: 10, fontWeight: 'bold', textShadow: `0 0 8px ${apiColor}80` }}>PATH //</span> 
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 600 }}>{game.installPath}</span>
+        {/* Title Header */}
+        <div style={{ position: 'relative', marginBottom: 12 }}>
+          <h1 style={{ 
+            margin: '0 0 8px 0', fontSize: 38, fontWeight: 800, 
+            letterSpacing: '-0.5px', textShadow: '0 4px 20px rgba(0,0,0,0.6), 0 0 40px rgba(255,255,255,0.1)',
+            lineHeight: 1.1, fontFamily: 'var(--ag-font-display)'
+          }}>
+            {game.name}
+          </h1>
+          
+          {/* Path */}
+          <div style={{ 
+            fontFamily: 'var(--ag-font-mono)', fontSize: 12, 
+            color: 'var(--ag-text-muted)', display: 'flex', alignItems: 'center',
+            opacity: 0.9, background: 'rgba(0,0,0,0.3)', padding: '5px 12px', borderRadius: 4, width: 'fit-content'
+          }}>
+            <span style={{ color: `${apiColor}`, marginRight: 10, fontWeight: 'bold', textShadow: `0 0 8px ${apiColor}80` }}>PATH //</span> 
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 600 }}>{game.installPath}</span>
+          </div>
         </div>
         
         {/* Tags and Actions */}
@@ -90,6 +92,62 @@ export function GameDetail({ game, config, onConfigChange, logLines, onRemoveGam
             REMOVE
           </button>
         </div>
+
+        {/* Anti-Cheat Safety Guard Banner */}
+        {game.hasAntiCheat && (
+          <div style={{
+            marginTop: 20, padding: '14px 18px', borderRadius: 'var(--ag-radius-sm)',
+            background: 'rgba(255, 59, 92, 0.12)', border: '1px solid rgba(255, 59, 92, 0.4)',
+            display: 'flex', alignItems: 'center', gap: 14,
+            boxShadow: '0 4px 20px rgba(255, 59, 92, 0.1)'
+          }}>
+            <span style={{ fontSize: 24 }}>🛡️</span>
+            <div>
+              <div style={{ color: '#ff3b5c', fontWeight: 'bold', fontSize: 13, fontFamily: 'var(--ag-font-display)', letterSpacing: '1px' }}>
+                ANTI-CHEAT DETECTED ({game.antiCheatName || 'Multiplayer Guard'})
+              </div>
+              <div style={{ color: 'var(--ag-text-muted)', fontSize: 11, marginTop: 3 }}>
+                Injection is automatically locked to protect your account from multiplayer bans.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Active VR Mod / Play Flat Banner */}
+        {game.hasInjector && !game.hasAntiCheat && (
+          <div style={{
+            marginTop: 20, padding: '12px 18px', borderRadius: 'var(--ag-radius-sm)',
+            background: 'rgba(0, 230, 118, 0.08)', border: '1px solid rgba(0, 230, 118, 0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            boxShadow: '0 4px 20px rgba(0, 230, 118, 0.08)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--ag-accent-success)', boxShadow: '0 0 8px var(--ag-accent-success)' }} />
+              <div>
+                <div style={{ color: 'var(--ag-accent-success)', fontWeight: 'bold', fontSize: 12, fontFamily: 'var(--ag-font-mono)' }}>
+                  VR MOD ACTIVE IN GAME DIRECTORY
+                </div>
+                <div style={{ color: 'var(--ag-text-muted)', fontSize: 11, marginTop: 2 }}>
+                  NexVR injection binaries are deployed in this title.
+                </div>
+              </div>
+            </div>
+            {onUninstallMod && (
+              <button
+                onClick={onUninstallMod}
+                className="btn-glow"
+                style={{
+                  padding: '6px 14px', borderRadius: 4,
+                  background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.2)',
+                  color: '#fff', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--ag-font-mono)',
+                  letterSpacing: '0.5px'
+                }}
+              >
+                RESTORE FLAT SCREEN
+              </button>
+            )}
+          </div>
+        )}
       </div>
       
       {/* Settings */}

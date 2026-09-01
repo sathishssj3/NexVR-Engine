@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import type { GameEntry, VRStatus, VRConfig, ScanResult } from './types';
+import type { GameEntry, VRStatus, VRConfig, ScanResult, UpdateStatus } from './types';
 import { Sidebar } from './components/Sidebar';
 import { GameDetail } from './components/GameDetail';
 import { VRStatusBar } from './components/VRStatusBar';
 import { AboutPanel } from './components/AboutPanel';
+import { HeroCommandCenter } from './components/HeroCommandCenter';
+import { useFastSmoothScroll } from './hooks/useFastSmoothScroll';
 import './index.css';
 
 declare global {
@@ -26,7 +28,16 @@ declare global {
         openConfig: (id: string) => Promise<void>,
         openLog: (id: string) => Promise<void>
       },
-      inject: { deploy: (id: string) => Promise<{success: boolean, message: string, pid?: number, cancelled?: boolean}>, cancel: () => Promise<void>, monitor: (pid: number) => Promise<void> },
+      inject: {
+        deploy: (id: string) => Promise<{success: boolean, message: string, pid?: number, cancelled?: boolean}>,
+        cancel: () => Promise<void>,
+        monitor: (pid: number) => Promise<void>,
+        uninstall: (id: string) => Promise<{success: boolean, message: string}>
+      },
+      update: {
+        check: () => Promise<UpdateStatus>,
+        getStatus: () => Promise<{ version: string, timestamp: number, changelog: string }>
+      },
       log: {
         onLine: (cb: (line: string) => void) => void,
         offLine: () => void,
@@ -60,8 +71,12 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState<'library' | 'about'>('library');
   const [transitioning, setTransitioning] = useState(false);
   const [hasConsented, setHasConsented] = useState<boolean>(() => localStorage.getItem('ag_ac_consent') === 'true');
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const injectTokenRef = useRef<number>(0);
   const mainContentRef = useRef<HTMLDivElement>(null);
+
+  // Fast & smooth accelerated scrolling
+  useFastSmoothScroll(mainContentRef, { speed: 1.7, smoothness: 0.25 });
 
   const scanGames = async () => {
     if (window.ag && window.ag.library) {
@@ -77,6 +92,22 @@ export default function App() {
       const st = await window.ag.vr.status();
       setVrStatus(st);
     }, 5000);
+
+    // Query OTA hotfix status
+    if (window.ag && window.ag.update) {
+      window.ag.update.getStatus().then((st) => {
+        if (st && st.timestamp > 0) {
+          setUpdateStatus({
+            checking: false,
+            hasUpdate: false,
+            updated: true,
+            version: st.version,
+            changelog: st.changelog,
+          });
+        }
+      }).catch(() => {});
+    }
+
     return () => clearInterval(interval);
   }, []);
 
@@ -125,8 +156,33 @@ export default function App() {
     }
   };
 
-    const handleInject = async () => {
+  const handleUninstallMod = async () => {
     if (!selectedGame) return;
+    if (!window.confirm(`Restore "${selectedGame.name}" to Flat Screen?\n\nThis will remove vrinject.dll and shaders from the game directory so it starts normally without VR.`)) {
+      return;
+    }
+    const res = await window.ag.inject.uninstall(selectedGame.id);
+    if (res.success) {
+      window.alert("✓ " + res.message);
+      scanGames();
+    } else {
+      window.alert("Error: " + res.message);
+    }
+  };
+
+  const handleInject = async () => {
+    if (!selectedGame) return;
+
+    if (selectedGame.hasAntiCheat) {
+      window.alert(`🛡️ INJECTION BLOCKED FOR SAFETY\n\n"${selectedGame.name}" is protected by ${selectedGame.antiCheatName || 'Anti-Cheat'}.\n\nInjecting custom DLLs into anti-cheat protected titles is strictly disabled to prevent multiplayer account bans.`);
+      return;
+    }
+
+    if (!vrStatus.connected) {
+      if (!window.confirm(`⚠️ NO VR HEADSET DETECTED\n\nYour OpenXR / SteamVR runtime does not detect an active headset.\n\nMake sure your headset is powered on and SteamVR or Quest Link is active.\n\nDo you want to launch into VR anyway?`)) {
+        return;
+      }
+    }
     
     if (!hasConsented) {
       if (!window.confirm("WARNING: ACCOUNT BAN RISK\n\nInjecting into multiplayer games protected by Anti-Cheat software (e.g., Easy Anti-Cheat, BattlEye, Vanguard) is strictly prohibited and can result in permanent account bans.\n\nNexVR Engine explicitly refuses to inject when these systems are detected, but the risk remains.\n\nBy proceeding, you acknowledge this risk and agree to only use NexVR Engine with single-player or unprotected titles.\n\nDo you accept these risks and wish to continue?")) {
@@ -216,12 +272,24 @@ export default function App() {
             NEX/<span style={{ marginLeft: '-0.15em' }}>R</span> ENGINE
           </strong>
           <span style={{ 
-            marginLeft: 10, marginRight: 24, color: 'var(--ag-accent)', fontSize: 10, 
+            marginLeft: 10, marginRight: 16, color: 'var(--ag-accent)', fontSize: 10, 
             fontFamily: 'var(--ag-font-mono)', letterSpacing: '1px', 
             textShadow: '0 0 8px rgba(0,240,255,0.4)', opacity: 0.7 
           }}>
             v0.1.0
           </span>
+          {updateStatus?.updated && (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              padding: '2px 8px', borderRadius: 10, fontSize: 9,
+              background: 'rgba(0, 230, 118, 0.12)', border: '1px solid rgba(0, 230, 118, 0.3)',
+              color: 'var(--ag-accent-success)', fontFamily: 'var(--ag-font-mono)',
+              marginRight: 16, letterSpacing: '0.5px'
+            }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--ag-accent-success)', boxShadow: '0 0 6px var(--ag-accent-success)' }} />
+              OTA HOTFIX ACTIVE
+            </span>
+          )}
           <div style={{ display: 'flex', gap: 2, WebkitAppRegion: 'no-drag' } as any}>
              {(['library', 'about'] as const).map(tab => (
                <button 
@@ -290,11 +358,13 @@ export default function App() {
             />
             <div 
               ref={mainContentRef}
+              className="fast-smooth-scroll"
               style={{ 
-              flex: 1, padding: '28px 36px', overflowY: 'auto', overflowX: 'hidden',
+              flex: 1, padding: '28px 36px',
               opacity: transitioning ? 0 : 1,
               transform: transitioning ? 'translateY(6px)' : 'translateY(0)',
-              transition: 'opacity 0.2s ease, transform 0.2s ease'
+              transition: 'opacity 0.2s ease, transform 0.2s ease',
+              willChange: 'scroll-position',
             }}>
               {selectedGame && config ? (
                 <GameDetail 
@@ -304,13 +374,19 @@ export default function App() {
                   onConfigChange={handleConfigChange}
                   logLines={logLines}
                   onRemoveGame={handleRemoveGame}
+                  onUninstallMod={handleUninstallMod}
                 />
               ) : (
-                <div className="empty-state">
-                  <div className="icon">⬡</div>
-                  <div className="text">&gt; AWAITING SELECTION...</div>
-                  <div className="hint">Select a game from the sidebar to configure VR settings</div>
-                </div>
+                <HeroCommandCenter
+                  games={games}
+                  vrStatus={vrStatus}
+                  onSelectGame={handleSelectGame}
+                  onRescan={scanGames}
+                  onAddCustom={async () => {
+                    const res = await window.ag.library.addCustom();
+                    if (res.success) scanGames();
+                  }}
+                />
               )}
             </div>
           </>
@@ -324,6 +400,7 @@ export default function App() {
         selectedGame={selectedGame} 
         injectState={injectState}
         onInject={handleInject} 
+        onUninstallMod={handleUninstallMod}
       />
       <div className="crt-overlay" />
     </div>

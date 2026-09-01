@@ -1,3 +1,4 @@
+import mainLogo from '../assets/logo.png';
 
 export function AboutPanel() {
   const handleLink = (url: string) => {
@@ -7,18 +8,33 @@ export function AboutPanel() {
   };
 
   const techStack = [
-    { name: 'OpenXR', color: '#00d4ff' },
-    { name: 'DirectX 11', color: '#00ff88' },
-    { name: 'DirectX 12', color: '#00ff88' },
-    { name: 'Vulkan', color: '#ff6b6b' },
-    { name: 'MinHook', color: '#c084fc' },
+    { name: 'C++20', color: 'var(--ag-accent)' },
+    { name: 'DirectX 11 / 12', color: '#00ff88' },
+    { name: 'Vulkan', color: '#ff4444' },
+    { name: 'DirectML', color: '#a855f7' },
+    { name: 'OpenXR', color: '#38bdf8' },
+    { name: 'React 19', color: '#61dafb' },
+    { name: 'TypeScript', color: '#3178c6' },
     { name: 'Electron', color: '#47848f' },
   ];
 
   return (
     <div style={{ flex: 1, padding: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflowY: 'auto', background: 'radial-gradient(circle at 50% 30%, rgba(0, 240, 255, 0.05), transparent 70%)' }}>
       <div className="glass-card fade-in-up" style={{ width: '100%', maxWidth: 620, padding: '44px 40px', textAlign: 'center', borderTop: '3px solid var(--ag-accent)' }}>
-        {/* Logo */}
+        {/* Main Official Logo */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
+          <img
+            src={mainLogo}
+            alt="NexVR Engine"
+            style={{
+              width: 84, height: 84, borderRadius: '50%',
+              border: '2px solid rgba(0, 240, 255, 0.6)',
+              boxShadow: '0 0 35px rgba(0, 240, 255, 0.4), inset 0 1px 2px rgba(255,255,255,0.4)',
+              background: '#020305'
+            }}
+          />
+        </div>
+        {/* Logo Title */}
         <h1 style={{ 
           fontSize: 44, fontWeight: 700, letterSpacing: '8px', 
           color: 'var(--ag-accent)', margin: '0 0 6px 0', 
@@ -74,21 +90,21 @@ export function AboutPanel() {
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginBottom: 32, flexWrap: 'wrap' }}>
-          <button onClick={() => handleLink('https://github.com/sathishssj3/NexVR-Engine')} className="btn-glow" style={{ 
+          <button onClick={() => handleLink('https://github.com/sathishssj3/NexVR-Lab')} className="btn-glow" style={{ 
             background: 'rgba(0,240,255,0.08)', border: '1px solid rgba(0,240,255,0.25)', 
             padding: '10px 20px', borderRadius: 'var(--ag-radius-sm)', color: 'var(--ag-accent)', 
             cursor: 'pointer', fontFamily: 'var(--ag-font-mono)', fontSize: 11, letterSpacing: '1px' 
           }}>
             ◇ GITHUB
           </button>
-          <button onClick={() => handleLink('https://github.com/sathishssj3/NexVR-Engine/issues')} className="btn-glow" style={{ 
+          <button onClick={() => handleLink('https://github.com/sathishssj3/NexVR-Lab/issues')} className="btn-glow" style={{ 
             background: 'rgba(255,255,255,0.03)', border: '1px solid var(--ag-border)', 
             padding: '10px 20px', borderRadius: 'var(--ag-radius-sm)', color: 'var(--ag-text-primary)', 
             cursor: 'pointer', fontFamily: 'var(--ag-font-mono)', fontSize: 11, letterSpacing: '1px' 
           }}>
             ⚑ REPORT BUG
           </button>
-          <button onClick={() => handleLink('https://github.com/sathishssj3/NexVR-Engine/wiki')} className="btn-glow" style={{ 
+          <button onClick={() => handleLink('https://github.com/sathishssj3/NexVR-Lab/wiki')} className="btn-glow" style={{ 
             background: 'rgba(255,255,255,0.03)', border: '1px solid var(--ag-border)', 
             padding: '10px 20px', borderRadius: 'var(--ag-radius-sm)', color: 'var(--ag-text-primary)', 
             cursor: 'pointer', fontFamily: 'var(--ag-font-mono)', fontSize: 11, letterSpacing: '1px' 

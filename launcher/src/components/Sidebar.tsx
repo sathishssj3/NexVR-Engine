@@ -1,10 +1,15 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { GameEntry } from '../types';
+import { useFastSmoothScroll } from '../hooks/useFastSmoothScroll';
 
 export function Sidebar({ games, waitingGames = [], selectedId, onSelect, onRescan, onRestore, onIgnore, onRestoreIgnored }: any) {
   const [search, setSearch] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   const [isWaitListOpen, setIsWaitListOpen] = useState(false);
+  const sidebarScrollRef = useRef<HTMLDivElement>(null);
+
+  // Fast and smooth scrolling for game list
+  useFastSmoothScroll(sidebarScrollRef, { speed: 1.5, smoothness: 0.28 });
   
   const handleRescan = async () => {
     setIsScanning(true);
@@ -103,7 +108,7 @@ export function Sidebar({ games, waitingGames = [], selectedId, onSelect, onResc
              </div>
            </div>
         ) : (
-          <div style={{ flex: 1, overflowY: 'auto', padding: '0 5px' }}>
+          <div ref={sidebarScrollRef} className="fast-smooth-scroll" style={{ flex: 1, padding: '0 5px' }}>
             {filtered.length === 0 ? (
               <div className="empty-state" style={{ padding: '40px 20px' }}>
                 <div className="icon">🎮</div>
@@ -132,43 +137,73 @@ export function Sidebar({ games, waitingGames = [], selectedId, onSelect, onResc
                 onMouseEnter={e => { if (selectedId !== g.id) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.transform = 'translateX(4px)'; } }}
                 onMouseLeave={e => { if (selectedId !== g.id) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateX(0)'; } }}
               >
-                {/* Game Icon */}
+                {/* Game Icon with 12px perfect squircle radius */}
                 <div style={{ 
-                  width: 48, height: 64, borderRadius: 'var(--ag-radius-sm)', 
-                  background: selectedId === g.id ? 'linear-gradient(135deg, rgba(40,50,75,0.8), #050608)' : 'linear-gradient(135deg, rgba(20,25,35,0.5), #050608)', 
+                  width: 52, height: 52, borderRadius: 12, 
+                  background: selectedId === g.id ? 'linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(15, 20, 30, 0.95))' : 'linear-gradient(135deg, rgba(25, 32, 45, 0.6), rgba(10, 14, 20, 0.9))', 
                   display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                  marginRight: 16, fontSize: 20, fontWeight: 'bold', 
-                  color: selectedId === g.id ? '#fff' : 'var(--ag-text-muted)', 
+                  marginRight: 14, 
                   flexShrink: 0, 
-                  boxShadow: selectedId === g.id ? '0 8px 16px rgba(0,240,255,0.25), inset 0 1px 2px rgba(255,255,255,0.3)' : '0 4px 10px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.05)', 
+                  boxShadow: selectedId === g.id ? '0 8px 20px rgba(0,240,255,0.3), inset 0 1px 2px rgba(255,255,255,0.3)' : '0 4px 12px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.06)', 
                   overflow: 'hidden', 
-                  border: selectedId === g.id ? '1px solid rgba(0,240,255,0.5)' : '1px solid rgba(255,255,255,0.08)', 
-                  transition: 'all 0.4s var(--ag-transition)' 
+                  border: selectedId === g.id ? '1px solid rgba(0,240,255,0.6)' : '1px solid rgba(255,255,255,0.1)', 
+                  transition: 'all 0.3s var(--ag-transition)' 
                 }}>
                   {g.iconBase64 ? (
-                     <img src={g.iconBase64} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt={g.name} />
+                     <img 
+                       src={g.iconBase64} 
+                       style={{ 
+                         width: '100%', height: '100%', 
+                         objectFit: 'cover', 
+                         imageRendering: '-webkit-optimize-contrast'
+                       }} 
+                       alt={g.name} 
+                     />
                   ) : (
-                     g.name.substring(0, 2).toUpperCase()
+                     <span style={{ 
+                       fontFamily: 'var(--ag-font-display)', 
+                       fontWeight: 800, fontSize: 16, 
+                       color: selectedId === g.id ? 'var(--ag-accent)' : 'var(--ag-text-muted)',
+                       letterSpacing: '1px'
+                     }}>
+                       {g.name.substring(0, 2).toUpperCase()}
+                     </span>
                   )}
                 </div>
                 
                 {/* Game Info */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                   <span style={{ 
-                    fontSize: 14, fontWeight: 600, 
+                    fontSize: 13, fontWeight: 600, 
                     color: selectedId === g.id ? '#fff' : 'var(--ag-text-primary)', 
                     whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', 
-                    letterSpacing: '0.3px' 
+                    letterSpacing: '0.3px',
+                    fontFamily: 'var(--ag-font-display)'
                   }}>
                     {g.name}
                   </span>
-                  <span style={{ 
-                    fontSize: 10, 
-                    color: selectedId === g.id ? 'var(--ag-accent)' : 'var(--ag-text-muted)', 
-                    marginTop: 4, fontFamily: 'var(--ag-font-mono)', letterSpacing: '1px' 
-                  }}>
-                    {g.api}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                    <span style={{ 
+                      fontSize: 9, 
+                      padding: '1px 5px',
+                      borderRadius: 4,
+                      fontWeight: 700,
+                      background: g.api === 'DX12' ? 'rgba(0, 230, 118, 0.15)' : 'rgba(0, 240, 255, 0.12)',
+                      color: g.api === 'DX12' ? 'var(--ag-accent-success)' : 'var(--ag-accent)', 
+                      border: g.api === 'DX12' ? '1px solid rgba(0, 230, 118, 0.3)' : '1px solid rgba(0, 240, 255, 0.3)',
+                      fontFamily: 'var(--ag-font-mono)', letterSpacing: '0.5px' 
+                    }}>
+                      {g.api}
+                    </span>
+                    {g.compat === 'verified' && (
+                      <span style={{ fontSize: 9, fontFamily: 'var(--ag-font-mono)', color: 'var(--ag-accent-success)', fontWeight: 600 }}>
+                        ✓
+                      </span>
+                    )}
+                    {g.hasInjector && (
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--ag-accent-success)', boxShadow: '0 0 6px var(--ag-accent-success)' }} title="VR Mod Active" />
+                    )}
+                  </div>
                 </div>
               </div>
             ))
