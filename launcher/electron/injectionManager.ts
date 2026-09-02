@@ -304,21 +304,43 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
           }
         }
 
-        candidates.sort((a, b) => b.memory - a.memory);
+        // Prefer shipping binary in subfolders (e.g. Phoenix/Binaries/Win64) or processes with genuine game memory
+        let selectedCandidate: { pid: number; memory: number; path: string } | null = null;
         for (const candidate of candidates) {
           const processPath = await getProcessPath(candidate.pid).catch(() => '');
-          if (
-            !processPath || 
-            path.dirname(processPath).toLowerCase() === path.resolve(targetExeDir).toLowerCase() ||
-            processPath.toLowerCase().startsWith(path.resolve(installPath).toLowerCase())
-          ) {
-            targetPid = candidate.pid;
-            activeTargetPid = candidate.pid;
-            if (processPath) {
-              targetExeDir = path.dirname(processPath);
-            }
+          if (!processPath) continue;
+
+          const isInsideInstall = processPath.toLowerCase().startsWith(path.resolve(installPath).toLowerCase());
+          if (!isInsideInstall) continue;
+
+          const lowerPath = processPath.toLowerCase();
+          const isShippingBinary = lowerPath.includes('binaries') || lowerPath.includes('shipping');
+          
+          // If this is the heavy shipping binary or has > 50MB memory, select it immediately!
+          if (isShippingBinary || candidate.memory > 50000) {
+            selectedCandidate = { ...candidate, path: processPath };
             break;
           }
+
+          // Otherwise keep as fallback (in case it's an indie title without subfolders)
+          if (!selectedCandidate) {
+            selectedCandidate = { ...candidate, path: processPath };
+          }
+        }
+
+        if (selectedCandidate) {
+          // If it's a small stub (< 50MB) and not in Binaries, wait up to 15 seconds to let the real game spawn
+          const lowerPath = selectedCandidate.path.toLowerCase();
+          const isShippingBinary = lowerPath.includes('binaries') || lowerPath.includes('shipping');
+          if (!isShippingBinary && selectedCandidate.memory < 50000 && attempts < 30) {
+            // Keep waiting for the real game process to spawn!
+            continue;
+          }
+
+          targetPid = selectedCandidate.pid;
+          activeTargetPid = selectedCandidate.pid;
+          targetExeDir = path.dirname(selectedCandidate.path);
+          break;
         }
         if (targetPid > 0) break;
       } catch {
