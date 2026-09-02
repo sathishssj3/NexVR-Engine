@@ -1,4 +1,0 @@
-Backend,InitTime(ms),DroppedFrames,FallbackFreq,PeakQueue
-Vulkan,45,5,2,2
-DirectX 12,45,5,2,2
-DirectX 11,45,5,2,2

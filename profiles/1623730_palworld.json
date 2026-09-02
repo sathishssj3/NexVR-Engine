@@ -1,0 +1,15 @@
+{
+  "$schema": "./schema.json",
+  "id": "1623730",
+  "name": "Palworld",
+  "engine": "UnrealEngine5",
+  "api": "DX12",
+  "reverseZ": true,
+  "rowMajorMatrices": true,
+  "motionAimSensitivity": 1.0,
+  "useRecommendedResolution": true,
+  "srgbCorrection": true,
+  "depthSubmission": true,
+  "rawInputMode": true,
+  "autoInjectOnLaunch": true
+}

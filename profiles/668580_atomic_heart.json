@@ -1,0 +1,15 @@
+{
+  "$schema": "./schema.json",
+  "id": "668580",
+  "name": "Atomic Heart",
+  "engine": "UnrealEngine4",
+  "api": "DX12",
+  "reverseZ": true,
+  "rowMajorMatrices": true,
+  "motionAimSensitivity": 1.1,
+  "useRecommendedResolution": true,
+  "srgbCorrection": true,
+  "depthSubmission": true,
+  "rawInputMode": true,
+  "autoInjectOnLaunch": true
+}

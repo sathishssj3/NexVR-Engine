@@ -141,6 +141,13 @@ The NSIS installer will be generated in `launcher/dist-electron/`.
 > [!WARNING]
 > Both `vrinject.dll` and `vr-inject-cli.exe` **must be code-signed** before public distribution. Unsigned injection DLLs are flagged by Windows Defender and antivirus software. Set `SIGN_CERT_PATH` and `SIGN_CERT_PASS` environment variables before building to enable automatic signing.
 
+## 🤝 Contributing & Community Profiles
+
+We welcome community contributions! You can add support for new games without writing a single line of C++ code by creating a profile in [`profiles/`](profiles/):
+- **Adding a Game**: See the [3-minute game profile guide](CONTRIBUTING.md#-how-to-add-a-new-game-profile-in-3-minutes).
+- **Subsystem Architecture**: Read the subsystem guides in [`src/core/`](src/core/README.md), [`src/hooks/`](src/hooks/README.md), [`src/rendering/`](src/rendering/README.md), and [`src/heuristics/`](src/heuristics/README.md).
+- **Developer Guide**: Check [CONTRIBUTING.md](CONTRIBUTING.md) for quickstart, build commands, and the 5 golden rules of NexVR Engine.
+
 ---
 
 ## 📄 License

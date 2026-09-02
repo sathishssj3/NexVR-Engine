@@ -269,7 +269,7 @@ export default function App() {
             fontFamily: 'var(--ag-font-display)',
             textShadow: '0 0 10px rgba(255,255,255,0.2)' 
           }}>
-            NEX/<span style={{ marginLeft: '-0.15em' }}>R</span> ENGINE
+            NEXVR ENGINE
           </strong>
           <span style={{ 
             marginLeft: 10, marginRight: 16, color: 'var(--ag-accent)', fontSize: 10, 

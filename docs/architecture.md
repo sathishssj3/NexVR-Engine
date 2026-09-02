@@ -24,21 +24,24 @@ All team members and AI assistants must strictly follow this folder convention t
 ├── .github/
 │   └── workflows/          # GitHub Actions for CI/CD & Automated Testing
 ├── docs/                   # Product requirements, project memory, specs
+├── profiles/               # Declarative per-game JSON profiles & schema
 ├── src/                    # C++ source files for the Universal VR Injector
 │   ├── core/               # Runtime state, capability registry, config manager
 │   ├── hooks/              # DX11, DX12, Vulkan, and generic API hooks
-│   ├── injector/           # Main injector executable and DllMain entry points
-│   └── openxr/             # OpenXR runtime interaction and stereo visuals
+│   ├── rendering/          # Stereo reprojection shaders and graphics backends
+│   ├── heuristics/         # Camera matrix and depth buffer classifiers
+│   ├── memory_scanner/     # Dynamic heap and signature scanner
+│   ├── ai/                 # AI scheduler and neural inpainter
+│   └── injector/           # Main injector executable and DllMain entry points
 ├── tests/                  # C++ gtest suites
 ├── launcher/               # Electron & React based GUI for users
 ├── build/                  # CMake build output directory
 │   └── bin/                # Unified output dir (vrinject.dll, CLI, onnxruntime, etc)
 │       └── proxy/          # Proxy DLLs (dxgi.dll, d3d11.dll) - isolated to avoid shadowing
 ├── shaders/                # HLSL shaders compiled at build time
-├── claude.md               # Claude Code prompt guidelines & system memory
-├── architecture.md         # (This file) High-level system design spec
-├── project-status.md       # Milestones, completed tasks, and active handoffs
-└── changelog.md            # Date-stamped historic log of updates
+├── CONTRIBUTING.md         # Developer onboarding & quickstart guide
+├── README.md               # Product overview and user instructions
+└── build.bat               # Automated one-click build script
 ```
 
 ---

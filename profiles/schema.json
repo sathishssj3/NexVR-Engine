@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "NexVRGameProfile",
+  "description": "Declarative VR configuration and engine profile for a game title in NexVR Engine.",
+  "type": "object",
+  "required": ["id", "name"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier: Steam App ID (e.g., '990080'), Epic catalog ID, or custom slug."
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable game title."
+    },
+    "engine": {
+      "type": "string",
+      "enum": ["UnrealEngine4", "UnrealEngine5", "Unity", "Generic"],
+      "default": "Generic",
+      "description": "Target game engine for projection math and shader compatibility."
+    },
+    "api": {
+      "type": "string",
+      "enum": ["DX11", "DX12", "Vulkan", "Unknown"],
+      "default": "DX11",
+      "description": "Preferred graphics rendering API."
+    },
+    "reverseZ": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the engine uses reverse-Z depth buffer (1.0 = near, 0.0 = far)."
+    },
+    "rowMajorMatrices": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether camera matrices are row-major (true for UE) or column-major (false for Unity)."
+    },
+    "motionAimSensitivity": {
+      "type": "number",
+      "minimum": 0.1,
+      "maximum": 10.0,
+      "default": 1.0,
+      "description": "Sensitivity multiplier for VR motion controller aiming."
+    },
+    "useRecommendedResolution": {
+      "type": "boolean",
+      "default": true,
+      "description": "Use headset recommended OpenXR swapchain resolution instead of desktop window size."
+    },
+    "srgbCorrection": {
+      "type": "boolean",
+      "default": true,
+      "description": "Apply sRGB gamma correction to prevent washed-out or double-gamma lighting."
+    },
+    "depthSubmission": {
+      "type": "boolean",
+      "default": false,
+      "description": "Submit reconstructed depth buffer to OpenXR runtime for positional timewarp."
+    },
+    "rawInputMode": {
+      "type": "boolean",
+      "default": true,
+      "description": "Bypass desktop cursor clipping and intercept raw mouse/gamepad deltas."
+    },
+    "autoInjectOnLaunch": {
+      "type": "boolean",
+      "default": true,
+      "description": "Automatically hook and inject when the game process is detected."
+    },
+    "ipd": {
+      "type": "number",
+      "default": 0.064,
+      "description": "Interpupillary distance in meters (default 64mm)."
+    },
+    "convergence": {
+      "type": "number",
+      "default": 10.0,
+      "description": "Focal convergence distance in meters."
+    }
+  },
+  "additionalProperties": false
+}

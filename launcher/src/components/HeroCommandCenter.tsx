@@ -42,7 +42,7 @@ export function HeroCommandCenter({
           </div>
 
           <h1 style={{ margin: '0 0 8px 0', fontSize: 32, fontWeight: 800, fontFamily: 'var(--ag-font-display)', letterSpacing: '1px', color: '#fff', textShadow: '0 2px 20px rgba(0,0,0,0.8), 0 0 30px rgba(0,240,255,0.2)' }}>
-            NEX/<span style={{ color: 'var(--ag-accent)' }}>R</span> COMMAND CENTER
+            NEXV<span style={{ color: 'var(--ag-accent)' }}>R</span> COMMAND CENTER
           </h1>
           <p style={{ margin: 0, fontSize: 13, color: 'var(--ag-text-muted)', maxWidth: 640, lineHeight: 1.6, fontFamily: 'var(--ag-font-mono)' }}>
             Universal Direct-to-Eye XR Pipeline with DirectML neural depth reconstruction and sub-millisecond input passthrough. Select any game below to initialize your VR session.

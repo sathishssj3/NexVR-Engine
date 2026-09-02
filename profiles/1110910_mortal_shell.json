@@ -1,0 +1,15 @@
+{
+  "$schema": "./schema.json",
+  "id": "1110910",
+  "name": "Mortal Shell",
+  "engine": "UnrealEngine4",
+  "api": "DX11",
+  "reverseZ": true,
+  "rowMajorMatrices": true,
+  "motionAimSensitivity": 1.0,
+  "useRecommendedResolution": true,
+  "srgbCorrection": true,
+  "depthSubmission": false,
+  "rawInputMode": true,
+  "autoInjectOnLaunch": true
+}

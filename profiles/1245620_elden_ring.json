@@ -1,0 +1,15 @@
+{
+  "$schema": "./schema.json",
+  "id": "1245620",
+  "name": "Elden Ring",
+  "engine": "Generic",
+  "api": "DX12",
+  "reverseZ": true,
+  "rowMajorMatrices": false,
+  "motionAimSensitivity": 0.9,
+  "useRecommendedResolution": true,
+  "srgbCorrection": true,
+  "depthSubmission": false,
+  "rawInputMode": true,
+  "autoInjectOnLaunch": true
+}

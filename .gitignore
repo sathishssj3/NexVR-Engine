@@ -93,3 +93,30 @@ openvr_capi.h
 depth_inpainter.onnx.data
 dummy.cpp
 compile_commands.json
+
+# Scratch binaries and metrics
+*.spv
+*.spv.txt
+*.csv
+!docs/*.csv
+*.rvf
+*.rvf.lock
+
+# AI Agent memory, telemetry and vector databases
+.swarm/
+.claude/
+.claude-flow/
+.security-scans/
+.remember/
+*.db
+*.db-shm
+*.db-wal
+ruvector.db
+
+# Driver binary caches and obsolete scratch
+nexvr_vulkan_pipeline_cache.bin
+test_suite_report.md
+ai_matrix_classifier/
+dev/
+test_app/
+updates/
