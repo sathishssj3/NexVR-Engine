@@ -13,6 +13,7 @@ import {
   safeGamePath,
   validateGameId,
 } from './utils';
+import { detectAntiCheat } from './libraryManager';
 
 const execFileAsync = util.promisify(child_process.execFile);
 const isDev = !app.isPackaged;
@@ -85,7 +86,14 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     if (!registeredInstallPath) return { success: false, message: 'Game path not found' };
     const installPath = canonicalExistingPath(registeredInstallPath, 'directory');
 
-    stopActiveLogWatch();
+    // Anti-Cheat Guard: Block injection into protected games to prevent multiplayer account bans
+    const ac = detectAntiCheat(installPath);
+    if (ac.hasAntiCheat) {
+      return {
+        success: false,
+        message: `Injection Blocked: ${ac.antiCheatName} detected. To protect your account from multiplayer bans, VR injection is disabled on this title.`
+      };
+    }
     const logPath = safeGamePath(installPath, 'vrinject.log');
     fs.writeFileSync(logPath, '');
     activeLogPath = logPath;
@@ -201,31 +209,60 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     }
 
     try {
-      if (fs.existsSync(shadersSource)) {
-        fs.cpSync(shadersSource, resolveWithinRoot(targetExeDir, 'shaders'), {
-          recursive: true,
-          force: true,
-          dereference: false,
-        });
+      const updatesDir = path.join(app.getPath('userData'), 'updates');
+      const hotfixShaders = path.join(updatesDir, 'shaders');
+      const activeShadersSource = fs.existsSync(hotfixShaders) ? hotfixShaders : shadersSource;
+
+      const targetDirs = new Set<string>([targetExeDir, installPath]);
+      for (const sub of ['Phoenix/Binaries/Win64', 'Chameleon/Binaries/Win64', 'Binaries/Win64']) {
+        const subDir = path.join(installPath, sub);
+        if (fs.existsSync(subDir)) targetDirs.add(subDir);
       }
-      if (fs.existsSync(modelsSource)) {
-        fs.cpSync(modelsSource, resolveWithinRoot(targetExeDir, 'models'), {
-          recursive: true,
-          force: true,
-          dereference: false,
-        });
+
+      for (const d of targetDirs) {
+        if (fs.existsSync(activeShadersSource)) {
+          try {
+            fs.cpSync(activeShadersSource, path.join(d, 'shaders'), {
+              recursive: true,
+              force: true,
+              dereference: false,
+            });
+          } catch (e) {}
+        }
+        if (fs.existsSync(modelsSource)) {
+          try {
+            fs.cpSync(modelsSource, path.join(d, 'models'), {
+              recursive: true,
+              force: true,
+              dereference: false,
+            });
+          } catch (e) {}
+        }
       }
+
       // Copy ONNX and DirectML DLLs to prevent target process loader lock/freeze due to missing imports
       // Also copy vrinject.dll and openxr_loader.dll so the implicit Vulkan layer can pick it up BEFORE the game starts
+      // Prioritize OTA hotfixed vrinject.dll from updatesDir if available!
       const dllsToCopy = ['onnxruntime.dll', 'DirectML.dll', 'vrinject.dll', 'openxr_loader.dll'];
       for (const dll of dllsToCopy) {
-        const srcPath = resolveWithinRoot(canonicalBinSourceDir, dll);
+        const hotfixPath = path.join(updatesDir, dll);
+        const srcPath = fs.existsSync(hotfixPath)
+          ? hotfixPath
+          : resolveWithinRoot(canonicalBinSourceDir, dll);
+
         if (fs.existsSync(srcPath)) {
-          fs.copyFileSync(srcPath, resolveWithinRoot(targetExeDir, dll));
+          for (const d of targetDirs) {
+            try {
+              fs.copyFileSync(srcPath, path.join(d, dll));
+              console.info(`Copied ${dll} to ${d} (source: ${srcPath === hotfixPath ? 'HOTFIX' : 'BUNDLED'})`);
+            } catch (e) {
+              console.warn(`Could not copy ${dll} to ${d} (already present or locked): ${e}`);
+            }
+          }
         }
       }
     } catch (error) {
-      console.error('Failed to copy shader/model assets to target directory:', error);
+      console.warn('Non-fatal error copying shader/model assets to target directory:', error);
     }
 
     activeTargetExeName = targetExeName;
@@ -261,7 +298,8 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
             parts[4].replace(/"/g, '').replace(/,/g, '').replace(/\s*K\s*$/i, ''),
             10
           );
-          if (exeName === targetExeName && Number.isSafeInteger(pid)) {
+          // Filter out processes with invalid PID or negligible memory (e.g. zombie processes < 5MB)
+          if (exeName === targetExeName && Number.isSafeInteger(pid) && memory > 5000) {
             candidates.push({ pid, memory: Number.isFinite(memory) ? memory : 0 });
           }
         }
@@ -271,10 +309,14 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
           const processPath = await getProcessPath(candidate.pid).catch(() => '');
           if (
             !processPath || 
-            path.dirname(processPath).toLowerCase() === path.resolve(targetExeDir).toLowerCase()
+            path.dirname(processPath).toLowerCase() === path.resolve(targetExeDir).toLowerCase() ||
+            processPath.toLowerCase().startsWith(path.resolve(installPath).toLowerCase())
           ) {
             targetPid = candidate.pid;
             activeTargetPid = candidate.pid;
+            if (processPath) {
+              targetExeDir = path.dirname(processPath);
+            }
             break;
           }
         }
@@ -289,7 +331,26 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
       return { success: false, message: 'Game executable not found or closed immediately' };
     }
 
-    const dllTarget = resolveWithinRoot(targetExeDir, 'vrinject.dll');
+    const canonicalDll = resolveWithinRoot(canonicalBinSourceDir, 'vrinject.dll');
+    let dllTarget = resolveWithinRoot(targetExeDir, 'vrinject.dll');
+    
+    // Check if target directory DLL is up-to-date with the canonical binary.
+    // If the game was running and locked vrinject.dll, copying may have failed.
+    // Fall back to injecting canonicalDll directly so SHA-256 verification succeeds.
+    try {
+      if (fs.existsSync(canonicalDll)) {
+        if (!fs.existsSync(dllTarget) || fs.statSync(dllTarget).mtimeMs < fs.statSync(canonicalDll).mtimeMs) {
+          try {
+            fs.copyFileSync(canonicalDll, dllTarget);
+          } catch {
+            dllTarget = canonicalDll;
+          }
+        }
+      }
+    } catch {
+      dllTarget = canonicalDll;
+    }
+
     const escapePs = (str: string) => str.replace(/'/g, "''");
     const innerScript =
       `$env:NEXVR_AUTH_TOKEN = '${escapePs(process.env.NEXVR_AUTH_TOKEN || '')}'; ` +
@@ -381,3 +442,67 @@ ipcMain.handle('inject:monitor', async (event, pid: number) => {
   activeTargetExeName = '';
   activeGameId = '';
 });
+
+// 1-Click "Disable VR / Play Flat" Uninstaller
+ipcMain.handle('inject:uninstall', async (event, id: string) => {
+  assertTrustedIpcSender(event);
+  const validId = validateGameId(id);
+  const registeredInstallPath = gamePathsMap[validId];
+  if (!registeredInstallPath) return { success: false, message: 'Game path not found' };
+  const installPath = canonicalExistingPath(registeredInstallPath, 'directory');
+
+  try {
+    let targetExeDir = installPath;
+    const registeredExe = gameExeMap[validId];
+    if (registeredExe) {
+      targetExeDir = path.dirname(canonicalExistingPath(registeredExe, 'file'));
+    } else {
+      // Locate directory where vrinject.dll was deployed
+      const scanForVrinject = (dir: string, depth = 0): string | null => {
+        if (depth > 6) return null;
+        try {
+          const entries = fs.readdirSync(dir, { withFileTypes: true });
+          for (const e of entries) {
+            if (e.isFile() && e.name.toLowerCase() === 'vrinject.dll') return dir;
+            if (e.isDirectory() && !e.name.toLowerCase().includes('support')) {
+              const res = scanForVrinject(path.join(dir, e.name), depth + 1);
+              if (res) return res;
+            }
+          }
+        } catch {}
+        return null;
+      };
+      const foundDir = scanForVrinject(installPath);
+      if (foundDir) targetExeDir = foundDir;
+    }
+
+    // Remove deployed VR injection files
+    const filesToRemove = ['vrinject.dll', 'onnxruntime.dll', 'DirectML.dll', 'openxr_loader.dll', 'vrinject.log'];
+    let removedCount = 0;
+    for (const f of filesToRemove) {
+      const p = path.join(targetExeDir, f);
+      if (fs.existsSync(p)) {
+        try {
+          fs.unlinkSync(p);
+          removedCount++;
+        } catch {}
+      }
+    }
+    const shadersDir = path.join(targetExeDir, 'shaders');
+    if (fs.existsSync(shadersDir)) {
+      try {
+        fs.rmSync(shadersDir, { recursive: true, force: true });
+        removedCount++;
+      } catch {}
+    }
+
+    console.info(`[Injector] Uninstalled VR mod from: ${targetExeDir} (${removedCount} files removed)`);
+    return {
+      success: true,
+      message: 'VR Mod uninstalled successfully. Game is now restored to original flat screen mode.'
+    };
+  } catch (err: any) {
+    return { success: false, message: `Failed to uninstall VR mod: ${err.message}` };
+  }
+});
+

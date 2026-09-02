@@ -478,14 +478,14 @@ ipcMain.handle('library:scan', async (event): Promise<{ active: GameEntry[], wai
                 let iconBase64: string | undefined = scanLauncherGameArt('epic', id, dName);
                 const exeName = parsed.LaunchExecutable || parsed.Executable;
                 let epicExePath = '';
-                if (exeName) {
+                const primaryExe = findPrimaryExecutable(installPath);
+                if (primaryExe && fs.existsSync(primaryExe)) {
+                  epicExePath = primaryExe;
+                } else if (exeName) {
                   const directPath = resolveWithinRoot(installPath, exeName);
                   if (fs.existsSync(directPath)) {
                     epicExePath = directPath;
                   }
-                }
-                if (!epicExePath || !fs.existsSync(epicExePath)) {
-                  epicExePath = findPrimaryExecutable(installPath);
                 }
                 if (epicExePath && fs.existsSync(epicExePath)) {
                   if (!iconBase64) {
