@@ -1,21 +1,147 @@
-MIT License
+NEXVR ENGINE — PROPRIETARY SOFTWARE LICENSE AGREEMENT
+======================================================
 
-Copyright (c) 2025 NexVR Engine
+Copyright (c) 2025-2026 Sathish SSJ3. All Rights Reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+IMPORTANT — READ CAREFULLY BEFORE USING THIS SOFTWARE.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+This Proprietary Software License Agreement ("Agreement") is a legal agreement
+between you ("User") and Sathish SSJ3 ("Licensor") for the NexVR Engine
+software, including all source code, object code, binaries, documentation,
+assets, shaders, models, profiles, and associated files ("Software").
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+By downloading, installing, copying, or otherwise using the Software, you
+agree to be bound by the terms of this Agreement.
+
+
+1. GRANT OF LICENSE
+-------------------
+Subject to the terms of this Agreement, the Licensor grants you a limited,
+non-exclusive, non-transferable, revocable license to:
+
+  (a) Download and install the Software on your personal computer(s) for
+      personal, non-commercial use only.
+
+  (b) Use the Software to inject VR rendering into compatible video games
+      that you legally own.
+
+No other rights are granted. All rights not expressly granted herein are
+reserved by the Licensor.
+
+
+2. RESTRICTIONS
+---------------
+You may NOT, without prior written consent from the Licensor:
+
+  (a) Copy, reproduce, distribute, publish, or share the Software or any
+      portion thereof, whether in source code or binary form.
+
+  (b) Modify, adapt, translate, reverse engineer, decompile, disassemble,
+      or create derivative works based on the Software.
+
+  (c) Sell, rent, lease, sublicense, lend, or otherwise transfer the
+      Software or any rights therein to any third party.
+
+  (d) Remove, alter, or obscure any proprietary notices, labels, or marks
+      on the Software.
+
+  (e) Use the Software for any commercial purpose, including but not
+      limited to integrating it into commercial products or services.
+
+  (f) Use the Software to circumvent, bypass, or interfere with any
+      anti-cheat, digital rights management, or copy protection systems.
+
+  (g) Clone, fork, or redistribute the source code repository or any
+      portion of its contents.
+
+
+3. INTELLECTUAL PROPERTY
+------------------------
+The Software and all copies thereof are proprietary to the Licensor and
+title thereto remains in the Licensor. All applicable rights to patents,
+copyrights, trademarks, trade secrets, and other intellectual property
+rights in the Software are and shall remain in the Licensor.
+
+The Software is protected by copyright laws and international treaty
+provisions. The structure, organization, and code of the Software are
+valuable trade secrets and confidential information of the Licensor.
+
+
+4. CONFIDENTIALITY
+------------------
+The source code, algorithms, techniques, and internal architecture of the
+Software constitute trade secrets of the Licensor. You agree to maintain
+the confidentiality of such information and not disclose it to any third
+party without prior written consent from the Licensor.
+
+
+5. TERMINATION
+--------------
+This license is effective until terminated. It will terminate automatically
+without notice if you fail to comply with any term of this Agreement. Upon
+termination, you must destroy all copies of the Software in your possession.
+
+The Licensor reserves the right to revoke this license at any time, for
+any reason, with or without notice.
+
+
+6. NO WARRANTY
+--------------
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+THE LICENSOR DOES NOT WARRANT THAT THE SOFTWARE WILL BE ERROR-FREE OR
+UNINTERRUPTED, OR THAT DEFECTS WILL BE CORRECTED.
+
+
+7. LIMITATION OF LIABILITY
+--------------------------
+IN NO EVENT SHALL THE LICENSOR BE LIABLE FOR ANY INDIRECT, INCIDENTAL,
+SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO
+LOSS OF PROFITS, DATA, OR USE, ARISING OUT OF OR IN CONNECTION WITH THIS
+AGREEMENT OR THE USE OF THE SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+OF SUCH DAMAGES.
+
+THE LICENSOR'S TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNT PAID BY YOU
+FOR THE SOFTWARE (IF ANY).
+
+
+8. ANTI-CHEAT COMPLIANCE
+-------------------------
+The Software is designed exclusively for single-player and cooperative
+gaming experiences. Use of the Software with games employing active
+anti-cheat systems (including but not limited to EasyAntiCheat, BattlEye,
+Riot Vanguard, or similar) is strictly prohibited. The Licensor bears no
+responsibility for any consequences arising from such misuse, including
+but not limited to game bans or account suspensions.
+
+
+9. GOVERNING LAW
+-----------------
+This Agreement shall be governed by and construed in accordance with the
+laws of India, without regard to its conflict of law provisions.
+
+
+10. ENTIRE AGREEMENT
+--------------------
+This Agreement constitutes the entire agreement between you and the
+Licensor with respect to the Software and supersedes all prior or
+contemporaneous understandings, agreements, or communications.
+
+If any provision of this Agreement is found to be unenforceable, the
+remaining provisions shall remain in full force and effect.
+
+
+11. CONTACT
+-----------
+For licensing inquiries, permissions, or commercial use requests:
+
+  GitHub:  https://github.com/sathishssj3
+  Project: https://github.com/sathishssj3/NexVR-Engine-Releases
+
+
+======================================================
+Copyright (c) 2025-2026 Sathish SSJ3. All Rights Reserved.
+NexVR Engine is a trademark of Sathish SSJ3.
+======================================================
