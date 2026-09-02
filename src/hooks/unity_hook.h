@@ -2,6 +2,14 @@
 
 #include <cstdint>
 
+// ============================================================================
+// ARCHITECTURAL NOTE:
+// UnityHook specifies the roadmap interface for native Unity camera overrides
+// (Camera.worldToCameraMatrix / Camera.projectionMatrix via IL2CPP/Mono).
+// In the current production release, universal stereoscopic VR is driven by
+// Universal Depth Reprojection in StereoRenderer.
+// ============================================================================
+
 namespace vrinject {
 namespace unity {
 

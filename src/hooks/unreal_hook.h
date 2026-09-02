@@ -3,6 +3,15 @@
 #include "core/ue_sdk.h"
 #include <cstdint>
 
+// ============================================================================
+// ARCHITECTURAL NOTE:
+// UnrealHook specifies the roadmap interface for native in-engine camera
+// overrides (ULocalPlayer::GetProjectionData in UE4 / CalcSceneView in UE5).
+// In the current production release, universal stereoscopic VR is driven by
+// Universal Depth Reprojection in StereoRenderer, which works across all titles
+// without requiring per-version engine symbol offsets.
+// ============================================================================
+
 namespace vrinject {
 namespace ue {
 

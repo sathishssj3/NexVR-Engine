@@ -9,7 +9,8 @@ StereoRenderer::StereoRenderer() {
 
 bool StereoRenderer::UpdateConstantBuffer(ID3D11DeviceContext* context, 
                                           ID3D11Buffer* cb,
-                                          const StereoFrameContext& frameCtx) {
+                                          const StereoFrameContext& frameCtx,
+                                          bool shouldAttemptStereo) {
     D3D11_MAPPED_SUBRESOURCE mapped;
     HRESULT hr = context->Map(cb, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
     if (FAILED(hr)) return false;
@@ -28,6 +29,7 @@ bool StereoRenderer::UpdateConstantBuffer(ID3D11DeviceContext* context,
     
     constants->width = frameCtx.viewport.width;
     constants->height = frameCtx.viewport.height;
+    constants->shouldAttemptStereo = shouldAttemptStereo ? 1 : 0;
 
     context->Unmap(cb, 0);
     return true;
@@ -37,7 +39,8 @@ bool StereoRenderer::RenderStereoFrame(ID3D11DeviceContext* context,
                                        StereoResourceManager* resourceManager,
                                        const StereoFrameContext& frameCtx,
                                        ID3D11ShaderResourceView* gameColorSRV,
-                                       ID3D11ShaderResourceView* gameDepthSRV) {
+                                       ID3D11ShaderResourceView* gameDepthSRV,
+                                       bool shouldAttemptStereo) {
     if (state_ != StereoRendererState::READY && state_ != StereoRendererState::RENDERING && state_ != StereoRendererState::ASW_ACTIVE) {
         return false;
     }
@@ -59,7 +62,7 @@ bool StereoRenderer::RenderStereoFrame(ID3D11DeviceContext* context,
 
     // 1. Update Constant Buffer
     ID3D11Buffer* cb = resourceManager->GetConstantBuffer();
-    if (!UpdateConstantBuffer(context, cb, frameCtx)) {
+    if (!UpdateConstantBuffer(context, cb, frameCtx, shouldAttemptStereo)) {
         return false;
     }
 

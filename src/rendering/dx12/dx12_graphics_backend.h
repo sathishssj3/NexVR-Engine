@@ -34,6 +34,7 @@ public:
         const CameraSnapshot& camSnapshot, 
         const DepthSnapshot& depthSnapshot, 
         const StereoParams& params,
+        bool shouldAttemptStereo,
         void* uiMaskHandle = nullptr
     ) override;
     

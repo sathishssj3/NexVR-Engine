@@ -12,7 +12,7 @@ public:
     }
 
     bool Initialize(ID3D12Device* device, DXGI_FORMAT rtvFormat);
-    void Render(ID3D12Device* device, ID3D12CommandQueue* queue, ID3D12Resource* backBuffer);
+    void Render(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, ID3D12Resource* leftDest, ID3D12Resource* rightDest = nullptr);
     void Shutdown();
 
 private:
@@ -22,8 +22,6 @@ private:
     bool m_initialized = false;
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_srvDescHeap;
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_rtvDescHeap;
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_cmdAlloc;
-    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_cmdList;
     UINT m_rtvDescriptorSize = 0;
 };
 

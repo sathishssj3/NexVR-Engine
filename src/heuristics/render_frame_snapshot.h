@@ -52,6 +52,10 @@ struct RenderFrameSnapshot {
     uint32_t apiVersion = 0;
     uint32_t driverVersion = 0;
     
+    // Vulkan specific synchronization
+    const void* vulkanWaitSemaphores = nullptr;
+    uint32_t vulkanWaitSemaphoreCount = 0;
+    
     bool IsValid() const {
         bool baseValid = nativeDevice != nullptr && nativeContext != nullptr && nativeSwapchain != nullptr && width > 0 && height > 0;
         if (backend == GraphicsBackend::Vulkan) {

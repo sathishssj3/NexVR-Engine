@@ -1,5 +1,8 @@
-export function VRStatusBar({ status, selectedGame, injectState, onInject }: any) {
+export function VRStatusBar({ status, selectedGame, injectState, onInject, onUninstallMod }: any) {
+  const isAntiCheat = selectedGame?.hasAntiCheat;
+
   const getButtonContent = () => {
+    if (isAntiCheat) return `🛡️ ANTI-CHEAT BLOCKED`;
     if (injectState === 'injecting') return '⊗ ABORT SEQUENCE';
     if (injectState === 'success') return '✓ SYSTEM ACTIVE';
     if (injectState === 'running') return '■ CLOSE GAME';
@@ -9,6 +12,7 @@ export function VRStatusBar({ status, selectedGame, injectState, onInject }: any
   };
 
   const getButtonColor = () => {
+    if (isAntiCheat) return 'var(--ag-accent-danger)';
     if (injectState === 'success') return 'var(--ag-accent-success)';
     if (injectState === 'running') return 'var(--ag-accent-danger)';
     if (injectState === 'error') return 'var(--ag-accent-danger)';
@@ -86,17 +90,36 @@ export function VRStatusBar({ status, selectedGame, injectState, onInject }: any
             LOGS
           </button>
           
+          {selectedGame?.hasInjector && !isAntiCheat && onUninstallMod && (
+            <button 
+              onClick={onUninstallMod} 
+              className="btn-glow"
+              title="Remove VR Mod files and restore game to original flat screen mode"
+              style={{ 
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)', 
+                color: 'var(--ag-text-muted)', cursor: 'pointer', fontFamily: 'var(--ag-font-mono)', 
+                fontSize: 11, letterSpacing: '1px', padding: '12px 18px', borderRadius: 'var(--ag-radius-sm)',
+                transition: 'all 0.3s'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; e.currentTarget.style.color = '#fff'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = 'var(--ag-text-muted)'; }}
+            >
+              RESTORE FLAT
+            </button>
+          )}
+          
           <button 
             onClick={onInject}
-            disabled={!selectedGame || injectState === 'success' || injectState === 'error' || injectState === 'cancelled'}
-            className={isReady ? 'pulse-btn btn-glow' : 'btn-glow'}
+            disabled={!selectedGame || isAntiCheat || injectState === 'success' || injectState === 'error' || injectState === 'cancelled'}
+            title={isAntiCheat ? 'Multiplayer Anti-Cheat detected. Injection disabled to prevent bans.' : undefined}
+            className={isReady && !isAntiCheat ? 'pulse-btn btn-glow' : 'btn-glow'}
             style={{ 
-              background: isActive ? 'rgba(255,0,60,0.15)' : injectState === 'success' ? 'rgba(0,255,136,0.15)' : 'linear-gradient(135deg, rgba(0,240,255,0.15), rgba(0,240,255,0.05))', 
+              background: isActive ? 'rgba(255,0,60,0.15)' : isAntiCheat ? 'rgba(255,59,92,0.1)' : injectState === 'success' ? 'rgba(0,255,136,0.15)' : 'linear-gradient(135deg, rgba(0,240,255,0.15), rgba(0,240,255,0.05))', 
               border: `1px solid ${getButtonColor()}`, 
               color: getButtonColor(),
               padding: '16px 36px',
               borderRadius: 'var(--ag-radius-sm)',
-              cursor: (!selectedGame || injectState === 'success' || injectState === 'error' || injectState === 'cancelled') ? 'not-allowed' : 'pointer',
+              cursor: (!selectedGame || isAntiCheat || injectState === 'success' || injectState === 'error' || injectState === 'cancelled') ? 'not-allowed' : 'pointer',
               opacity: (!selectedGame && injectState === 'default') ? 0.3 : 1,
               fontFamily: 'var(--ag-font-display)',
               fontWeight: 800,

@@ -123,21 +123,23 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
 
     const binSourceDir = isDev ? path.join(__dirname, '../../../build/bin') : process.resourcesPath;
     const canonicalBinSourceDir = canonicalExistingPath(binSourceDir, 'directory');
-    const cliSource = canonicalExistingPath(
-      resolveWithinRoot(canonicalBinSourceDir, 'vr-inject-cli.exe'),
-      'file'
-    );
+    const otaCli = path.join(app.getPath('userData'), 'updates', 'vr-inject-cli.exe');
+    const cliSource = (fs.existsSync(otaCli) && fs.statSync(otaCli).size > 50000)
+      ? otaCli
+      : canonicalExistingPath(
+          resolveWithinRoot(canonicalBinSourceDir, 'vr-inject-cli.exe'),
+          'file'
+        );
     const shadersSource = resolveWithinRoot(canonicalBinSourceDir, 'shaders');
     const modelsSource = resolveWithinRoot(canonicalBinSourceDir, 'models');
 
     if (validId.startsWith('custom_') && gameExeMap[validId]) {
       const customExe = canonicalExistingPath(gameExeMap[validId], 'file');
-      if (path.dirname(customExe).toLowerCase() !== installPath.toLowerCase()) {
-        throw new Error('Custom executable is outside its registered install directory');
-      }
+      resolveWithinRoot(installPath, path.relative(installPath, customExe));
       // Use child_process.exec with Windows 'start' command to properly set CWD and handle ShellExecute
       // This bypasses Node's spawn EACCES limitation when launching games that require elevation or special permissions.
-      child_process.exec(`start "" /d "${installPath}" "${customExe}"`);
+      const exeCwd = path.dirname(customExe);
+      child_process.exec(`start "" /d "${exeCwd}" "${customExe}"`);
     } else if (/^\d+$/.test(validId)) {
       await shell.openExternal(`steam://rungameid/${validId}`);
     } else {
@@ -261,6 +263,19 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
           }
         }
       }
+
+      // Ensure vrinject.json configuration is synchronized across all target binary directories
+      const rootConfigPath = path.join(installPath, 'vrinject.json');
+      if (fs.existsSync(rootConfigPath)) {
+        for (const d of targetDirs) {
+          const destCfg = path.join(d, 'vrinject.json');
+          if (destCfg !== rootConfigPath) {
+            try {
+              fs.copyFileSync(rootConfigPath, destCfg);
+            } catch (e) {}
+          }
+        }
+      }
     } catch (error) {
       console.warn('Non-fatal error copying shader/model assets to target directory:', error);
     }
@@ -354,23 +369,27 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     }
 
     const canonicalDll = resolveWithinRoot(canonicalBinSourceDir, 'vrinject.dll');
+    const otaDll = path.join(app.getPath('userData'), 'updates', 'vrinject.dll');
+    const sourceDll = (fs.existsSync(otaDll) && fs.statSync(otaDll).size > 100000)
+      ? otaDll
+      : canonicalDll;
     let dllTarget = resolveWithinRoot(targetExeDir, 'vrinject.dll');
     
-    // Check if target directory DLL is up-to-date with the canonical binary.
+    // Check if target directory DLL is up-to-date with the source binary.
     // If the game was running and locked vrinject.dll, copying may have failed.
-    // Fall back to injecting canonicalDll directly so SHA-256 verification succeeds.
+    // Fall back to injecting sourceDll directly so SHA-256 verification succeeds.
     try {
-      if (fs.existsSync(canonicalDll)) {
-        if (!fs.existsSync(dllTarget) || fs.statSync(dllTarget).mtimeMs < fs.statSync(canonicalDll).mtimeMs) {
+      if (fs.existsSync(sourceDll)) {
+        if (!fs.existsSync(dllTarget) || fs.statSync(dllTarget).mtimeMs < fs.statSync(sourceDll).mtimeMs) {
           try {
-            fs.copyFileSync(canonicalDll, dllTarget);
+            fs.copyFileSync(sourceDll, dllTarget);
           } catch {
-            dllTarget = canonicalDll;
+            dllTarget = sourceDll;
           }
         }
       }
     } catch {
-      dllTarget = canonicalDll;
+      dllTarget = sourceDll;
     }
 
     const escapePs = (str: string) => str.replace(/'/g, "''");

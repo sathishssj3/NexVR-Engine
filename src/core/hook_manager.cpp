@@ -1,6 +1,8 @@
 #include "core/hook_manager.h"
 #include "core/logger.h"
 #include "core/engine_detector.h"
+#include <algorithm>
+#include <cctype>
 #include "hooks/dx11_hook.h"
 #include "hooks/dx12_hook.h"
 #include "hooks/vulkan_hook.h"
@@ -98,6 +100,11 @@ bool HookManager::Install() {
             // DX11Hook::InitializeIAT();
             // DX12Hook::InitializeIAT();
         } else {
+            char exeName[MAX_PATH] = {0};
+            GetModuleFileNameA(NULL, exeName, MAX_PATH);
+            std::string exeStr = exeName;
+            LOG_INFO("HookManager: Executable path is: %s", exeStr.c_str());
+            
             DXGIFactoryHook::Initialize();
             m_rollbackStack.push_back([]() { DXGIFactoryHook::Shutdown(); });
 

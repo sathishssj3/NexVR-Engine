@@ -2,6 +2,8 @@
 #include <atomic>
 #include <mutex>
 #include <iostream>
+#include <vector>
+#include <algorithm>
 #include "rendering/stereo/stereo_pipeline.h"
 #include "core/diagnostic_context.h"
 #include "core/subsystem_context.h"
@@ -9,10 +11,13 @@
 #include "hooks/vulkan_hook.h"
 #include "rendering/vulkan/vulkan_dispatch_table.h"
 #include "core/frame_coordinator.h"
+#include "rendering/vulkan/vulkan_graphics_backend.h"
+
 #include "rendering/vulkan/vulkan_lifecycle_manager.h"
 #include "rendering/vulkan/vulkan_queue_manager.h"
 #include "rendering/vulkan/vulkan_snapshot_validator.h"
 #include "rendering/vulkan/vulkan_depth_candidate_collector.h"
+#include "rendering/vulkan/vulkan_camera_extractor.h"
 
 namespace vrinject {
 namespace vulkan {
@@ -70,13 +75,17 @@ namespace {
     std::unordered_map<void*, PFN_vkMapMemory> g_nextMapMemory;
     std::unordered_map<void*, PFN_vkCmdUpdateBuffer> g_nextCmdUpdateBuffer;
     std::unordered_map<void*, PFN_vkGetDeviceQueue> g_nextGetDeviceQueue;
+    std::unordered_map<void*, PFN_vkVoidFunction> g_nextGetDeviceQueue2; // Using PFN_vkVoidFunction for simplicity or typedef it if available
+    std::unordered_map<void*, PFN_vkQueueSubmit> g_nextQueueSubmit;
 
     // Store swapchain images so we can find the backbuffer on Present
     std::mutex g_swapchainMutex;
     std::unordered_map<VkSwapchainKHR, std::vector<VkImage>> g_swapchainImages;
+    std::unordered_map<VkSwapchainKHR, VkFormat> g_swapchainFormat;
     std::unordered_map<VkQueue, VkDevice> g_queueToDevice;
     std::atomic<VkInstance> g_vulkanInstance{VK_NULL_HANDLE};
     std::unordered_map<VkDevice, VkPhysicalDevice> g_deviceToPhysicalDevice;
+    std::unordered_map<VkPhysicalDevice, VkInstance> g_physDeviceToInstance;
 
     template<typename T>
     inline void* GetDispatchKey(T object) {
@@ -157,6 +166,8 @@ VKAPI_ATTR VkResult VKAPI_CALL VRInject_vkCreateDevice(VkPhysicalDevice physical
         auto nextMapMemory         = (PFN_vkMapMemory)gdpa(*pDevice, "vkMapMemory");
         auto nextCmdUpdateBuffer   = (PFN_vkCmdUpdateBuffer)gdpa(*pDevice, "vkCmdUpdateBuffer");
         auto nextGetDeviceQueue    = (PFN_vkGetDeviceQueue)gdpa(*pDevice, "vkGetDeviceQueue");
+        auto nextGetDeviceQueue2   = (PFN_vkVoidFunction)gdpa(*pDevice, "vkGetDeviceQueue2");
+        auto nextQueueSubmit       = (PFN_vkQueueSubmit)gdpa(*pDevice, "vkQueueSubmit");
 
         {
             std::lock_guard<std::mutex> lock(g_dispatchMutex);
@@ -167,6 +178,8 @@ VKAPI_ATTR VkResult VKAPI_CALL VRInject_vkCreateDevice(VkPhysicalDevice physical
             g_nextMapMemory[key]            = nextMapMemory;
             g_nextCmdUpdateBuffer[key]      = nextCmdUpdateBuffer;
             g_nextGetDeviceQueue[key]       = nextGetDeviceQueue;
+            g_nextGetDeviceQueue2[key]      = nextGetDeviceQueue2;
+            g_nextQueueSubmit[key]          = nextQueueSubmit;
         }
 
         // g_deviceToPhysicalDevice is read under g_swapchainMutex in QueuePresent, so it is
@@ -179,7 +192,16 @@ VKAPI_ATTR VkResult VKAPI_CALL VRInject_vkCreateDevice(VkPhysicalDevice physical
         vrinject::vulkan::VulkanDispatchTable::Get().InitOriginalGetDeviceProcAddr(gdpa);
         vrinject::vulkan::VulkanDispatchTable::Get().RegisterDevice(*pDevice, g_vulkanInstance.load(std::memory_order_acquire));
 
-        vrinject::vulkan::VulkanLifecycleManager::Get().OnDeviceCreated(physicalDevice, *pDevice, pCreateInfo);
+        VkInstance instance = VK_NULL_HANDLE;
+        {
+            std::lock_guard<std::mutex> lock(g_swapchainMutex);
+            auto it = g_physDeviceToInstance.find(physicalDevice);
+            if (it != g_physDeviceToInstance.end()) {
+                instance = it->second;
+            }
+        }
+
+        vrinject::vulkan::VulkanLifecycleManager::Get().OnDeviceCreated(instance, physicalDevice, *pDevice, pCreateInfo);
 
         LOG_INFO("Vulkan Layer: vkCreateDevice intercepted");
     }
@@ -187,6 +209,7 @@ VKAPI_ATTR VkResult VKAPI_CALL VRInject_vkCreateDevice(VkPhysicalDevice physical
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL VRInject_vkCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) {
+    LOG_INFO("Vulkan Layer: vkCreateSwapchainKHR intercepted (device=%p)", device);
     auto nextFunc = LookupNext(g_nextCreateSwapchain, GetDispatchKey(device));
     if (!nextFunc) {
         // Untracked device - we cannot forward, and claiming VK_SUCCESS would hand the app
@@ -195,8 +218,20 @@ VKAPI_ATTR VkResult VKAPI_CALL VRInject_vkCreateSwapchainKHR(VkDevice device, co
         if (pSwapchain) *pSwapchain = VK_NULL_HANDLE;
         return VK_ERROR_INITIALIZATION_FAILED;
     }
-    VkResult res = nextFunc(device, pCreateInfo, pAllocator, pSwapchain);
+    
+    // Force SAMPLED_BIT and TRANSFER_SRC_BIT so the VR injector compute shader can read the backbuffer!
+    VkSwapchainCreateInfoKHR modifiedCreateInfo = *pCreateInfo;
+    modifiedCreateInfo.imageUsage |= VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    
+    VkResult res = nextFunc(device, &modifiedCreateInfo, pAllocator, pSwapchain);
+    LOG_INFO("Vulkan Layer: vkCreateSwapchainKHR result=%d, pSwapchain=%p", res, (pSwapchain ? *pSwapchain : nullptr));
     if (res == VK_SUCCESS && pSwapchain && *pSwapchain) {
+        {
+            std::lock_guard<std::mutex> lock(g_swapchainMutex);
+            if (pCreateInfo) {
+                g_swapchainFormat[*pSwapchain] = pCreateInfo->imageFormat;
+            }
+        }
         vrinject::vulkan::VulkanLifecycleManager::Get().OnSwapchainCreated(device, *pSwapchain, pCreateInfo);
     }
     return res;
@@ -229,6 +264,22 @@ VKAPI_ATTR void VKAPI_CALL VRInject_vkGetDeviceQueue(VkDevice device, uint32_t q
         if (pQueue && *pQueue) {
             std::lock_guard<std::mutex> lock(g_swapchainMutex);
             g_queueToDevice[*pQueue] = device;
+            vrinject::vulkan::VulkanQueueManager::Get().RegisterQueue(device, queueFamilyIndex, queueIndex, *pQueue);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL VRInject_vkGetDeviceQueue2(VkDevice device, const void* pQueueInfo, VkQueue* pQueue) {
+    auto nextFunc = reinterpret_cast<void(VKAPI_CALL*)(VkDevice, const void*, VkQueue*)>(LookupNext(g_nextGetDeviceQueue2, GetDispatchKey(device)));
+    if (nextFunc) {
+        nextFunc(device, pQueueInfo, pQueue);
+        if (pQueue && *pQueue) {
+            std::lock_guard<std::mutex> lock(g_swapchainMutex);
+            g_queueToDevice[*pQueue] = device;
+            const VkDeviceQueueInfo2* info = reinterpret_cast<const VkDeviceQueueInfo2*>(pQueueInfo);
+            if (info) {
+                vrinject::vulkan::VulkanQueueManager::Get().RegisterQueue(device, info->queueFamilyIndex, info->queueIndex, *pQueue);
+            }
         }
     }
 }
@@ -250,15 +301,66 @@ VKAPI_ATTR VkResult VKAPI_CALL VRInject_QueuePresentKHR(VkQueue queue, const VkP
             }
         }
     }
+    
+    if (pPresentInfo) {
+        LOG_INFO("Vulkan Layer: vkQueuePresentKHR called! swapchainCount=%u", pPresentInfo->swapchainCount);
+        for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
+            LOG_INFO("  Swapchain[%u] = %p", i, pPresentInfo->pSwapchains[i]);
+            // If we haven't seen this swapchain before, maybe we can register it now?
+            if (device != VK_NULL_HANDLE) {
+                vrinject::vulkan::VulkanLifecycleManager::Get().OnSwapchainCreated(device, pPresentInfo->pSwapchains[i], nullptr);
+            }
+        }
+    } else {
+        LOG_INFO("Vulkan Layer: vkQueuePresentKHR called with NULL pPresentInfo!");
+    }
+
+    VkPresentInfoKHR modifiedPresentInfo = {};
+    if (pPresentInfo) {
+        modifiedPresentInfo = *pPresentInfo;
+    }
+    VkSemaphore ourSemaphore = VK_NULL_HANDLE;
 
     if (device != VK_NULL_HANDLE) {
-        vrinject::vulkan::VulkanQueueManager::Get().RegisterQueue(device, 0, 0, queue);
-        
         vrinject::RenderFrameSnapshot snapshot = vrinject::vulkan::VulkanLifecycleManager::Get().CreateSnapshot(queue);
+        
+        {
+            std::lock_guard<std::mutex> lock(g_swapchainMutex);
+            if (pPresentInfo && pPresentInfo->swapchainCount > 0) {
+                VkSwapchainKHR swapchain = pPresentInfo->pSwapchains[0];
+                uint32_t imageIndex = pPresentInfo->pImageIndices[0];
+                auto it = g_swapchainImages.find(swapchain);
+                if (it != g_swapchainImages.end() && imageIndex < it->second.size()) {
+                    snapshot.backBuffer = it->second[imageIndex];
+                }
+                auto fmtIt = g_swapchainFormat.find(swapchain);
+                if (fmtIt != g_swapchainFormat.end()) {
+                    snapshot.format = static_cast<int64_t>(fmtIt->second);
+                }
+                
+                // Pass the game's wait semaphores into our snapshot
+                snapshot.vulkanWaitSemaphores = pPresentInfo->pWaitSemaphores;
+                snapshot.vulkanWaitSemaphoreCount = pPresentInfo->waitSemaphoreCount;
+            }
+            auto it = g_physDeviceToInstance.find(physicalDevice);
+            if (it != g_physDeviceToInstance.end()) {
+                snapshot.nativeInstance = it->second;
+            }
+        }
         std::string error;
         if (vrinject::vulkan::VulkanSnapshotValidator::Validate(snapshot, error)) {
+            // WAIT FOR GAME RENDERING TO FINISH!
+            // We must wait for the queue to be idle before injecting our compute shader
+            // to avoid a GPU data race (Layout Transition Hazard) on the swapchain image.
+            auto dt = vrinject::vulkan::VulkanDispatchTable::Get().GetDeviceDispatch(device);
+            if (dt) dt->QueueWaitIdle(queue);
+
             vrinject::SubsystemContext::Get().GetFrameCoordinator()->OnPresentBegin(snapshot);
             vrinject::SubsystemContext::Get().GetFrameCoordinator()->OnPresentEnd();
+            
+            // Wait for our compute shader to finish before presenting
+            if (dt) dt->QueueWaitIdle(queue);
+            
         } else {
             static int logCount = 0;
             if (logCount < 50) {
@@ -269,12 +371,51 @@ VKAPI_ATTR VkResult VKAPI_CALL VRInject_QueuePresentKHR(VkQueue queue, const VkP
         vrinject::vulkan::VulkanDepthCandidateCollector::Get().CollectCandidates(device);
     }
 
-    auto nextFunc = LookupNext(g_nextQueuePresent, GetDispatchKey(queue));
+    void* dispatchKey = nullptr;
+    if (device != VK_NULL_HANDLE) {
+        dispatchKey = GetDispatchKey(device);
+    } else {
+        dispatchKey = GetDispatchKey(queue); // Fallback, though likely to fail
+    }
+
+    auto nextFunc = LookupNext(g_nextQueuePresent, dispatchKey);
     if (!nextFunc) {
         LOG_WARN("Vulkan Layer: vkQueuePresentKHR on an untracked queue - failing the call.");
         return VK_ERROR_INITIALIZATION_FAILED;
     }
+    
+    // Replace the game's wait semaphores with OUR semaphore!
+    if (ourSemaphore != VK_NULL_HANDLE && pPresentInfo) {
+        modifiedPresentInfo.waitSemaphoreCount = 1;
+        modifiedPresentInfo.pWaitSemaphores = &ourSemaphore;
+        return nextFunc(queue, &modifiedPresentInfo);
+    }
+    
     return nextFunc(queue, pPresentInfo);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL VRInject_QueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence) {
+    auto nextFunc = LookupNext(g_nextQueueSubmit, GetDispatchKey(queue));
+    if (!nextFunc) {
+        LOG_WARN("Vulkan Layer: vkQueueSubmit on an untracked queue - failing the call.");
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
+
+    VkDevice device = VK_NULL_HANDLE;
+    {
+        std::lock_guard<std::mutex> lock(g_swapchainMutex);
+        auto it = g_queueToDevice.find(queue);
+        if (it != g_queueToDevice.end()) {
+            device = it->second;
+        }
+    }
+
+    if (device) {
+        vrinject::vulkan::VulkanCameraExtractor::Get().Extract(device, submitCount, pSubmits);
+        // DepthCandidateCollector already hooked in VRInject_QueuePresentKHR but doing it here is fine as fallback
+    }
+
+    return nextFunc(queue, submitCount, pSubmits, fence);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL VRInject_vkMapMemory(VkDevice device, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags, void** ppData) {
@@ -305,6 +446,8 @@ extern "C" {
         if (strcmp(pName, "vkCmdUpdateBuffer") == 0) return reinterpret_cast<PFN_vkVoidFunction>(VRInject_vkCmdUpdateBuffer);
         if (strcmp(pName, "vkCreateDevice") == 0) return reinterpret_cast<PFN_vkVoidFunction>(VRInject_vkCreateDevice);
         if (strcmp(pName, "vkGetDeviceQueue") == 0) return reinterpret_cast<PFN_vkVoidFunction>(VRInject_vkGetDeviceQueue);
+        if (strcmp(pName, "vkGetDeviceQueue2") == 0) return reinterpret_cast<PFN_vkVoidFunction>(VRInject_vkGetDeviceQueue2);
+        if (strcmp(pName, "vkQueueSubmit") == 0) return reinterpret_cast<PFN_vkVoidFunction>(VRInject_QueueSubmit);
 
         if (device == VK_NULL_HANDLE) return nullptr;
 
@@ -312,6 +455,43 @@ extern "C" {
         // pointer here - that recurses straight back into us.
         auto nextGdpa = LookupNext(g_deviceDispatch, GetDispatchKey(device));
         return nextGdpa ? nextGdpa(device, pName) : nullptr;
+    }
+
+    VKAPI_ATTR VkResult VKAPI_CALL VRInject_vkEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount, VkPhysicalDevice* pPhysicalDevices) {
+        auto gpa = LookupNext(g_instanceDispatch, GetDispatchKey(instance));
+        if (!gpa) return VK_ERROR_INITIALIZATION_FAILED;
+        auto nextFunc = (PFN_vkEnumeratePhysicalDevices)gpa(instance, "vkEnumeratePhysicalDevices");
+        if (!nextFunc) return VK_ERROR_INITIALIZATION_FAILED;
+
+        VkResult res = nextFunc(instance, pPhysicalDeviceCount, pPhysicalDevices);
+        if (res == VK_SUCCESS && pPhysicalDeviceCount && pPhysicalDevices) {
+            std::lock_guard<std::mutex> lock(g_swapchainMutex);
+            LOG_INFO("Vulkan Layer: vkEnumeratePhysicalDevices returned %u devices for instance %p", *pPhysicalDeviceCount, instance);
+
+            // Sort devices to put DISCRETE_GPU first, forcing games to pick the dGPU
+            if (*pPhysicalDeviceCount > 1) {
+                auto pfnGetProps = (PFN_vkGetPhysicalDeviceProperties)gpa(instance, "vkGetPhysicalDeviceProperties");
+                if (pfnGetProps) {
+                    std::vector<VkPhysicalDevice> devices(pPhysicalDevices, pPhysicalDevices + *pPhysicalDeviceCount);
+                    std::stable_sort(devices.begin(), devices.end(), [&](VkPhysicalDevice a, VkPhysicalDevice b) {
+                        VkPhysicalDeviceProperties propsA, propsB;
+                        pfnGetProps(a, &propsA);
+                        pfnGetProps(b, &propsB);
+                        return (propsA.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) && 
+                               (propsB.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+                    });
+                    for (uint32_t i = 0; i < *pPhysicalDeviceCount; ++i) {
+                        pPhysicalDevices[i] = devices[i];
+                    }
+                }
+            }
+
+            for (uint32_t i = 0; i < *pPhysicalDeviceCount; ++i) {
+                LOG_INFO("  Device[%u] = %p", i, pPhysicalDevices[i]);
+                g_physDeviceToInstance[pPhysicalDevices[i]] = instance;
+            }
+        }
+        return res;
     }
 
     __declspec(dllexport) VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL VRInject_vkGetInstanceProcAddr(VkInstance instance, const char* pName) {
@@ -323,11 +503,15 @@ extern "C" {
         if (strcmp(pName, "vkCreateDevice") == 0) return reinterpret_cast<PFN_vkVoidFunction>(VRInject_vkCreateDevice);
         
         // Instance-level functions
+        if (strcmp(pName, "vkEnumeratePhysicalDevices") == 0) return reinterpret_cast<PFN_vkVoidFunction>(VRInject_vkEnumeratePhysicalDevices);
         if (strcmp(pName, "vkQueuePresentKHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(VRInject_QueuePresentKHR);
         if (strcmp(pName, "vkCreateSwapchainKHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(VRInject_vkCreateSwapchainKHR);
         if (strcmp(pName, "vkGetSwapchainImagesKHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(VRInject_vkGetSwapchainImagesKHR);
         if (strcmp(pName, "vkMapMemory") == 0) return reinterpret_cast<PFN_vkVoidFunction>(VRInject_vkMapMemory);
         if (strcmp(pName, "vkCmdUpdateBuffer") == 0) return reinterpret_cast<PFN_vkVoidFunction>(VRInject_vkCmdUpdateBuffer);
+        if (strcmp(pName, "vkGetDeviceQueue") == 0) return reinterpret_cast<PFN_vkVoidFunction>(VRInject_vkGetDeviceQueue);
+        if (strcmp(pName, "vkGetDeviceQueue2") == 0) return reinterpret_cast<PFN_vkVoidFunction>(VRInject_vkGetDeviceQueue2);
+        if (strcmp(pName, "vkQueueSubmit") == 0) return reinterpret_cast<PFN_vkVoidFunction>(VRInject_QueueSubmit);
 
         // The loader queries global entry points (vkEnumerateInstanceExtensionProperties,
         // vkEnumerateInstanceLayerProperties, ...) with a null instance. GetDispatchKey

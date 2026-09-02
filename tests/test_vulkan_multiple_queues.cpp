@@ -17,7 +17,7 @@ TEST(VulkanQueueGenerationTest, DetectsAndRejectsStaleQueueHandles) {
     VkQueue queue1 = reinterpret_cast<VkQueue>(0x555);
 
     lm.OnInstanceCreated(instance, VK_API_VERSION_1_2);
-    lm.OnDeviceCreated(pd, dev1, nullptr);
+    lm.OnDeviceCreated(instance, pd, dev1, nullptr);
 
     VkSwapchainCreateInfoKHR createInfo{};
     createInfo.surface = reinterpret_cast<VkSurfaceKHR>(0x666);

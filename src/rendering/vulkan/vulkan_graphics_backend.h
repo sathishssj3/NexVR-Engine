@@ -32,7 +32,7 @@ public:
     bool Healthy() const override;
     CameraSnapshot GetCamera() override;
     DepthSnapshot GetDepth() override;
-    void RenderStereo(const RenderFrameSnapshot& frameSnapshot, const CameraSnapshot& camSnapshot, const DepthSnapshot& depthSnapshot, const StereoParams& params, void* uiMaskHandle = nullptr) override;
+    void RenderStereo(const RenderFrameSnapshot& frameSnapshot, const CameraSnapshot& camSnapshot, const DepthSnapshot& depthSnapshot, const StereoParams& params, bool shouldAttemptStereo, void* uiMaskHandle = nullptr) override;
     void* GetLeftEyeTexture() override;
     void* GetRightEyeTexture() override;
     GraphicsBackend GetAPI() const override { return GraphicsBackend::Vulkan; }
@@ -90,6 +90,9 @@ private:
     VkImage m_depthImage = VK_NULL_HANDLE;
     VkDeviceMemory m_depthImageMemory = VK_NULL_HANDLE;
     VkImageView m_depthImageView = VK_NULL_HANDLE;
+
+    VkImage m_gameColorImage = VK_NULL_HANDLE;
+    VkImageView m_gameColorView = VK_NULL_HANDLE;
 
     bool CreateGPUResources();
     void DestroyGPUResources();

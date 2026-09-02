@@ -168,7 +168,7 @@ TEST_F(VulkanStressTest, Render10kFramesFullRenderCopyPath) {
     // Register lifecycle state so the backend sees a valid device
     auto& lifecycle = VulkanLifecycleManager::Get();
     lifecycle.OnInstanceCreated(instance, VK_API_VERSION_1_2);
-    lifecycle.OnDeviceCreated(physicalDevice, device, nullptr);
+    lifecycle.OnDeviceCreated(instance, physicalDevice, device, nullptr);
     VkSwapchainCreateInfoKHR scInfo{};
     scInfo.surface = reinterpret_cast<VkSurfaceKHR>(0x5000);
     lifecycle.OnSwapchainCreated(device, reinterpret_cast<VkSwapchainKHR>(0x4000), &scInfo);
@@ -276,7 +276,7 @@ TEST_F(VulkanStressTest, Render10kFramesFullRenderCopyPath) {
                                          VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0);
         backend.SetOpenXRSwapchainImages(leftImage, rightImage);
         RenderFrameSnapshot dummyFrame;
-        backend.RenderStereo(dummyFrame, camSnapshot, depthSnapshot, params);
+        backend.RenderStereo(dummyFrame, camSnapshot, depthSnapshot, params, true);
     }
 
     auto endTime   = std::chrono::high_resolution_clock::now();

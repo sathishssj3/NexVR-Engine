@@ -24,6 +24,13 @@ struct VRConfig {
     std::string shaderDir = ""; // Custom shader directory (empty = use moduleDir + "\\shaders")
     std::string modelDir = "";  // Custom model directory (empty = use moduleDir + "\\models")
     float depthBufferMaxSizeMultiplier = 16.0f; // Max depth buffer size as multiple of backbuffer (16.0 = 16x supersampling)
+    
+    // Per-game engine profile overrides (isolates games from global heuristic drift)
+    std::string engineType = ""; // Optional override: "UnrealEngine4", "UnrealEngine5", "Unity", "Generic"
+    bool hasReverseZOverride = false;
+    bool reverseZ = true;
+    bool hasRowMajorOverride = false;
+    bool rowMajorMatrices = true;
 };
 
 class ConfigManager {

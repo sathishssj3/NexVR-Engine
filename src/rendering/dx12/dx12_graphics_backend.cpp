@@ -13,6 +13,8 @@
 #include "rendering/dx12/dx12_lifecycle_manager.h"
 #include "rendering/stereo/stereo_camera_generator.h"
 #include "rendering/stereo/stereo_pipeline.h"
+#include "rendering/dx12/imgui_dx12_integration.h"
+#include "core/overlay_manager.h"
 #include <iostream>
 
 namespace vrinject {
@@ -108,7 +110,14 @@ DepthSnapshot DX12GraphicsBackend::GetDepth() {
     return SubsystemContext::Get().GetDepthLockManager()->GetSnapshot();
 }
 
-void DX12GraphicsBackend::RenderStereo(const RenderFrameSnapshot& frameSnapshot, const CameraSnapshot& camSnapshot, const DepthSnapshot& depthSnapshot, const StereoParams& params, void* uiMaskHandle) {
+void DX12GraphicsBackend::RenderStereo(
+    const RenderFrameSnapshot& frameSnapshot,
+    const CameraSnapshot& camSnapshot, 
+    const DepthSnapshot& depthSnapshot, 
+    const StereoParams& params,
+    bool shouldAttemptStereo,
+    void* uiMaskHandle) 
+{
     if (m_state != StereoRendererState::READY) return;
     if (!m_commandQueue) return;
 
@@ -128,8 +137,8 @@ void DX12GraphicsBackend::RenderStereo(const RenderFrameSnapshot& frameSnapshot,
     // Free resources that completed execution on GPU
     m_fenceManager->ProcessDeferredReleases();
 
-    // Update resources based on new snapshots (like handling resizes)
-    m_resourceManager->UpdateFrameResources(m_device.Get(), camSnapshot, depthSnapshot);
+    // Update resources based on new snapshots (like handling resizes) and write stereo matrices
+    m_resourceManager->UpdateFrameResources(m_device.Get(), leftEye, rightEye, camSnapshot, depthSnapshot, shouldAttemptStereo);
 
     // Perform rendering dispatch and synchronize
     bool success = m_renderer->RenderStereo(
@@ -142,9 +151,12 @@ void DX12GraphicsBackend::RenderStereo(const RenderFrameSnapshot& frameSnapshot,
         depthSnapshot,
         m_oxrLeftDest,
         m_oxrRightDest,
-        static_cast<ID3D12Resource*>(uiMaskHandle));
+        shouldAttemptStereo,
+        uiMaskHandle ? (ID3D12Resource*)uiMaskHandle : nullptr);
         
-    if (!success) {
+    if (success) {
+        m_state = StereoRendererState::READY;
+    } else {
         m_state = StereoRendererState::DEGRADED;
     }
 }
@@ -220,7 +232,8 @@ void DX12GraphicsBackend::SubmitStereoFrame(
 
             SetOpenXRSwapchainImages(leftDest, rightDest);
 
-            RenderStereo(currentSnapshot, camSnapshot, depthSnapshot, params);
+            RenderStereo(currentSnapshot, camSnapshot, depthSnapshot, params, shouldAttemptStereo, uiMaskHandle);
+            bool stereoOk = (m_state == StereoRendererState::READY);
 
             oxrSubmitter->ReleaseAndEndDX12(
                 xrRuntime->GetSession(), xrRuntime->GetReferenceSpace(),
@@ -228,7 +241,7 @@ void DX12GraphicsBackend::SubmitStereoFrame(
                 currentSnapshot.height, currentSnapshot.width,
                 currentSnapshot.height);
 
-            stateMonitor.UpdateStereoHealth(shouldAttemptStereo);
+            stateMonitor.UpdateStereoHealth(stereoOk || (currentSnapshot.backBuffer != nullptr));
             stateMonitor.UpdateOpenXrHealth(true);
         } else {
             stateMonitor.UpdateOpenXrHealth(false);

@@ -80,17 +80,13 @@ VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkCreateDevice(
     const VkAllocationCallbacks* pAllocator,
     VkDevice* pDevice) 
 {
-    VkResult result = VK_ERROR_INITIALIZATION_FAILED;
-    if (True_vkCreateDevice) {
-        result = True_vkCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice);
-    } else {
-        return VK_ERROR_INITIALIZATION_FAILED;
-    }
+    if (!True_vkCreateDevice) return VK_ERROR_INITIALIZATION_FAILED;
 
-
+    VkResult result = True_vkCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice);
     
     if (result == VK_SUCCESS && pDevice && *pDevice) {
-        VulkanLifecycleManager::Get().OnDeviceCreated(physicalDevice, *pDevice, pCreateInfo);
+        VulkanLifecycleManager::Get().OnDeviceCreated(g_vulkanInstance, physicalDevice, *pDevice, pCreateInfo);
+        // We might not have the instance, but we register the device anyway.
         VulkanDispatchTable::Get().RegisterDevice(*pDevice, g_vulkanInstance); 
     }
     return result;
@@ -135,10 +131,19 @@ static void InstallLateDeviceHooks(VkDevice device) {
 
     LOG_INFO("InstallLateDeviceHooks: Installing direct hooks for device %p", device);
 
+    PFN_vkGetDeviceProcAddr gdpa = True_vkGetDeviceProcAddr;
+    if (!gdpa) {
+        HMODULE vk = GetModuleHandleA("vulkan-1.dll");
+        if (vk) gdpa = (PFN_vkGetDeviceProcAddr)GetProcAddress(vk, "vkGetDeviceProcAddr");
+    }
+
     // Ensure device is registered in dispatch table (may have been missed if vkCreateDevice wasn't hooked)
     auto& dispatchTable = VulkanDispatchTable::Get();
     if (!dispatchTable.GetDeviceDispatch(device)) {
         LOG_WARN("InstallLateDeviceHooks: Device not in dispatch table, registering now");
+        if (!dispatchTable.GetOriginalGetDeviceProcAddr() && gdpa) {
+            dispatchTable.InitOriginalGetDeviceProcAddr(gdpa);
+        }
         dispatchTable.RegisterDevice(device, VK_NULL_HANDLE);
     }
 
@@ -146,14 +151,7 @@ static void InstallLateDeviceHooks(VkDevice device) {
     auto& lifecycle = VulkanLifecycleManager::Get();
     if (!lifecycle.GetCurrentDevice()) {
         LOG_WARN("InstallLateDeviceHooks: Device not in lifecycle manager, registering now");
-        lifecycle.OnDeviceCreated(VK_NULL_HANDLE, device, nullptr);
-    }
-
-    // Get the REAL vkQueuePresentKHR address from the device's dispatch chain
-    PFN_vkGetDeviceProcAddr gdpa = True_vkGetDeviceProcAddr;
-    if (!gdpa) {
-        HMODULE vk = GetModuleHandleA("vulkan-1.dll");
-        if (vk) gdpa = (PFN_vkGetDeviceProcAddr)GetProcAddress(vk, "vkGetDeviceProcAddr");
+        lifecycle.OnDeviceCreated(g_vulkanInstance, VK_NULL_HANDLE, device, nullptr);
     }
 
     if (gdpa) {

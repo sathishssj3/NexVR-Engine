@@ -31,7 +31,7 @@ private:
     Microsoft::WRL::ComPtr<ID3D12PipelineState> m_stereoPSO;
 
     bool m_isSafeCreationPhase = false;
-    mutable std::mutex m_mutex;
+    mutable std::recursive_mutex m_mutex;
 
     bool CompileShader(const std::wstring& filename, const std::string& entrypoint, const std::string& target, std::vector<uint8_t>& outBytecode);
 };

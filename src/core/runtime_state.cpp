@@ -75,6 +75,7 @@ void RuntimeState::BackgroundInitialize() {
     auto logger = std::make_shared<FileLogger>();
     logger->Init(logPath);
     auto config = std::make_shared<ConfigManager>();
+    config->Load(dllDir);
     SubsystemContext::Get().Initialize(std::move(logger), std::move(config));
 
     seh::RegisterVehShield(static_cast<HMODULE>(m_hModule));

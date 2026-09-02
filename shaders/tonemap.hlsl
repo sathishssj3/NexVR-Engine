@@ -12,7 +12,6 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
         c = float3(0.0, 0.0, 0.0);
     }
     c = clamp(c, 0.0f, 1.0f);
-    // Convert from sRGB to Linear space to cancel out the VR headset display's gamma curve
     c = pow(c, 2.2f);
     OutputTex[DTid.xy] = float4(c, 1.0f);
 }

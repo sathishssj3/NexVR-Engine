@@ -34,7 +34,8 @@ struct StereoShaderConstants {
     
     uint32_t width;
     uint32_t height;
-    float padding[2];
+    uint32_t shouldAttemptStereo;
+    float pad3;
 };
 
 class StereoRenderer {
@@ -49,12 +50,14 @@ public:
                            StereoResourceManager* resourceManager,
                            const StereoFrameContext& frameCtx,
                            ID3D11ShaderResourceView* gameColorSRV,
-                           ID3D11ShaderResourceView* gameDepthSRV);
+                           ID3D11ShaderResourceView* gameDepthSRV,
+                           bool shouldAttemptStereo);
 
 private:
     bool UpdateConstantBuffer(ID3D11DeviceContext* context, 
                               ID3D11Buffer* cb,
-                              const StereoFrameContext& frameCtx);
+                              const StereoFrameContext& frameCtx,
+                              bool shouldAttemptStereo);
 
     StereoRendererState state_ = StereoRendererState::UNINITIALIZED;
     AswManager aswManager_;

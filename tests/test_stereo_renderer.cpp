@@ -12,7 +12,7 @@ TEST(StereoRenderer, StateMachine) {
     
     // Test that RenderStereoFrame fails gracefully with nulls
     StereoFrameContext ctx;
-    bool success = renderer.RenderStereoFrame(nullptr, nullptr, ctx, nullptr, nullptr);
+    bool success = renderer.RenderStereoFrame(nullptr, nullptr, ctx, nullptr, nullptr, true);
     EXPECT_FALSE(success);
     EXPECT_EQ(renderer.GetState(), StereoRendererState::FAILED);
 }
@@ -42,7 +42,7 @@ TEST(StereoRenderer, MidFrameLossResistance) {
     // Create a mock resource manager 
     // (We don't have a real D3D11Device here, so we will expect it to fail gracefully without crashing)
     // The key is that it doesn't try to access global tracking state that might have been invalidated.
-    bool success = renderer.RenderStereoFrame(nullptr, nullptr, ctx, nullptr, nullptr);
+    bool success = renderer.RenderStereoFrame(nullptr, nullptr, ctx, nullptr, nullptr, true);
     
     // It should fail gracefully due to null DX11 context, NOT due to stale state.
     EXPECT_FALSE(success);

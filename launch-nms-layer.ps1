@@ -18,7 +18,7 @@ if (-not (Test-Path $exe)) { throw "NMS.exe not found at $exe" }
 # Archive the previous log so the next read is unambiguously this run.
 if (Test-Path $log) {
     $stamp = (Get-Item $log).LastWriteTime.ToString("yyyyMMdd-HHmmss")
-    Move-Item $log (Join-Path $logDir "vrinject-$stamp.log") -Force
+    #Move-Item $log (Join-Path $logDir "vrinject-$stamp.log") -Force -ErrorAction SilentlyContinue
     Write-Host "Archived previous log as vrinject-$stamp.log"
 }
 if (Test-Path $loaderLog) { Remove-Item $loaderLog -Force }

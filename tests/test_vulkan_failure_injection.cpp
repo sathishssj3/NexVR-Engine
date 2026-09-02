@@ -16,9 +16,10 @@ protected:
 TEST_F(VulkanFailureTest, DeviceLostTransition) {
     auto& lm = VulkanLifecycleManager::Get();
     
+    VkInstance dummyInstance = reinterpret_cast<VkInstance>(0x0);
     VkPhysicalDevice dummyPD = reinterpret_cast<VkPhysicalDevice>(0x1);
     VkDevice dummyDevice = reinterpret_cast<VkDevice>(0x2);
-    lm.OnDeviceCreated(dummyPD, dummyDevice, nullptr);
+    lm.OnDeviceCreated(dummyInstance, dummyPD, dummyDevice, nullptr);
     
     EXPECT_EQ(lm.GetState(), RenderState::INITIALIZING);
     

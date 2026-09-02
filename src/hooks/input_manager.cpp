@@ -1,6 +1,8 @@
 #include "hooks/input_manager.h"
 #include "core/logger.h"
 #include "hooks/input_hook.h"
+#include "core/overlay_manager.h"
+#include "imgui.h"
 #include <vector>
 
 namespace vrinject {
@@ -161,11 +163,18 @@ void InputManager::Update(XrSession session) {
     XINPUT_STATE state = {};
     state.dwPacketNumber = 1;
     
+    bool menuPressed = GetBool(session, m_actionMenu);
+    static bool s_lastMenuState = false;
+    if (menuPressed && !s_lastMenuState) {
+        OverlayManager::GetInstance().ToggleOverlay();
+    }
+    s_lastMenuState = menuPressed;
+
     if (GetBool(session, m_actionA)) state.Gamepad.wButtons |= XINPUT_GAMEPAD_A;
     if (GetBool(session, m_actionB)) state.Gamepad.wButtons |= XINPUT_GAMEPAD_B;
     if (GetBool(session, m_actionX)) state.Gamepad.wButtons |= XINPUT_GAMEPAD_X;
     if (GetBool(session, m_actionY)) state.Gamepad.wButtons |= XINPUT_GAMEPAD_Y;
-    if (GetBool(session, m_actionMenu)) state.Gamepad.wButtons |= XINPUT_GAMEPAD_START;
+    if (menuPressed) state.Gamepad.wButtons |= XINPUT_GAMEPAD_START;
     if (GetBool(session, m_actionThumbstickClickLeft)) state.Gamepad.wButtons |= XINPUT_GAMEPAD_LEFT_THUMB;
     if (GetBool(session, m_actionThumbstickClickRight)) state.Gamepad.wButtons |= XINPUT_GAMEPAD_RIGHT_THUMB;
     if (GetFloat(session, m_actionGripLeft) > 0.5f) state.Gamepad.wButtons |= XINPUT_GAMEPAD_LEFT_SHOULDER;

@@ -1,7 +1,8 @@
 import { ipcMain } from 'electron';
 import * as fs from 'fs';
+import * as path from 'path';
 import { VRConfig } from '../src/types';
-import { assertTrustedIpcSender, gamePathsMap, validateGameId, validateConfig, safeGamePath } from './utils';
+import { assertTrustedIpcSender, gamePathsMap, gameExeMap, validateGameId, validateConfig, safeGamePath } from './utils';
 
 const defaultVRConfig: VRConfig = {
   motionAimSensitivity: 1.0,
@@ -12,19 +13,131 @@ const defaultVRConfig: VRConfig = {
   autoInjectOnLaunch: true,
 };
 
+const curatedProfiles: Record<string, Partial<VRConfig>> = {
+  // Hogwarts Legacy (Steam / Epic)
+  '990080': {
+    motionAimSensitivity: 1.0,
+    useRecommendedResolution: true,
+    srgbCorrection: true,
+    depthSubmission: true,
+    rawInputMode: true,
+    autoInjectOnLaunch: true,
+  },
+  'd0614ddf466b44a2a229a43a75db9efd': {
+    motionAimSensitivity: 1.0,
+    useRecommendedResolution: true,
+    srgbCorrection: true,
+    depthSubmission: true,
+    rawInputMode: true,
+    autoInjectOnLaunch: true,
+  },
+  // Cyberpunk 2077
+  '1091500': {
+    motionAimSensitivity: 1.2,
+    useRecommendedResolution: true,
+    srgbCorrection: false,
+    depthSubmission: true,
+    rawInputMode: true,
+    autoInjectOnLaunch: true,
+  },
+  // Elden Ring
+  '1245620': {
+    motionAimSensitivity: 0.9,
+    useRecommendedResolution: true,
+    srgbCorrection: true,
+    depthSubmission: false,
+    rawInputMode: true,
+    autoInjectOnLaunch: true,
+  },
+  // Atomic Heart
+  '668580': {
+    motionAimSensitivity: 1.1,
+    useRecommendedResolution: true,
+    srgbCorrection: true,
+    depthSubmission: true,
+    rawInputMode: true,
+    autoInjectOnLaunch: true,
+  },
+  // Mortal Shell
+  '1110910': {
+    motionAimSensitivity: 1.0,
+    useRecommendedResolution: true,
+    srgbCorrection: true,
+    depthSubmission: false,
+    rawInputMode: true,
+    autoInjectOnLaunch: true,
+  },
+  // Palworld
+  '1623730': {
+    motionAimSensitivity: 1.0,
+    useRecommendedResolution: true,
+    srgbCorrection: true,
+    depthSubmission: true,
+    rawInputMode: true,
+    autoInjectOnLaunch: true,
+  },
+};
+
+function loadProfilesFromDisk(): Record<string, Partial<VRConfig>> {
+  const profiles: Record<string, Partial<VRConfig>> = { ...curatedProfiles };
+  try {
+    // Check root profiles directory (development and packaged resources)
+    const candidateDirs = [
+      path.resolve(__dirname, '../../../profiles'),
+      path.resolve(__dirname, '../../profiles'),
+      path.join(process.resourcesPath, 'profiles'),
+    ];
+    for (const pDir of candidateDirs) {
+      if (fs.existsSync(pDir)) {
+        const files = fs.readdirSync(pDir);
+        for (const f of files) {
+          if (f.endsWith('.json') && f !== 'schema.json') {
+            try {
+              const data = JSON.parse(fs.readFileSync(path.join(pDir, f), 'utf-8'));
+              if (data && typeof data.id === 'string') {
+                profiles[data.id] = {
+                  motionAimSensitivity: typeof data.motionAimSensitivity === 'number' ? data.motionAimSensitivity : 1.0,
+                  useRecommendedResolution: data.useRecommendedResolution !== false,
+                  srgbCorrection: data.srgbCorrection !== false,
+                  depthSubmission: Boolean(data.depthSubmission),
+                  rawInputMode: data.rawInputMode !== false,
+                  autoInjectOnLaunch: data.autoInjectOnLaunch !== false,
+                };
+              }
+            } catch {}
+          }
+        }
+      }
+    }
+  } catch {}
+  return profiles;
+}
+
+const activeProfiles = loadProfilesFromDisk();
+
 ipcMain.handle('config:read', async (event, id: string): Promise<VRConfig> => {
   try {
     assertTrustedIpcSender(event);
     const validId = validateGameId(id);
     const installPath = gamePathsMap[validId];
-    if (!installPath) return defaultVRConfig;
-    const cfgPath = safeGamePath(installPath, 'vrinject.json');
-    if (fs.existsSync(cfgPath)) {
-      const content = fs.readFileSync(cfgPath, 'utf-8');
-      const parsed = JSON.parse(content);
-      return validateConfig({ ...defaultVRConfig, ...parsed });
+    const registeredExe = gameExeMap[validId];
+    const targetDir = registeredExe ? path.dirname(registeredExe) : undefined;
+    const initialConfig = { ...defaultVRConfig, ...(activeProfiles[validId] || {}) };
+    if (!installPath) return initialConfig;
+
+    // Check target binary directory first, then root install directory
+    const candidatePaths: string[] = [];
+    if (targetDir) candidatePaths.push(path.join(targetDir, 'vrinject.json'));
+    candidatePaths.push(safeGamePath(installPath, 'vrinject.json'));
+
+    for (const cfgPath of candidatePaths) {
+      if (fs.existsSync(cfgPath)) {
+        const content = fs.readFileSync(cfgPath, 'utf-8');
+        const parsed = JSON.parse(content);
+        return validateConfig({ ...initialConfig, ...parsed });
+      }
     }
-    return defaultVRConfig;
+    return initialConfig;
   } catch (e) {
     console.error('config:read error', e);
     return defaultVRConfig;
@@ -41,11 +154,27 @@ ipcMain.handle('config:write', async (event, id: string, cfg: unknown) => {
     const validCfg = validateConfig(cfg);
     const installPath = gamePathsMap[validId];
     if (!installPath) return { success: false, error: 'Game path not found' };
-    const cfgPath = safeGamePath(installPath, 'vrinject.json');
-    const tempPath = safeGamePath(installPath, `vrinject.${process.pid}.tmp`);
-    fs.writeFileSync(tempPath, JSON.stringify(validCfg, null, 2), { flag: 'wx' });
-    fs.renameSync(tempPath, cfgPath);
-    fs.chmodSync(cfgPath, 0o600); // S6.3: Owner rw only
+
+    const registeredExe = gameExeMap[validId];
+    const targetDir = registeredExe ? path.dirname(registeredExe) : undefined;
+
+    // Synchronize config to both installPath and target shipping binary directory
+    const dirsToSync = new Set<string>([installPath]);
+    if (targetDir && fs.existsSync(targetDir)) dirsToSync.add(targetDir);
+    for (const sub of ['Phoenix/Binaries/Win64', 'Chameleon/Binaries/Win64', 'Binaries/Win64']) {
+      const subDir = path.join(installPath, sub);
+      if (fs.existsSync(subDir)) dirsToSync.add(subDir);
+    }
+
+    for (const dir of dirsToSync) {
+      const cfgPath = path.join(dir, 'vrinject.json');
+      const tempPath = path.join(dir, `vrinject.${process.pid}.tmp`);
+      fs.writeFileSync(tempPath, JSON.stringify(validCfg, null, 2));
+      fs.renameSync(tempPath, cfgPath);
+      try {
+        fs.chmodSync(cfgPath, 0o600); // S6.3: Owner rw only
+      } catch {}
+    }
     return { success: true };
   } catch (e: any) {
     return { success: false, error: e.message };

@@ -60,7 +60,8 @@ ResolvedBufferInfo VulkanBufferResolver::ResolveBuffer(VkDevice device, VkDescri
     for (const auto& mapped : mappedMemories) {
         if (mapped.memory == result.memory && mapped.device == device) {
             // Check if absoluteMemoryOffset falls within mapped region
-            if (absoluteMemoryOffset >= mapped.offset && absoluteMemoryOffset < mapped.offset + mapped.size) {
+            VkDeviceSize mappedEnd = (mapped.size == VK_WHOLE_SIZE) ? VK_WHOLE_SIZE : (mapped.offset + mapped.size);
+            if (absoluteMemoryOffset >= mapped.offset && absoluteMemoryOffset < mappedEnd) {
                 result.mappedPointer = reinterpret_cast<uint8_t*>(mapped.hostPointer) + (absoluteMemoryOffset - mapped.offset);
                 break;
             }

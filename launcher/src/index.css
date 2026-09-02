@@ -56,20 +56,31 @@ body {
 /*  Scrollbar                               */
 /* ======================================== */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(45, 55, 80, 0.6);
-  border-radius: 3px;
-  transition: background 0.3s;
+  background: rgba(0, 240, 255, 0.25);
+  border-radius: 4px;
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 240, 255, 0.6);
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+  background: rgba(0, 240, 255, 0.7);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.5);
+}
+
+/* Hardware accelerated scroll container */
+.fast-smooth-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
+  transform: translateZ(0);
 }
 
 /* ======================================== */
@@ -77,8 +88,8 @@ body {
 /* ======================================== */
 .glass-panel {
   background: var(--ag-bg-surface);
-  -webkit-backdrop-filter: blur(24px) saturate(140%);
-  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
   border: 1px solid var(--ag-border);
   box-shadow: 
     0 15px 50px rgba(0, 0, 0, 0.5),
@@ -86,17 +97,16 @@ body {
 }
 
 .glass-card {
-  background: var(--ag-bg-card);
-  -webkit-backdrop-filter: blur(16px) saturate(120%);
-  backdrop-filter: blur(16px) saturate(120%);
+  background: rgba(15, 20, 32, 0.85);
   border: 1px solid var(--ag-border);
   border-radius: var(--ag-radius-md);
   box-shadow: 
-    0 10px 40px rgba(0, 0, 0, 0.35),
+    0 10px 30px rgba(0, 0, 0, 0.35),
     inset 0 1px 2px var(--ag-border-light);
-  transition: all 0.4s var(--ag-transition);
+  transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
   position: relative;
   overflow: hidden;
+  transform: translateZ(0);
 }
 
 .glass-card::before {

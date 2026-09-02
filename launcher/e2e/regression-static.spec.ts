@@ -60,7 +60,7 @@ test.describe('Native source safety regression tests', () => {
   test('DX11 lifecycle manager validates the device from the swapchain before use', () => {
     // Device validation moved from dx11_hook.cpp into the lifecycle manager,
     // which now owns the DX11 device/swapchain state machine.
-    const dx11Lifecycle = readRepoFile('src', 'core', 'dx11_lifecycle_manager.cpp');
+    const dx11Lifecycle = readRepoFile('src', 'rendering', 'dx11', 'dx11_lifecycle_manager.cpp');
 
     expect(dx11Lifecycle).toMatch(/GetDevice\(__uuidof\(ID3D11Device\)/);
     expect(dx11Lifecycle).toMatch(/FAILED\([^)]*GetDevice/);
@@ -84,5 +84,43 @@ test.describe('Native source safety regression tests', () => {
 
     expect(neuralInpainter).toMatch(/if\s*\(\s*!context\s*\|\|\s*!warpedColorSRV\s*\)\s*return nullptr;/);
     expect(neuralInpainter, 'placeholder status must be documented in-source').toMatch(/placeholder|passthrough/i);
+  });
+});
+
+test.describe('Cross-game isolation and profile safety regression tests', () => {
+  test('engine detector avoids brittle hardcoded executable name overrides', () => {
+    const engineDetector = readRepoFile('src', 'core', 'engine_detector.cpp');
+
+    // QUAL-04: No hardcoded game-specific branches like exeStr.find("HogwartsLegacy")
+    // or broad exeStr.find("-Win64-Shipping") that misclassify UE4 games as UE5.
+    expect(engineDetector).not.toContain('HogwartsLegacy');
+    expect(engineDetector).not.toContain('PenguinHotel');
+    expect(engineDetector).not.toMatch(/exeStr\.find\("-Win64-Shipping"\)/);
+
+    // Must support profile-first detection
+    expect(engineDetector).toContain('profileDetection');
+    expect(engineDetector).toContain('engineType');
+  });
+
+  test('configManager synchronizes vrinject.json across installPath and targetExeDir', () => {
+    const configManager = readRepoFile('launcher', 'electron', 'configManager.ts');
+
+    expect(configManager).toContain('dirsToSync');
+    expect(configManager).toContain('candidatePaths');
+    expect(configManager).toContain('targetDir');
+  });
+
+  test('injectionManager synchronizes vrinject.json and allows subfolder custom executables', () => {
+    const injectionManager = readRepoFile('launcher', 'electron', 'injectionManager.ts');
+
+    expect(injectionManager).toContain('rootConfigPath');
+    expect(injectionManager).toContain('resolveWithinRoot(installPath, path.relative(installPath, customExe))');
+  });
+
+  test('frameCoordinator guards OpenXR runtime access on early frames', () => {
+    const frameCoord = readRepoFile('src', 'core', 'frame_coordinator.cpp');
+
+    expect(frameCoord).toMatch(/if\s*\(\s*m_oxrRuntime\s*\)\s*\{[\s\S]*m_oxrRuntime->GetState\(\)\s*==\s*openxr::RuntimeState::SYSTEM_SELECTED/);
+    expect(frameCoord).toMatch(/bool\s+xrReady\s*=\s*m_oxrRuntime\s*&&/);
   });
 });

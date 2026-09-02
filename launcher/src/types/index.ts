@@ -10,7 +10,18 @@ export interface GameEntry {
   api:            GraphicsAPI;
   compat:         CompatStatus;
   hasInjector:    boolean;
+  hasAntiCheat?:  boolean;
+  antiCheatName?: string;
   iconBase64?:    string;
+}
+
+export interface UpdateStatus {
+  checking: boolean;
+  hasUpdate: boolean;
+  updated: boolean;
+  version: string;
+  changelog?: string;
+  error?: string;
 }
 
 export interface VRConfig {

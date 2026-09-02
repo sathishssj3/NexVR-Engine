@@ -245,6 +245,32 @@ bool OpenXRRuntimeManager::CreateSessionVulkan(VkInstance vkInstance, VkPhysical
         return false;
     }
 
+    PFN_xrGetVulkanGraphicsDeviceKHR pfnGetVulkanGraphicsDeviceKHR = nullptr;
+    xrGetInstanceProcAddr(instance_, "xrGetVulkanGraphicsDeviceKHR", (PFN_xrVoidFunction*)&pfnGetVulkanGraphicsDeviceKHR);
+    if (pfnGetVulkanGraphicsDeviceKHR) {
+        VkPhysicalDevice xrReqDevice = VK_NULL_HANDLE;
+        XrResult devRes = pfnGetVulkanGraphicsDeviceKHR(instance_, systemId_, vkInstance, &xrReqDevice);
+        if (XR_FAILED(devRes)) {
+            LOG_WARN("OpenXR: xrGetVulkanGraphicsDeviceKHR failed with %d", (int)devRes);
+        } else if (xrReqDevice != physicalDevice) {
+            LOG_WARN("OpenXR: Requested physical device %p does not match application device %p!", (void*)xrReqDevice, (void*)physicalDevice);
+            physicalDevice = xrReqDevice; // Force it to match what OpenXR wants!
+        } else {
+            LOG_INFO("OpenXR: xrGetVulkanGraphicsDeviceKHR validated physical device %p", (void*)physicalDevice);
+        }
+    } else {
+        LOG_WARN("OpenXR: xrGetVulkanGraphicsDeviceKHR not found, session creation may fail");
+    }
+
+    PFN_xrGetVulkanGraphicsRequirementsKHR pfnGetVulkanGraphicsRequirementsKHR = nullptr;
+    xrGetInstanceProcAddr(instance_, "xrGetVulkanGraphicsRequirementsKHR", (PFN_xrVoidFunction*)&pfnGetVulkanGraphicsRequirementsKHR);
+    if (pfnGetVulkanGraphicsRequirementsKHR) {
+        XrGraphicsRequirementsVulkanKHR graphicsRequirements{XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN_KHR};
+        pfnGetVulkanGraphicsRequirementsKHR(instance_, systemId_, &graphicsRequirements);
+    } else {
+        LOG_WARN("OpenXR: xrGetVulkanGraphicsRequirementsKHR not found, session creation may fail");
+    }
+
     XrGraphicsBindingVulkanKHR graphicsBinding{XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR};
     graphicsBinding.instance = vkInstance;
     graphicsBinding.physicalDevice = physicalDevice;

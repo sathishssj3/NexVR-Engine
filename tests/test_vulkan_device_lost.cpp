@@ -27,7 +27,7 @@ TEST_F(VulkanDeviceLostTest, DeviceLostTransitionAndRecovery) {
     VkQueue dummyQueue = reinterpret_cast<VkQueue>(0x5005);
     
     lm.OnInstanceCreated(dummyInstance, VK_API_VERSION_1_2);
-    lm.OnDeviceCreated(dummyPD, dummyDevice, nullptr);
+    lm.OnDeviceCreated(dummyInstance, dummyPD, dummyDevice, nullptr);
     
     VkSwapchainCreateInfoKHR createInfo{};
     createInfo.surface = reinterpret_cast<VkSurfaceKHR>(0x6006);
@@ -54,7 +54,7 @@ TEST_F(VulkanDeviceLostTest, DeviceLostTransitionAndRecovery) {
     VkDevice newDevice = reinterpret_cast<VkDevice>(0x7007);
     VkSwapchainKHR newSwapchain = reinterpret_cast<VkSwapchainKHR>(0x8008);
     
-    lm.OnDeviceCreated(dummyPD, newDevice, nullptr);
+    lm.OnDeviceCreated(dummyInstance, dummyPD, newDevice, nullptr);
     lm.OnSwapchainCreated(newDevice, newSwapchain, &createInfo);
     
     EXPECT_EQ(lm.GetState(), RenderState::RUNNING);

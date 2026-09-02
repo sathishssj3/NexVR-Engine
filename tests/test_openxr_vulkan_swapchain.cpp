@@ -216,7 +216,7 @@ int main() {
             cam.frame = i;
             backend.SetOpenXRSwapchainImages(leftDest, rightDest);
             RenderFrameSnapshot dummyFrame;
-            backend.RenderStereo(dummyFrame, cam, depth, params);
+            backend.RenderStereo(dummyFrame, cam, depth, params, true);
 
             submitter.ReleaseAndEndVulkan(
                 runtimeManager.GetSession(), 

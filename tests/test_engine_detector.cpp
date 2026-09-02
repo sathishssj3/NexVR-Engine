@@ -52,3 +52,34 @@ TEST(EngineDetector, UnknownWhenNoEngineSignalsExist) {
     EXPECT_EQ(detection.confidence, 0.0f);
     EXPECT_TRUE(detection.tuning.excludeShadowPasses);
 }
+
+TEST(EngineDetector, MultiGameIsolation_HogwartsLegacyAndModernUE5) {
+    // Hogwarts Legacy (UE4 title with PhysX / bink / win64 shipping)
+    auto hlDetection = EngineDetector::DetectFromModuleNames({
+        "HogwartsLegacy.exe",
+        "PhysX3_x64.dll",
+        "bink2w64.dll",
+    });
+
+    EXPECT_EQ(hlDetection.type, EngineType::UnrealEngine4);
+    EXPECT_EQ(hlDetection.versionString, "UE4.xx");
+    EXPECT_TRUE(hlDetection.tuning.reverseZ);
+    EXPECT_TRUE(hlDetection.tuning.rowMajorMatrices);
+
+    // Modern UE5 Title (e.g., MECCHA CHAMELEON / PenguinHotel / modern shipping title)
+    auto ue5Detection = EngineDetector::DetectFromModuleNames({
+        "Chameleon-Win64-Shipping.exe",
+        "UnrealEngine5.dll",
+        "GameModule.dll",
+    });
+
+    EXPECT_EQ(ue5Detection.type, EngineType::UnrealEngine5);
+    EXPECT_EQ(ue5Detection.versionString, "UE5.x");
+    EXPECT_TRUE(ue5Detection.tuning.reverseZ);
+    EXPECT_TRUE(ue5Detection.tuning.rowMajorMatrices);
+
+    // Verify neither detection mutually interferes with the other
+    EXPECT_NE(hlDetection.type, ue5Detection.type);
+    EXPECT_EQ(hlDetection.versionString, "UE4.xx");
+    EXPECT_EQ(ue5Detection.versionString, "UE5.x");
+}

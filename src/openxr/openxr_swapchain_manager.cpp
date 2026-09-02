@@ -43,15 +43,30 @@ bool OpenXRSwapchainManager::CreateSwapchain(XrSession session, int64_t format, 
     
     if (backendAPI == GraphicsBackend::DX12) {
         std::vector<XrSwapchainImageD3D12KHR>& outImages = isLeft ? leftImagesD3D12_ : rightImagesD3D12_;
-        outImages.resize(imageCount, {XR_TYPE_SWAPCHAIN_IMAGE_D3D12_KHR});
+        outImages.clear();
+        outImages.resize(imageCount);
+        for (uint32_t i = 0; i < imageCount; ++i) {
+            outImages[i] = {XR_TYPE_SWAPCHAIN_IMAGE_D3D12_KHR};
+            outImages[i].next = nullptr;
+        }
         res = xrEnumerateSwapchainImages(outSwapchain, imageCount, &imageCount, reinterpret_cast<XrSwapchainImageBaseHeader*>(outImages.data()));
     } else if (backendAPI == GraphicsBackend::Vulkan) {
         std::vector<XrSwapchainImageVulkanKHR>& outImages = isLeft ? leftImagesVulkan_ : rightImagesVulkan_;
-        outImages.resize(imageCount, {XR_TYPE_SWAPCHAIN_IMAGE_VULKAN_KHR});
+        outImages.clear();
+        outImages.resize(imageCount);
+        for (uint32_t i = 0; i < imageCount; ++i) {
+            outImages[i] = {XR_TYPE_SWAPCHAIN_IMAGE_VULKAN_KHR};
+            outImages[i].next = nullptr;
+        }
         res = xrEnumerateSwapchainImages(outSwapchain, imageCount, &imageCount, reinterpret_cast<XrSwapchainImageBaseHeader*>(outImages.data()));
     } else {
         std::vector<XrSwapchainImageD3D11KHR>& outImages = isLeft ? leftImagesD3D11_ : rightImagesD3D11_;
-        outImages.resize(imageCount, {XR_TYPE_SWAPCHAIN_IMAGE_D3D11_KHR});
+        outImages.clear();
+        outImages.resize(imageCount);
+        for (uint32_t i = 0; i < imageCount; ++i) {
+            outImages[i] = {XR_TYPE_SWAPCHAIN_IMAGE_D3D11_KHR};
+            outImages[i].next = nullptr;
+        }
         res = xrEnumerateSwapchainImages(outSwapchain, imageCount, &imageCount, reinterpret_cast<XrSwapchainImageBaseHeader*>(outImages.data()));
     }
     
@@ -99,7 +114,8 @@ bool OpenXRSwapchainManager::AcquireImages(uint32_t& outLeftIndex, uint32_t& out
 
 bool OpenXRSwapchainManager::WaitImages() {
     XrSwapchainImageWaitInfo waitInfo{XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO};
-    waitInfo.timeout = XR_INFINITE_DURATION;
+    // 50ms bounded timeout prevents freezing/hanging the game loop if runtime stalls
+    waitInfo.timeout = 50000000; // 50ms in nanoseconds
 
     XrResult resL = xrWaitSwapchainImage(leftSwapchain_, &waitInfo);
     if (XR_FAILED(resL)) return false;

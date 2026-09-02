@@ -248,4 +248,27 @@ void Dx11LifecycleManager::Reset() {
     m_swapchainResources.swapChain.Reset();
 }
 
+void Dx11LifecycleManager::ReleaseSwapchainReferences() {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    // Release ALL references to swapchain buffers.
+    // DXGI requires zero outstanding references before ResizeBuffers.
+    m_swapchainResources.backBuffer.Reset();
+    m_swapchainResources.rtv.Reset();
+
+    if (m_deviceResources.immediateContext) {
+        m_deviceResources.immediateContext->ClearState();
+        m_deviceResources.immediateContext->Flush();
+    }
+
+    LOG_INFO("Dx11LifecycleManager: Released swapchain references for ResizeBuffers");
+}
+
+void Dx11LifecycleManager::NotifyResizeComplete() {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    // Mark for rebuild — the next ProcessPresent will re-acquire the backbuffer
+    m_state.store(RenderState::RESIZE_PENDING, std::memory_order_release);
+    LOG_INFO("Dx11LifecycleManager: ResizeBuffers completed, marked for rebuild");
+}
+
 } // namespace vrinject
+

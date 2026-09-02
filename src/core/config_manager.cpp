@@ -1,6 +1,8 @@
 #include "core/config_manager.h"
 #include "core/logger.h"
 #include <fstream>
+#include <vector>
+#include <shlobj.h>
 #include <nlohmann/json.hpp>
 #include <algorithm>
 
@@ -9,10 +11,50 @@ using json = nlohmann::json;
 namespace vrinject {
 
 bool ConfigManager::Load(const std::string& moduleDir) {
-    m_configPath = moduleDir + "\\vrinject.json";
+    std::vector<std::string> candidatePaths;
     
-    // FIX (portable): Convert path to wide string to support non-ASCII characters
-    // in the directory path (e.g., Cyrillic/Chinese usernames) on all Windows locales.
+    // 1. Check exact moduleDir
+    if (!moduleDir.empty()) {
+        std::string base = moduleDir;
+        if (base.back() == '\\' || base.back() == '/') base.pop_back();
+        candidatePaths.push_back(base + "\\vrinject.json");
+        
+        // 2. Hierarchical parent directory searches (up to 3 levels up, e.g. Phoenix\Binaries\Win64 -> install root)
+        std::string cur = base;
+        for (int i = 0; i < 3; ++i) {
+            size_t slash = cur.find_last_of("\\/");
+            if (slash == std::string::npos || slash == 0) break;
+            cur = cur.substr(0, slash);
+            candidatePaths.push_back(cur + "\\vrinject.json");
+        }
+    }
+    
+    // 3. User local appdata fallback (e.g. %LOCALAPPDATA%\VRInject\vrinject.json)
+    char appData[MAX_PATH]{};
+    if (SUCCEEDED(SHGetFolderPathA(nullptr, CSIDL_LOCAL_APPDATA, nullptr, 0, appData))) {
+        candidatePaths.push_back(std::string(appData) + "\\VRInject\\vrinject.json");
+    }
+
+    std::string foundPath = "";
+    for (const auto& path : candidatePaths) {
+        int wLen = MultiByteToWideChar(CP_UTF8, 0, path.c_str(), -1, nullptr, 0);
+        std::wstring wPath(wLen > 0 ? wLen : 1, L'\0');
+        if (wLen > 0) MultiByteToWideChar(CP_UTF8, 0, path.c_str(), -1, &wPath[0], wLen);
+
+        std::ifstream testFile(wPath);
+        if (testFile.is_open()) {
+            foundPath = path;
+            break;
+        }
+    }
+
+    if (foundPath.empty()) {
+        m_configPath = moduleDir + "\\vrinject.json";
+        LOG_INFO("Config file not found in module directory or parent trees. Creating default at %s.", m_configPath.c_str());
+        return Save();
+    }
+
+    m_configPath = foundPath;
     int wLen = MultiByteToWideChar(CP_UTF8, 0, m_configPath.c_str(), -1, nullptr, 0);
     std::wstring wConfigPath(wLen > 0 ? wLen : 1, L'\0');
     if (wLen > 0) MultiByteToWideChar(CP_UTF8, 0, m_configPath.c_str(), -1, &wConfigPath[0], wLen);
@@ -46,6 +88,17 @@ bool ConfigManager::Load(const std::string& moduleDir) {
         m_config.shaderDir = j.value("shaderDir", "");
         m_config.modelDir = j.value("modelDir", "");
         m_config.depthBufferMaxSizeMultiplier = j.value("depthBufferMaxSizeMultiplier", 16.0f);
+
+        // Per-game engine profile overrides
+        m_config.engineType = j.value("engine", "");
+        if (j.contains("reverseZ")) {
+            m_config.hasReverseZOverride = true;
+            m_config.reverseZ = j.value("reverseZ", true);
+        }
+        if (j.contains("rowMajorMatrices")) {
+            m_config.hasRowMajorOverride = true;
+            m_config.rowMajorMatrices = j.value("rowMajorMatrices", true);
+        }
         
         LOG_INFO("Configuration loaded successfully from %s", m_configPath.c_str());
         return true;
@@ -83,6 +136,10 @@ bool ConfigManager::Save() {
         j["shaderDir"] = m_config.shaderDir;
         j["modelDir"] = m_config.modelDir;
         j["depthBufferMaxSizeMultiplier"] = m_config.depthBufferMaxSizeMultiplier;
+
+        if (!m_config.engineType.empty()) j["engine"] = m_config.engineType;
+        if (m_config.hasReverseZOverride) j["reverseZ"] = m_config.reverseZ;
+        if (m_config.hasRowMajorOverride) j["rowMajorMatrices"] = m_config.rowMajorMatrices;
         
         // FIX (portable): Use wide path for saving as well.
         int wLen = MultiByteToWideChar(CP_UTF8, 0, m_configPath.c_str(), -1, nullptr, 0);

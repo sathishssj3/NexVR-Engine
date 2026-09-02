@@ -1,6 +1,7 @@
 #include "rendering/vulkan/vulkan_lifecycle_manager.h"
 #include "rendering/vulkan/vulkan_queue_manager.h"
 #include "rendering/vulkan/vulkan_dispatch_table.h"
+#include "core/logger.h"
 #include <iostream>
 
 namespace vrinject {
@@ -33,11 +34,14 @@ void VulkanLifecycleManager::OnInstanceDestroyed(VkInstance instance) {
     }
 }
 
-void VulkanLifecycleManager::OnDeviceCreated(VkPhysicalDevice physicalDevice, VkDevice device, const VkDeviceCreateInfo* pCreateInfo) {
+void VulkanLifecycleManager::OnDeviceCreated(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, const VkDeviceCreateInfo* pCreateInfo) {
     std::lock_guard lock(m_mutex);
+    m_currentInstance = instance;
     m_currentPhysicalDevice = physicalDevice;
     m_currentDevice = device;
     m_deviceGeneration++;
+
+    VulkanQueueManager::Get().Initialize(physicalDevice, device);
 
     // Detect timeline semaphore extension if present in pCreateInfo
     m_supportsTimelineSemaphore = false;
@@ -58,14 +62,21 @@ void VulkanLifecycleManager::OnDeviceDestroyed(VkDevice device) {
     if (m_currentDevice == device) {
         m_currentDevice = nullptr;
         m_currentPhysicalDevice = nullptr;
+        m_deviceGeneration++;
+
+        VulkanQueueManager::Get().Shutdown();
         SetState(RenderState::DEVICE_REMOVED); // or SHUTTING_DOWN
     }
 }
 
 void VulkanLifecycleManager::OnSwapchainCreated(VkDevice device, VkSwapchainKHR swapchain, const VkSwapchainCreateInfoKHR* pCreateInfo) {
     std::lock_guard lock(m_mutex);
-    if (m_currentDevice != device) return;
-
+    if (m_currentDevice != device) {
+        LOG_WARN("VulkanLifecycleManager: OnSwapchainCreated called with device %p, expected %p", device, m_currentDevice);
+        return;
+    }
+    
+    LOG_INFO("VulkanLifecycleManager: OnSwapchainCreated setting RUNNING state. Swapchain=%p", swapchain);
     m_currentSwapchain = swapchain;
     m_swapchainGeneration++;
     m_queueGeneration++;
@@ -110,6 +121,8 @@ RenderFrameSnapshot VulkanLifecycleManager::CreateSnapshot(VkQueue presentQueue)
     snapshot.nativeContext = presentQueue;
     snapshot.nativeSwapchain = m_currentSwapchain;
     snapshot.nativeSurface = m_currentSurface;
+    snapshot.nativeInstance = m_currentInstance;
+    snapshot.nativePhysicalDevice = m_currentPhysicalDevice;
     snapshot.width = m_width;
     snapshot.height = m_height;
     snapshot.format = m_format;

@@ -71,16 +71,21 @@ bool DX12StereoResourceManager::CreateEyeTextures(uint32_t width, uint32_t heigh
     D3D12_HEAP_PROPERTIES heapProps = {};
     heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
     
+    DXGI_FORMAT eyeFmt = Dx12LifecycleManager::Get().GetFormat();
+    if (eyeFmt == DXGI_FORMAT_UNKNOWN) {
+        eyeFmt = DXGI_FORMAT_R8G8B8A8_UNORM;
+    }
+
     D3D12_RESOURCE_DESC desc = {};
     desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
     desc.Width = width;
     desc.Height = height;
     desc.DepthOrArraySize = 1;
     desc.MipLevels = 1;
-    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.Format = eyeFmt;
     desc.SampleDesc.Count = 1;
     desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-    desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
     if (FAILED(m_device->CreateCommittedResource(
             &heapProps, D3D12_HEAP_FLAG_NONE, &desc, 
@@ -171,7 +176,26 @@ void DX12StereoResourceManager::BindDescriptorHeaps(ID3D12GraphicsCommandList* c
     }
 }
 
-void DX12StereoResourceManager::UpdateFrameResources(ID3D12Device* device, const CameraSnapshot& cam, const DepthSnapshot& depth) {
+#include <DirectXMath.h>
+
+static Matrix4x4 InverseMatrix(const Matrix4x4& m) {
+    DirectX::XMMATRIX dxm = DirectX::XMLoadFloat4x4(reinterpret_cast<const DirectX::XMFLOAT4X4*>(&m));
+    DirectX::XMVECTOR det;
+    DirectX::XMMATRIX invDxm = DirectX::XMMatrixInverse(&det, dxm);
+    
+    Matrix4x4 result;
+    DirectX::XMStoreFloat4x4(reinterpret_cast<DirectX::XMFLOAT4X4*>(&result), invDxm);
+    return result;
+}
+
+void DX12StereoResourceManager::UpdateFrameResources(
+    ID3D12Device* device,
+    const EyeView& leftEye,
+    const EyeView& rightEye,
+    const CameraSnapshot& cam,
+    const DepthSnapshot& depth,
+    bool shouldAttemptStereo) 
+{
     // HandleResize has its own internal locking — call it before acquiring m_mutex
     // to avoid recursive lock deadlock
     if (cam.IsValid() && cam.resourceIdentity.width > 0 && cam.resourceIdentity.height > 0) {
@@ -188,10 +212,19 @@ void DX12StereoResourceManager::UpdateFrameResources(ID3D12Device* device, const
 
     std::lock_guard<std::mutex> lock(m_mutex);
 
-    // Update constant buffer data
+    // Update constant buffer data with exact reprojection parameters
     if (m_mappedConstantBuffer) {
-        // Here we'd map reprojection matrices. 
-        // memcpy(m_mappedConstantBuffer, &stereoData, sizeof(StereoData));
+        DX12StereoShaderConstants consts{};
+        consts.inverseViewProj = InverseMatrix(cam.vp);
+        consts.leftViewProj = leftEye.viewProjection;
+        consts.rightViewProj = rightEye.viewProjection;
+        consts.originalEyePos = cam.position;
+        consts.leftEyePos = leftEye.eyePosition;
+        consts.rightEyePos = rightEye.eyePosition;
+        consts.width = m_currentWidth;
+        consts.height = m_currentHeight;
+        consts.shouldAttemptStereo = shouldAttemptStereo ? 1 : 0;
+        memcpy(m_mappedConstantBuffer, &consts, sizeof(DX12StereoShaderConstants));
     }
 
     UpdateViews(cam, depth);
@@ -202,39 +235,109 @@ void DX12StereoResourceManager::UpdateViews(const CameraSnapshot& cam, const Dep
     D3D12_CPU_DESCRIPTOR_HANDLE srvHandle = m_cbvSrvUavHeap->GetCPUDescriptorHandleForHeapStart();
     srvHandle.ptr += m_descriptorSize; // Skip CBV
 
-    if (cam.IsValid() && cam.resourceIdentity.nativeHandle) {
-        ID3D12Resource* camRes = reinterpret_cast<ID3D12Resource*>(cam.resourceIdentity.nativeHandle);
+    ID3D12Resource* camRes = (cam.IsValid() && cam.resourceIdentity.nativeHandle) ? 
+        reinterpret_cast<ID3D12Resource*>(cam.resourceIdentity.nativeHandle) : 
+        Dx12LifecycleManager::Get().GetBackBuffer();
+
+    DXGI_FORMAT colorFmt = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+    if (camRes) {
+        D3D12_RESOURCE_DESC resDesc = camRes->GetDesc();
+        colorFmt = (cam.IsValid() && cam.resourceIdentity.format != DXGI_FORMAT_UNKNOWN) ? 
+            static_cast<DXGI_FORMAT>(cam.resourceIdentity.format) : resDesc.Format;
+        if (colorFmt == DXGI_FORMAT_UNKNOWN) {
+            colorFmt = Dx12LifecycleManager::Get().GetFormat();
+        }
+        
+        switch (colorFmt) {
+            case DXGI_FORMAT_R8G8B8A8_TYPELESS:
+                colorFmt = DXGI_FORMAT_R8G8B8A8_UNORM;
+                break;
+            case DXGI_FORMAT_B8G8R8A8_TYPELESS:
+                colorFmt = DXGI_FORMAT_B8G8R8A8_UNORM;
+                break;
+            case DXGI_FORMAT_R10G10B10A2_TYPELESS:
+                colorFmt = DXGI_FORMAT_R10G10B10A2_UNORM;
+                break;
+            case DXGI_FORMAT_R16G16B16A16_TYPELESS:
+                colorFmt = DXGI_FORMAT_R16G16B16A16_FLOAT;
+                break;
+            case DXGI_FORMAT_R11G11B10_FLOAT:
+                colorFmt = DXGI_FORMAT_R11G11B10_FLOAT;
+                break;
+            default:
+                break;
+        }
+        if (colorFmt == DXGI_FORMAT_UNKNOWN) {
+            colorFmt = DXGI_FORMAT_R8G8B8A8_UNORM;
+        }
+        
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-        srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // Assuming based on typical output
+        srvDesc.Format = colorFmt;
         srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
         srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-        srvDesc.Texture2D.MipLevels = 1;
+        srvDesc.Texture2D.MipLevels = resDesc.MipLevels > 0 ? resDesc.MipLevels : 1;
         m_device->CreateShaderResourceView(camRes, &srvDesc, srvHandle);
     }
     
     srvHandle.ptr += m_descriptorSize;
 
-    if (depth.IsValid() && depth.identity.nativeHandle) {
-        ID3D12Resource* depthRes = reinterpret_cast<ID3D12Resource*>(depth.identity.nativeHandle);
+    ID3D12Resource* depthRes = (depth.IsValid() && depth.identity.nativeHandle) ? 
+        reinterpret_cast<ID3D12Resource*>(depth.identity.nativeHandle) : 
+        camRes;
+
+    if (depthRes) {
+        D3D12_RESOURCE_DESC resDesc = depthRes->GetDesc();
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-        // Map depth format to its SRV-compatible typeless alias
-        switch (depth.identity.format) {
-            case DXGI_FORMAT_D32_FLOAT:
-                srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
-                break;
-            case DXGI_FORMAT_D24_UNORM_S8_UINT:
-                srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
-                break;
-            case DXGI_FORMAT_D16_UNORM:
-                srvDesc.Format = DXGI_FORMAT_R16_UNORM;
-                break;
-            default:
-                srvDesc.Format = DXGI_FORMAT_R32_FLOAT; // Fallback
-                break;
-        }
         srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
         srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-        srvDesc.Texture2D.MipLevels = 1;
+        srvDesc.Texture2D.MipLevels = resDesc.MipLevels > 0 ? resDesc.MipLevels : 1;
+
+        if (depthRes == camRes || !depth.IsValid()) {
+            // When no valid depth texture exists, use the valid color format for the fallback SRV
+            srvDesc.Format = (colorFmt != DXGI_FORMAT_UNKNOWN) ? colorFmt : resDesc.Format;
+            if (srvDesc.Format == DXGI_FORMAT_R8G8B8A8_TYPELESS) srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            else if (srvDesc.Format == DXGI_FORMAT_B8G8R8A8_TYPELESS) srvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+        } else {
+            DXGI_FORMAT actualFmt = (depth.identity.format != DXGI_FORMAT_UNKNOWN) ? 
+                static_cast<DXGI_FORMAT>(depth.identity.format) : resDesc.Format;
+            
+            switch (actualFmt) {
+                case DXGI_FORMAT_R32_TYPELESS:
+                case DXGI_FORMAT_D32_FLOAT:
+                case DXGI_FORMAT_R32_FLOAT:
+                    srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+                    break;
+                case DXGI_FORMAT_R24G8_TYPELESS:
+                case DXGI_FORMAT_D24_UNORM_S8_UINT:
+                case DXGI_FORMAT_R24_UNORM_X8_TYPELESS:
+                case DXGI_FORMAT_X24_TYPELESS_G8_UINT:
+                    srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+                    break;
+                case DXGI_FORMAT_R32G8X24_TYPELESS:
+                case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
+                case DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS:
+                case DXGI_FORMAT_X32_TYPELESS_G8X24_UINT:
+                    srvDesc.Format = DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+                    break;
+                case DXGI_FORMAT_R16_TYPELESS:
+                case DXGI_FORMAT_D16_UNORM:
+                case DXGI_FORMAT_R16_UNORM:
+                    srvDesc.Format = DXGI_FORMAT_R16_UNORM;
+                    break;
+                default:
+                    if (resDesc.Format == DXGI_FORMAT_R24G8_TYPELESS || resDesc.Format == DXGI_FORMAT_D24_UNORM_S8_UINT) {
+                        srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+                    } else if (resDesc.Format == DXGI_FORMAT_R16_TYPELESS || resDesc.Format == DXGI_FORMAT_D16_UNORM) {
+                        srvDesc.Format = DXGI_FORMAT_R16_UNORM;
+                    } else if (resDesc.Format == DXGI_FORMAT_R32G8X24_TYPELESS || resDesc.Format == DXGI_FORMAT_D32_FLOAT_S8X24_UINT) {
+                        srvDesc.Format = DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+                    } else {
+                        srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+                    }
+                    break;
+            }
+        }
         m_device->CreateShaderResourceView(depthRes, &srvDesc, srvHandle);
     }
 }

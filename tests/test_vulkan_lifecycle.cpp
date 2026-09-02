@@ -26,7 +26,7 @@ TEST_F(VulkanLifecycleTest, TestLifecycleTransitions) {
     // Simulate device create
     VkPhysicalDevice dummyPD = reinterpret_cast<VkPhysicalDevice>(0x5678);
     VkDevice dummyDevice = reinterpret_cast<VkDevice>(0x9ABC);
-    lm.OnDeviceCreated(dummyPD, dummyDevice, nullptr);
+    lm.OnDeviceCreated(dummyInstance, dummyPD, dummyDevice, nullptr);
     EXPECT_EQ(lm.GetState(), RenderState::INITIALIZING);
 
     // Simulate swapchain

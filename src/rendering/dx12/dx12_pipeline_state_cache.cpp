@@ -25,18 +25,18 @@ bool DX12PipelineStateCache::Initialize(ID3D12Device* device) {
 }
 
 void DX12PipelineStateCache::Shutdown() {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     m_stereoPSO.Reset();
     m_stereoRootSignature.Reset();
 }
 
 void DX12PipelineStateCache::SetSafeCreationPhase(bool isSafe) {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     m_isSafeCreationPhase = isSafe;
 }
 
 ID3D12RootSignature* DX12PipelineStateCache::GetStereoRootSignature(ID3D12Device* device) {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     
     if (m_stereoRootSignature) {
         return m_stereoRootSignature.Get();
@@ -89,14 +89,14 @@ ID3D12RootSignature* DX12PipelineStateCache::GetStereoRootSignature(ID3D12Device
     rootParameters[2].DescriptorTable.pDescriptorRanges = &ranges[2];
     rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
     
-    // Static sampler for reprojection mapping
+    // High Quality Anisotropic sampler for crisp, razor-sharp reprojection mapping
     D3D12_STATIC_SAMPLER_DESC sampler = {};
-    sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+    sampler.Filter = D3D12_FILTER_ANISOTROPIC;
     sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
     sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
     sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
     sampler.MipLODBias = 0;
-    sampler.MaxAnisotropy = 0;
+    sampler.MaxAnisotropy = 16;
     sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
     sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
     sampler.MinLOD = 0.0f;
@@ -128,18 +128,35 @@ ID3D12RootSignature* DX12PipelineStateCache::GetStereoRootSignature(ID3D12Device
     return m_stereoRootSignature.Get();
 }
 
+#include "stereo_reprojection_cs_dx12.h"
+
 ID3D12PipelineState* DX12PipelineStateCache::GetStereoPSO(ID3D12Device* device) {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     
     // Return cached PSO if available
     if (m_stereoPSO) {
         return m_stereoPSO.Get();
     }
     
-    // PSO doesn't exist yet — this is expected until the real HLSL shader
-    // is compiled and a .cso is provided. Return nullptr silently;
-    // the renderer handles this by skipping the dispatch.
-    return nullptr;
+    if (!device) return nullptr;
+
+    ID3D12RootSignature* rootSig = GetStereoRootSignature(device);
+    if (!rootSig) {
+        return nullptr;
+    }
+
+    D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
+    psoDesc.pRootSignature = rootSig;
+    psoDesc.CS = { g_stereo_reprojection_DX12, sizeof(g_stereo_reprojection_DX12) };
+    psoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+
+    HRESULT hr = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&m_stereoPSO));
+    if (FAILED(hr)) {
+        std::cerr << "DX12PipelineStateCache: Failed to create Stereo Compute PSO! HRESULT: " << hr << std::endl;
+        return nullptr;
+    }
+
+    return m_stereoPSO.Get();
 }
 
 bool DX12PipelineStateCache::CompileShader(const std::wstring& filename, const std::string& entrypoint, const std::string& target, std::vector<uint8_t>& outBytecode) {

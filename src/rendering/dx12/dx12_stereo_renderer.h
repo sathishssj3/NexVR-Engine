@@ -33,6 +33,7 @@ public:
         const DepthSnapshot& depth,
         ID3D12Resource* oxrLeftDest = nullptr,
         ID3D12Resource* oxrRightDest = nullptr,
+        bool shouldAttemptStereo = true,
         ID3D12Resource* uiMask = nullptr);
 
 private:

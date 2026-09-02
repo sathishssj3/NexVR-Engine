@@ -87,21 +87,8 @@ bool StereoResourceManager::EnsureOneSourceView(
         return false;
     }
 
-    // Fast path: the game already made this shader-readable, so no copy needed.
-    if (srcDesc.BindFlags & D3D11_BIND_SHADER_RESOURCE) {
-        D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc = {};
-        viewDesc.Format = (srvFormat == DXGI_FORMAT_UNKNOWN) ? srcDesc.Format : srvFormat;
-        viewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-        viewDesc.Texture2D.MipLevels = 1;
-
-        shadow.Reset();   // direct binding wins; drop any stale copy
-        srv.Reset();
-        if (FAILED(device_->CreateShaderResourceView(source, &viewDesc, &srv))) {
-            srv.Reset();
-            return false;
-        }
-        return true;
-    }
+    // Always use shadow copy to avoid creating SRVs directly on the game's swapchain backbuffer,
+    // which would hold persistent COM references and cause DXGI_ERROR_INVALID_CALL during ResizeBuffers.
 
     // Slow path: rebuild the shadow copy if absent or mismatched.
     bool rebuild = !shadow;
@@ -150,21 +137,44 @@ bool StereoResourceManager::EnsureOneSourceView(
 bool StereoResourceManager::EnsureSourceViews(ID3D11DeviceContext* context,
                                               ID3D11Texture2D* gameColor,
                                               ID3D11Texture2D* gameDepth) {
-    if (!gameColor || !gameDepth) return false;
-
-    // Colour inherits its own format; depth needs the typeless/read pair.
-    D3D11_TEXTURE2D_DESC depthDesc = {};
-    gameDepth->GetDesc(&depthDesc);
+    if (!gameColor) return false;
 
     const bool colorOk = EnsureOneSourceView(
         context, gameColor,
         DXGI_FORMAT_UNKNOWN, DXGI_FORMAT_UNKNOWN,
         gameColorCopy_, gameColorSRV_);
 
-    const bool depthOk = EnsureOneSourceView(
-        context, gameDepth,
-        TypelessDepthFormat(depthDesc.Format), DepthSrvFormat(depthDesc.Format),
-        gameDepthCopy_, gameDepthSRV_);
+    bool depthOk = false;
+    if (gameDepth) {
+        // Colour inherits its own format; depth needs the typeless/read pair.
+        D3D11_TEXTURE2D_DESC depthDesc = {};
+        gameDepth->GetDesc(&depthDesc);
+
+        depthOk = EnsureOneSourceView(
+            context, gameDepth,
+            TypelessDepthFormat(depthDesc.Format), DepthSrvFormat(depthDesc.Format),
+            gameDepthCopy_, gameDepthSRV_);
+    } else {
+        // Create 1x1 dummy depth texture if depth is not available yet (e.g. main menu)
+        if (!gameDepthCopy_ || !gameDepthSRV_) {
+            D3D11_TEXTURE2D_DESC dummyDesc = {};
+            dummyDesc.Width = 1;
+            dummyDesc.Height = 1;
+            dummyDesc.MipLevels = 1;
+            dummyDesc.ArraySize = 1;
+            dummyDesc.Format = DXGI_FORMAT_R32_FLOAT;
+            dummyDesc.SampleDesc.Count = 1;
+            dummyDesc.Usage = D3D11_USAGE_DEFAULT;
+            dummyDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+            
+            float farVal = 1.0f;
+            D3D11_SUBRESOURCE_DATA initData = { &farVal, sizeof(float), 0 };
+            if (SUCCEEDED(device_->CreateTexture2D(&dummyDesc, &initData, &gameDepthCopy_))) {
+                device_->CreateShaderResourceView(gameDepthCopy_.Get(), nullptr, &gameDepthSRV_);
+            }
+        }
+        depthOk = (gameDepthSRV_ != nullptr);
+    }
 
     return colorOk && depthOk;
 }

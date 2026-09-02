@@ -145,6 +145,7 @@ void VulkanDispatchTable::RegisterDevice(VkDevice device, VkInstance instance) {
     table.CmdBindPipeline = reinterpret_cast<PFN_vkCmdBindPipeline>(getDeviceProcAddr(device, "vkCmdBindPipeline"));
     table.CmdDispatch = reinterpret_cast<PFN_vkCmdDispatch>(getDeviceProcAddr(device, "vkCmdDispatch"));
     table.CmdCopyImage = reinterpret_cast<PFN_vkCmdCopyImage>(getDeviceProcAddr(device, "vkCmdCopyImage"));
+    table.CmdBlitImage = reinterpret_cast<PFN_vkCmdBlitImage>(getDeviceProcAddr(device, "vkCmdBlitImage"));
 
     table.CreatePipelineCache = reinterpret_cast<PFN_vkCreatePipelineCache>(getDeviceProcAddr(device, "vkCreatePipelineCache"));
     table.DestroyPipelineCache = reinterpret_cast<PFN_vkDestroyPipelineCache>(getDeviceProcAddr(device, "vkDestroyPipelineCache"));
@@ -159,6 +160,7 @@ void VulkanDispatchTable::RegisterDevice(VkDevice device, VkInstance instance) {
     table.DestroyDescriptorPool = reinterpret_cast<PFN_vkDestroyDescriptorPool>(getDeviceProcAddr(device, "vkDestroyDescriptorPool"));
 
     table.GetImageMemoryRequirements = reinterpret_cast<PFN_vkGetImageMemoryRequirements>(getDeviceProcAddr(device, "vkGetImageMemoryRequirements"));
+    table.GetBufferMemoryRequirements = reinterpret_cast<PFN_vkGetBufferMemoryRequirements>(getDeviceProcAddr(device, "vkGetBufferMemoryRequirements"));
     table.AllocateMemory = reinterpret_cast<PFN_vkAllocateMemory>(getDeviceProcAddr(device, "vkAllocateMemory"));
     table.FreeMemory = reinterpret_cast<PFN_vkFreeMemory>(getDeviceProcAddr(device, "vkFreeMemory"));
     table.BindImageMemory = reinterpret_cast<PFN_vkBindImageMemory>(getDeviceProcAddr(device, "vkBindImageMemory"));

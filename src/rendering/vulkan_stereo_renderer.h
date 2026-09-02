@@ -19,12 +19,14 @@ public:
     ~VulkanStereoRenderer();
 
     bool Initialize();
+    uint32_t GetCurrentFrameIndex() const { return m_frameIndex; }
 
     // cameraBuffer + depthView are the actual Vulkan handles for descriptor binding
     bool Render(const CameraSnapshot& camera,
                 const DepthSnapshot& depth,
                 VkBuffer cameraBuffer,
                 VkDeviceSize cameraBufferSize,
+                VkImageView gameColorView,
                 VkImageView depthView,
                 VulkanStereoResourceManager& resourceManager,
                 VulkanPipelineCache& pipelineCache,
@@ -32,9 +34,13 @@ public:
                 VulkanCommandManager& commandManager,
                 VulkanSyncManager& syncManager,
                 VulkanResourceStateTracker& stateTracker,
-                VkImage oxrLeftDest = VK_NULL_HANDLE,
-                VkImage oxrRightDest = VK_NULL_HANDLE,
-                VkImageView uiMaskView = VK_NULL_HANDLE);
+                VkImage oxrLeftDest,
+                VkImage oxrRightDest,
+                bool shouldAttemptStereo,
+                VkImageView uiMaskView = VK_NULL_HANDLE,
+                uint32_t waitSemaphoreCount = 0,
+                const VkSemaphore* pWaitSemaphores = nullptr,
+                VkSemaphore signalSemaphore = VK_NULL_HANDLE);
 
 private:
     VkDevice m_device = VK_NULL_HANDLE;

@@ -38,17 +38,19 @@ bool VulkanDescriptorManager::AllocateSets(uint32_t count) {
         m_recycled.clear();
     }
 
-    VkDescriptorPoolSize poolSizes[3]{};
+    VkDescriptorPoolSize poolSizes[4]{};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSizes[0].descriptorCount = count; // Camera
-    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = count; // Depth
-    poolSizes[2].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    poolSizes[2].descriptorCount = count * 2; // Left/Right UAVs
+    poolSizes[1].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    poolSizes[1].descriptorCount = count * 2; // GameColor, GameDepth
+    poolSizes[2].type = VK_DESCRIPTOR_TYPE_SAMPLER;
+    poolSizes[2].descriptorCount = count; // Sampler
+    poolSizes[3].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    poolSizes[3].descriptorCount = count * 2; // Left/Right UAVs
 
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = 3;
+    poolInfo.poolSizeCount = 4;
     poolInfo.pPoolSizes = poolSizes;
     poolInfo.maxSets = count;
 
@@ -108,8 +110,9 @@ void VulkanDescriptorManager::UpdateDescriptorSets(uint32_t frameIndex,
                                                    VkBuffer cameraBuffer, 
                                                    VkDeviceSize cameraBufferOffset,
                                                    VkDeviceSize cameraBufferSize,
+                                                   VkImageView gameColorView,
                                                    VkImageView depthView, 
-                                                   VkSampler depthSampler,
+                                                   VkSampler linearSampler,
                                                    VkImageView leftEyeView, 
                                                    VkImageView rightEyeView) {
     std::lock_guard<std::mutex> lock(m_mutex);
@@ -122,7 +125,7 @@ void VulkanDescriptorManager::UpdateDescriptorSets(uint32_t frameIndex,
     if (frameIndex < m_recycled.size()) {
         m_recycled[frameIndex] = false;
     }
-    VkWriteDescriptorSet writes[4]{};
+    VkWriteDescriptorSet writes[6]{};
 
     // Binding 0: Camera Buffer
     VkDescriptorBufferInfo bufferInfo{};
@@ -138,47 +141,73 @@ void VulkanDescriptorManager::UpdateDescriptorSets(uint32_t frameIndex,
     writes[0].descriptorCount = 1;
     writes[0].pBufferInfo = &bufferInfo;
 
-    // Binding 1: Depth Texture
-    VkDescriptorImageInfo depthInfo{};
-    depthInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // Assume it's transitioned to this
-    depthInfo.imageView = depthView;
-    depthInfo.sampler = depthSampler;
+    // Binding 1: Game Color Texture
+    VkDescriptorImageInfo colorInfo{};
+    colorInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // Assuming appropriate state
+    colorInfo.imageView = gameColorView;
+    colorInfo.sampler = VK_NULL_HANDLE;
 
     writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     writes[1].dstSet = set;
     writes[1].dstBinding = 1;
     writes[1].dstArrayElement = 0;
-    writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    writes[1].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     writes[1].descriptorCount = 1;
-    writes[1].pImageInfo = &depthInfo;
+    writes[1].pImageInfo = &colorInfo;
 
-    // Binding 2: Left Eye
-    VkDescriptorImageInfo leftInfo{};
-    leftInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    leftInfo.imageView = leftEyeView;
+    // Binding 2: Game Depth Texture
+    VkDescriptorImageInfo depthInfo{};
+    depthInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    depthInfo.imageView = depthView;
+    depthInfo.sampler = VK_NULL_HANDLE;
 
     writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     writes[2].dstSet = set;
     writes[2].dstBinding = 2;
     writes[2].dstArrayElement = 0;
-    writes[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    writes[2].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     writes[2].descriptorCount = 1;
-    writes[2].pImageInfo = &leftInfo;
+    writes[2].pImageInfo = &depthInfo;
 
-    // Binding 3: Right Eye
-    VkDescriptorImageInfo rightInfo{};
-    rightInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    rightInfo.imageView = rightEyeView;
+    // Binding 3: Linear Sampler
+    VkDescriptorImageInfo samplerInfo{};
+    samplerInfo.sampler = linearSampler;
 
     writes[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     writes[3].dstSet = set;
     writes[3].dstBinding = 3;
     writes[3].dstArrayElement = 0;
-    writes[3].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    writes[3].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
     writes[3].descriptorCount = 1;
-    writes[3].pImageInfo = &rightInfo;
+    writes[3].pImageInfo = &samplerInfo;
 
-    dt->UpdateDescriptorSets(m_device, 4, writes, 0, nullptr);
+    // Binding 4: Left Eye UAV
+    VkDescriptorImageInfo leftInfo{};
+    leftInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    leftInfo.imageView = leftEyeView;
+
+    writes[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writes[4].dstSet = set;
+    writes[4].dstBinding = 4;
+    writes[4].dstArrayElement = 0;
+    writes[4].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    writes[4].descriptorCount = 1;
+    writes[4].pImageInfo = &leftInfo;
+
+    // Binding 5: Right Eye UAV
+    VkDescriptorImageInfo rightInfo{};
+    rightInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    rightInfo.imageView = rightEyeView;
+
+    writes[5].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writes[5].dstSet = set;
+    writes[5].dstBinding = 5;
+    writes[5].dstArrayElement = 0;
+    writes[5].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    writes[5].descriptorCount = 1;
+    writes[5].pImageInfo = &rightInfo;
+
+    dt->UpdateDescriptorSets(m_device, 6, writes, 0, nullptr);
 }
 
 } // namespace vulkan

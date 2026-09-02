@@ -45,6 +45,14 @@ public:
     // Resets state back to UNINITIALIZED for testing
     void Reset();
 
+    // Called by ResizeBuffers hook BEFORE the original call.
+    // Releases all ComPtr references to swapchain buffers so ResizeBuffers can succeed.
+    void ReleaseSwapchainReferences();
+    
+    // Called by ResizeBuffers hook AFTER the original call succeeds.
+    // Marks state for rebuild so backbuffer is re-acquired on next Present.
+    void NotifyResizeComplete();
+
     RenderState GetState() const { return m_state.load(std::memory_order_relaxed); }
     GraphicsResourceEpoch GetEpoch() const { return m_epoch; }
 

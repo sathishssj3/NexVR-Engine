@@ -20,8 +20,8 @@ export interface UpdateStatus {
   error?: string;
 }
 
-const MANIFEST_URL = 'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine/main/updates/manifest.json';
-const RAW_FILES_BASE = 'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine/main/updates/';
+const MANIFEST_URL = 'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine-Releases/main/updates/manifest.json';
+const RAW_FILES_BASE = 'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine-Releases/main/updates/';
 
 function getUpdatesDir(): string {
   const dir = path.join(app.getPath('userData'), 'updates');

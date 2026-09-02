@@ -54,51 +54,72 @@ EngineTuningProfile TuningFor(EngineType type) {
 void EngineDetector::Detect() {
     LOG_INFO("Detecting game engine...");
 
+    // 1. Check if per-game config defines an explicit profile
+    const auto* configMgr = SubsystemContext::Get().GetConfig();
+    if (configMgr) {
+        const auto& config = configMgr->GetConfig();
+        if (!config.engineType.empty()) {
+            std::string eng = ToLower(config.engineType);
+            EngineDetection profileDetection{};
+            if (eng.find("unreal5") != std::string::npos || eng.find("ue5") != std::string::npos) {
+                profileDetection.type = EngineType::UnrealEngine5;
+                profileDetection.versionString = "UE5.x (Profile Override)";
+            } else if (eng.find("unreal") != std::string::npos || eng.find("ue4") != std::string::npos) {
+                profileDetection.type = EngineType::UnrealEngine4;
+                profileDetection.versionString = "UE4.xx (Profile Override)";
+            } else if (eng.find("unity") != std::string::npos) {
+                profileDetection.type = EngineType::Unity;
+                profileDetection.versionString = "Unity (Profile Override)";
+            } else {
+                profileDetection.type = EngineType::Unknown;
+                profileDetection.versionString = "Custom/Profile";
+            }
+            profileDetection.confidence = 1.0f;
+            profileDetection.tuning = TuningFor(profileDetection.type);
+            if (config.hasReverseZOverride) profileDetection.tuning.reverseZ = config.reverseZ;
+            if (config.hasRowMajorOverride) profileDetection.tuning.rowMajorMatrices = config.rowMajorMatrices;
+            ApplyDetection(profileDetection);
+            LOG_INFO("EngineDetector: Applied explicit profile override -> %s", profileDetection.versionString.c_str());
+            return;
+        }
+    }
+
+    // 2. Check loaded modules in current process
     EngineDetection moduleDetection = DetectFromModuleNames(EnumerateCurrentProcessModules());
     if (moduleDetection.type != EngineType::Unknown) {
         ApplyDetection(moduleDetection);
-        LOG_INFO("Detected %s engine with confidence %.2f.",
+        LOG_INFO("Detected %s engine from modules with confidence %.2f.",
                  m_versionString.c_str(),
                  m_detection.confidence);
         return;
     }
 
-    // Check for Unreal Engine (must only check current process!)
+    // 3. Check for UnrealWindow class in current process
     if (CheckForUnrealWindow()) {
         LOG_INFO("Detected UnrealWindow class - Game is running Unreal Engine.");
         m_detection.type = EngineType::UnrealEngine4;
         m_detection.versionString = "UE4.xx";
-        m_detection.confidence = 0.65f;
+        m_detection.confidence = 0.80f;
         m_detection.tuning = TuningFor(m_detection.type);
         ApplyDetection(m_detection);
-        
-        // Scan for signatures to determine exact UE4/UE5 version
         ScanForUnrealSignatures();
         return;
     }
 
-    char exeName[MAX_PATH];
-    GetModuleFileNameA(NULL, exeName, MAX_PATH);
-    std::string exeStr = exeName;
-    if (exeStr.find("HogwartsLegacy") != std::string::npos) {
-        LOG_INFO("Detected Hogwarts Legacy - Forcing Unreal Engine mode.");
-        m_detection.type = EngineType::UnrealEngine4;
-        m_detection.versionString = "UE4.xx (HogwartsLegacy executable hint)";
-        m_detection.confidence = 0.75f;
-        m_detection.tuning = TuningFor(m_detection.type);
-        ApplyDetection(m_detection);
-        ScanForUnrealSignatures();
-        return;
-    }
-    if (exeStr.find("-Win64-Shipping") != std::string::npos || exeStr.find("PenguinHotel") != std::string::npos) {
-        LOG_INFO("Detected Unreal Engine shipping executable pattern.");
-        m_detection.type = EngineType::UnrealEngine5;
-        m_detection.versionString = "UE5.x (Modern Unreal Engine Title)";
-        m_detection.confidence = 0.85f;
-        m_detection.tuning = TuningFor(m_detection.type);
-        ApplyDetection(m_detection);
-        ScanForUnrealSignatures();
-        return;
+    // 4. Check executable path structure for standard Unreal Engine folder layout (e.g. Binaries/Win64)
+    char exeName[MAX_PATH]{};
+    if (GetModuleFileNameA(NULL, exeName, MAX_PATH)) {
+        std::string exeStr = ToLower(exeName);
+        if (exeStr.find("binaries\\win64") != std::string::npos || exeStr.find("binaries/win64") != std::string::npos) {
+            LOG_INFO("Detected Unreal Engine directory structure (Binaries/Win64).");
+            m_detection.type = EngineType::UnrealEngine4;
+            m_detection.versionString = "Unreal Engine (Path Structure)";
+            m_detection.confidence = 0.75f;
+            m_detection.tuning = TuningFor(m_detection.type);
+            ApplyDetection(m_detection);
+            ScanForUnrealSignatures();
+            return;
+        }
     }
 
     LOG_WARN("Engine type unknown. Defaulting to generic hooks and Universal Memory Scanner.");
@@ -128,7 +149,7 @@ EngineDetection EngineDetector::DetectFromModuleNames(const std::vector<std::str
         hasMono = hasMono || Contains(name, "mono-2.0-bdwgc.dll") || Contains(name, "mono.dll");
 
         hasUE5 = hasUE5 || Contains(name, "unrealeditor-") || Contains(name, "ue5") || Contains(name, "unrealengine5");
-        hasUE4 = hasUE4 || Contains(name, "ue4") || Contains(name, "unrealengine4");
+        hasUE4 = hasUE4 || Contains(name, "ue4") || Contains(name, "unrealengine4") || Contains(name, "physx3");
         hasUnreal = hasUnreal || hasUE4 || hasUE5 || Contains(name, "unrealengine") || Contains(name, "unrealpak");
     }
 

@@ -74,7 +74,7 @@ struct DeviceDispatchTable {
     PFN_vkCmdBindPipeline CmdBindPipeline = nullptr;
     PFN_vkCmdDispatch CmdDispatch = nullptr;
     PFN_vkCmdCopyImage CmdCopyImage = nullptr;
-    
+    PFN_vkCmdBlitImage CmdBlitImage = nullptr;
     PFN_vkCreatePipelineCache CreatePipelineCache = nullptr;
     PFN_vkDestroyPipelineCache DestroyPipelineCache = nullptr;
     PFN_vkCreateDescriptorSetLayout CreateDescriptorSetLayout = nullptr;
@@ -89,6 +89,7 @@ struct DeviceDispatchTable {
     PFN_vkDestroyDescriptorPool DestroyDescriptorPool = nullptr;
 
     PFN_vkGetImageMemoryRequirements GetImageMemoryRequirements = nullptr;
+    PFN_vkGetBufferMemoryRequirements GetBufferMemoryRequirements = nullptr;
     PFN_vkAllocateMemory AllocateMemory = nullptr;
     PFN_vkFreeMemory FreeMemory = nullptr;
     PFN_vkBindImageMemory BindImageMemory = nullptr;

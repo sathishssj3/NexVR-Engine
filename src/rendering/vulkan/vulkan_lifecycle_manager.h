@@ -15,7 +15,7 @@ public:
     void OnInstanceCreated(VkInstance instance, uint32_t apiVersion);
     void OnInstanceDestroyed(VkInstance instance);
 
-    void OnDeviceCreated(VkPhysicalDevice physicalDevice, VkDevice device, const VkDeviceCreateInfo* pCreateInfo);
+    void OnDeviceCreated(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, const VkDeviceCreateInfo* pCreateInfo);
     void OnDeviceDestroyed(VkDevice device);
 
     void OnSwapchainCreated(VkDevice device, VkSwapchainKHR swapchain, const VkSwapchainCreateInfoKHR* pCreateInfo);
@@ -30,6 +30,7 @@ public:
 
     RenderState GetState() const { return m_currentState; }
     VkDevice GetCurrentDevice() const { return m_currentDevice; }
+    VkPhysicalDevice GetCurrentPhysicalDevice() const { return m_currentPhysicalDevice; }
 
 private:
     VulkanLifecycleManager() = default;

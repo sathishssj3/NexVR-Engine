@@ -19,6 +19,8 @@
 #include <mutex>
 #include <shared_mutex>
 #include "rendering/dx12/dx12_lifecycle_manager.h"
+#include "rendering/vulkan/vulkan_lifecycle_manager.h"
+#include "core/diagnostic_context.h"
 #include "core/frame_coordinator.h"
 
 #include <wrl/client.h>
@@ -175,6 +177,11 @@ HRESULT ProcessPresentDX12(SwapChainType* pSwapChain, OriginalFunc originalFunc,
         return originalFunc ? originalFunc(pSwapChain, args...) : DXGI_ERROR_INVALID_CALL;
     }
 
+    if (vrinject::vulkan::VulkanLifecycleManager::Get().GetState() != vrinject::RenderState::UNINITIALIZED) {
+        // Vulkan is active, this is likely an internal driver swapchain presentation. Pass through.
+        return originalFunc(pSwapChain, args...);
+    }
+
     HRESULT hr = S_OK;
     try {
         // In DX12, we need the command queue to provide to the lifecycle manager.
@@ -229,12 +236,14 @@ HRESULT __stdcall hkPresent1DX12(IDXGISwapChain1* pSwapChain, UINT SyncInterval,
 }
 
 HRESULT __stdcall hkResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags) {
-    LOG_INFO("DX12Hook: hkResizeBuffers requested format %d", NewFormat);
+    LOG_INFO("DX12Hook: hkResizeBuffers requested format %d (%ux%u)", NewFormat, Width, Height);
+    Dx12LifecycleManager::Get().ReleaseSwapchainReferences();
     return OriginalResizeBuffers ? OriginalResizeBuffers(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags) : DXGI_ERROR_INVALID_CALL;
 }
 
 HRESULT __stdcall hkResizeBuffers1(IDXGISwapChain3* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags, const UINT* pCreationNodeMask, IUnknown* const* ppPresentQueue) {
-    LOG_INFO("DX12Hook: hkResizeBuffers1 requested format %d", NewFormat);
+    LOG_INFO("DX12Hook: hkResizeBuffers1 requested format %d (%ux%u)", NewFormat, Width, Height);
+    Dx12LifecycleManager::Get().ReleaseSwapchainReferences();
     return OriginalResizeBuffers1 ? OriginalResizeBuffers1(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags, pCreationNodeMask, ppPresentQueue) : DXGI_ERROR_INVALID_CALL;
 }
 
@@ -246,8 +255,6 @@ void __stdcall hkCreateDepthStencilView(ID3D12Device* pDevice, ID3D12Resource* p
 }
 
 void __stdcall hkCopyDescriptors(ID3D12Device* pDevice, UINT NumDestDescriptorRanges, const D3D12_CPU_DESCRIPTOR_HANDLE* pDestDescriptorRangeStarts, const UINT* pDestDescriptorRangeSizes, UINT NumSrcDescriptorRanges, const D3D12_CPU_DESCRIPTOR_HANDLE* pSrcDescriptorRangeStarts, const UINT* pSrcDescriptorRangeSizes, D3D12_DESCRIPTOR_HEAP_TYPE DescriptorHeapsType) {
-    // Advanced tracker: for now we only support Simple copy well or 1:1, full implementation would loop over ranges.
-    // In practice, many engines use CopyDescriptorsSimple or 1:1 arrays
     if (OriginalCopyDescriptors) {
         OriginalCopyDescriptors(pDevice, NumDestDescriptorRanges, pDestDescriptorRangeStarts, pDestDescriptorRangeSizes, NumSrcDescriptorRanges, pSrcDescriptorRangeStarts, pSrcDescriptorRangeSizes, DescriptorHeapsType);
     }
@@ -267,37 +274,9 @@ void __stdcall hkCopyDescriptorsSimple(ID3D12Device* pDevice, UINT NumDescriptor
     }
 }
 
-
-
-
-
-
-
 void __stdcall hkExecuteCommandLists(ID3D12CommandQueue* pCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists) {
-    try {
-
-        // Scan persistently mapped buffers before command lists are executed by the GPU
-        {
-            std::lock_guard<std::recursive_mutex> mapLock(g_dx12MapMutex);
-            for (auto const& [pResource, pData] : g_dx12MappedResources) {
-                if (pResource && pData) {
-                    D3D12_RESOURCE_DESC desc = pResource->GetDesc();
-                    if (desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER) {
-                        SubsystemContext::Get().GetUniversalScanner()->ProcessConstantBuffer(pData, static_cast<size_t>(desc.Width));
-                    }
-                }
-            }
-        }
-
-        if (OriginalExecuteCommandLists) {
-            OriginalExecuteCommandLists(pCommandQueue, NumCommandLists, ppCommandLists);
-        }
-    } catch (const std::exception& e) {
-        LOG_ERROR("DX12Hook: hkExecuteCommandLists exception caught: %s", e.what());
-        if (OriginalExecuteCommandLists) OriginalExecuteCommandLists(pCommandQueue, NumCommandLists, ppCommandLists);
-    } catch (...) {
-        LOG_ERROR("DX12Hook: hkExecuteCommandLists unknown exception caught");
-        if (OriginalExecuteCommandLists) OriginalExecuteCommandLists(pCommandQueue, NumCommandLists, ppCommandLists);
+    if (OriginalExecuteCommandLists) {
+        OriginalExecuteCommandLists(pCommandQueue, NumCommandLists, ppCommandLists);
     }
 }
 
@@ -629,22 +608,8 @@ bool Initialize() {
         MH_EnableHook(resizeBuffers1Address);
     }
 
-    if (IsValidHookTarget(mapAddress) &&
-        MH_CreateHook(mapAddress, (void*)hkMap, (void**)&OriginalMap) == MH_OK) {
-        g_targetMapDX12 = mapAddress;
-        MH_EnableHook(mapAddress);
-    } else {
-        LOG_ERROR("DX12Hook: MH_CreateHook failed for Map");
-    }
-
-    if (IsValidHookTarget(unmapAddress) &&
-        MH_CreateHook(unmapAddress, (void*)hkUnmap, (void**)&OriginalUnmap) == MH_OK) {
-        g_targetUnmapDX12 = unmapAddress;
-        MH_EnableHook(unmapAddress);
-    } else {
-        LOG_ERROR("DX12Hook: MH_CreateHook failed for Unmap");
-    }
-
+    // Map and Unmap are intentionally NOT hooked in DX12 to avoid race conditions
+    // and driver invalid-call crashes on multi-threaded worker ring buffers.
     LOG_INFO("DX12Hook: Dummy Initialize success, waiting for DynamicHook");
     return true;
 }

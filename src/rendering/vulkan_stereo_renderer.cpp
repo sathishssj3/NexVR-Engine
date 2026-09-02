@@ -20,6 +20,7 @@ bool VulkanStereoRenderer::Render(const CameraSnapshot& camera,
                                   const DepthSnapshot& depth,
                                   VkBuffer cameraBuffer,
                                   VkDeviceSize cameraBufferSize,
+                                  VkImageView gameColorView,
                                   VkImageView depthView,
                                   VulkanStereoResourceManager& resourceManager,
                                   VulkanPipelineCache& pipelineCache,
@@ -29,7 +30,14 @@ bool VulkanStereoRenderer::Render(const CameraSnapshot& camera,
                                   VulkanResourceStateTracker& stateTracker,
                                   VkImage oxrLeftDest,
                                   VkImage oxrRightDest,
-                                  VkImageView uiMaskView) {
+                                  bool shouldAttemptStereo,
+                                  VkImageView uiMaskView,
+                                  uint32_t waitSemaphoreCount,
+                                  const VkSemaphore* pWaitSemaphores,
+                                  VkSemaphore signalSemaphore) {
+    
+    VkImage leftEyeImage = resourceManager.GetLeftEyeImage();
+    VkImage rightEyeImage = resourceManager.GetRightEyeImage();
     
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(m_device);
     if (!dt) {
@@ -69,10 +77,19 @@ bool VulkanStereoRenderer::Render(const CameraSnapshot& camera,
                                      m_queueFamilyIndex,
                                      VK_IMAGE_ASPECT_DEPTH_BIT);
     }
+    
+    // 3.5 Transition color image to SHADER_READ_ONLY_OPTIMAL
+    VkImage colorImage = static_cast<VkImage>(camera.resourceIdentity.nativeHandle);
+    if (colorImage) {
+        stateTracker.TransitionImage(cmd, colorImage,
+                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                     VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                     VK_ACCESS_SHADER_READ_BIT,
+                                     m_queueFamilyIndex,
+                                     VK_IMAGE_ASPECT_COLOR_BIT);
+    }
 
     // 4. Transition eye output images to GENERAL for storage writes
-    VkImage leftEyeImage = resourceManager.GetLeftEyeImage();
-    VkImage rightEyeImage = resourceManager.GetRightEyeImage();
     if (leftEyeImage) {
         stateTracker.TransitionImage(cmd, leftEyeImage,
                                      VK_IMAGE_LAYOUT_GENERAL,
@@ -99,6 +116,7 @@ bool VulkanStereoRenderer::Render(const CameraSnapshot& camera,
     // 6. Update & bind descriptor sets with real handles
     descriptorManager.UpdateDescriptorSets(m_frameIndex, 
                                            cameraBuffer, 0, cameraBufferSize,
+                                           gameColorView,
                                            depthView,
                                            resourceManager.GetSampler(), 
                                            resourceManager.GetLeftEyeView(), 
@@ -111,22 +129,25 @@ bool VulkanStereoRenderer::Render(const CameraSnapshot& camera,
     }
 
     // 7. Dispatch compute shader
-    uint32_t groupCountX = (resourceManager.GetWidth() + 15) / 16;
-    uint32_t groupCountY = (resourceManager.GetHeight() + 15) / 16;
+    uint32_t groupCountX = (resourceManager.GetWidth() + 7) / 8;
+    uint32_t groupCountY = (resourceManager.GetHeight() + 7) / 8;
     if (groupCountX > 0 && groupCountY > 0 && pipeline) {
         dt->CmdDispatch(cmd, groupCountX, groupCountY, 1);
     }
+
+    VkImage srcLeft = leftEyeImage;
+    VkImage srcRight = rightEyeImage;
 
     // 8. Copy to OpenXR Swapchain if provided
     if (!oxrLeftDest) {
         std::cerr << "Render debug: oxrLeftDest is null\n";
     }
-    if (!leftEyeImage) {
-        std::cerr << "Render debug: leftEyeImage is null\n";
+    if (!srcLeft) {
+        std::cerr << "Render debug: srcLeft is null\n";
     }
-    if (oxrLeftDest && leftEyeImage) {
-        // Transition internal left eye from GENERAL to TRANSFER_SRC
-        stateTracker.TransitionImage(cmd, leftEyeImage,
+    if (oxrLeftDest && srcLeft) {
+        // Transition source eye image to TRANSFER_SRC
+        stateTracker.TransitionImage(cmd, srcLeft,
                                      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                      VK_PIPELINE_STAGE_TRANSFER_BIT,
                                      VK_ACCESS_TRANSFER_READ_BIT,
@@ -149,7 +170,7 @@ bool VulkanStereoRenderer::Render(const CameraSnapshot& camera,
         copyRegion.extent.height = resourceManager.GetHeight();
         copyRegion.extent.depth = 1;
 
-        dt->CmdCopyImage(cmd, leftEyeImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        dt->CmdCopyImage(cmd, srcLeft, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                          oxrLeftDest, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                          1, &copyRegion);
                          
@@ -161,9 +182,9 @@ bool VulkanStereoRenderer::Render(const CameraSnapshot& camera,
                                      m_queueFamilyIndex);
     }
 
-    if (oxrRightDest && rightEyeImage) {
-        // Transition internal right eye from GENERAL to TRANSFER_SRC
-        stateTracker.TransitionImage(cmd, rightEyeImage,
+    if (oxrRightDest && srcRight) {
+        // Transition source right eye image to TRANSFER_SRC
+        stateTracker.TransitionImage(cmd, srcRight,
                                      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                      VK_PIPELINE_STAGE_TRANSFER_BIT,
                                      VK_ACCESS_TRANSFER_READ_BIT,
@@ -185,7 +206,7 @@ bool VulkanStereoRenderer::Render(const CameraSnapshot& camera,
         copyRegion.extent.height = resourceManager.GetHeight();
         copyRegion.extent.depth = 1;
 
-        dt->CmdCopyImage(cmd, rightEyeImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        dt->CmdCopyImage(cmd, srcRight, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                          oxrRightDest, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                          1, &copyRegion);
                          
@@ -197,6 +218,15 @@ bool VulkanStereoRenderer::Render(const CameraSnapshot& camera,
                                      m_queueFamilyIndex);
     }
 
+    if (colorImage) {
+        stateTracker.TransitionImage(cmd, colorImage,
+                                     VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                                     VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                                     0,
+                                     m_queueFamilyIndex,
+                                     VK_IMAGE_ASPECT_COLOR_BIT);
+    }
+
     // 9. End and submit
     commandManager.EndFrame(m_frameIndex);
 
@@ -204,6 +234,18 @@ bool VulkanStereoRenderer::Render(const CameraSnapshot& camera,
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &cmd;
+    
+    // Set up wait/signal semaphores for Vulkan presentation chaining
+    std::vector<VkPipelineStageFlags> waitStages(waitSemaphoreCount, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    if (waitSemaphoreCount > 0 && pWaitSemaphores) {
+        submitInfo.waitSemaphoreCount = waitSemaphoreCount;
+        submitInfo.pWaitSemaphores = pWaitSemaphores;
+        submitInfo.pWaitDstStageMask = waitStages.data();
+    }
+    if (signalSemaphore != VK_NULL_HANDLE) {
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = &signalSemaphore;
+    }
 
     VkResult submitRes = dt->QueueSubmit(m_queue, 1, &submitInfo, frameFence);
     if (submitRes != VK_SUCCESS) {

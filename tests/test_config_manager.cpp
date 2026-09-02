@@ -162,3 +162,46 @@ TEST_F(ConfigManagerTest, ConfigJsonParseErrorHandling) {
     EXPECT_FLOAT_EQ(cfg.ipd, 0.064f);  // Default value
     EXPECT_TRUE(cfg.enableNeuralInpainter);  // Default value
 }
+
+TEST_F(ConfigManagerTest, HierarchicalParentDirectoryDiscovery) {
+    // Simulate game installed at testDir with binary inside Phoenix/Binaries/Win64
+    fs::path subfolder = testDir / "Phoenix" / "Binaries" / "Win64";
+    fs::create_directories(subfolder);
+
+    // Place vrinject.json at root install folder testDir
+    std::ofstream outFile(testDir / "vrinject.json");
+    outFile << R"({
+        "ipd": 0.075,
+        "convergence": 18.0
+    })";
+    outFile.close();
+
+    // DLL executes in subfolder and calls Load with subfolder path
+    vrinject::ConfigManager& config = (*vrinject::SubsystemContext::Get().GetConfig());
+    bool result = config.Load(subfolder.string());
+
+    EXPECT_TRUE(result);
+    EXPECT_FLOAT_EQ(config.GetConfig().ipd, 0.075f);
+    EXPECT_FLOAT_EQ(config.GetConfig().convergence, 18.0f);
+}
+
+TEST_F(ConfigManagerTest, PerGameEngineProfileOverrides) {
+    std::ofstream outFile(configPath);
+    outFile << R"({
+        "engine": "UnrealEngine5",
+        "reverseZ": false,
+        "rowMajorMatrices": false
+    })";
+    outFile.close();
+
+    vrinject::ConfigManager& config = (*vrinject::SubsystemContext::Get().GetConfig());
+    bool result = config.Load(testDir.string());
+
+    EXPECT_TRUE(result);
+    const auto& cfg = config.GetConfig();
+    EXPECT_EQ(cfg.engineType, "UnrealEngine5");
+    EXPECT_TRUE(cfg.hasReverseZOverride);
+    EXPECT_FALSE(cfg.reverseZ);
+    EXPECT_TRUE(cfg.hasRowMajorOverride);
+    EXPECT_FALSE(cfg.rowMajorMatrices);
+}

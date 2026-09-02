@@ -2,6 +2,7 @@
 #include "heuristics/render_frame_snapshot.h"
 
 #include <memory>
+#include <mutex>
 #include "rendering/igraphics_backend.h"
 #include "openxr/openxr_runtime_manager.h"
 #include "openxr/openxr_swapchain_manager.h"
@@ -37,6 +38,8 @@ private:
     std::unique_ptr<IGraphicsBackend> m_graphicsBackend;
 
     std::unique_ptr<openxr::OpenXRHealthMonitor> m_oxrHealthMonitor;
+    std::mutex m_oxrRuntimeMutex;
+    std::unique_ptr<openxr::OpenXRRuntimeManager> m_pendingOxrRuntime;
     std::unique_ptr<openxr::OpenXRRuntimeManager> m_oxrRuntime;
     std::unique_ptr<openxr::OpenXRSwapchainManager> m_oxrSwapchain;
     std::unique_ptr<openxr::OpenXRFrameSubmitter> m_oxrSubmitter;

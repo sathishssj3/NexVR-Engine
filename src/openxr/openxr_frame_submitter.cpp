@@ -154,16 +154,20 @@ bool OpenXRFrameSubmitter::ReleaseAndEndDX11(
     projectionViews[0].pose = lastLeftPose_;
     projectionViews[0].fov = lastLeftFov_;
     projectionViews[0].subImage.swapchain = swapchainManager->GetLeftSwapchain();
+    projectionViews[0].subImage.imageArrayIndex = 0;
+    projectionViews[0].subImage.imageRect.offset = {0, 0};
     projectionViews[0].subImage.imageRect.extent = extentOf(leftDest);
 
     // Right Eye
     projectionViews[1].pose = lastRightPose_;
     projectionViews[1].fov = lastRightFov_;
     projectionViews[1].subImage.swapchain = swapchainManager->GetRightSwapchain();
+    projectionViews[1].subImage.imageArrayIndex = 0;
+    projectionViews[1].subImage.imageRect.offset = {0, 0};
     projectionViews[1].subImage.imageRect.extent = extentOf(rightDest);
 
     XrCompositionLayerProjection layer{XR_TYPE_COMPOSITION_LAYER_PROJECTION};
-    layer.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
+    layer.layerFlags = 0; // Opaque layer
     layer.space = referenceSpace;
     layer.viewCount = 2;
     layer.views = projectionViews;
@@ -226,6 +230,9 @@ bool OpenXRFrameSubmitter::BeginAndAcquireDX12(
         return false;
     }
 
+    // Locate views for head tracking
+    LocateViews(session, referenceSpace, outLeftPose, outLeftFov, outRightPose, outRightFov);
+
     // 3. Acquire Images
     state_ = SubmitterState::ACQUIRE_IMAGES;
     uint32_t leftIndex = 0;
@@ -277,19 +284,24 @@ bool OpenXRFrameSubmitter::ReleaseAndEndDX12(
         {XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW}
     };
 
-    projectionViews[0].pose.orientation.w = 1.0f;
-    projectionViews[0].fov = fov;
+    projectionViews[0].pose = lastLeftPose_;
+    projectionViews[0].fov = lastLeftFov_;
     projectionViews[0].subImage.swapchain = swapchainManager->GetLeftSwapchain();
+    projectionViews[0].subImage.imageArrayIndex = 0;
+    projectionViews[0].subImage.imageRect.offset = {0, 0};
     projectionViews[0].subImage.imageRect.extent.width = leftWidth;
     projectionViews[0].subImage.imageRect.extent.height = leftHeight;
     
-    projectionViews[1].pose.orientation.w = 1.0f;
-    projectionViews[1].fov = fov;
+    projectionViews[1].pose = lastRightPose_;
+    projectionViews[1].fov = lastRightFov_;
     projectionViews[1].subImage.swapchain = swapchainManager->GetRightSwapchain();
+    projectionViews[1].subImage.imageArrayIndex = 0;
+    projectionViews[1].subImage.imageRect.offset = {0, 0};
     projectionViews[1].subImage.imageRect.extent.width = rightWidth;
     projectionViews[1].subImage.imageRect.extent.height = rightHeight;
 
     XrCompositionLayerProjection projectionLayer{XR_TYPE_COMPOSITION_LAYER_PROJECTION};
+    projectionLayer.layerFlags = 0; // Opaque layer - do not blend with SteamVR void background
     projectionLayer.space = referenceSpace;
     projectionLayer.viewCount = 2;
     projectionLayer.views = projectionViews;
@@ -354,6 +366,9 @@ bool OpenXRFrameSubmitter::BeginAndAcquireVulkan(
         return false;
     }
 
+    // Locate views for head tracking
+    LocateViews(session, referenceSpace, outLeftPose, outLeftFov, outRightPose, outRightFov);
+
     // 3. Acquire Images
     state_ = SubmitterState::ACQUIRE_IMAGES;
     uint32_t leftIndex = 0;
@@ -398,26 +413,29 @@ bool OpenXRFrameSubmitter::ReleaseAndEndVulkan(
     // 7. End Frame
     state_ = SubmitterState::END_FRAME;
     
-    XrFovf fov = {-0.8f, 0.8f, 0.8f, -0.8f};
-
     XrCompositionLayerProjectionView projectionViews[2] = {
         {XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW},
         {XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW}
     };
 
-    projectionViews[0].pose.orientation.w = 1.0f;
-    projectionViews[0].fov = fov;
+    projectionViews[0].pose = lastLeftPose_;
+    projectionViews[0].fov = lastLeftFov_;
     projectionViews[0].subImage.swapchain = swapchainManager->GetLeftSwapchain();
+    projectionViews[0].subImage.imageArrayIndex = 0;
+    projectionViews[0].subImage.imageRect.offset = {0, 0};
     projectionViews[0].subImage.imageRect.extent.width = leftWidth;
     projectionViews[0].subImage.imageRect.extent.height = leftHeight;
     
-    projectionViews[1].pose.orientation.w = 1.0f;
-    projectionViews[1].fov = fov;
+    projectionViews[1].pose = lastRightPose_;
+    projectionViews[1].fov = lastRightFov_;
     projectionViews[1].subImage.swapchain = swapchainManager->GetRightSwapchain();
+    projectionViews[1].subImage.imageArrayIndex = 0;
+    projectionViews[1].subImage.imageRect.offset = {0, 0};
     projectionViews[1].subImage.imageRect.extent.width = rightWidth;
     projectionViews[1].subImage.imageRect.extent.height = rightHeight;
 
     XrCompositionLayerProjection projectionLayer{XR_TYPE_COMPOSITION_LAYER_PROJECTION};
+    projectionLayer.layerFlags = 0; // Opaque layer
     projectionLayer.space = referenceSpace;
     projectionLayer.viewCount = 2;
     projectionLayer.views = projectionViews;

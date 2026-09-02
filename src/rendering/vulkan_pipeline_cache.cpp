@@ -2,6 +2,11 @@
 #include "rendering/vulkan/vulkan_dispatch_table.h"
 #include <fstream>
 #include <cassert>
+#include <cstdint>
+
+static const uint32_t g_stereo_reprojection_cs_vk[] = 
+#include "stereo_reprojection_cs_vk.h"
+;
 
 namespace vrinject {
 namespace vulkan {
@@ -38,9 +43,15 @@ bool VulkanPipelineCache::Initialize() {
 
     if (!CreateDescriptorSetLayout()) return false;
     if (!CreatePipelineLayout()) return false;
-    if (!LoadShaderModule("shaders/vulkan/stereo.spv", &m_stereoShaderModule)) {
-        // Fallback or warning
+    
+    VkShaderModuleCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.codeSize = sizeof(g_stereo_reprojection_cs_vk);
+    createInfo.pCode = g_stereo_reprojection_cs_vk;
+    if (dt->CreateShaderModule(m_device, &createInfo, nullptr, &m_stereoShaderModule) != VK_SUCCESS) {
+        return false;
     }
+    
     if (!CreateComputePipeline()) return false;
 
     return true;
@@ -93,34 +104,46 @@ bool VulkanPipelineCache::SavePersistentCache() {
 bool VulkanPipelineCache::CreateDescriptorSetLayout() {
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(m_device);
 
-    VkDescriptorSetLayoutBinding bindings[4]{};
-    // Camera Buffer
+    VkDescriptorSetLayoutBinding bindings[6]{};
+    // Binding 0: Camera Buffer (b0)
     bindings[0].binding = 0;
     bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     bindings[0].descriptorCount = 1;
     bindings[0].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
-    // Depth Texture
+    // Binding 1: Game Color Texture (t0)
     bindings[1].binding = 1;
-    bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     bindings[1].descriptorCount = 1;
     bindings[1].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
-    // Left Eye UAV
+    // Binding 2: Depth Texture (t1)
     bindings[2].binding = 2;
-    bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     bindings[2].descriptorCount = 1;
     bindings[2].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-
-    // Right Eye UAV
+    
+    // Binding 3: Sampler (s0)
     bindings[3].binding = 3;
-    bindings[3].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    bindings[3].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
     bindings[3].descriptorCount = 1;
     bindings[3].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
+    // Binding 4: Left Eye UAV (u0)
+    bindings[4].binding = 4;
+    bindings[4].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    bindings[4].descriptorCount = 1;
+    bindings[4].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+
+    // Binding 5: Right Eye UAV (u1)
+    bindings[5].binding = 5;
+    bindings[5].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    bindings[5].descriptorCount = 1;
+    bindings[5].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 4;
+    layoutInfo.bindingCount = 6;
     layoutInfo.pBindings = bindings;
 
     return dt->CreateDescriptorSetLayout(m_device, &layoutInfo, nullptr, &m_descriptorSetLayout) == VK_SUCCESS;
@@ -176,7 +199,7 @@ bool VulkanPipelineCache::CreateComputePipeline() {
     pipelineInfo.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     pipelineInfo.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     pipelineInfo.stage.module = m_stereoShaderModule;
-    pipelineInfo.stage.pName = "main";
+    pipelineInfo.stage.pName = "CSMain";
 
     return dt->CreateComputePipelines(m_device, m_pipelineCache, 1, &pipelineInfo, nullptr, &m_stereoPipeline) == VK_SUCCESS;
 }

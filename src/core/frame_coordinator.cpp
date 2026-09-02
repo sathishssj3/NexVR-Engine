@@ -261,6 +261,15 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
     m_oxrHealthMonitor = std::make_unique<openxr::OpenXRHealthMonitor>();
     LOG_INFO("FrameCoordinator: OpenXR health monitor created.");
   }
+
+  // Consume any newly initialized OpenXR runtime safely on the render thread
+  {
+    std::lock_guard<std::mutex> lock(m_oxrRuntimeMutex);
+    if (m_pendingOxrRuntime) {
+      m_oxrRuntime = std::move(m_pendingOxrRuntime);
+    }
+  }
+
   static std::atomic<bool> s_oxrInitInProgress{false};
   if (!m_oxrRuntime || m_oxrRuntime->GetState() == openxr::RuntimeState::FAILED) {
     if (!s_oxrInitInProgress.load()) {
@@ -275,7 +284,8 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
           auto runtime = std::make_unique<openxr::OpenXRRuntimeManager>(m_oxrHealthMonitor.get());
           if (runtime->Initialize("NexVR Engine", backend)) {
             LOG_INFO("FrameCoordinator: Async OpenXR initialization SUCCEEDED (state=%d)!", (int)runtime->GetState());
-            m_oxrRuntime = std::move(runtime);
+            std::lock_guard<std::mutex> lock(m_oxrRuntimeMutex);
+            m_pendingOxrRuntime = std::move(runtime);
           } else {
             LOG_ERROR("FrameCoordinator: Async OpenXR initialization FAILED. Will retry in background in 2s.");
           }
@@ -288,21 +298,22 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
   if (m_oxrRuntime) {
     // Pump OpenXR events
     m_oxrRuntime->PollEvents();
-  }
 
-  if (m_oxrRuntime->GetState() == openxr::RuntimeState::SYSTEM_SELECTED) {
-    LOG_INFO("FrameCoordinator: OpenXR state is SYSTEM_SELECTED, creating session (backend=%d)...", (int)m_currentSnapshot.backend);
-    if (!m_graphicsBackend->CreateOpenXRSession(m_oxrRuntime.get(), m_currentSnapshot)) {
-        LOG_ERROR("FrameCoordinator: OpenXR session creation FAILED!");
-    } else {
-        LOG_INFO("FrameCoordinator: OpenXR session created successfully. Initializing Input Manager...");
-        m_inputManager.Initialize(m_oxrRuntime->GetInstance(), m_oxrRuntime->GetSession());
+    if (m_oxrRuntime->GetState() == openxr::RuntimeState::SYSTEM_SELECTED) {
+      LOG_INFO("FrameCoordinator: OpenXR state is SYSTEM_SELECTED, creating session (backend=%d)...", (int)m_currentSnapshot.backend);
+      if (!m_graphicsBackend->CreateOpenXRSession(m_oxrRuntime.get(), m_currentSnapshot)) {
+          LOG_ERROR("FrameCoordinator: OpenXR session creation FAILED!");
+      } else {
+          LOG_INFO("FrameCoordinator: OpenXR session created successfully. Initializing Input Manager...");
+          m_inputManager.Initialize(m_oxrRuntime->GetInstance(), m_oxrRuntime->GetSession());
+      }
     }
   }
 
   // Only attempt stereo rendering if both camera and depth are valid, and
-  // OpenXR is ready
+  // OpenXR is ready (strictly checking m_oxrRuntime != nullptr)
   bool xrReady =
+      m_oxrRuntime &&
       m_oxrRuntime->GetState() >= openxr::RuntimeState::SESSION_READY &&
       m_oxrRuntime->GetState() != openxr::RuntimeState::STOPPING &&
       m_oxrRuntime->GetState() != openxr::RuntimeState::STOPPED &&

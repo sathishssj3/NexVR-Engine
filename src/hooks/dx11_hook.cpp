@@ -8,6 +8,8 @@
 #include <memory>
 #include <string>
 #include <d3d11.h>
+#include <d3d12.h>
+#include <wrl/client.h>
 #include <dxgi1_2.h>
 
 #include "core/logger.h"
@@ -15,6 +17,7 @@
 #include "core/config_manager.h"
 #include "rendering/dx11/dx11_lifecycle_manager.h"
 #include "rendering/dx12/dx12_lifecycle_manager.h"
+#include "rendering/vulkan/vulkan_lifecycle_manager.h"
 #include "core/diagnostic_context.h"
 #include "core/subsystem_context.h"
 #include "core/frame_coordinator.h"
@@ -90,21 +93,77 @@ HRESULT ProcessPresent(SwapChainType* pSwapChain, OriginalFunc originalFunc, Arg
         return originalFunc ? originalFunc(pSwapChain, args...) : DXGI_ERROR_INVALID_CALL;
     }
 
+    // Only skip DX11 processing if Vulkan is ACTIVELY presenting frames.
+    // Many DX11 games (especially UE4/UE5) load Vulkan DLLs internally for
+    // shader compilation or compute, which can trigger Vulkan hooks and set
+    // VulkanLifecycleManager to INITIALIZING/DISCOVERING. We must NOT treat
+    // that as "Vulkan is the rendering API" — only RUNNING means Vulkan is
+    // actively presenting to a swapchain.
+    auto vulkanState = vrinject::vulkan::VulkanLifecycleManager::Get().GetState();
+    if (vulkanState == vrinject::RenderState::RUNNING) {
+        return originalFunc(pSwapChain, args...);
+    }
+
     HRESULT hr = S_OK;
     try {
         // Execute original present first to get the true HRESULT (e.g. DEVICE_REMOVED)
         hr = originalFunc(pSwapChain, args...);
 
-        // Check if this is a DX12 swapchain by looking for captured command queue
+        // Determine if the swapchain is truly DX12 or DX11.
+        // Cache the result per swapchain pointer to avoid probing every frame.
+        // Self-healing: if DX12 path fails repeatedly, fall back to DX11.
+        static IDXGISwapChain* s_lastProbedSwapChain = nullptr;
+        static bool s_lastProbeWasDX12 = false;
+        static int s_dx12FailCount = 0;
+        
+        IDXGISwapChain* baseSwapChain = static_cast<IDXGISwapChain*>(pSwapChain);
+        
+        // Re-probe if swapchain pointer changed OR if we previously didn't detect DX12 but a command queue has since been captured!
         ID3D12CommandQueue* capturedQueue = DXGIFactoryHook::GetCapturedCommandQueue();
+        if (baseSwapChain != s_lastProbedSwapChain || (!s_lastProbeWasDX12 && capturedQueue != nullptr)) {
+            s_lastProbedSwapChain = baseSwapChain;
+            s_lastProbeWasDX12 = false;
+            s_dx12FailCount = 0;
+            
+            if (capturedQueue) {
+                // Probe: try getting the swapchain buffer as ID3D12Resource
+                Microsoft::WRL::ComPtr<ID3D12Resource> probe;
+                if (SUCCEEDED(baseSwapChain->GetBuffer(0, IID_PPV_ARGS(&probe)))) {
+                    s_lastProbeWasDX12 = true;
+                    LOG_INFO("DX11Hook: Swapchain %p verified as DX12 (has ID3D12Resource buffers)", baseSwapChain);
+                } else {
+                    LOG_INFO("DX11Hook: Swapchain %p is DX11 (DX12 command queue present but buffers are not ID3D12Resource)", baseSwapChain);
+                }
+            } else {
+                LOG_INFO("DX11Hook: Swapchain %p detected as DX11 (no DX12 command queue)", baseSwapChain);
+            }
+        }
         
         RenderFrameSnapshot snapshot;
-        if (capturedQueue) {
-            // DX12 path - use Dx12LifecycleManager
+        bool useDX12 = s_lastProbeWasDX12 && (s_dx12FailCount < 30);
+        
+        if (useDX12) {
+            ID3D12CommandQueue* capturedQueue = DXGIFactoryHook::GetCapturedCommandQueue();
             snapshot = Dx12LifecycleManager::Get().ProcessPresent(
-                static_cast<IDXGISwapChain*>(pSwapChain), capturedQueue, hr);
-        } else {
-            // DX11 fallback path
+                baseSwapChain, capturedQueue, hr);
+            // Self-healing: if DX12 lifecycle stays broken, auto-fallback to DX11
+            if (snapshot.state == RenderState::DEGRADED || 
+                snapshot.state == RenderState::DEVICE_REMOVED ||
+                (!snapshot.backBuffer && snapshot.state != RenderState::UNINITIALIZED)) {
+                s_dx12FailCount++;
+                if (s_dx12FailCount >= 30) {
+                    LOG_WARN("DX11Hook: DX12 path failed %d times. Auto-falling back to DX11 for swapchain %p", 
+                             s_dx12FailCount, baseSwapChain);
+                    // Reset DX11 lifecycle to pick up this swapchain fresh
+                    Dx11LifecycleManager::Get().Reset();
+                }
+            } else {
+                s_dx12FailCount = 0; // Reset on success
+            }
+        }
+        
+        if (!useDX12) {
+            // DX11 path — guaranteed fallback for all games
             snapshot = Dx11LifecycleManager::Get().ProcessPresent(pSwapChain, hr);
         }
 
@@ -139,9 +198,19 @@ HRESULT __stdcall hkPresent1(IDXGISwapChain1* pSwapChain, UINT SyncInterval, UIN
 
 HRESULT __stdcall hkResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags) {
     if (OriginalResizeBuffers) {
-        // Re-creating the swapchain / resizing. We don't have the resource pointer here, 
-        // but we know that old depth buffers might be invalid. Handled by lifecycle manager.
-        return OriginalResizeBuffers(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
+        // CRITICAL: Release ALL our references to the swapchain's backbuffer
+        // before calling ResizeBuffers. DXGI requires zero outstanding references
+        // or the call fails with DXGI_ERROR_INVALID_CALL, which crashes UE4 games.
+        Dx11LifecycleManager::Get().ReleaseSwapchainReferences();
+        
+        HRESULT hr = OriginalResizeBuffers(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
+        
+        // Mark lifecycle for rebuild — it will re-acquire the backbuffer on next Present
+        if (SUCCEEDED(hr)) {
+            Dx11LifecycleManager::Get().NotifyResizeComplete();
+        }
+        
+        return hr;
     }
     return DXGI_ERROR_INVALID_CALL;
 }

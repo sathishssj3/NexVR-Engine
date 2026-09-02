@@ -184,39 +184,7 @@ bool InputHook::Initialize() {
         }
     }
 
-    // Hook Focus Functions
-    HMODULE hUser32 = GetModuleHandleA("user32.dll");
-    if (hUser32) {
-        void* pGetForeground = (void*)GetProcAddress(hUser32, "GetForegroundWindow");
-        void* pGetActive = (void*)GetProcAddress(hUser32, "GetActiveWindow");
-        void* pGetRawInput = (void*)GetProcAddress(hUser32, "GetRawInputData");
-        void* pGetCursor = (void*)GetProcAddress(hUser32, "GetCursorPos");
-        void* pSetCursor = (void*)GetProcAddress(hUser32, "SetCursor");
-        if (pGetForeground) {
-            MH_CreateHook(pGetForeground, reinterpret_cast<LPVOID>(&HookedGetForegroundWindow), reinterpret_cast<void**>(&OriginalGetForegroundWindow));
-            MH_EnableHook(pGetForeground);
-        }
-        if (pGetActive) {
-            MH_CreateHook(pGetActive, reinterpret_cast<LPVOID>(&HookedGetActiveWindow), reinterpret_cast<void**>(&OriginalGetActiveWindow));
-            MH_EnableHook(pGetActive);
-        }
-        if (pGetRawInput) {
-            MH_CreateHook(pGetRawInput, reinterpret_cast<LPVOID>(&HookedGetRawInputData), reinterpret_cast<void**>(&OriginalGetRawInputData));
-            MH_EnableHook(pGetRawInput);
-        }
-        if (pGetCursor) {
-            MH_CreateHook(pGetCursor, reinterpret_cast<LPVOID>(&HookedGetCursorPos), reinterpret_cast<void**>(&OriginalGetCursorPos));
-            MH_EnableHook(pGetCursor);
-        }
-        if (pSetCursor) {
-            MH_CreateHook(pSetCursor, reinterpret_cast<LPVOID>(&HookedSetCursor), reinterpret_cast<void**>(&OriginalSetCursor));
-            MH_EnableHook(pSetCursor);
-        }
-    }
-
     LOG_INFO("InputHook: Input path: %s", m_usesRawInput ? "Raw Input" : "SendInput");
-
-    StartBackgroundCapture();
 
     m_initialized = true;
     return true;

@@ -45,8 +45,15 @@ RenderFrameSnapshot Dx12LifecycleManager::ProcessPresent(IDXGISwapChain* swapCha
     if (m_state.load(std::memory_order_relaxed) == RenderState::RUNNING && m_swapchainResources.swapChain) {
         Microsoft::WRL::ComPtr<IDXGISwapChain3> sc3;
         if (SUCCEEDED(m_swapchainResources.swapChain.As(&sc3))) {
+            DXGI_SWAP_CHAIN_DESC desc{};
+            m_swapchainResources.swapChain->GetDesc(&desc);
+            UINT bufCount = desc.BufferCount > 0 ? desc.BufferCount : 1;
             UINT currentIdx = sc3->GetCurrentBackBufferIndex();
-            m_swapchainResources.swapChain->GetBuffer(currentIdx, IID_PPV_ARGS(&m_swapchainResources.backBuffer));
+            // Because original Present() was executed before ProcessPresent,
+            // currentIdx has already stepped forward to the NEXT buffer.
+            // The buffer that was just rendered by the game is the PREVIOUS index:
+            UINT presentedIdx = (currentIdx + bufCount - 1) % bufCount;
+            m_swapchainResources.swapChain->GetBuffer(presentedIdx, IID_PPV_ARGS(&m_swapchainResources.backBuffer));
         }
     }
 
@@ -140,6 +147,13 @@ bool Dx12LifecycleManager::Rebuild() {
         m_epoch.deviceGeneration, m_epoch.swapchainGeneration, m_epoch.resourceGeneration);
     m_recoveryAttempts = 0; // Reset budget on successful build
     return true;
+}
+
+void Dx12LifecycleManager::ReleaseSwapchainReferences() {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_swapchainResources.backBuffer.Reset();
+    m_state.store(RenderState::RESIZE_PENDING, std::memory_order_release);
+    LOG_INFO("Dx12LifecycleManager: Released swapchain backbuffer reference for ResizeBuffers.");
 }
 
 void Dx12LifecycleManager::HandleDeviceLoss(HRESULT presentResult) {

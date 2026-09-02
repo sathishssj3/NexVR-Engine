@@ -34,6 +34,9 @@ public:
     // Called on Present to handle transitions and return an immutable snapshot for the frame
     RenderFrameSnapshot ProcessPresent(IDXGISwapChain* swapChain, ID3D12CommandQueue* commandQueue, HRESULT presentResult);
     
+    // Releases references to swapchain backbuffer prior to ResizeBuffers
+    void ReleaseSwapchainReferences();
+
     // Forces shutdown/cleanup when DLL detaches or game closes
     void Shutdown();
 
@@ -46,6 +49,7 @@ public:
     ID3D12CommandQueue* GetMainQueue() const { return m_deviceResources.commandQueue.Get(); }
     ID3D12Device* GetDevice() const { return m_deviceResources.device.Get(); }
     ID3D12Resource* GetBackBuffer() const { return m_swapchainResources.backBuffer.Get(); }
+    DXGI_FORMAT GetFormat() const { return m_swapchainResources.format; }
     UINT GetWidth() const { return m_swapchainResources.width; }
     UINT GetHeight() const { return m_swapchainResources.height; }
     

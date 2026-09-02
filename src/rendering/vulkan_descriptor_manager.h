@@ -31,8 +31,9 @@ public:
                               VkBuffer cameraBuffer, 
                               VkDeviceSize cameraBufferOffset,
                               VkDeviceSize cameraBufferSize,
+                              VkImageView gameColorView,
                               VkImageView depthView, 
-                              VkSampler depthSampler,
+                              VkSampler linearSampler,
                               VkImageView leftEyeView, 
                               VkImageView rightEyeView);
 

@@ -29,6 +29,12 @@ contextBridge.exposeInMainWorld('ag', {
               ipcRenderer.invoke('inject:cancel'),
     monitor: (pid: number) =>
               ipcRenderer.invoke('inject:monitor', pid),
+    uninstall: (id: string) =>
+              ipcRenderer.invoke('inject:uninstall', id),
+  },
+  update: {
+    check: () => ipcRenderer.invoke('update:check'),
+    getStatus: () => ipcRenderer.invoke('update:getStatus'),
   },
   log: {
     onLine: (cb: (line: string) => void) => {

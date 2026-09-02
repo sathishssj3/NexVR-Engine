@@ -5,7 +5,7 @@ module.exports = {
   asar:        true,
 
   directories: {
-    output: 'dist-electron',
+    output: 'dist-out',
     buildResources: 'assets'
   },
 
@@ -14,7 +14,6 @@ module.exports = {
     'electron-dist/**/*',
     'package.json'
   ],
-
 
   win: {
     icon: 'assets/icon.ico',
@@ -60,12 +59,16 @@ module.exports = {
       from: '../models',
       to:   'models'
     },
+    {
+      from: '../profiles',
+      to:   'profiles'
+    },
   ],
 
   publish: {
     provider: 'github',
     owner: 'sathishssj3',
-    repo: 'NexVR-Engine',
+    repo: 'NexVR-Engine-Releases',
     releaseType: 'release',
   },
 };
