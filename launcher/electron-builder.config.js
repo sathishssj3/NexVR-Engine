@@ -5,13 +5,14 @@ module.exports = {
   asar:        true,
 
   directories: {
-    output: 'dist-out',
+    output: 'dist-final',
     buildResources: 'assets'
   },
 
   files: [
     'frontend-dist/**/*',
     'electron-dist/**/*',
+    'assets/icon.ico',
     'package.json'
   ],
 

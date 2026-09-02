@@ -7,6 +7,7 @@ test.describe('Launcher E2E Tests', () => {
   let window: any;
 
   test.beforeAll(async () => {
+    test.setTimeout(60000); // Electron cold-start can be slow
     // Launch electron passing the main file path
     electronApp = await electron.launch({
       args: [path.join(__dirname, '../electron-dist/electron/main.js')]
@@ -14,6 +15,7 @@ test.describe('Launcher E2E Tests', () => {
     window = await electronApp.firstWindow();
     window.on('console', (msg: any) => console.log('PAGE LOG:', msg.text()));
     window.on('pageerror', (err: any) => console.log('PAGE ERROR:', err.message));
+    await window.waitForLoadState('domcontentloaded');
   });
 
   test.afterAll(async () => {

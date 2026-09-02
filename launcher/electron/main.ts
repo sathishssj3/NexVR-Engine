@@ -1,7 +1,8 @@
-import { app, BrowserWindow, ipcMain, protocol, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, protocol, dialog, net } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as crypto from 'crypto';
+import { pathToFileURL } from 'url';
 import { assertTrustedIpcSender, resolveWithinRoot } from './utils';
 
 // Enforce single instance lock to prevent cache collisions and multiple windows
@@ -95,13 +96,17 @@ function createWindow() {
     });
     mainWindow.webContents.openDevTools();
   } else {
+    const indexPath = path.join(__dirname, '..', '..', 'frontend-dist', 'index.html');
     mainWindow.loadURL('nexvr://app/index.html').catch(err => {
-      dialog.showErrorBox('loadURL Error', String(err));
+      console.warn('[LOAD] Custom protocol load failed, falling back to direct loadFile:', err);
+      mainWindow?.loadFile(indexPath).catch(fileErr => {
+        dialog.showErrorBox('loadURL Error', String(fileErr));
+      });
     });
   }
 
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    if (!isDev && !url.startsWith('nexvr://app/')) {
+    if (!isDev && !url.startsWith('nexvr://app/') && !url.startsWith('file://')) {
       event.preventDefault();
       console.log(`[SECURITY] Blocked navigation to: ${url}`);
     }
@@ -126,16 +131,10 @@ app.whenReady().then(() => {
 
     try {
       const fullPath = resolveWithinRoot(frontendDir, filePath);
-      const nodeBuffer = fs.readFileSync(fullPath);
-      const uint8 = new Uint8Array(nodeBuffer.buffer, nodeBuffer.byteOffset, nodeBuffer.byteLength);
-      const ext = path.extname(filePath).toLowerCase();
-      const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
-      return new Response(uint8, {
-        status: 200,
-        headers: { 'Content-Type': mimeType },
-      });
+      const fileUrl = pathToFileURL(fullPath).toString();
+      return net.fetch(fileUrl);
     } catch (err: any) {
-      console.error('[nexvr://] Failed to serve requested asset', err.message);
+      console.error('[nexvr://] Failed to serve requested asset:', err.message);
       return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain' } });
     }
   });

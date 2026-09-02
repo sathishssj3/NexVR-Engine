@@ -11,7 +11,7 @@ export function assertTrustedIpcSender(event: IpcMainInvokeEvent | IpcMainEvent)
   const senderUrl = event.senderFrame?.url || event.sender.getURL();
 
   if (app.isPackaged) {
-    if (!senderUrl.startsWith('nexvr://app/')) {
+    if (!senderUrl.startsWith('nexvr://app/') && !senderUrl.startsWith('file://')) {
       throw new Error('Rejected IPC from an untrusted frame');
     }
     return;

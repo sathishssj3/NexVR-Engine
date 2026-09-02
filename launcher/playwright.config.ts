@@ -10,4 +10,6 @@ export default defineConfig({
   use: {
     trace: 'on-first-retry',
   },
+  /* Build electron-dist/ before running E2E tests so launcher.spec.ts can find main.js */
+  globalSetup: './e2e/global-setup.ts',
 });
