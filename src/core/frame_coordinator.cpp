@@ -261,24 +261,34 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
     m_oxrHealthMonitor = std::make_unique<openxr::OpenXRHealthMonitor>();
     LOG_INFO("FrameCoordinator: OpenXR health monitor created.");
   }
+  static std::atomic<bool> s_oxrInitInProgress{false};
   if (!m_oxrRuntime || m_oxrRuntime->GetState() == openxr::RuntimeState::FAILED) {
-    static int s_retryCooldown = 0;
-    if (!m_oxrRuntime || ++s_retryCooldown >= 60) {
-      s_retryCooldown = 0;
-      LOG_INFO("FrameCoordinator: %s OpenXR runtime manager...", m_oxrRuntime ? "Retrying" : "Creating");
-      m_oxrRuntime = std::make_unique<openxr::OpenXRRuntimeManager>(
-          m_oxrHealthMonitor.get());
-      bool oxrOk = m_oxrRuntime->Initialize("NexVR Engine", m_currentSnapshot.backend);
-      if (oxrOk) {
-        LOG_INFO("FrameCoordinator: OpenXR initialized successfully (state=%d).", (int)m_oxrRuntime->GetState());
-      } else {
-        LOG_ERROR("FrameCoordinator: OpenXR initialization FAILED! Will retry in 1s.");
+    if (!s_oxrInitInProgress.load()) {
+      static auto s_lastAttempt = std::chrono::steady_clock::now() - std::chrono::seconds(10);
+      auto now = std::chrono::steady_clock::now();
+      if (std::chrono::duration_cast<std::chrono::seconds>(now - s_lastAttempt).count() >= 2) {
+        s_lastAttempt = now;
+        s_oxrInitInProgress.store(true);
+        GraphicsBackend backend = m_currentSnapshot.backend;
+        std::thread([this, backend]() {
+          LOG_INFO("FrameCoordinator: Async OpenXR initialization background thread started...");
+          auto runtime = std::make_unique<openxr::OpenXRRuntimeManager>(m_oxrHealthMonitor.get());
+          if (runtime->Initialize("NexVR Engine", backend)) {
+            LOG_INFO("FrameCoordinator: Async OpenXR initialization SUCCEEDED (state=%d)!", (int)runtime->GetState());
+            m_oxrRuntime = std::move(runtime);
+          } else {
+            LOG_ERROR("FrameCoordinator: Async OpenXR initialization FAILED. Will retry in background in 2s.");
+          }
+          s_oxrInitInProgress.store(false);
+        }).detach();
       }
     }
   }
 
-  // Pump OpenXR events
-  m_oxrRuntime->PollEvents();
+  if (m_oxrRuntime) {
+    // Pump OpenXR events
+    m_oxrRuntime->PollEvents();
+  }
 
   if (m_oxrRuntime->GetState() == openxr::RuntimeState::SYSTEM_SELECTED) {
     LOG_INFO("FrameCoordinator: OpenXR state is SYSTEM_SELECTED, creating session (backend=%d)...", (int)m_currentSnapshot.backend);
