@@ -371,42 +371,34 @@ int main(int argc, char* argv[]) {
     }
 
     // S3.1: System Process Protection & PID Verification & Smart Target Selection
-    HANDLE hSnap = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    bool pidFound = false;
-    DWORD bestPid = 0;
-    SIZE_T maxMem = 0;
-    
-    if (hSnap != INVALID_HANDLE_VALUE) {
-        PROCESSENTRY32 pe{};
-        pe.dwSize = sizeof(pe);
-        if (::Process32First(hSnap, &pe)) {
-            do {
-                if (pe.th32ProcessID == targetPid) {
-                    HANDLE hTemp = ::OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pe.th32ProcessID);
-                    if (hTemp) {
-                        PROCESS_MEMORY_COUNTERS pmc;
-                        if (::GetProcessMemoryInfo(hTemp, &pmc, sizeof(pmc))) {
-                            if (pmc.WorkingSetSize > maxMem) {
-                                maxMem = pmc.WorkingSetSize;
-                                bestPid = pe.th32ProcessID;
-                            }
-                        }
-                        ::CloseHandle(hTemp);
-                    }
-                }
-            } while (::Process32Next(hSnap, &pe));
-        }
-        ::CloseHandle(hSnap);
+    if (targetPid <= 4) {
+        PrintErr("[ERROR] Invalid PID (system process)");
+        return 21;
     }
-    
-    const SIZE_T MIN_MEMORY_THRESHOLD = 15 * 1024 * 1024;
-    if (bestPid != 0 && maxMem > MIN_MEMORY_THRESHOLD) { // Must be larger than 15MB (launcher is ~6MB)
-        targetPid = bestPid;
-        pidFound = true;
+
+    bool pidFound = false;
+    // Retry briefly if the process is in very early launch phase
+    for (int retry = 0; retry < 10 && !pidFound; ++retry) {
+        HANDLE hTemp = ::OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, targetPid);
+        if (hTemp) {
+            PROCESS_MEMORY_COUNTERS pmc;
+            if (::GetProcessMemoryInfo(hTemp, &pmc, sizeof(pmc))) {
+                // Any valid game process running user code will have at least 1MB
+                if (pmc.WorkingSetSize >= 1024 * 1024) {
+                    pidFound = true;
+                }
+            } else {
+                pidFound = true; // Handle acquired successfully
+            }
+            ::CloseHandle(hTemp);
+        }
+        if (!pidFound) {
+            ::Sleep(200);
+        }
     }
     
     if (!pidFound) {
-        PrintErr("[ERROR] Real Game Process (PID) not found or too small to be the actual game");
+        PrintErr("[ERROR] Real Game Process (PID %lu) not found or exited", targetPid);
         return 21;
     }
 
@@ -444,11 +436,31 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    // S1.4: DLL Hash Verification
+    // S1.4: DLL Hash Verification with Self-Healing Fallback
     std::wstring computedHash = ComputeFileHashSHA256(dllPath);
     if (computedHash.empty() || computedHash != EXPECTED_DLL_HASH) {
-        PrintErr("[ERROR] Security verification failed. DLL hash mismatch or tampering detected.");
-        return 14;
+        // Target DLL in the game folder may be from an older build. Check canonical sibling DLL.
+        char selfExePath[MAX_PATH];
+        ::GetModuleFileNameA(NULL, selfExePath, MAX_PATH);
+        std::string siblingDll = selfExePath;
+        size_t lastSlash = siblingDll.find_last_of("\\/");
+        if (lastSlash != std::string::npos) {
+            siblingDll = siblingDll.substr(0, lastSlash + 1) + "vrinject.dll";
+        }
+
+        std::wstring siblingHash = ComputeFileHashSHA256(siblingDll);
+        if (!siblingHash.empty() && siblingHash == EXPECTED_DLL_HASH) {
+            PrintInfo("[RECOVERY] Game directory DLL is from an older build. Updating with current engine DLL...");
+            if (::CopyFileA(siblingDll.c_str(), dllPath.c_str(), FALSE)) {
+                PrintOK("[RECOVERY] Game directory DLL successfully updated.");
+            } else {
+                PrintWarn("[RECOVERY] Game directory DLL is in use. Injecting verified canonical DLL directly.");
+                dllPath = siblingDll;
+            }
+        } else {
+            PrintErr("[ERROR] Security verification failed. DLL hash mismatch or tampering detected.");
+            return 14;
+        }
     }
 
     PrintInfo("Target PID:  %lu", targetPid);
