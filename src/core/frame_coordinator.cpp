@@ -1,5 +1,6 @@
 #include "core/frame_coordinator.h"
 #include <system_error>
+#include <vector>
 #include "rendering/dx11/dx11_graphics_backend.h"
 #include "rendering/dx12/dx12_graphics_backend.h"
 #include "rendering/stereo/stereo_pipeline.h"
@@ -24,6 +25,9 @@
 
 #include "rendering/stereo/stereo_camera_generator.h"
 #include "rendering/stereo/stereo_frame_builder.h"
+#include "core/overlay_manager.h"
+#include "hooks/input_hook.h"
+#include <windows.h>
 
 #include "ai/backend/dx11_ai_backend.h"
 #include "ai/backend/dx12_ai_backend.h"
@@ -84,6 +88,31 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
              (int)m_currentSnapshot.state,
              m_currentSnapshot.width, m_currentSnapshot.height);
   }
+
+  // Initialize OverlayManager on first frame with window HWND
+  static bool s_overlayInitialized = false;
+  if (!s_overlayInitialized) {
+      HWND hwnd = nullptr;
+      if (m_currentSnapshot.nativeSwapchain) {
+          IDXGISwapChain* sc = reinterpret_cast<IDXGISwapChain*>(m_currentSnapshot.nativeSwapchain);
+          DXGI_SWAP_CHAIN_DESC desc = {};
+          if (SUCCEEDED(sc->GetDesc(&desc))) {
+              hwnd = desc.OutputWindow;
+          }
+      }
+      OverlayManager::GetInstance().Initialize(hwnd);
+      s_overlayInitialized = true;
+  }
+
+  // Keyboard shortcut toggle for In-Headset Dashboard (HOME key only)
+  static bool s_lastHomeState = false;
+  bool homePressed = (GetAsyncKeyState(VK_HOME) & 0x8000) != 0;
+  if (homePressed && !s_lastHomeState) {
+      OverlayManager::GetInstance().ToggleOverlay();
+      LOG_INFO("OverlayManager: In-headset menu toggled via keyboard shortcut (Visible: %s)",
+               OverlayManager::GetInstance().IsOverlayVisible() ? "YES" : "NO");
+  }
+  s_lastHomeState = homePressed;
 
   // Camera and depth discovery - wrapped in try-catch because these subsystems
   // may crash on DX12 backends (they were designed for DX11). A crash here must
@@ -232,15 +261,19 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
     m_oxrHealthMonitor = std::make_unique<openxr::OpenXRHealthMonitor>();
     LOG_INFO("FrameCoordinator: OpenXR health monitor created.");
   }
-  if (!m_oxrRuntime) {
-    LOG_INFO("FrameCoordinator: Creating OpenXR runtime manager...");
-    m_oxrRuntime = std::make_unique<openxr::OpenXRRuntimeManager>(
-        m_oxrHealthMonitor.get());
-    bool oxrOk = m_oxrRuntime->Initialize("NexVR Engine", m_currentSnapshot.backend);
-    if (oxrOk) {
-      LOG_INFO("FrameCoordinator: OpenXR initialized successfully (state=%d).", (int)m_oxrRuntime->GetState());
-    } else {
-      LOG_ERROR("FrameCoordinator: OpenXR initialization FAILED!");
+  if (!m_oxrRuntime || m_oxrRuntime->GetState() == openxr::RuntimeState::FAILED) {
+    static int s_retryCooldown = 0;
+    if (!m_oxrRuntime || ++s_retryCooldown >= 60) {
+      s_retryCooldown = 0;
+      LOG_INFO("FrameCoordinator: %s OpenXR runtime manager...", m_oxrRuntime ? "Retrying" : "Creating");
+      m_oxrRuntime = std::make_unique<openxr::OpenXRRuntimeManager>(
+          m_oxrHealthMonitor.get());
+      bool oxrOk = m_oxrRuntime->Initialize("NexVR Engine", m_currentSnapshot.backend);
+      if (oxrOk) {
+        LOG_INFO("FrameCoordinator: OpenXR initialized successfully (state=%d).", (int)m_oxrRuntime->GetState());
+      } else {
+        LOG_ERROR("FrameCoordinator: OpenXR initialization FAILED! Will retry in 1s.");
+      }
     }
   }
 
@@ -285,12 +318,113 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
       // OPENXR FRAME SUBMISSION & RENDER
       // ==============================================
       if (!m_oxrSwapchain) {
-        DXGI_FORMAT targetFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+        int64_t targetFormat = 28; // DXGI_FORMAT_R8G8B8A8_UNORM (default for DX11/DX12)
+        if (m_currentSnapshot.backend == GraphicsBackend::Vulkan) {
+            // Enumerate formats the OpenXR runtime supports and pick
+            // the best match for raw byte copy (vkCmdCopyImage).
+            targetFormat = 43; // fallback: VK_FORMAT_R8G8B8A8_SRGB
+            uint32_t fmtCount = 0;
+            if (XR_SUCCEEDED(xrEnumerateSwapchainFormats(m_oxrRuntime->GetSession(), 0, &fmtCount, nullptr)) && fmtCount > 0) {
+                std::vector<int64_t> fmts(fmtCount);
+                xrEnumerateSwapchainFormats(m_oxrRuntime->GetSession(), fmtCount, &fmtCount, fmts.data());
+                LOG_INFO("FrameCoordinator: OpenXR runtime supports %u swapchain formats:", fmtCount);
+                for (uint32_t i = 0; i < fmtCount; i++) {
+                    LOG_INFO("  format[%u] = %lld", i, fmts[i]);
+                }
+                // Pick format matching game's channel order for vkCmdCopyImage.
+                // Prefer the game's own format family (UNORM first, then SRGB).
+                int64_t gameFormat = m_currentSnapshot.format;
+                // Build preference list dynamically based on game format
+                std::vector<int64_t> preferred;
+                if (gameFormat == 44 || gameFormat == 50) {
+                    // Game uses B8G8R8A8 family
+                    preferred = {44, 50, 37, 43}; // B8G8R8A8_UNORM, B8G8R8A8_SRGB, R8G8B8A8_UNORM, R8G8B8A8_SRGB
+                } else {
+                    // Game uses R8G8B8A8 family (most common)
+                    preferred = {37, 43, 44, 50}; // R8G8B8A8_UNORM, R8G8B8A8_SRGB, B8G8R8A8_UNORM, B8G8R8A8_SRGB
+                }
+                for (int64_t pref : preferred) {
+                    for (int64_t supported : fmts) {
+                        if (supported == pref) {
+                            targetFormat = pref;
+                            goto format_found;
+                        }
+                    }
+                }
+                format_found:;
+            }
+        } else {
+            // DX11/DX12: Enumerate OpenXR-supported DXGI formats.
+            // ALWAYS try the game's own format first for bit-perfect CopyResource.
+            // CopyResource requires identical formats or it will fail silently.
+            uint32_t fmtCount = 0;
+            if (XR_SUCCEEDED(xrEnumerateSwapchainFormats(m_oxrRuntime->GetSession(), 0, &fmtCount, nullptr)) && fmtCount > 0) {
+                std::vector<int64_t> fmts(fmtCount);
+                xrEnumerateSwapchainFormats(m_oxrRuntime->GetSession(), fmtCount, &fmtCount, fmts.data());
+                LOG_INFO("FrameCoordinator: OpenXR runtime supports %u DXGI swapchain formats:", fmtCount);
+                for (uint32_t i = 0; i < fmtCount; i++) {
+                    LOG_INFO("  dxgi_format[%u] = %lld", i, fmts[i]);
+                }
+                
+                // Fallback priority list (sRGB > UNORM > Float)
+                // 29 = R8G8B8A8_UNORM_SRGB, 91 = B8G8R8A8_UNORM_SRGB
+                // 28 = R8G8B8A8_UNORM, 87 = B8G8R8A8_UNORM, 24 = R10G10B10A2_UNORM, 10 = R16G16B16A16_FLOAT
+                const int64_t dxgiPreferred[] = {29, 91, 28, 87, 24, 10, 2};
+
+                int64_t gameFormat = static_cast<int64_t>(m_currentSnapshot.format);
+                
+                // Color space & format family management:
+                // CopyResource requires textures to belong to the exact same DXGI format family.
+                // For R8G8B8A8 family (28, 29): prefer sRGB 29, fallback 28.
+                // For B8G8R8A8 family (87, 91): prefer sRGB 91, fallback 87.
+                // For R10G10B10A2 family (24): must use 24.
+                // For R16G16B16A16_FLOAT family (10): must use 10.
+                std::vector<int64_t> familyPreference;
+                if (gameFormat == 28 || gameFormat == 29) {
+                    familyPreference = {29, 28};
+                } else if (gameFormat == 87 || gameFormat == 91) {
+                    familyPreference = {91, 87};
+                } else if (gameFormat == 24) {
+                    familyPreference = {24};
+                } else if (gameFormat == 10) {
+                    familyPreference = {10};
+                } else {
+                    familyPreference = {gameFormat};
+                }
+
+                // Step 1: Try format from the game's format family first
+                for (int64_t pref : familyPreference) {
+                    for (int64_t supported : fmts) {
+                        if (supported == pref) {
+                            targetFormat = pref;
+                            LOG_INFO("FrameCoordinator: Selected format %lld matching game family (game format %lld)", pref, gameFormat);
+                            goto dxgi_format_found;
+                        }
+                    }
+                }
+                
+                // Step 2: Global fallback priority list (sRGB > UNORM > Float)
+                for (int64_t pref : dxgiPreferred) {
+                    for (int64_t supported : fmts) {
+                        if (supported == pref) {
+                            targetFormat = pref;
+                            goto dxgi_format_found;
+                        }
+                    }
+                }
+                dxgi_format_found:;
+            }
+        }
+        LOG_INFO("FrameCoordinator: Creating OpenXR swapchain with format=%lld, game_format=%lld, %ux%u",
+                 targetFormat, m_currentSnapshot.format, m_currentSnapshot.width, m_currentSnapshot.height);
         m_oxrSwapchain = std::make_unique<openxr::OpenXRSwapchainManager>(
             m_oxrHealthMonitor.get());
-        m_oxrSwapchain->Initialize(
+        if (!m_oxrSwapchain->Initialize(
             m_oxrRuntime->GetSession(), targetFormat, m_currentSnapshot.width,
-            m_currentSnapshot.height, m_currentSnapshot.backend);
+            m_currentSnapshot.height, m_currentSnapshot.backend)) {
+            LOG_ERROR("FrameCoordinator: OpenXR swapchain creation FAILED with format %lld!", targetFormat);
+            m_oxrSwapchain.reset(); // Allow retry next frame
+        }
       }
       if (!m_oxrSubmitter) {
         m_oxrSubmitter = std::make_unique<openxr::OpenXRFrameSubmitter>(
