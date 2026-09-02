@@ -472,12 +472,6 @@ int main(int argc, char* argv[]) {
     std::printf("\n");
     if (ok) {
         PrintOK("Injection complete. Check vrinject.log for hook status.");
-        
-        // Hide SteamVR dashboard automatically
-        PrintInfo("Toggling SteamVR dashboard...");
-        // Delay to allow OpenXR to initialize in the target process
-        ::Sleep(3000); 
-        ::ShellExecuteA(NULL, "open", "vrmonitor://debugcommands/system_dashboard_toggle", NULL, NULL, SW_SHOWNORMAL);
     } else {
         PrintErr("Injection failed. See messages above for details.");
     }
