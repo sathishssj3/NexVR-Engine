@@ -44,6 +44,11 @@ function getLocalManifest(): UpdateManifest | null {
 function fetchJson<T>(url: string): Promise<T> {
   return new Promise((resolve, reject) => {
     const req = https.get(url, { headers: { 'User-Agent': 'NexVR-Launcher' }, timeout: 5000 }, (res) => {
+      if (res.statusCode === 404) {
+        resolve(null as any);
+        res.resume();
+        return;
+      }
       if (res.statusCode !== 200) {
         reject(new Error(`HTTP ${res.statusCode} from ${url}`));
         res.resume();
@@ -109,6 +114,16 @@ function downloadFile(url: string, destPath: string): Promise<void> {
 export async function checkForEngineHotfix(): Promise<UpdateStatus> {
   try {
     const remote = await fetchJson<UpdateManifest>(MANIFEST_URL);
+    if (!remote) {
+      console.info('[UpdateManager] System is running the latest engine build.');
+      const local = getLocalManifest();
+      return {
+        checking: false,
+        hasUpdate: false,
+        updated: false,
+        version: local?.engineVersion || '0.1.0',
+      };
+    }
     const local = getLocalManifest();
 
     if (!local || remote.timestamp > local.timestamp) {

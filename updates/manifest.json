@@ -1,0 +1,8 @@
+{
+  "engineVersion": "0.1.0-hotfix1",
+  "timestamp": 1787600000000,
+  "changelog": "Fixed stereo reprojection, dynamic format negotiation, and centered VR dashboard",
+  "files": [
+    "vrinject.dll"
+  ]
+}

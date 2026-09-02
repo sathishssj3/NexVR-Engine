@@ -4,6 +4,22 @@ import * as fs from 'fs';
 import * as crypto from 'crypto';
 import { assertTrustedIpcSender, resolveWithinRoot } from './utils';
 
+// Enforce single instance lock to prevent cache collisions and multiple windows
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
+
+// Disable GPU disk cache in dev mode to prevent Chromium Windows file lock errors (0x5)
+app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
+
 // Initialize core authorization token for DLL injector validation
 const NEXVR_AUTH_TOKEN = crypto.randomUUID();
 process.env.NEXVR_AUTH_TOKEN = NEXVR_AUTH_TOKEN;
