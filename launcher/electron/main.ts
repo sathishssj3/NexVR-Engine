@@ -26,6 +26,10 @@ const NEXVR_AUTH_TOKEN = crypto.randomUUID();
 process.env.NEXVR_AUTH_TOKEN = NEXVR_AUTH_TOKEN;
 
 const isDev = !app.isPackaged;
+if (isDev) {
+  // Isolate development session data from installed/packaged app to prevent singleton lock conflicts (Error code: 32)
+  app.setPath('userData', path.join(app.getPath('appData'), 'NexVR-Dev'));
+}
 
 // Register the custom app scheme for sandboxed context assets loading
 protocol.registerSchemesAsPrivileged([{

@@ -3,10 +3,11 @@ import { spawn, execSync } from 'child_process';
 import electronPath from 'electron';
 
 async function start() {
-  // Clean up any stale electron processes from prior crashes or dev sessions
+  // Clean up any stale electron or packaged engine processes from prior crashes or dev sessions
   try {
     if (process.platform === 'win32') {
       execSync('taskkill /F /IM electron.exe /T 2>nul', { stdio: 'ignore' });
+      execSync('taskkill /F /IM "NexVR Engine.exe" /T 2>nul', { stdio: 'ignore' });
     }
   } catch {}
 

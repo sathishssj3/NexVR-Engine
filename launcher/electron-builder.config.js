@@ -5,7 +5,7 @@ module.exports = {
   asar:        true,
 
   directories: {
-    output: 'dist-final',
+    output: 'dist-v1',
     buildResources: 'assets'
   },
 
