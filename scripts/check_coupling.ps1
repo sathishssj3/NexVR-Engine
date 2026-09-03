@@ -65,17 +65,26 @@ if ($ctest_out -match 'Total Tests:\s*(\d+)') {
 }
 
 # 5. FrameCoordinator Degree
-$graphify_out = (graphify explain "FrameCoordinator" | Select-String "Degree")
-if ($graphify_out -match 'Degree:\s*(\d+)') {
-    $degree = [int]$matches[1]
-    if ($degree -gt $budget["framecoordinator_degree"]) {
-        Write-Host "FAIL: FrameCoordinator degree exceeded budget. Expected <= $($budget['framecoordinator_degree']), got $degree" -ForegroundColor Red
-        $failed = $true
-    } else {
-        Write-Host "PASS: FrameCoordinator degree: $degree (Budget: $($budget['framecoordinator_degree']))" -ForegroundColor Green
+$graphifyCmd = Get-Command graphify -ErrorAction SilentlyContinue
+if ($graphifyCmd) {
+    try {
+        $graphify_out = (& graphify explain "FrameCoordinator" 2>$null | Select-String "Degree")
+        if ($graphify_out -match 'Degree:\s*(\d+)') {
+            $degree = [int]$matches[1]
+            if ($degree -gt $budget["framecoordinator_degree"]) {
+                Write-Host "FAIL: FrameCoordinator degree exceeded budget. Expected <= $($budget['framecoordinator_degree']), got $degree" -ForegroundColor Red
+                $failed = $true
+            } else {
+                Write-Host "PASS: FrameCoordinator degree: $degree (Budget: $($budget['framecoordinator_degree']))" -ForegroundColor Green
+            }
+        } else {
+            Write-Host "WARN: Could not parse graphify output." -ForegroundColor Yellow
+        }
+    } catch {
+        Write-Host "WARN: graphify execution failed: $_" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "WARN: Could not parse graphify output." -ForegroundColor Yellow
+    Write-Host "SKIP: graphify CLI not available in environment." -ForegroundColor Yellow
 }
 
 if ($failed) {

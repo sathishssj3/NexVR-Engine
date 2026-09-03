@@ -1,0 +1,3 @@
+# Local wrangler state — holds real waitlist addresses from `pages dev`
+.wrangler/
+node_modules/

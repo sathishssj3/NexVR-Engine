@@ -1,0 +1,9 @@
+name = "nexvr-engine"
+compatibility_date = "2026-01-01"
+pages_build_output_dir = "."
+
+# Waitlist storage. Create the namespace, then paste its id here:
+#   wrangler kv namespace create WAITLIST
+[[kv_namespaces]]
+binding = "WAITLIST"
+id = "PASTE_KV_NAMESPACE_ID_HERE"

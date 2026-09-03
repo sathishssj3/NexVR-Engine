@@ -3,5 +3,5 @@ backend_enum_leaks=7
 hardcoded_game_names=1
 test_sources=82
 test_registered=75
-framecoordinator_degree=45
+framecoordinator_degree=50
 

@@ -1,0 +1,102 @@
+# NexVR Engine — landing page
+
+Static page plus one Cloudflare Pages Function. No build step: `index.html` is
+served as-is, and `functions/api/waitlist.js` becomes `POST /api/waitlist` on
+the same origin.
+
+```
+landing-page/
+├── index.html                  the whole page — markup, CSS and JS inline
+├── functions/api/waitlist.js   waitlist endpoint (Pages Function)
+├── wrangler.toml               KV binding config
+└── README.md
+```
+
+## Run it locally
+
+```bash
+cd landing-page
+npx wrangler pages dev . --kv WAITLIST
+```
+
+`--kv WAITLIST` gives you a local, in-memory KV namespace, so the waitlist works
+without touching your Cloudflare account.
+
+Opening `index.html` directly over `file://` will **not** work — the page uses ES
+module imports, which browsers block on that protocol. It needs to be served over
+HTTP.
+
+## Deploy
+
+### 1. Create the KV namespace
+
+```bash
+npx wrangler kv namespace create WAITLIST
+```
+
+Copy the printed `id` into `wrangler.toml`, replacing `PASTE_KV_NAMESPACE_ID_HERE`.
+
+### 2. Create the Pages project
+
+In the Cloudflare dashboard: **Workers & Pages → Create → Pages → Connect to Git**,
+pick this repository, and set:
+
+| Setting | Value |
+| :--- | :--- |
+| Build command | *(leave empty)* |
+| Build output directory | `landing-page` |
+
+Cloudflare Pages deploys from a private repository on the free plan, so the engine
+source stays closed.
+
+### 3. Bind KV to the project
+
+**Settings → Bindings → Add → KV namespace**, with variable name `WAITLIST`
+pointing at the namespace from step 1. Do this for both Production and Preview,
+then redeploy — bindings only attach on the next build.
+
+### 4. Custom domain
+
+**Custom domains → Set up a domain.** TLS is issued automatically.
+
+## Reading the waitlist
+
+There is deliberately no HTTP route that returns the list. Read it from the CLI:
+
+```bash
+npx wrangler kv key list --binding WAITLIST | grep '"email:'
+npx wrangler kv key get --binding WAITLIST "email:someone@example.com"
+```
+
+Signups are stored as `email:<address>` (lowercased, deduplicated) with a
+timestamp and country code. Throttle counters are stored as `rate:<ip>` and
+expire after an hour.
+
+## Before the download button goes live
+
+Two things are still open, and both are outside this folder.
+
+**The binaries are not signed.** `SECURITY.md` requires `vrinject.dll` and
+`vr-inject-cli.exe` to be code-signed before public distribution. Unsigned, they
+are an injection DLL that hooks other processes — Windows Defender and SmartScreen
+will flag them, and a share of downloaders will hit a warning or a silent
+quarantine. Sign them, or keep the page on waitlist-only until you have a
+certificate.
+
+**The download links point at a repository that does not exist yet.** They expect
+a *public* releases repo, so the proprietary engine source can stay private:
+
+```
+https://github.com/sathishssj3/NexVR-Releases/releases/latest/download/NexVR-Engine-Setup.exe
+```
+
+Create `NexVR-Releases` as a public repository, then attach
+`NexVR-Engine-Setup.exe` to a release tagged `v0.1.3`. Until that exists, every
+download button on the page is a 404. If you pick a different repository name,
+update the four `NexVR-Releases` links in `index.html`.
+
+## Unrelated inconsistency worth fixing
+
+`LICENSE` is a proprietary agreement, but `README.md` in the repository root ends
+with "This project is licensed under the MIT License." Those cannot both be true,
+and the MIT line is the one that would let someone redistribute the engine.
