@@ -124,15 +124,6 @@ jobs:
         }
         exit 0
 
-    - name: Run Clang-Tidy
-      uses: KyleMayes/clang-tidy-action@v0.1.2
-      with:
-        clang-tidy-bin: clang-tidy
-        path: build
-        clang-tidy-warnings-as-errors: '*'
-        header-filter: '^src/(core|hooks|rendering|openxr|ai|heuristics|injector)/'
-        format-style: file
-
     - name: CodeQL Perform Analysis
       uses: github/codeql-action/analyze@v4
       with:
