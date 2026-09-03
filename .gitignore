@@ -8,7 +8,7 @@ build_baseline/
 build_auto/
 out/
 bin/
-cmake/
+cmake/cmake-*/
 CMakeSettings.json
 compile_commands.json
 ctest_output.txt
