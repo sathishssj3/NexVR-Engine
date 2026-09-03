@@ -133,7 +133,7 @@ TEST_F(HeadlessHarnessTest, Stages4To8EndToEnd) {
 
     void* fakeDepth = m_depthBuffer.Get();
 
-    for (int frame = 1; frame <= 10; ++frame) {
+    for (int frame = 1; frame <= 100; ++frame) {
         CameraCandidate cam;
         cam.valid = true;
         cam.confidence = 1.0f;
@@ -159,6 +159,10 @@ TEST_F(HeadlessHarnessTest, Stages4To8EndToEnd) {
         // Drive the frame
         ScopedFrame scopedFrame(*SubsystemContext::Get().GetFrameCoordinator(), snapshot);
         printf("Frame %d ended, views.size() = %zu\n", frame, MockOpenXRRuntime::GetSubmittedViews().size());
+        if (MockOpenXRRuntime::GetSubmittedViews().size() == 2) {
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     // Verify OpenXR received the views

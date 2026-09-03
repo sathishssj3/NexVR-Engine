@@ -1,21 +1,67 @@
-MIT License
+NEXVR ENGINE — PROPRIETARY SOFTWARE LICENSE AGREEMENT
+======================================================
 
-Copyright (c) 2025 NexVR Engine
+Copyright (c) 2025-2026 Sathish SSJ3. All Rights Reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+IMPORTANT — READ CAREFULLY BEFORE INSTALLING OR USING THIS SOFTWARE.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+This Proprietary Software License Agreement ("Agreement") is a legal agreement
+between you ("User") and Sathish SSJ3 ("Licensor") for the NexVR Engine
+software, including all source code, object code, binaries, documentation,
+assets, shaders, models, profiles, and associated files ("Software").
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+By downloading, installing, copying, or otherwise using the Software, you
+agree to be bound by the terms of this Agreement.
+
+1. GRANT OF LICENSE
+-------------------
+Subject to the terms of this Agreement, the Licensor grants you a limited,
+non-exclusive, non-transferable, revocable license to:
+
+  (a) Download and install the Software on your personal computer(s) for
+      personal, non-commercial use only.
+
+  (b) Use the Software to inject VR rendering into compatible video games
+      that you legally own.
+
+No other rights are granted. All rights not expressly granted herein are
+reserved by the Licensor.
+
+2. RESTRICTIONS
+---------------
+You may NOT, without prior written consent from the Licensor:
+
+  (a) Copy, reproduce, distribute, publish, or share the Software or any
+      portion thereof, whether in source code or binary form.
+
+  (b) Modify, adapt, translate, reverse engineer, decompile, disassemble,
+      or create derivative works based on the Software.
+
+  (c) Sell, rent, lease, sublicense, lend, or otherwise transfer the
+      Software or any rights therein to any third party.
+
+  (d) Remove, alter, or obscure any proprietary notices, labels, or marks
+      on the Software.
+
+  (e) Use the Software for any commercial purpose, including but not
+      limited to integrating it into commercial products or services.
+
+3. OWNERSHIP
+------------
+The Software is licensed, not sold. Sathish SSJ3 retains all right, title,
+and interest in and to the Software, including all copyrights, patents,
+trade secrets, trademarks, and other intellectual property rights.
+
+4. TERMINATION
+--------------
+This Agreement is effective until terminated. Your rights under this Agreement
+will terminate automatically without notice if you fail to comply with any of
+its terms. Upon termination, you must cease all use of the Software and
+destroy all copies in your possession.
+
+5. DISCLAIMER OF WARRANTIES & LIMITATION OF LIABILITY
+-----------------------------------------------------
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. IN NO EVENT
+SHALL SATHISH SSJ3 BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY
+ARISING FROM OR IN CONNECTION WITH THE SOFTWARE OR THE USE OF THE SOFTWARE.
+

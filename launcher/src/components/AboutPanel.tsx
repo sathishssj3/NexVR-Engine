@@ -134,7 +134,7 @@ export function AboutPanel() {
           color: 'var(--ag-text-muted)', fontSize: 10, fontFamily: 'var(--ag-font-mono)', 
           letterSpacing: '1px', opacity: 0.5 
         }}>
-          © 2026 sathishssj3 // MIT License
+          © 2026 sathishssj3 // Proprietary — All Rights Reserved
         </div>
       </div>
     </div>

@@ -5,7 +5,7 @@ module.exports = {
   asar:        true,
 
   directories: {
-    output: 'dist-v1',
+    output: 'dist-electron',
     buildResources: 'assets'
   },
 
@@ -18,21 +18,29 @@ module.exports = {
 
   win: {
     icon: 'assets/icon.ico',
-    target: [{ target: 'nsis', arch: ['x64'] }],
+    target: [
+      { target: 'nsis', arch: ['x64'] },
+      { target: 'portable', arch: ['x64'] },
+      { target: 'zip', arch: ['x64'] }
+    ],
     cscLink: process.env.SIGN_CERT_PATH,
     cscKeyPassword: process.env.SIGN_CERT_PASS,
   },
 
   nsis: {
-    oneClick:                           false,
-    allowToChangeInstallationDirectory: true,
+    oneClick:                           true,
+    perMachine:                         false,
+    allowToChangeInstallationDirectory: false,
     installerIcon:   'assets/icon.ico',
     uninstallerIcon: 'assets/icon.ico',
     installerHeaderIcon: 'assets/icon.ico',
     createDesktopShortcut: true,
     createStartMenuShortcut: true,
     shortcutName: 'NexVR Engine',
-    license: 'assets/LICENSE.txt',
+  },
+
+  portable: {
+    artifactName: 'NexVR Engine Portable ${version}.${ext}',
   },
 
   extraResources: [

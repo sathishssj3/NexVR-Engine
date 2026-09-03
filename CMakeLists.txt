@@ -183,10 +183,7 @@ add_dependencies(vrinject compile_shaders)
 
 
 
-# ---------------------------------------------------------------------------
-# dummy_app - target app for testing injection
-# ---------------------------------------------------------------------------
-add_executable(dummy_app WIN32 tools/dummy_d3d11_app.cpp)
+
 
 # ---------------------------------------------------------------------------
 # vr-inject-cli - injection CLI
@@ -211,18 +208,6 @@ if (DEFINED ENV{SIGN_CERT_PATH})
         "$<TARGET_FILE:vr-inject-cli>"
       COMMENT "Signing vr-inject-cli.exe")
 endif()
-
-target_link_libraries(dummy_app PRIVATE
-    d3d11
-    user32
-)
-
-# ---------------------------------------------------------------------------
-# test_app - testing vrinject DLL dynamically
-# ---------------------------------------------------------------------------
-add_executable(test_app WIN32 test_app/test_app.cpp)
-target_link_libraries(test_app PRIVATE d3d11 dxgi user32)
-
 
 add_executable(test_xr src/test_xr.cpp)
 target_include_directories(test_xr PRIVATE ${OPENXR_INCLUDE_DIR})

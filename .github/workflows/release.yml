@@ -4,8 +4,11 @@ name: CI - Build, Test, and Analyze
 on:
   push:
     branches: [ "main" ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build-and-test:
@@ -268,7 +271,7 @@ jobs:
       if: failure()
       uses: actions/upload-artifact@v4
       with:
-        name: build-crash-log
+        name: build-crash-log-${{ matrix.configuration }}
         path: |
           build_crash.log
           build.log
@@ -277,7 +280,7 @@ jobs:
     - name: Upload Binaries to Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: test-ai-binaries
+        name: test-ai-binaries-${{ matrix.configuration }}
         path: |
           build/bin/vrinject.dll
           build/bin/test_ai_directml.exe
@@ -286,27 +289,37 @@ jobs:
         retention-days: 7
 
     - name: Setup Node.js
+      if: matrix.configuration == 'Release'
       uses: actions/setup-node@v4
       with:
         node-version: '24'
 
     - name: Install Launcher Dependencies
+      if: matrix.configuration == 'Release'
       working-directory: ./launcher
       run: npm install
 
     - name: Build and Package Electron App
+      if: matrix.configuration == 'Release'
       working-directory: ./launcher
       # This triggers vite build, tsc, and electron-builder
       run: npm run pack
 
     - name: Upload Artifacts
+      if: matrix.configuration == 'Release'
       uses: actions/upload-artifact@v4
       with:
         name: nexvr-engine-installer
-        path: launcher/dist-electron/NexVR Engine Setup*.exe
+        path: |
+          launcher/dist-electron/NexVR Engine Setup*.exe
+          launcher/dist-electron/NexVR Engine Portable*.exe
+          launcher/dist-electron/*.zip
 
     - name: Upload to Release
       uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
+      if: startsWith(github.ref, 'refs/tags/') && matrix.configuration == 'Release'
       with:
-        files: launcher/dist-electron/NexVR Engine Setup*.exe
+        files: |
+          launcher/dist-electron/NexVR Engine Setup*.exe
+          launcher/dist-electron/NexVR Engine Portable*.exe
+          launcher/dist-electron/*.zip
