@@ -94,7 +94,9 @@ jobs:
 
       - name: Build and Package Electron App (NSIS Installer)
         working-directory: ./launcher
-        run: npm run pack
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run pack -- --publish never
 
       - name: Standardize Setup.exe Filenames
         shell: pwsh
