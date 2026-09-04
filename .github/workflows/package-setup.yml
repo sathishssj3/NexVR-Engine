@@ -18,6 +18,7 @@ on:
       - 'v*'
     paths:
       - 'launcher/**'
+      - 'nexvr-client/launcher/**'
       - '.github/workflows/package-setup.yml'
 
 permissions:

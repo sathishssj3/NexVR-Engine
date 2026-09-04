@@ -4,9 +4,9 @@ resource "aws_vpc" "main" {
   enable_dns_support   = true
 
   tags = {
-    Name        = "${var.environment}-nexvr-vpc"
-    Environment = var.environment
-    ManagedBy   = "Terraform"
+    Name                                                 = "${var.environment}-nexvr-vpc"
+    Environment                                          = var.environment
+    ManagedBy                                            = "Terraform"
     "kubernetes.io/cluster/${var.environment}-nexvr-eks" = "shared"
   }
 }

@@ -1,0 +1,6 @@
+- `[/]` Phase 1: Add Telemetry
+    - `[ ]` Add throttled logging to `vulkan_depth_candidate_collector.cpp`
+    - `[ ]` Add throttled logging to `depth_lock_manager.cpp`
+    - `[ ]` Build updated `vrinject.dll`
+    - `[ ]` Have user test and collect logs
+- `[ ]` Phase 2: Stereoscopic Shader Activation (Pending Log Results)

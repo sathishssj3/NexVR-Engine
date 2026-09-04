@@ -30,21 +30,21 @@ variable "nodes_security_group_id" {
 }
 
 variable "desired_capacity" {
-  type        = number
-  default     = 2
+  type    = number
+  default = 2
 }
 
 variable "min_capacity" {
-  type        = number
-  default     = 2
+  type    = number
+  default = 2
 }
 
 variable "max_capacity" {
-  type        = number
-  default     = 10
+  type    = number
+  default = 10
 }
 
 variable "instance_types" {
-  type        = list(string)
-  default     = ["m6i.large", "t3.xlarge"]
+  type    = list(string)
+  default = ["m6i.large", "t3.xlarge"]
 }

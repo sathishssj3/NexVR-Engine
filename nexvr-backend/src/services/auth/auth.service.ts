@@ -109,7 +109,7 @@ export class AuthService {
     const accessToken = jwt.sign(
       { id: user.id, email: user.email, role: user.role, tier: user.tier },
       config.JWT_SECRET,
-      { expiresIn: config.JWT_EXPIRES_IN }
+      { expiresIn: config.JWT_EXPIRES_IN as any }
     );
 
     const refreshTokenString = `${user.id}.${jwt.sign({ id: user.id }, config.JWT_SECRET, { expiresIn: '7d' })}`;
