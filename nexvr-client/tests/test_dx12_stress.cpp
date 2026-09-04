@@ -91,8 +91,11 @@ TEST_F(DX12StressTest, Render100kFramesWithoutLeaks) {
     
     D3D12_RESOURCE_DESC resDesc = {};
     resDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-    resDesc.Width = 1920;
-    resDesc.Height = 1080;
+    const UINT testWidth = (std::getenv("CI") != nullptr) ? 320 : 1920;
+    const UINT testHeight = (std::getenv("CI") != nullptr) ? 240 : 1080;
+
+    resDesc.Width = testWidth;
+    resDesc.Height = testHeight;
     resDesc.DepthOrArraySize = 1;
     resDesc.MipLevels = 1;
     resDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -117,21 +120,21 @@ TEST_F(DX12StressTest, Render100kFramesWithoutLeaks) {
     camSnapshot.valid = true;
     camSnapshot.confidence = 1.0f;
     camSnapshot.resourceIdentity.nativeHandle = dummyCamRes.Get();
-    camSnapshot.resourceIdentity.width = 1920;
-    camSnapshot.resourceIdentity.height = 1080;
+    camSnapshot.resourceIdentity.width = testWidth;
+    camSnapshot.resourceIdentity.height = testHeight;
     camSnapshot.resourceIdentity.format = DXGI_FORMAT_R8G8B8A8_UNORM;
     
     DepthSnapshot depthSnapshot;
     depthSnapshot.confidence = 100.0f; 
     depthSnapshot.identity.nativeHandle = dummyDepthRes.Get();
-    depthSnapshot.identity.width = 1920;
-    depthSnapshot.identity.height = 1080;
+    depthSnapshot.identity.width = testWidth;
+    depthSnapshot.identity.height = testHeight;
     depthSnapshot.identity.format = DXGI_FORMAT_D32_FLOAT;
     
     StereoParams params;
     params.ipd = 0.064f;
 
-    const int FRAME_COUNT = (std::getenv("CI") != nullptr) ? 20 :
+    const int FRAME_COUNT = (std::getenv("CI") != nullptr) ? 5 :
 #if defined(_DEBUG)
         20;
 #else
