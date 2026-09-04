@@ -1,0 +1,164 @@
+name: Package Setup.exe
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag (e.g. v0.1.0)'
+        required: false
+        default: 'v0.1.0'
+        type: string
+      publish_to_releases_repo:
+        description: 'Publish Setup.exe to sathishssj3/NexVR-Engine-Releases'
+        required: false
+        default: true
+        type: boolean
+  push:
+    tags:
+      - 'v*'
+    paths:
+      - 'launcher/**'
+      - '.github/workflows/package-setup.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  package-setup:
+    name: Build and Package Setup.exe
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup MSVC & CMake
+        uses: ilammy/msvc-dev-cmd@v1.13.0
+
+      - name: Download Official DXC (for SPIR-V support)
+        shell: cmd
+        run: |
+          curl.exe -L https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.7.2308/dxc_2023_08_14.zip -o dxc.zip
+          7z.exe x dxc.zip -odxc -y
+
+      - name: Setup Vulkan SDK
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $VulkanURL = "https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-sdk.exe"
+          Write-Host "Downloading Vulkan SDK..."
+          Invoke-WebRequest -Uri $VulkanURL -OutFile VulkanSDK.exe
+          Write-Host "Installing Vulkan SDK..."
+          Start-Process -FilePath ".\VulkanSDK.exe" -ArgumentList "--root", "C:\VulkanSDK", "--accept-licenses", "--default-answer", "--confirm-command", "install" -Wait -NoNewWindow
+          echo "VULKAN_SDK=C:\VulkanSDK" >> $env:GITHUB_ENV
+          echo "C:\VulkanSDK\Bin" >> $env:GITHUB_PATH
+
+      - name: Decode Code Signing Certificate (Optional)
+        shell: pwsh
+        env:
+          CERT_BASE64: ${{ secrets.SIGN_CERT_PATH }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:CERT_BASE64)) {
+            Write-Host "No certificate secret found. Building unsigned."
+            exit 0
+          }
+          $cleanBase64 = $env:CERT_BASE64 -replace '[^A-Za-z0-9+/=]', ''
+          $pad = $cleanBase64.Length % 4
+          if ($pad -gt 0) { $cleanBase64 += "=" * (4 - $pad) }
+          try {
+            $bytes = [Convert]::FromBase64String($cleanBase64)
+            [IO.File]::WriteAllBytes("${{ github.workspace }}\cert.pfx", $bytes)
+            echo "SIGN_CERT_PATH=${{ github.workspace }}\cert.pfx" >> $env:GITHUB_ENV
+            echo "SIGN_CERT_PASS=${{ secrets.SIGN_CERT_PASS }}" >> $env:GITHUB_ENV
+            Write-Host "Certificate configured successfully."
+          } catch {
+            Write-Host "Warning: Certificate decoding failed. Proceeding unsigned."
+          }
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Generate Dummy Models
+        shell: pwsh
+        run: |
+          pip install onnx
+          if (-not (Test-Path models)) { mkdir models }
+          python generate_dummy_onnx.py
+          Copy-Item models/dummy.onnx models/depth_inpainter.onnx
+          Copy-Item models/dummy_ui.onnx models/ui_synthesizer.onnx
+
+      - name: Configure CMake
+        run: cmake -B build -S . -A x64 -DDXC_EXECUTABLE="${{ github.workspace }}/dxc/bin/x64/dxc.exe"
+
+      - name: Build Native Engine Targets (Release)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          # Build only the native components required by the installer (vrinject.dll, cli, shaders)
+          cmake --build build --config Release --target vrinject vr-inject-cli
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "::error::Native build failed."
+            exit $LASTEXITCODE
+          }
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Launcher Dependencies
+        working-directory: ./launcher
+        run: npm install
+
+      - name: Build and Package Electron App (NSIS Installer)
+        working-directory: ./launcher
+        run: npm run pack
+
+      - name: Standardize Setup.exe Filenames
+        shell: pwsh
+        working-directory: ./launcher/dist-electron
+        run: |
+          $setupFile = Get-ChildItem -Filter "*Setup*.exe" | Select-Object -First 1
+          if ($setupFile) {
+            Write-Host "Discovered NSIS installer: $($setupFile.Name)"
+            Copy-Item $setupFile.FullName "NexVR-Engine-Setup.exe" -Force
+            Copy-Item $setupFile.FullName "NexVR.Engine.Setup.0.1.0.exe" -Force
+            Write-Host "Created canonical download targets: NexVR-Engine-Setup.exe and NexVR.Engine.Setup.0.1.0.exe"
+          } else {
+            Write-Host "::error::No Setup.exe was found in dist-electron!"
+            exit 1
+          }
+
+      - name: Upload Setup.exe as GitHub Actions Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NexVR-Engine-Setup
+          path: |
+            launcher/dist-electron/NexVR-Engine-Setup.exe
+            launcher/dist-electron/NexVR.Engine.Setup.*.exe
+            launcher/dist-electron/NexVR Engine Setup*.exe
+            launcher/dist-electron/NexVR Engine Portable*.exe
+            launcher/dist-electron/*.zip
+          retention-days: 30
+
+      - name: Publish to NexVR-Engine Releases (Local Repo)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            launcher/dist-electron/NexVR-Engine-Setup.exe
+            launcher/dist-electron/NexVR.Engine.Setup.*.exe
+            launcher/dist-electron/NexVR Engine Portable*.exe
+            launcher/dist-electron/*.zip
+
+      - name: Publish to NexVR-Engine-Releases Repo
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish_to_releases_repo == true) || startsWith(github.ref, 'refs/tags/') }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.release_tag || github.ref_name }}
+        run: |
+          $tagToUse = if ($env:TAG) { $env:TAG } else { "v0.1.0" }
+          ./scripts/upload_to_releases_repo.ps1 -Token $env:GH_TOKEN -Tag $tagToUse
