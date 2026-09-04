@@ -230,14 +230,14 @@ bool StereoResourceManager::CreateRenderTargets(uint32_t width, uint32_t height,
 
     DXGI_FORMAT texFormat = format;
     DXGI_FORMAT uavFormat = format;
-    if (format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB) {
+    if (format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB || format == DXGI_FORMAT_R8G8B8A8_UNORM || format == DXGI_FORMAT_R8G8B8A8_TYPELESS) {
         texFormat = DXGI_FORMAT_R8G8B8A8_TYPELESS;
         uavFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-    } else if (format == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB) {
+    } else if (format == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB || format == DXGI_FORMAT_B8G8R8A8_UNORM || format == DXGI_FORMAT_B8G8R8A8_TYPELESS) {
         texFormat = DXGI_FORMAT_B8G8R8A8_TYPELESS;
         uavFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
     } else if (format == DXGI_FORMAT_UNKNOWN) {
-        texFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+        texFormat = DXGI_FORMAT_R8G8B8A8_TYPELESS;
         uavFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
     }
     desc.Format = texFormat;

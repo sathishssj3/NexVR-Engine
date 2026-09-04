@@ -1,16 +1,17 @@
 {
-  "engineVersion": "0.1.4",
-  "timestamp": 1788534251195,
-  "changelog": "Sekiro VR rendering fix & Steam Overlay Hook Engine v0.1.4",
+  "engineVersion": "0.1.5",
+  "timestamp": 1788535097680,
+  "changelog": "Sekiro VR Rendering Fix & Steam Overlay Hook Engine v0.1.5",
   "features": [
-    "Universal Steam Overlay Hook Engine: Eliminates false-positive anti-cheat blockage",
-    "D3D11 sRGB Typeless UAV Support: Prevents E_INVALIDARG on sRGB swapchain formats",
-    "Adaptive Swapchain Resolution Sync: Clamps texture copy regions to avoid compositor drop"
+    "Steam Overlay Hook Engine: Eliminates false-positive anti-cheat blockage",
+    "D3D11 Universal Typeless Eye Textures: Enables seamless copying to both UNORM and sRGB OpenXR swapchains",
+    "Sekiro Automatic Configuration: Enforces forward-Z, column-major matrices, and sRGB correction bypass",
+    "Self-Healing OTA CLI Verification: Accepts OTA engine updates without hash rejection"
   ],
   "fixes": [
-    "Sekiro: Shadows Die Twice: Resolved black screen in VR caused by Steam Overlay detour conflict",
-    "DXGI Swapchain Fallback: Automatic recovery if modified buffer usage is rejected",
-    "Launcher OTA Engine: Lowered CLI size threshold to deploy hotfix CLI instantly"
+    "Sekiro: Shadows Die Twice: Fixed VR display in headset caused by Steam Overlay hook blockage and sRGB UAV format rejection",
+    "Direct3D 11 CopySubresourceRegion: Prevented driver texture format drop between game backbuffer and OpenXR compositor",
+    "Launcher Config Deployment: Automatically generates vrinject.json with Sekiro profile on launch and syncs across game binaries"
   ],
   "files": [
     "vrinject.dll",

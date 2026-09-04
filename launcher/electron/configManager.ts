@@ -76,6 +76,15 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     rawInputMode: true,
     autoInjectOnLaunch: true,
   },
+  // Sekiro: Shadows Die Twice
+  '814380': {
+    motionAimSensitivity: 1.0,
+    useRecommendedResolution: true,
+    srgbCorrection: false,
+    depthSubmission: false,
+    rawInputMode: true,
+    autoInjectOnLaunch: true,
+  },
 };
 
 function loadProfilesFromDisk(): Record<string, Partial<VRConfig>> {
