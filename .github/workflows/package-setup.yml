@@ -136,11 +136,14 @@ jobs:
             launcher/dist-electron/*.zip
 
       - name: Publish to NexVR-Engine-Releases Repo
-        if: ${{ secrets.RELEASES_REPO_TOKEN != '' }}
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.RELEASES_REPO_TOKEN }}
           TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
+          if ([string]::IsNullOrWhiteSpace($env:GH_TOKEN)) {
+            Write-Host "No RELEASES_REPO_TOKEN secret found. Skipping cross-repo release upload."
+            exit 0
+          }
           $tagToUse = if ($env:TAG) { $env:TAG } else { "v0.1.0" }
           ./scripts/upload_to_releases_repo.ps1 -Token $env:GH_TOKEN -Tag $tagToUse
