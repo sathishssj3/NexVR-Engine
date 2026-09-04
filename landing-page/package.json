@@ -1,0 +1,15 @@
+{
+  "name": "nexvr-landing-page",
+  "version": "0.1.0",
+  "description": "NexVR Engine marketing & waitlist landing page",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler pages dev . --kv WAITLIST --port 8788",
+    "deploy": "wrangler pages deploy .",
+    "waitlist:list": "wrangler kv key list --binding WAITLIST",
+    "preview": "wrangler pages dev ."
+  },
+  "devDependencies": {
+    "wrangler": "^3.114.0"
+  }
+}
