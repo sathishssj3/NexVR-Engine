@@ -98,13 +98,15 @@ export default function App() {
     // Query OTA hotfix status
     if (window.ag && window.ag.update) {
       window.ag.update.getStatus().then((st) => {
-        if (st && st.timestamp > 0) {
+        if (st) {
           setUpdateStatus({
             checking: false,
             hasUpdate: false,
-            updated: true,
-            version: st.version,
+            updated: st.timestamp > 0,
+            version: st.version || '0.1.0',
             changelog: st.changelog,
+            features: st.features,
+            fixes: st.fixes,
           });
         }
       }).catch(() => {});
@@ -274,11 +276,15 @@ export default function App() {
             NEXVR ENGINE
           </strong>
           <span style={{ 
-            marginLeft: 10, marginRight: 16, color: 'var(--ag-accent)', fontSize: 10, 
+            marginLeft: 10, marginRight: 16, 
+            color: updateStatus?.updated ? 'var(--ag-accent-success)' : 'var(--ag-accent)', 
+            fontSize: 10, 
             fontFamily: 'var(--ag-font-mono)', letterSpacing: '1px', 
-            textShadow: '0 0 8px rgba(0,240,255,0.4)', opacity: 0.7 
+            textShadow: updateStatus?.updated ? '0 0 8px rgba(0,230,118,0.4)' : '0 0 8px rgba(0,240,255,0.4)', 
+            opacity: 0.9,
+            fontWeight: 600
           }}>
-            v0.1.0
+            {updateStatus?.version ? (updateStatus.version.startsWith('v') ? updateStatus.version : `v${updateStatus.version}`) : 'v0.1.0'}
           </span>
           {updateStatus?.updated && (
             <span style={{
@@ -400,7 +406,7 @@ export default function App() {
             onRescan={scanGames}
           />
         ) : (
-          <AboutPanel />
+          <AboutPanel version={updateStatus?.version} />
         )}
       </div>
 

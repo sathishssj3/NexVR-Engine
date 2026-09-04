@@ -1,6 +1,6 @@
 import mainLogo from '../assets/logo.png';
 
-export function AboutPanel() {
+export function AboutPanel({ version }: { version?: string }) {
   const handleLink = (url: string) => {
     if (window.ag && window.ag.shell) {
       window.ag.shell.openExternal(url);
@@ -23,35 +23,33 @@ export function AboutPanel() {
       <div className="glass-card fade-in-up" style={{ width: '100%', maxWidth: 620, padding: '44px 40px', textAlign: 'center', borderTop: '3px solid var(--ag-accent)' }}>
         {/* Main Official Logo */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
-          <img
-            src={mainLogo}
-            alt="NexVR Engine"
-            style={{
-              width: 84, height: 84, borderRadius: '50%',
-              border: '2px solid rgba(0, 240, 255, 0.6)',
-              boxShadow: '0 0 35px rgba(0, 240, 255, 0.4), inset 0 1px 2px rgba(255,255,255,0.4)',
-              background: '#020305'
-            }}
+          <img 
+            src={mainLogo} 
+            alt="NexVR Engine Logo" 
+            style={{ 
+              width: '100px', 
+              height: 'auto', 
+              filter: 'drop-shadow(0 0 16px rgba(0, 240, 255, 0.5))' 
+            }} 
           />
         </div>
-        {/* Logo Title */}
+
         <h1 style={{ 
-          fontSize: 44, fontWeight: 700, letterSpacing: '8px', 
-          color: 'var(--ag-accent)', margin: '0 0 6px 0', 
-          fontFamily: 'var(--ag-font-display)',
-          textShadow: '0 0 30px rgba(0,240,255,0.3), 0 0 60px rgba(0,240,255,0.1)' 
+          margin: '0 0 8px 0', fontSize: 26, letterSpacing: '2px', 
+          fontFamily: 'var(--ag-font-display)', color: '#fff' 
         }}>
           NEXVR ENGINE
         </h1>
-        <div style={{ 
-          fontSize: 12, fontFamily: 'var(--ag-font-mono)', 
-          color: 'var(--ag-text-muted)', letterSpacing: '6px', marginBottom: 6 
-        }}>
-          ENGINE
-        </div>
         <p style={{ 
-          fontSize: 15, color: 'var(--ag-text-primary)', letterSpacing: '2px', 
-          marginBottom: 36, opacity: 0.7, fontWeight: 300 
+          margin: '0 0 28px 0', color: 'var(--ag-accent)', fontSize: 13, 
+          letterSpacing: '1.5px', fontFamily: 'var(--ag-font-mono)', opacity: 0.9 
+        }}>
+          Universal VR Injection Runtime
+        </p>
+
+        <p style={{ 
+          color: 'var(--ag-text-muted)', fontSize: 13, lineHeight: '1.6', 
+          margin: '0 auto 28px auto', maxWidth: 480 
         }}>
           Every game. Full depth.
         </p>
@@ -62,7 +60,7 @@ export function AboutPanel() {
           background: 'var(--ag-border)', borderRadius: 'var(--ag-radius-sm)', overflow: 'hidden' 
         }}>
           {[
-            { label: 'VERSION', value: 'v0.1.0' },
+            { label: 'VERSION', value: version ? (version.startsWith('v') ? version : `v${version}`) : 'v0.1.0' },
             { label: 'BUILD', value: import.meta.env.VITE_BUILD_DATE || 'dev' },
             { label: 'ELECTRON', value: window.ag?.versions?.electron || '—' },
             { label: 'NODE', value: window.ag?.versions?.node || '—' },

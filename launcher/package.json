@@ -1,7 +1,7 @@
 {
   "name": "launcher",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Universal VR injection launcher",
   "author": "NexVR Engine",
   "homepage": "https://github.com/sathishssj3/NexVR-Engine",
