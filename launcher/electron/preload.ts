@@ -35,6 +35,7 @@ contextBridge.exposeInMainWorld('ag', {
   update: {
     check: () => ipcRenderer.invoke('update:check'),
     getStatus: () => ipcRenderer.invoke('update:getStatus'),
+    openFolder: () => ipcRenderer.invoke('update:openFolder'),
   },
   log: {
     onLine: (cb: (line: string) => void) => {

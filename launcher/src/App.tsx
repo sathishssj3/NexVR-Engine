@@ -4,6 +4,7 @@ import { Sidebar } from './components/Sidebar';
 import { GameDetail } from './components/GameDetail';
 import { VRStatusBar } from './components/VRStatusBar';
 import { AboutPanel } from './components/AboutPanel';
+import { SettingsView } from './components/SettingsView';
 import { HeroCommandCenter } from './components/HeroCommandCenter';
 import { useFastSmoothScroll } from './hooks/useFastSmoothScroll';
 import './index.css';
@@ -36,7 +37,8 @@ declare global {
       },
       update: {
         check: () => Promise<UpdateStatus>,
-        getStatus: () => Promise<{ version: string, timestamp: number, changelog: string }>
+        getStatus: () => Promise<{ version: string, timestamp: number, changelog: string, features?: string[], fixes?: string[] }>,
+        openFolder: () => Promise<void>
       },
       log: {
         onLine: (cb: (line: string) => void) => void,
@@ -68,7 +70,7 @@ export default function App() {
   const [config, setConfig] = useState<VRConfig | null>(null);
   const [logLines, setLogLines] = useState<string[]>([]);
   const [injectState, setInjectState] = useState<'default' | 'injecting' | 'success' | 'running' | 'error' | 'cancelled'>('default');
-  const [currentTab, setCurrentTab] = useState<'library' | 'about'>('library');
+  const [currentTab, setCurrentTab] = useState<'library' | 'settings' | 'about'>('library');
   const [transitioning, setTransitioning] = useState(false);
   const [hasConsented, setHasConsented] = useState<boolean>(() => localStorage.getItem('ag_ac_consent') === 'true');
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
@@ -291,7 +293,7 @@ export default function App() {
             </span>
           )}
           <div style={{ display: 'flex', gap: 2, WebkitAppRegion: 'no-drag' } as any}>
-             {(['library', 'about'] as const).map(tab => (
+             {(['library', 'settings', 'about'] as const).map(tab => (
                <button 
                  key={tab}
                  onClick={() => setCurrentTab(tab)} 
@@ -390,6 +392,13 @@ export default function App() {
               )}
             </div>
           </>
+        ) : currentTab === 'settings' ? (
+          <SettingsView
+            vrStatus={vrStatus}
+            updateStatus={updateStatus}
+            onUpdateStatusChange={st => setUpdateStatus(st)}
+            onRescan={scanGames}
+          />
         ) : (
           <AboutPanel />
         )}

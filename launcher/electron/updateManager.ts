@@ -1,4 +1,4 @@
-import { app, ipcMain } from 'electron';
+import { app, ipcMain, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as https from 'https';
@@ -8,6 +8,8 @@ export interface UpdateManifest {
   engineVersion: string;
   timestamp: number;
   changelog: string;
+  features?: string[];
+  fixes?: string[];
   files: string[];
 }
 
@@ -17,6 +19,8 @@ export interface UpdateStatus {
   updated: boolean;
   version: string;
   changelog?: string;
+  features?: string[];
+  fixes?: string[];
   error?: string;
 }
 
@@ -152,13 +156,18 @@ export async function checkForEngineHotfix(): Promise<UpdateStatus> {
         updated: true,
         version: remote.engineVersion,
         changelog: remote.changelog,
+        features: remote.features,
+        fixes: remote.fixes,
       };
     } else {
       return {
         checking: false,
         hasUpdate: false,
-        updated: false,
+        updated: true,
         version: local.engineVersion,
+        changelog: local.changelog,
+        features: local.features,
+        fixes: local.fixes,
       };
     }
   } catch (err: any) {
@@ -167,8 +176,11 @@ export async function checkForEngineHotfix(): Promise<UpdateStatus> {
     return {
       checking: false,
       hasUpdate: false,
-      updated: false,
+      updated: !!local,
       version: local?.engineVersion || '0.1.0',
+      changelog: local?.changelog,
+      features: local?.features,
+      fixes: local?.fixes,
       error: err.message,
     };
   }
@@ -187,5 +199,13 @@ ipcMain.handle('update:getStatus', async (event) => {
     version: local?.engineVersion || '0.1.0',
     timestamp: local?.timestamp || 0,
     changelog: local?.changelog || '',
+    features: local?.features || [],
+    fixes: local?.fixes || [],
   };
+});
+
+ipcMain.handle('update:openFolder', async (event) => {
+  assertTrustedIpcSender(event);
+  const dir = getUpdatesDir();
+  shell.openPath(dir);
 });

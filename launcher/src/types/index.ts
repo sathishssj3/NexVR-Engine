@@ -21,6 +21,8 @@ export interface UpdateStatus {
   updated: boolean;
   version: string;
   changelog?: string;
+  features?: string[];
+  fixes?: string[];
   error?: string;
 }
 
