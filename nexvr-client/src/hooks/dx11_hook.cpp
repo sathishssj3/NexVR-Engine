@@ -118,40 +118,58 @@ HRESULT ProcessPresent(SwapChainType* pSwapChain, OriginalFunc originalFunc, Arg
         
         IDXGISwapChain* baseSwapChain = static_cast<IDXGISwapChain*>(pSwapChain);
         
-        // Re-probe if swapchain pointer changed OR if we previously didn't detect DX12 but a command queue has since been captured!
-        ID3D12CommandQueue* capturedQueue = DXGIFactoryHook::GetCapturedCommandQueue();
-        if (baseSwapChain != s_lastProbedSwapChain || (!s_lastProbeWasDX12 && capturedQueue != nullptr)) {
+        // Re-probe if swapchain pointer changed
+        if (baseSwapChain != s_lastProbedSwapChain) {
             s_lastProbedSwapChain = baseSwapChain;
             s_lastProbeWasDX12 = false;
             s_dx12FailCount = 0;
             
-            if (capturedQueue) {
-                // Probe: try getting the swapchain buffer as ID3D12Resource
-                Microsoft::WRL::ComPtr<ID3D12Resource> probe;
-                if (SUCCEEDED(baseSwapChain->GetBuffer(0, IID_PPV_ARGS(&probe)))) {
-                    s_lastProbeWasDX12 = true;
-                    LOG_INFO("DX11Hook: Swapchain %p verified as DX12 (has ID3D12Resource buffers)", baseSwapChain);
-                } else {
-                    LOG_INFO("DX11Hook: Swapchain %p is DX11 (DX12 command queue present but buffers are not ID3D12Resource)", baseSwapChain);
+            // Probe unconditionally: verify swapchain's actual buffer type (BUG-10)
+            Microsoft::WRL::ComPtr<ID3D12Resource> probe;
+            if (SUCCEEDED(baseSwapChain->GetBuffer(0, IID_PPV_ARGS(&probe)))) {
+                s_lastProbeWasDX12 = true;
+                LOG_INFO("DX11Hook: Swapchain %p verified as DX12 (has ID3D12Resource buffers)", baseSwapChain);
+                
+                // If command queue hasn't been captured via hooks yet, query it directly from the swapchain
+                if (!DXGIFactoryHook::GetCapturedCommandQueue()) {
+                    Microsoft::WRL::ComPtr<ID3D12CommandQueue> scQueue;
+                    if (SUCCEEDED(baseSwapChain->GetDevice(IID_PPV_ARGS(&scQueue)))) {
+                        DXGIFactoryHook::SetCapturedCommandQueue(scQueue.Get());
+                        LOG_INFO("DX11Hook: Captured DX12 CommandQueue directly from swapchain: %p", scQueue.Get());
+                    }
                 }
             } else {
-                LOG_INFO("DX11Hook: Swapchain %p detected as DX11 (no DX12 command queue)", baseSwapChain);
+                LOG_INFO("DX11Hook: Swapchain %p verified as DX11 (buffers are not ID3D12Resource)", baseSwapChain);
             }
         }
         
         RenderFrameSnapshot snapshot;
-        bool useDX12 = s_lastProbeWasDX12 && (s_dx12FailCount < 30);
+        bool useDX12 = s_lastProbeWasDX12 && (s_dx12FailCount < 60);
         
         if (useDX12) {
             ID3D12CommandQueue* capturedQueue = DXGIFactoryHook::GetCapturedCommandQueue();
+            if (!capturedQueue) {
+                Microsoft::WRL::ComPtr<ID3D12CommandQueue> scQueue;
+                if (SUCCEEDED(baseSwapChain->GetDevice(IID_PPV_ARGS(&scQueue)))) {
+                    capturedQueue = scQueue.Get();
+                    DXGIFactoryHook::SetCapturedCommandQueue(capturedQueue);
+                    LOG_INFO("DX11Hook: Retrieved DX12 CommandQueue from swapchain in ProcessPresent: %p", capturedQueue);
+                }
+            }
             snapshot = Dx12LifecycleManager::Get().ProcessPresent(
                 baseSwapChain, capturedQueue, hr);
             // Self-healing: if DX12 lifecycle stays broken, auto-fallback to DX11
             if (snapshot.state == RenderState::DEGRADED || 
                 snapshot.state == RenderState::DEVICE_REMOVED ||
-                (!snapshot.backBuffer && snapshot.state != RenderState::UNINITIALIZED)) {
+                snapshot.state == RenderState::RECOVERY_FAILED ||
+                (!snapshot.backBuffer && 
+                 snapshot.state != RenderState::UNINITIALIZED &&
+                 snapshot.state != RenderState::DISCOVERING &&
+                 snapshot.state != RenderState::INITIALIZING &&
+                 snapshot.state != RenderState::RESIZE_PENDING &&
+                 snapshot.state != RenderState::REBUILDING_RESOURCES)) {
                 s_dx12FailCount++;
-                if (s_dx12FailCount >= 30) {
+                if (s_dx12FailCount >= 60) {
                     LOG_WARN("DX11Hook: DX12 path failed %d times. Auto-falling back to DX11 for swapchain %p", 
                              s_dx12FailCount, baseSwapChain);
                     // Reset DX11 lifecycle to pick up this swapchain fresh
@@ -202,12 +220,14 @@ HRESULT __stdcall hkResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount, 
         // before calling ResizeBuffers. DXGI requires zero outstanding references
         // or the call fails with DXGI_ERROR_INVALID_CALL, which crashes UE4 games.
         Dx11LifecycleManager::Get().ReleaseSwapchainReferences();
+        Dx12LifecycleManager::Get().ReleaseSwapchainReferences();
         
         HRESULT hr = OriginalResizeBuffers(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
         
         // Mark lifecycle for rebuild — it will re-acquire the backbuffer on next Present
         if (SUCCEEDED(hr)) {
             Dx11LifecycleManager::Get().NotifyResizeComplete();
+            Dx12LifecycleManager::Get().NotifyResizeComplete();
         }
         
         return hr;
@@ -450,16 +470,14 @@ bool Initialize() {
 void Shutdown() {
     Dx11LifecycleManager::Get().Shutdown();
 
-    if (g_targetPresent) MH_DisableHook(g_targetPresent);
-    if (g_targetPresent1) MH_DisableHook(g_targetPresent1);
-    if (g_targetResizeBuffers) MH_DisableHook(g_targetResizeBuffers);
-    if (g_targetUpdateSubresource) MH_DisableHook(g_targetUpdateSubresource);
-    if (g_targetMap) MH_DisableHook(g_targetMap);
-    if (g_targetOMSetRenderTargets) MH_DisableHook(g_targetOMSetRenderTargets);
-    if (g_targetClearDepthStencilView) MH_DisableHook(g_targetClearDepthStencilView);
-    if (g_targetCreateTexture2D) MH_DisableHook(g_targetCreateTexture2D);
-
-    MH_Uninitialize();
+    if (g_targetPresent) { MH_DisableHook(g_targetPresent); g_targetPresent = nullptr; }
+    if (g_targetPresent1) { MH_DisableHook(g_targetPresent1); g_targetPresent1 = nullptr; }
+    if (g_targetResizeBuffers) { MH_DisableHook(g_targetResizeBuffers); g_targetResizeBuffers = nullptr; }
+    if (g_targetUpdateSubresource) { MH_DisableHook(g_targetUpdateSubresource); g_targetUpdateSubresource = nullptr; }
+    if (g_targetMap) { MH_DisableHook(g_targetMap); g_targetMap = nullptr; }
+    if (g_targetOMSetRenderTargets) { MH_DisableHook(g_targetOMSetRenderTargets); g_targetOMSetRenderTargets = nullptr; }
+    if (g_targetClearDepthStencilView) { MH_DisableHook(g_targetClearDepthStencilView); g_targetClearDepthStencilView = nullptr; }
+    if (g_targetCreateTexture2D) { MH_DisableHook(g_targetCreateTexture2D); g_targetCreateTexture2D = nullptr; }
 }
 
 } // namespace DX11Hook

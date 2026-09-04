@@ -26,7 +26,8 @@ RenderFrameSnapshot Dx11LifecycleManager::ProcessPresent(IDXGISwapChain* swapCha
         return CreateSnapshot();
     }
 
-    if (currentState == RenderState::UNINITIALIZED || currentState == RenderState::RECOVERING || currentState == RenderState::REINITIALIZING) {
+    if (!m_deviceResources.device ||
+        currentState == RenderState::UNINITIALIZED || currentState == RenderState::RECOVERING || currentState == RenderState::REINITIALIZING) {
         Discover(swapChain);
     } else if (currentState == RenderState::RUNNING) {
         Validate(swapChain);

@@ -238,13 +238,21 @@ HRESULT __stdcall hkPresent1DX12(IDXGISwapChain1* pSwapChain, UINT SyncInterval,
 HRESULT __stdcall hkResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags) {
     LOG_INFO("DX12Hook: hkResizeBuffers requested format %d (%ux%u)", NewFormat, Width, Height);
     Dx12LifecycleManager::Get().ReleaseSwapchainReferences();
-    return OriginalResizeBuffers ? OriginalResizeBuffers(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags) : DXGI_ERROR_INVALID_CALL;
+    HRESULT hr = OriginalResizeBuffers ? OriginalResizeBuffers(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags) : DXGI_ERROR_INVALID_CALL;
+    if (SUCCEEDED(hr)) {
+        Dx12LifecycleManager::Get().NotifyResizeComplete();
+    }
+    return hr;
 }
 
 HRESULT __stdcall hkResizeBuffers1(IDXGISwapChain3* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags, const UINT* pCreationNodeMask, IUnknown* const* ppPresentQueue) {
     LOG_INFO("DX12Hook: hkResizeBuffers1 requested format %d (%ux%u)", NewFormat, Width, Height);
     Dx12LifecycleManager::Get().ReleaseSwapchainReferences();
-    return OriginalResizeBuffers1 ? OriginalResizeBuffers1(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags, pCreationNodeMask, ppPresentQueue) : DXGI_ERROR_INVALID_CALL;
+    HRESULT hr = OriginalResizeBuffers1 ? OriginalResizeBuffers1(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags, pCreationNodeMask, ppPresentQueue) : DXGI_ERROR_INVALID_CALL;
+    if (SUCCEEDED(hr)) {
+        Dx12LifecycleManager::Get().NotifyResizeComplete();
+    }
+    return hr;
 }
 
 void __stdcall hkCreateDepthStencilView(ID3D12Device* pDevice, ID3D12Resource* pResource, const D3D12_DEPTH_STENCIL_VIEW_DESC* pDesc, D3D12_CPU_DESCRIPTOR_HANDLE DestDescriptor) {
@@ -275,6 +283,12 @@ void __stdcall hkCopyDescriptorsSimple(ID3D12Device* pDevice, UINT NumDescriptor
 }
 
 void __stdcall hkExecuteCommandLists(ID3D12CommandQueue* pCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists) {
+    if (pCommandQueue && vrinject::seh::IsValidMemoryPointer(pCommandQueue)) {
+        D3D12_COMMAND_QUEUE_DESC desc = pCommandQueue->GetDesc();
+        if (desc.Type == D3D12_COMMAND_LIST_TYPE_DIRECT) {
+            DXGIFactoryHook::SetCapturedCommandQueue(pCommandQueue);
+        }
+    }
     if (OriginalExecuteCommandLists) {
         OriginalExecuteCommandLists(pCommandQueue, NumCommandLists, ppCommandLists);
     }
@@ -615,7 +629,18 @@ bool Initialize() {
 }
 
 void Shutdown() {
-    MH_DisableHook(MH_ALL_HOOKS);
+    if (g_targetExecuteCommandLists) { MH_DisableHook(g_targetExecuteCommandLists); g_targetExecuteCommandLists = nullptr; }
+    if (g_targetCreateDepthStencilView) { MH_DisableHook(g_targetCreateDepthStencilView); g_targetCreateDepthStencilView = nullptr; }
+    if (g_targetCopyDescriptors) { MH_DisableHook(g_targetCopyDescriptors); g_targetCopyDescriptors = nullptr; }
+    if (g_targetCopyDescriptorsSimple) { MH_DisableHook(g_targetCopyDescriptorsSimple); g_targetCopyDescriptorsSimple = nullptr; }
+    if (g_targetDrawIndexedInstanced) { MH_DisableHook(g_targetDrawIndexedInstanced); g_targetDrawIndexedInstanced = nullptr; }
+    if (g_targetOMSetRenderTargets) { MH_DisableHook(g_targetOMSetRenderTargets); g_targetOMSetRenderTargets = nullptr; }
+    if (g_targetClearDepthStencilView) { MH_DisableHook(g_targetClearDepthStencilView); g_targetClearDepthStencilView = nullptr; }
+    if (g_targetPresentDX12) { MH_DisableHook(g_targetPresentDX12); g_targetPresentDX12 = nullptr; }
+    if (g_targetPresent1DX12) { MH_DisableHook(g_targetPresent1DX12); g_targetPresent1DX12 = nullptr; }
+    if (g_targetResizeBuffers) { MH_DisableHook(g_targetResizeBuffers); g_targetResizeBuffers = nullptr; }
+    if (g_targetResizeBuffers1) { MH_DisableHook(g_targetResizeBuffers1); g_targetResizeBuffers1 = nullptr; }
+
     ImGuiDX12Integration::GetInstance().Shutdown();
     Dx12LifecycleManager::Get().Shutdown();
 }

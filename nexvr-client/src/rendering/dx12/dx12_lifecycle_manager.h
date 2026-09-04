@@ -37,6 +37,9 @@ public:
     // Releases references to swapchain backbuffer prior to ResizeBuffers
     void ReleaseSwapchainReferences();
 
+    // Marks swapchain for rebuild after ResizeBuffers completes
+    void NotifyResizeComplete();
+
     // Forces shutdown/cleanup when DLL detaches or game closes
     void Shutdown();
 

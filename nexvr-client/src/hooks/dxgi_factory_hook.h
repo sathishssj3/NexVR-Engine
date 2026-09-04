@@ -11,6 +11,7 @@ namespace DXGIFactoryHook {
 
     // Returns the captured command queue if it matches the swapchain's device
     ID3D12CommandQueue* GetCapturedCommandQueue();
+    void SetCapturedCommandQueue(ID3D12CommandQueue* queue);
 
 }
 }

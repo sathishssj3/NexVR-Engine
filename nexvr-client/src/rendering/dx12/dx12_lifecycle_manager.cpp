@@ -20,7 +20,8 @@ RenderFrameSnapshot Dx12LifecycleManager::ProcessPresent(IDXGISwapChain* swapCha
         return CreateSnapshot();
     }
 
-    if (currentState == RenderState::UNINITIALIZED || currentState == RenderState::RECOVERING || currentState == RenderState::REINITIALIZING) {
+    if (!m_deviceResources.device || !m_deviceResources.commandQueue ||
+        currentState == RenderState::UNINITIALIZED || currentState == RenderState::RECOVERING || currentState == RenderState::REINITIALIZING) {
         Discover(swapChain, commandQueue);
     } else if (currentState == RenderState::RUNNING) {
         Validate(swapChain, commandQueue);
@@ -61,12 +62,25 @@ RenderFrameSnapshot Dx12LifecycleManager::ProcessPresent(IDXGISwapChain* swapCha
 }
 
 void Dx12LifecycleManager::Discover(IDXGISwapChain* swapChain, ID3D12CommandQueue* commandQueue) {
-    if (!swapChain || !commandQueue) return;
+    if (!swapChain) return;
+
+    ID3D12CommandQueue* queueToUse = commandQueue;
+    Microsoft::WRL::ComPtr<ID3D12CommandQueue> queriedQueue;
+    if (!queueToUse) {
+        if (SUCCEEDED(swapChain->GetDevice(__uuidof(ID3D12CommandQueue), (void**)&queriedQueue))) {
+            queueToUse = queriedQueue.Get();
+        }
+    }
+
+    if (!queueToUse) {
+        LOG_WARN("Dx12LifecycleManager: Discover called without command queue and swapChain->GetDevice failed to provide one.");
+        return;
+    }
 
     m_swapchainResources.swapChain = swapChain;
-    m_deviceResources.commandQueue = commandQueue;
+    m_deviceResources.commandQueue = queueToUse;
 
-    if (FAILED(commandQueue->GetDevice(__uuidof(ID3D12Device), (void**)&m_deviceResources.device))) {
+    if (FAILED(queueToUse->GetDevice(__uuidof(ID3D12Device), (void**)&m_deviceResources.device))) {
         Degrade("Failed to query ID3D12Device from CommandQueue");
         return;
     }
@@ -77,7 +91,7 @@ void Dx12LifecycleManager::Discover(IDXGISwapChain* swapChain, ID3D12CommandQueu
     
     m_state.store(RenderState::INITIALIZING, std::memory_order_release);
     LOG_INFO("Dx12LifecycleManager: Discovered Device %p, Queue %p (Epoch %llu:%llu:%llu)", 
-        m_deviceResources.device.Get(), commandQueue, m_epoch.deviceGeneration, m_epoch.swapchainGeneration, m_epoch.resourceGeneration);
+        m_deviceResources.device.Get(), queueToUse, m_epoch.deviceGeneration, m_epoch.swapchainGeneration, m_epoch.resourceGeneration);
 }
 
 void Dx12LifecycleManager::Validate(IDXGISwapChain* swapChain, ID3D12CommandQueue* commandQueue) {
@@ -154,6 +168,12 @@ void Dx12LifecycleManager::ReleaseSwapchainReferences() {
     m_swapchainResources.backBuffer.Reset();
     m_state.store(RenderState::RESIZE_PENDING, std::memory_order_release);
     LOG_INFO("Dx12LifecycleManager: Released swapchain backbuffer reference for ResizeBuffers.");
+}
+
+void Dx12LifecycleManager::NotifyResizeComplete() {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_state.store(RenderState::RESIZE_PENDING, std::memory_order_release);
+    LOG_INFO("Dx12LifecycleManager: ResizeBuffers completed, marked for rebuild");
 }
 
 void Dx12LifecycleManager::HandleDeviceLoss(HRESULT presentResult) {

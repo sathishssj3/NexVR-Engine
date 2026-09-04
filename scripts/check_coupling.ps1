@@ -55,6 +55,9 @@ if ($test_sources -lt $budget["test_sources"]) {
 }
 
 $ctest_out = (ctest --test-dir build -N 2>$null | Select-Object -Last 1)
+if ($ctest_out -notmatch 'Total Tests:\s*([1-9]\d*)' -and (Test-Path "build\nexvr-client")) {
+    $ctest_out = (ctest --test-dir "build\nexvr-client" -N 2>$null | Select-Object -Last 1)
+}
 if ($ctest_out -match 'Total Tests:\s*(\d+)') {
     $test_registered = [int]$matches[1]
     if ($test_registered -lt $budget["test_registered"]) {

@@ -5,4 +5,5 @@ project(NexVREngine LANGUAGES C CXX)
 # NexVR Monorepo Root CMake Orchestrator
 # Directs compilation to nexvr-client while preserving root build layout
 # -----------------------------------------------------------------------------
+enable_testing()
 add_subdirectory(nexvr-client)
