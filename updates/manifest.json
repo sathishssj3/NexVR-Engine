@@ -1,7 +1,17 @@
 {
-  "engineVersion": "0.1.1",
-  "timestamp": 1788523372504,
-  "changelog": "Fix Sekiro DX11 OpenXR format negotiation and add verified FromSoftware profile",
+  "engineVersion": "0.1.2",
+  "timestamp": 1788526097651,
+  "changelog": "Low-latency DirectML neural upscaling & adaptive stereo sync v0.1.2",
+  "features": [
+    "DirectML Neural Upscaler v2: Enhanced depth reconstruction with <1.2ms latency",
+    "Dynamic Stereo Sync: Frame-pacing lock for 90Hz/120Hz OpenXR runtimes",
+    "Live Version Synchronization: Instant UI badge and About panel version updates"
+  ],
+  "fixes": [
+    "Sekiro: Shadows Die Twice: Resolved swapchain format mismatch for DXGI_FORMAT_R8G8B8A8_UNORM",
+    "OpenXR Frame Submitter: Added resilient CopySubresourceRegion fallback and format validation",
+    "Launcher UI Header: Dynamic synchronization with active OTA hotfix version"
+  ],
   "files": [
     "vrinject.dll",
     "vr-inject-cli.exe"
