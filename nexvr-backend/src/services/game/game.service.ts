@@ -51,8 +51,8 @@ export class GameService {
     if (cached) return cached;
 
     const games = await db.game.findMany();
-    const match = games.find((g) =>
-      g.exeNames.some((e) => e.toLowerCase() === normalizedExe)
+    const match = games.find((g: any) =>
+      g.exeNames.some((e: any) => e.toLowerCase() === normalizedExe)
     );
 
     if (!match) {

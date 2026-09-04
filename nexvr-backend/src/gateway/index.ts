@@ -23,10 +23,10 @@ const app = express();
 app.use(helmet());
 
 // CORS Policy
-const allowedOrigins = config.CORS_ORIGINS.split(',').map((s) => s.trim());
+const allowedOrigins = config.CORS_ORIGINS.split(',').map((s: string) => s.trim());
 app.use(
   cors({
-    origin: (origin, callback) => {
+    origin: (origin: any, callback: any) => {
       // Allow requests with no origin (like mobile apps, Electron, or curl)
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
@@ -62,7 +62,7 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Liveness & Readiness Probes
-app.get('/health', async (_req, res) => {
+app.get('/health', async (_req: express.Request, res: express.Response) => {
   let dbOk = false;
   let redisOk = false;
 
@@ -100,7 +100,7 @@ app.use('/api/v1/update', updateRouter);
 app.use('/api/v1/telemetry', telemetryRouter);
 
 // 404 Route Handler
-app.use((_req, _res, next) => {
+app.use((_req: express.Request, _res: express.Response, next: express.NextFunction) => {
   next(new NotFoundError('Requested API endpoint does not exist'));
 });
 

@@ -5,7 +5,7 @@ import { logger } from './logger.js';
 export const redis = new Redis(config.REDIS_URL, {
   lazyConnect: true,
   maxRetriesPerRequest: 3,
-  retryStrategy(times) {
+  retryStrategy(times: number) {
     const delay = Math.min(times * 100, 3000);
     return delay;
   },
@@ -15,7 +15,7 @@ redis.on('connect', () => {
   logger.info('Connected to Redis cache server');
 });
 
-redis.on('error', (err) => {
+redis.on('error', (err: any) => {
   logger.warn({ err: err.message }, 'Redis connection error; operating in degraded mode');
 });
 

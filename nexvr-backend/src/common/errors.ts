@@ -11,7 +11,9 @@ export class AppError extends Error {
     this.statusCode = statusCode;
     this.isOperational = isOperational;
     Object.setPrototypeOf(this, new.target.prototype);
-    Error.captureStackTrace(this, this.constructor);
+    if ('captureStackTrace' in Error) {
+      (Error as any).captureStackTrace(this, this.constructor);
+    }
   }
 }
 
@@ -63,7 +65,7 @@ export function errorHandler(
     res.status(400).json({
       status: 'error',
       message: 'Validation failed',
-      errors: err.errors,
+      errors: (err as any).issues || (err as any).errors,
     });
     return;
   }
