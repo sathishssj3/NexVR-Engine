@@ -4,11 +4,15 @@ name: CI - Build, Test, and Analyze
 on:
   push:
     branches: [ "main" ]
-    tags:
-      - 'v*'
+  tags:
+    - 'v*'
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-test:
@@ -37,7 +41,15 @@ jobs:
         curl.exe -L https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.7.2308/dxc_2023_08_14.zip -o dxc.zip
         7z.exe x dxc.zip -odxc -y
 
+    - name: Cache Vulkan SDK
+      id: cache-vulkan
+      uses: actions/cache@v4
+      with:
+        path: C:\VulkanSDK
+        key: vulkan-sdk-1.4-windows
+
     - name: Setup Vulkan SDK
+      if: steps.cache-vulkan.outputs.cache-hit != 'true'
       shell: pwsh
       run: |
         $ErrorActionPreference = 'Stop'
@@ -46,11 +58,16 @@ jobs:
         Invoke-WebRequest -Uri $VulkanURL -OutFile VulkanSDK.exe
         Write-Host "Installing Vulkan SDK..."
         Start-Process -FilePath ".\VulkanSDK.exe" -ArgumentList "--root", "C:\VulkanSDK", "--accept-licenses", "--default-answer", "--confirm-command", "install" -Wait -NoNewWindow
-        Write-Host "Configuring Environment..."
+
+    - name: Configure Vulkan Environment
+      shell: pwsh
+      run: |
         echo "VULKAN_SDK=C:\VulkanSDK" >> $env:GITHUB_ENV
         echo "C:\VulkanSDK\Bin" >> $env:GITHUB_PATH
 
+    # Only run CodeQL on Release configuration to avoid slowing down Debug by 4x and uploading duplicate alerts
     - name: Run CodeQL Analysis (Init)
+      if: matrix.configuration == 'Release'
       uses: github/codeql-action/init@v4
       with:
         languages: cpp
@@ -59,6 +76,7 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
+        cache: 'pip'
 
     - name: Generate Dummy Models
       shell: pwsh
@@ -82,18 +100,15 @@ jobs:
           exit 1
         }
 
-
-
+    # Run Cppcheck once (on Release) so it doesn't run redundantly twice across matrix jobs
     - name: Run Cppcheck Static Analysis
+      if: matrix.configuration == 'Release'
       shell: pwsh
       run: |
-        # Download cppcheck portable directly from GitHub releases to avoid
-        # the broken FILESDIR in choco's package (hardcoded to a build-machine path).
         $cppcheckVer = "2.14.0"
         $zipUrl = "https://github.com/danmar/cppcheck/releases/download/$cppcheckVer/cppcheck-$cppcheckVer-x64-Setup.msi"
         $installDir = "$env:RUNNER_TEMP\cppcheck"
 
-        # Try MSI silent install (includes cfg/ directory)
         Write-Host "Installing cppcheck $cppcheckVer..."
         Invoke-WebRequest -Uri $zipUrl -OutFile "$env:RUNNER_TEMP\cppcheck.msi" -ErrorAction SilentlyContinue
         if (Test-Path "$env:RUNNER_TEMP\cppcheck.msi") {
@@ -102,7 +117,6 @@ jobs:
 
         $cppcheckExe = "$installDir\cppcheck.exe"
         if (-not (Test-Path $cppcheckExe)) {
-          # Fallback: try choco but don't fail the build if cfg is broken
           Write-Host "MSI install failed, trying choco..."
           choco install cppcheck -y --no-progress | Out-Null
           $cppcheckExe = "cppcheck"
@@ -126,6 +140,7 @@ jobs:
         exit 0
 
     - name: CodeQL Perform Analysis
+      if: matrix.configuration == 'Release'
       uses: github/codeql-action/analyze@v4
       continue-on-error: true
       with:
@@ -156,7 +171,22 @@ jobs:
           **/TEST-*.xml
         retention-days: 7
 
-  # Keep the original release job for when releases are published
+    # Export compiled engine binaries from Release configuration so testers and the release job can reuse them
+    - name: Upload Release Engine Binaries
+      if: matrix.configuration == 'Release'
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-ai-binaries
+        path: |
+          build/bin/vrinject.dll
+          build/bin/vr-inject-cli.exe
+          build/bin/onnxruntime.dll
+          build/bin/DirectML.dll
+          build/bin/proxy/dxgi.dll
+          build/bin/proxy/d3d11.dll
+          build/bin/shaders
+        retention-days: 7
+
   release:
     if: startsWith(github.ref, 'refs/tags/')
     needs: build-and-test
@@ -169,27 +199,26 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Setup MSVC & CMake
-      uses: ilammy/msvc-dev-cmd@v1.13.0
+    - name: Download Pre-compiled Engine Binaries
+      uses: actions/download-artifact@v4
+      with:
+        name: test-ai-binaries
+        path: build/bin
 
-    - name: Download Official DXC (for SPIR-V support)
-      shell: cmd
-      run: |
-        curl.exe -L https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.7.2308/dxc_2023_08_14.zip -o dxc.zip
-        7z.exe x dxc.zip -odxc -y
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        cache: 'pip'
 
-    - name: Setup Vulkan SDK
+    - name: Generate Dummy Models
       shell: pwsh
       run: |
-        $ErrorActionPreference = 'Stop'
-        $VulkanURL = "https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-sdk.exe"
-        Write-Host "Downloading Vulkan SDK..."
-        Invoke-WebRequest -Uri $VulkanURL -OutFile VulkanSDK.exe
-        Write-Host "Installing Vulkan SDK..."
-        Start-Process -FilePath ".\VulkanSDK.exe" -ArgumentList "--root", "C:\VulkanSDK", "--accept-licenses", "--default-answer", "--confirm-command", "install" -Wait -NoNewWindow
-        Write-Host "Configuring Environment..."
-        echo "VULKAN_SDK=C:\VulkanSDK" >> $env:GITHUB_ENV
-        echo "C:\VulkanSDK\Bin" >> $env:GITHUB_PATH
+        pip install onnx
+        if (-not (Test-Path models)) { mkdir models }
+        python generate_dummy_onnx.py
+        Copy-Item models/dummy.onnx models/depth_inpainter.onnx
+        Copy-Item models/dummy_ui.onnx models/ui_synthesizer.onnx
 
     - name: Decode Code Signing Certificate
       shell: pwsh
@@ -222,70 +251,12 @@ jobs:
           exit 1
         }
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
-
-    - name: Generate Dummy Models
-      shell: pwsh
-      run: |
-        pip install onnx
-        if (-not (Test-Path models)) { mkdir models }
-        python generate_dummy_onnx.py
-        Copy-Item models/dummy.onnx models/depth_inpainter.onnx
-        Copy-Item models/dummy_ui.onnx models/ui_synthesizer.onnx
-
-    - name: Configure CMake
-      run: cmake -B build -S . -A x64 -DDXC_EXECUTABLE="${{ github.workspace }}/dxc/bin/x64/dxc.exe"
-
-
-    - name: Build C++ Components (DLL & CLI)
-      shell: pwsh
-      run: |
-        # Was 'SilentlyContinue', which hid errors from the log it then shipped.
-        $ErrorActionPreference = 'Continue'
-        cmake --build build --config Release > build.log 2>&1
-        if ($LASTEXITCODE -ne 0) {
-          $LogTail = Get-Content build.log -Tail 300 | Out-String
-          Write-Host "=== ERROR PREVIEW ==="
-          Write-Host $LogTail
-          Write-Host "====================="
-          Set-Content -Path build_crash.log -Value $LogTail
-          Write-Host "::error::Release build failed. Full log in the build-crash-log artifact."
-          exit 1
-        }
-
-    # The failure path above used to commit build_crash.log and run
-    # 'git push origin HEAD:main || true' from the CI bot - a job with write
-    # access mutating the default branch, with '|| true' swallowing every error.
-    # A failing build now uploads its log as an artifact instead and touches no
-    # branch.
-    - name: Upload Build Crash Log
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-crash-log
-        path: |
-          build_crash.log
-          build.log
-        if-no-files-found: ignore
-
-    - name: Upload Binaries to Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-ai-binaries
-        path: |
-          build/bin/vrinject.dll
-          build/bin/test_ai_directml.exe
-          build/bin/onnxruntime.dll
-          build/bin/DirectML.dll
-        retention-days: 7
-
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '24'
+        node-version: '22'
+        cache: 'npm'
+        cache-dependency-path: 'nexvr-client/launcher/package-lock.json'
 
     - name: Install Launcher Dependencies
       working-directory: ./nexvr-client/launcher

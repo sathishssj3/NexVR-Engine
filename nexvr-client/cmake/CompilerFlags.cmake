@@ -6,7 +6,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Security & Hardening compile/link options
 if(MSVC)
-    add_compile_options(/GS /guard:cf /EHa)
+    add_compile_options(/GS /guard:cf /EHa /MP)
     add_link_options(/DYNAMICBASE /NXCOMPAT /GUARD:CF)
 else()
     add_compile_options(-fstack-protector-strong -D_FORTIFY_SOURCE=2)
