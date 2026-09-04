@@ -1,12 +1,12 @@
 # Stage 1: Build dependencies & TypeScript
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
 COPY package*.json ./
 COPY prisma ./prisma/
 
-RUN npm ci
+RUN npm install
 
 COPY tsconfig.json ./
 COPY src ./src
@@ -15,7 +15,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # Stage 2: Minimal Production Image
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 
 WORKDIR /app
 
@@ -28,7 +28,7 @@ RUN addgroup --system --gid 1001 nodejs && \
 COPY package*.json ./
 COPY prisma ./prisma/
 
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --omit=dev && npm cache clean --force
 RUN npx prisma generate
 
 COPY --from=builder /app/dist ./dist

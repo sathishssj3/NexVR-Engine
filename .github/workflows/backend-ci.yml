@@ -26,13 +26,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: nexvr-backend/package-lock.json
+          node-version: '22'
 
       - name: Install Dependencies
         working-directory: ./nexvr-backend
-        run: npm ci
+        run: npm install
 
       - name: Prisma Generate
         working-directory: ./nexvr-backend
