@@ -4,12 +4,22 @@ Static page plus one Cloudflare Pages Function. No build step: `index.html` is
 served as-is, and `functions/api/waitlist.js` becomes `POST /api/waitlist` on
 the same origin.
 
-```
+```text
 landing-page/
 ├── index.html                  the whole page — markup, CSS and JS inline
+├── logo.png                    brand mark, 256px (from assets/logo.png)
 ├── functions/api/waitlist.js   waitlist endpoint (Pages Function)
 ├── wrangler.toml               KV binding config
 └── README.md
+```
+
+`logo.png` is a downscaled copy of `assets/logo.png` in the repository root.
+It has to live inside this folder because Cloudflare Pages only publishes the
+build output directory — a path like `../assets/logo.png` would 404 once
+deployed. Regenerate it with:
+
+```bash
+python -c "from PIL import Image; Image.open('../assets/logo.png').resize((256,256), Image.LANCZOS).save('logo.png', optimize=True)"
 ```
 
 ## Run it locally
@@ -86,7 +96,7 @@ certificate.
 **The download links point at a repository that does not exist yet.** They expect
 a *public* releases repo, so the proprietary engine source can stay private:
 
-```
+```text
 https://github.com/sathishssj3/NexVR-Releases/releases/latest/download/NexVR-Engine-Setup.exe
 ```
 

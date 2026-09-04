@@ -1,3 +1,10 @@
 # Local wrangler state — holds real waitlist addresses from `pages dev`
 .wrangler/
 node_modules/
+package-lock.json
+
+# Plugin scratch
+.claude-flow/
+
+# Throwaway screenshots and scripts (leading underscore = temporary)
+_*

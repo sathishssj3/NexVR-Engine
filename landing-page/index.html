@@ -77,14 +77,19 @@ a{color:inherit;text-decoration:none}
 }
 .eyebrow::before{content:"";width:1.75rem;height:1px;background:var(--red);flex:none}
 
-.d1{font-family:var(--display);font-weight:700;font-size:clamp(2.5rem,5.5vw,4.7rem);
-    line-height:.94;letter-spacing:-.03em;margin:0}
+/* Sized to fill ~93% of the content column: "FLAT GAME IN." measures 6.36em,
+   so below the 1280px cap that lands on a constant 13.1vw. The max stops it
+   overflowing once the container stops growing. */
+.d1{font-family:var(--display);font-weight:700;font-size:clamp(2.1rem,13.1vw,10.3rem);
+    line-height:.9;letter-spacing:-.04em;margin:0}
 .d2{font-family:var(--display);font-weight:700;font-size:clamp(1.95rem,4.2vw,3.25rem);
     line-height:1.02;letter-spacing:-.02em;margin:0 0 1.1rem}
 .d3{font-family:var(--display);font-weight:600;font-size:1.0625rem;
     letter-spacing:-.01em;margin:0 0 .5rem}
 .lede{color:var(--muted);font-size:clamp(1rem,1.35vw,1.15rem);max-width:46ch;margin:1.6rem 0 0}
-.hero .lede{margin-inline:auto}
+/* Wider than the body default so it reads as a base under the big title
+   rather than a narrow column stranded beneath it. */
+.hero .lede{max-width:58ch;margin-inline:auto}
 .small{font-size:.8125rem;color:var(--muted);line-height:1.6}
 .mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
 
@@ -103,7 +108,10 @@ a{color:inherit;text-decoration:none}
   transition:transform 1.15s var(--ease),opacity 1.15s var(--ease);
   will-change:transform;
 }
-.ghost.pre::before{transform:translate3d(18px,0,0);opacity:.9}
+.ghost.pre::before{transform:translate3d(var(--conv-pre,18px),0,0);opacity:.9}
+/* The hero title runs ~2.5x the size of a section head, so a fixed 4px offset
+   reads as a hairline there. Scale it up to keep the mis-convergence legible. */
+.d1 .ghost{--conv:clamp(3px,.55vw,8px);--conv-pre:clamp(12px,2.4vw,34px)}
 
 /* ---------- nav ---------- */
 .nav{position:fixed;inset:0 0 auto;z-index:60;transition:background .35s,border-color .35s,backdrop-filter .35s}
@@ -117,8 +125,11 @@ a{color:inherit;text-decoration:none}
 }
 .brand{font-family:var(--display);font-weight:700;letter-spacing:.02em;font-size:.95rem;
        display:flex;align-items:center;gap:.6rem;margin-right:auto}
-.brand i{width:.5rem;height:.5rem;background:var(--red);display:block;flex:none;
-         box-shadow:0 0 12px var(--red)}
+/* The asset is a black rounded square, so it is clipped to a circle — the same
+   way the repo README presents it. alt="" because the adjacent text already
+   names the brand. */
+.brand-mark{width:2.15rem;height:2.15rem;border-radius:50%;flex:none;
+            display:block;object-fit:cover}
 .nav-links{display:flex;gap:1.9rem;list-style:none;margin:0;padding:0}
 .nav-links a{font-family:var(--display);font-size:.75rem;font-weight:600;letter-spacing:.14em;
              text-transform:uppercase;color:var(--muted);position:relative;padding-block:.35rem;
@@ -150,31 +161,31 @@ a{color:inherit;text-decoration:none}
 
 /* ---------- hero ---------- */
 .hero{min-height:100vh;position:relative;display:grid;align-items:center}
-.hero-in{width:100%;max-width:var(--maxw);margin-inline:auto;
-         padding:8rem var(--gutter) 6rem;text-align:center}
-.hero-copy{max-width:52rem;margin-inline:auto}
+/* Deliberately wider than --maxw: the title bleeds past the body column so it
+   reads as the loudest thing on the page. It still lands inside the nav's
+   bounds, so nothing looks misaligned. */
+.hero-in{width:100%;max-width:1560px;margin-inline:auto;
+         padding:5.5rem var(--gutter) 4rem;text-align:center}
+.hero-copy{max-width:none}
 .hero-tag{font-family:var(--display);font-size:.7rem;font-weight:600;letter-spacing:.2em;
           text-transform:uppercase;color:var(--muted);display:inline-flex;align-items:center;
           gap:.6rem;border:1px solid var(--edge);padding:.45rem .8rem;margin-bottom:1.9rem}
 .hero-tag b{color:var(--red);font-weight:600}
 
 /* stat rail under the hero copy */
-.rail{display:flex;flex-wrap:wrap;gap:0;justify-content:center;margin-top:3.5rem;
-      border-top:1px solid var(--edge)}
+.rail{display:flex;flex-wrap:wrap;gap:0;justify-content:center;margin:3.5rem auto 0;
+      width:fit-content;border-top:1px solid var(--edge)}
 .rail div{padding:1.15rem clamp(1.25rem,3vw,2.25rem) 0;border-right:1px solid var(--edge)}
 .rail div:last-child{border-right:0}
 .rail b{font-family:var(--display);font-size:1.35rem;font-weight:700;display:block;line-height:1.1}
 .rail span{font-size:.6875rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 
-/* scroll cue */
-.scroll-hint{position:absolute;bottom:1.6rem;left:50%;transform:translateX(-50%);
-  font-family:var(--display);font-size:.625rem;letter-spacing:.2em;text-transform:uppercase;
-  color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:.55rem}
-.scroll-hint::after{content:"";width:1px;height:2.2rem;background:linear-gradient(var(--red),transparent)}
-
 @media(max-width:960px){
   .hero-in{padding-block:7.5rem 4.5rem}
-  .scroll-hint{display:none}
+}
+/* Once the rail wraps, the dividers land in the wrong places — drop them. */
+@media(max-width:560px){
+  .rail div{border-right:0;padding-bottom:.6rem}
 }
 
 /* ---------- pipeline ---------- */
@@ -280,7 +291,7 @@ a{color:inherit;text-decoration:none}
 <!-- ============ NAV ============ -->
 <nav class="nav" id="nav">
   <div class="nav-in">
-    <a class="brand" href="#top"><i></i>NEXVR&nbsp;ENGINE</a>
+    <a class="brand" href="#top"><img class="brand-mark" src="logo.png" alt="" width="256" height="256">NEXVR&nbsp;ENGINE</a>
     <ul class="nav-links">
       <li><a href="#pipeline">Pipeline</a></li>
       <li><a href="#games">Games</a></li>
@@ -322,7 +333,6 @@ a{color:inherit;text-decoration:none}
     </div>
 
   </div>
-  <div class="scroll-hint">Scroll</div>
 </header>
 
 <!-- ============ PIPELINE ============ -->
@@ -536,7 +546,7 @@ a{color:inherit;text-decoration:none}
 <!-- ============ FOOTER ============ -->
 <footer class="foot">
   <div class="wrap foot-in">
-    <a class="brand" href="#top"><i></i>NEXVR&nbsp;ENGINE</a>
+    <a class="brand" href="#top"><img class="brand-mark" src="logo.png" alt="" width="256" height="256">NEXVR&nbsp;ENGINE</a>
     <p class="small" style="margin:0">
       Single-player graphics hook injector. Not affiliated with or endorsed by any
       game publisher. © 2026 NexVR Lab.

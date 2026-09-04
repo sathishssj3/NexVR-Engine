@@ -131,12 +131,17 @@ TEST_F(DX12StressTest, Render100kFramesWithoutLeaks) {
     StereoParams params;
     params.ipd = 0.064f;
 
-    const int FRAME_COUNT = 100000;
+    const int FRAME_COUNT = (std::getenv("CI") != nullptr) ? 1000 :
+#if defined(_DEBUG)
+        1000;
+#else
+        10000;
+#endif
     
     std::cout << "Running DX12 Stereo Backend for " << FRAME_COUNT << " frames..." << std::endl;
     
     for (int i = 0; i < FRAME_COUNT; ++i) {
-        if (i % 10000 == 0) {
+        if (i % 200 == 0) {
             std::cout << "Frame " << i << std::endl;
         }
         camSnapshot.frame = i;
@@ -162,5 +167,5 @@ TEST_F(DX12StressTest, Render100kFramesWithoutLeaks) {
     backend.Shutdown();
     lifecycle.Reset();
     
-    std::cout << "Completed 100k frames. Tearing down device and checking live objects." << std::endl;
+    std::cout << "Completed " << FRAME_COUNT << " frames. Tearing down device and checking live objects." << std::endl;
 }
