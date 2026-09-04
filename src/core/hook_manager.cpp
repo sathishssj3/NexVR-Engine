@@ -85,45 +85,29 @@ bool HookManager::Install() {
     if (vulkan::hooks::IsLayerActive()) {
         LOG_INFO("HookManager: Vulkan layer active - skipping DXGI/DX11/DX12 and MinHook Vulkan detours.");
     } else {
-        bool hasAntiCheat = (GetModuleHandleA("easyanticheat_x64.dll") != NULL ||
-                             GetModuleHandleA("GameOverlayRenderer64.dll") != NULL || // Some over-aggressive overlays
-                             GetModuleHandleA("bedaisy.sys") != NULL); // Not a module, but just representing EAC/BE
+        char exeName[MAX_PATH] = {0};
+        GetModuleFileNameA(NULL, exeName, MAX_PATH);
+        std::string exeStr = exeName;
+        LOG_INFO("HookManager: Executable path is: %s", exeStr.c_str());
+        
+        DXGIFactoryHook::Initialize();
+        m_rollbackStack.push_back([]() { DXGIFactoryHook::Shutdown(); });
 
-        if (hasAntiCheat) {
-            LOG_INFO("HookManager: Anti-cheat detected. Falling back to IAT Hooking for DXGI/DX11/DX12 to avoid .text inline detours.");
-            
-            // In a full implementation, DXGIFactoryHook, DX11Hook, DX12Hook would expose their 
-            // detour functions, and we'd call IATHook::InstallHook for "CreateDXGIFactory", "D3D11CreateDevice", etc.
-            // For this Phase 10 architectural demonstration, we log the fallback.
-            
-            // DXGIFactoryHook::InitializeIAT();
-            // DX11Hook::InitializeIAT();
-            // DX12Hook::InitializeIAT();
+        if (!DX11Hook::Initialize()) {
+            LOG_WARN("DX11Hook initialization failed.");
         } else {
-            char exeName[MAX_PATH] = {0};
-            GetModuleFileNameA(NULL, exeName, MAX_PATH);
-            std::string exeStr = exeName;
-            LOG_INFO("HookManager: Executable path is: %s", exeStr.c_str());
-            
-            DXGIFactoryHook::Initialize();
-            m_rollbackStack.push_back([]() { DXGIFactoryHook::Shutdown(); });
+            m_rollbackStack.push_back([]() { DX11Hook::Shutdown(); });
+        }
 
-            if (!DX11Hook::Initialize()) {
-                LOG_WARN("DX11Hook initialization failed.");
-            } else {
-                m_rollbackStack.push_back([]() { DX11Hook::Shutdown(); });
-            }
-
-            if (!DX12Hook::Initialize()) {
-                LOG_WARN("DX12Hook initialization failed.");
-            } else {
-                m_rollbackStack.push_back([]() { DX12Hook::Shutdown(); });
-            }
+        if (!DX12Hook::Initialize()) {
+            LOG_WARN("DX12Hook initialization failed.");
+        } else {
+            m_rollbackStack.push_back([]() { DX12Hook::Shutdown(); });
         }
 
         vulkan::hooks::InstallVulkanHooks();
         m_rollbackStack.push_back([]() { vulkan::hooks::RemoveVulkanHooks(); });
-        LOG_INFO("HookManager: Vulkan hooks installed successfully.");
+        LOG_INFO("HookManager: Graphics hooks installed successfully.");
     }
 
     DX12Hook::SetOnFrameCallback([](const DX12Hook::FrameResourcesDX12& res) {

@@ -132,9 +132,14 @@ bool OpenXRFrameSubmitter::ReleaseAndEndDX11(
         if (srcDesc.Format == dstDesc.Format && srcDesc.Width == dstDesc.Width && srcDesc.Height == dstDesc.Height) {
             context->CopyResource(leftDest, leftEyeTex);
         } else {
-            LOG_WARN("OpenXRFrameSubmitter: Left eye format (%u, %ux%u) != swapchain (%u, %ux%u). Attempting CopySubresourceRegion.",
-                     srcDesc.Format, srcDesc.Width, srcDesc.Height, dstDesc.Format, dstDesc.Width, dstDesc.Height);
-            context->CopySubresourceRegion(leftDest, 0, 0, 0, 0, leftEyeTex, 0, nullptr);
+            D3D11_BOX box;
+            box.left = 0;
+            box.top = 0;
+            box.front = 0;
+            box.right = (std::min)(srcDesc.Width, dstDesc.Width);
+            box.bottom = (std::min)(srcDesc.Height, dstDesc.Height);
+            box.back = 1;
+            context->CopySubresourceRegion(leftDest, 0, 0, 0, 0, leftEyeTex, 0, &box);
         }
     }
     if (rightEyeTex && rightDest) {
@@ -145,9 +150,14 @@ bool OpenXRFrameSubmitter::ReleaseAndEndDX11(
         if (srcDesc.Format == dstDesc.Format && srcDesc.Width == dstDesc.Width && srcDesc.Height == dstDesc.Height) {
             context->CopyResource(rightDest, rightEyeTex);
         } else {
-            LOG_WARN("OpenXRFrameSubmitter: Right eye format (%u, %ux%u) != swapchain (%u, %ux%u). Attempting CopySubresourceRegion.",
-                     srcDesc.Format, srcDesc.Width, srcDesc.Height, dstDesc.Format, dstDesc.Width, dstDesc.Height);
-            context->CopySubresourceRegion(rightDest, 0, 0, 0, 0, rightEyeTex, 0, nullptr);
+            D3D11_BOX box;
+            box.left = 0;
+            box.top = 0;
+            box.front = 0;
+            box.right = (std::min)(srcDesc.Width, dstDesc.Width);
+            box.bottom = (std::min)(srcDesc.Height, dstDesc.Height);
+            box.back = 1;
+            context->CopySubresourceRegion(rightDest, 0, 0, 0, 0, rightEyeTex, 0, &box);
         }
     }
 

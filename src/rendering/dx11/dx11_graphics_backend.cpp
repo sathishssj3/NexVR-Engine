@@ -82,10 +82,10 @@ void DX11GraphicsBackend::RenderStereo(
         return;
     }
 
-    uint32_t width = depthSnapshot.identity.width;
-    uint32_t height = depthSnapshot.identity.height;
-    if (width == 0) width = frameSnapshot.width;
-    if (height == 0) height = frameSnapshot.height;
+    uint32_t width = frameSnapshot.width;
+    uint32_t height = frameSnapshot.height;
+    if (width == 0) width = depthSnapshot.identity.width;
+    if (height == 0) height = depthSnapshot.identity.height;
     if (width == 0) width = 1920;
     if (height == 0) height = 1080;
 

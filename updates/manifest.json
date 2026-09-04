@@ -1,16 +1,16 @@
 {
-  "engineVersion": "0.1.3",
-  "timestamp": 1788532535451,
-  "changelog": "Next-Gen Optical Flow & Neural Depth Frame Generation v0.1.3",
+  "engineVersion": "0.1.4",
+  "timestamp": 1788534251195,
+  "changelog": "Sekiro VR rendering fix & Steam Overlay Hook Engine v0.1.4",
   "features": [
-    "Neural Frame Interpolation: DirectML accelerated 60fps -> 90/120fps motion synthesis",
-    "Adaptive Stereoscopic FOV: Auto-scaling asymmetric projection matrices per HMD",
-    "Ultra-Low Latency Direct Hooking: Bypasses DXGI intermediate presentation blit"
+    "Universal Steam Overlay Hook Engine: Eliminates false-positive anti-cheat blockage",
+    "D3D11 sRGB Typeless UAV Support: Prevents E_INVALIDARG on sRGB swapchain formats",
+    "Adaptive Swapchain Resolution Sync: Clamps texture copy regions to avoid compositor drop"
   ],
   "fixes": [
-    "Sekiro: Shadows Die Twice: Enhanced stereoscopic depth field alignment and zero-ghosting HUD",
-    "DirectX 11 Command Queue Sync: Eliminates micro-stutter during rapid head rotation",
-    "Launcher OTA Engine: Instant zero-downtime hotfix deployment verified"
+    "Sekiro: Shadows Die Twice: Resolved black screen in VR caused by Steam Overlay detour conflict",
+    "DXGI Swapchain Fallback: Automatic recovery if modified buffer usage is rejected",
+    "Launcher OTA Engine: Lowered CLI size threshold to deploy hotfix CLI instantly"
   ],
   "files": [
     "vrinject.dll",

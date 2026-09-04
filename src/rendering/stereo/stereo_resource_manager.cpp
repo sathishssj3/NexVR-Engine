@@ -221,7 +221,6 @@ bool StereoResourceManager::CreateRenderTargets(uint32_t width, uint32_t height,
     desc.Height = height;
     desc.MipLevels = 1;
     desc.ArraySize = 1;
-    desc.Format = format;
     desc.SampleDesc.Count = 1;
     desc.SampleDesc.Quality = 0;
     desc.Usage = D3D11_USAGE_DEFAULT;
@@ -229,22 +228,48 @@ bool StereoResourceManager::CreateRenderTargets(uint32_t width, uint32_t height,
     desc.CPUAccessFlags = 0;
     desc.MiscFlags = 0;
 
+    DXGI_FORMAT texFormat = format;
+    DXGI_FORMAT uavFormat = format;
+    if (format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB) {
+        texFormat = DXGI_FORMAT_R8G8B8A8_TYPELESS;
+        uavFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+    } else if (format == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB) {
+        texFormat = DXGI_FORMAT_B8G8R8A8_TYPELESS;
+        uavFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
+    } else if (format == DXGI_FORMAT_UNKNOWN) {
+        texFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+        uavFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+    }
+    desc.Format = texFormat;
+
     HRESULT hr = device_->CreateTexture2D(&desc, nullptr, &leftEyeTex_);
-    if (FAILED(hr)) return false;
+    if (FAILED(hr)) {
+        LOG_ERROR("StereoResourceManager: CreateTexture2D for leftEyeTex failed (format %u, hr=0x%X)", texFormat, hr);
+        return false;
+    }
 
     hr = device_->CreateTexture2D(&desc, nullptr, &rightEyeTex_);
-    if (FAILED(hr)) return false;
+    if (FAILED(hr)) {
+        LOG_ERROR("StereoResourceManager: CreateTexture2D for rightEyeTex failed (format %u, hr=0x%X)", texFormat, hr);
+        return false;
+    }
 
     D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-    uavDesc.Format = format;
+    uavDesc.Format = uavFormat;
     uavDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
     uavDesc.Texture2D.MipSlice = 0;
 
     hr = device_->CreateUnorderedAccessView(leftEyeTex_.Get(), &uavDesc, &leftEyeUAV_);
-    if (FAILED(hr)) return false;
+    if (FAILED(hr)) {
+        LOG_ERROR("StereoResourceManager: CreateUnorderedAccessView for leftEyeUAV failed (format %u, hr=0x%X)", uavFormat, hr);
+        return false;
+    }
 
     hr = device_->CreateUnorderedAccessView(rightEyeTex_.Get(), &uavDesc, &rightEyeUAV_);
-    if (FAILED(hr)) return false;
+    if (FAILED(hr)) {
+        LOG_ERROR("StereoResourceManager: CreateUnorderedAccessView for rightEyeUAV failed (format %u, hr=0x%X)", uavFormat, hr);
+        return false;
+    }
 
     return true;
 }

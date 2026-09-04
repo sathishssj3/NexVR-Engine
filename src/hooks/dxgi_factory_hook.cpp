@@ -34,6 +34,10 @@ HRESULT __stdcall hkCreateSwapChain(IDXGIFactory* pFactory, IUnknown* pDevice, D
     }
 
     HRESULT hr = OriginalCreateSwapChain(pFactory, pDevice, pDesc ? &modifiedDesc : nullptr, ppSwapChain);
+    if (FAILED(hr) && pDesc) {
+        LOG_WARN("DXGIFactoryHook: CreateSwapChain with modifiedDesc failed (0x%X), retrying with original desc", hr);
+        hr = OriginalCreateSwapChain(pFactory, pDevice, pDesc, ppSwapChain);
+    }
     if (SUCCEEDED(hr) && pDevice) {
         Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue;
         if (SUCCEEDED(pDevice->QueryInterface(__uuidof(ID3D12CommandQueue), (void**)&queue))) {
@@ -65,6 +69,10 @@ HRESULT __stdcall hkCreateSwapChainForHwnd(IDXGIFactory2* pFactory, IUnknown* pD
     }
 
     HRESULT hr = OriginalCreateSwapChainForHwnd(pFactory, pDevice, hWnd, pDesc ? &modifiedDesc : nullptr, pFullscreenDesc, pRestrictToOutput, ppSwapChain);
+    if (FAILED(hr) && pDesc) {
+        LOG_WARN("DXGIFactoryHook: CreateSwapChainForHwnd with modifiedDesc failed (0x%X), retrying with original desc", hr);
+        hr = OriginalCreateSwapChainForHwnd(pFactory, pDevice, hWnd, pDesc, pFullscreenDesc, pRestrictToOutput, ppSwapChain);
+    }
     if (SUCCEEDED(hr) && pDevice) {
         Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue;
         if (SUCCEEDED(pDevice->QueryInterface(__uuidof(ID3D12CommandQueue), (void**)&queue))) {
