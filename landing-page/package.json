@@ -10,6 +10,6 @@
     "preview": "wrangler pages dev ."
   },
   "devDependencies": {
-    "wrangler": "^3.114.0"
+    "wrangler": "^4.129.0"
   }
 }
