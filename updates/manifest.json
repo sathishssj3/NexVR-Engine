@@ -1,0 +1,9 @@
+{
+  "engineVersion": "0.1.1",
+  "timestamp": 1788523372504,
+  "changelog": "Fix Sekiro DX11 OpenXR format negotiation and add verified FromSoftware profile",
+  "files": [
+    "vrinject.dll",
+    "vr-inject-cli.exe"
+  ]
+}

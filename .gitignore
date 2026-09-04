@@ -113,9 +113,7 @@ ai_matrix_classifier/
 ai_pipeline/
 dev/
 test_app/
-tools/
-updates/
-website/
+
 build_baseline/
 Testing/
 
