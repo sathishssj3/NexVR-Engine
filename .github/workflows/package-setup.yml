@@ -96,8 +96,8 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Continue'
-          # Build only the native components required by the installer (vrinject.dll, cli, shaders)
-          cmake --build build --config Release --target vrinject vr-inject-cli
+          # Build shaders first, then native injection engine and CLI
+          cmake --build build --config Release --target compile_shaders vrinject vr-inject-cli
           if ($LASTEXITCODE -ne 0) {
             Write-Host "::error::Native build failed."
             exit $LASTEXITCODE
