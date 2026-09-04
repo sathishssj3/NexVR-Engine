@@ -97,7 +97,7 @@ certificate.
 a *public* releases repo, so the proprietary engine source can stay private:
 
 ```text
-https://github.com/sathishssj3/NexVR-Releases/releases/latest/download/NexVR-Engine-Setup.exe
+https://github.com/sathishssj3/NexVR-Engine-Releases/releases/latest/download/NexVR-Engine-Setup.exe
 ```
 
 Create `NexVR-Releases` as a public repository, then attach
