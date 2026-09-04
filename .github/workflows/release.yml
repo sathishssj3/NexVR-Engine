@@ -4,8 +4,8 @@ name: CI - Build, Test, and Analyze
 on:
   push:
     branches: [ "main" ]
-  tags:
-    - 'v*'
+    tags:
+      - 'v*'
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
