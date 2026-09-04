@@ -53,27 +53,6 @@ jobs:
           echo "VULKAN_SDK=C:\VulkanSDK" >> $env:GITHUB_ENV
           echo "C:\VulkanSDK\Bin" >> $env:GITHUB_PATH
 
-      - name: Decode Code Signing Certificate (Optional)
-        shell: pwsh
-        env:
-          CERT_BASE64: ${{ secrets.SIGN_CERT_PATH }}
-        run: |
-          if ([string]::IsNullOrWhiteSpace($env:CERT_BASE64)) {
-            Write-Host "No certificate secret found. Building unsigned."
-            exit 0
-          }
-          $cleanBase64 = $env:CERT_BASE64 -replace '[^A-Za-z0-9+/=]', ''
-          $pad = $cleanBase64.Length % 4
-          if ($pad -gt 0) { $cleanBase64 += "=" * (4 - $pad) }
-          try {
-            $bytes = [Convert]::FromBase64String($cleanBase64)
-            [IO.File]::WriteAllBytes("${{ github.workspace }}\cert.pfx", $bytes)
-            echo "SIGN_CERT_PATH=${{ github.workspace }}\cert.pfx" >> $env:GITHUB_ENV
-            echo "SIGN_CERT_PASS=${{ secrets.SIGN_CERT_PASS }}" >> $env:GITHUB_ENV
-            Write-Host "Certificate configured successfully."
-          } catch {
-            Write-Host "Warning: Certificate decoding failed. Proceeding unsigned."
-          }
 
       - name: Setup Python
         uses: actions/setup-python@v5
