@@ -96,12 +96,13 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Continue'
-          # Build shaders first, then native injection engine and CLI
-          cmake --build build --config Release --target compile_shaders vrinject vr-inject-cli
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "::error::Native build failed."
-            exit $LASTEXITCODE
-          }
+          # Build shaders, then injection DLL, then CLI in sequence
+          cmake --build build --config Release --target copy_shaders_for_dx12
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build build --config Release --target vrinject
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build build --config Release --target vr-inject-cli
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

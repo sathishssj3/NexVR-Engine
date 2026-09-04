@@ -178,8 +178,9 @@ add_custom_command(TARGET vrinject POST_BUILD
   COMMAND powershell -NonInteractive -NoProfile -ExecutionPolicy Bypass -File "${CMAKE_BINARY_DIR}/generate_hash.ps1" "$<TARGET_FILE:vrinject>" "${CMAKE_BINARY_DIR}/expected_hash.h"
   COMMENT "Generating DLL hash header")
 
-# Make sure shaders are compiled before the DLL is built.
+# Make sure shaders are compiled and copied before the DLL is built.
 add_dependencies(vrinject compile_shaders)
+add_dependencies(vrinject copy_shaders_for_dx12)
 
 
 
