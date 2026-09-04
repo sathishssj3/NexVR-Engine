@@ -1,17 +1,17 @@
 {
-  "engineVersion": "0.1.5",
-  "timestamp": 1788535097680,
-  "changelog": "Sekiro VR Rendering Fix & Steam Overlay Hook Engine v0.1.5",
+  "engineVersion": "0.1.6",
+  "timestamp": 1788539422014,
+  "changelog": "Universal Multi-Machine Injection & Admin Dependency Sync v0.1.6",
   "features": [
-    "Steam Overlay Hook Engine: Eliminates false-positive anti-cheat blockage",
-    "D3D11 Universal Typeless Eye Textures: Enables seamless copying to both UNORM and sRGB OpenXR swapchains",
-    "Sekiro Automatic Configuration: Enforces forward-Z, column-major matrices, and sRGB correction bypass",
-    "Self-Healing OTA CLI Verification: Accepts OTA engine updates without hash rejection"
+    "Universal Machine Compatibility: Allowed UAC elevation services (svchost, consent) and NexVR launcher names",
+    "Elevated Dependency Synchronization: Automatically deploys onnxruntime, DirectML, and vrinject.json to protected Program Files directories",
+    "Real Exit Code Propagation: Propagates actual UAC injection exit codes to the launcher UI",
+    "Auto-resolving Copy Paths: Resolves executable directories automatically if CLI flags are omitted"
   ],
   "fixes": [
-    "Sekiro: Shadows Die Twice: Fixed VR display in headset caused by Steam Overlay hook blockage and sRGB UAV format rejection",
-    "Direct3D 11 CopySubresourceRegion: Prevented driver texture format drop between game backbuffer and OpenXR compositor",
-    "Launcher Config Deployment: Automatically generates vrinject.json with Sekiro profile on launch and syncs across game binaries"
+    "Fixed Error 22 (Unauthorized caller) on tester machines with standard Windows UAC",
+    "Fixed silent injection failure in Sekiro caused by missing elevated permissions to write to Steam game directories",
+    "Fixed missing DirectML.dll and vrinject.json synchronization in game folder"
   ],
   "files": [
     "vrinject.dll",

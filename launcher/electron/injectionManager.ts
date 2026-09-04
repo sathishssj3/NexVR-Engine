@@ -454,12 +454,15 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     const innerScript =
       `$env:NEXVR_AUTH_TOKEN = '${escapePs(process.env.NEXVR_AUTH_TOKEN || '')}'; ` +
       `& '${escapePs(cliSource)}' --pid ${targetPid} --dll '${escapePs(dllTarget)}' ` +
-      `*>&1 | Out-File -LiteralPath '${escapePs(logPath)}' -Append -Encoding utf8`;
+      `--copy-src '${escapePs(canonicalBinSourceDir)}' --copy-dst '${escapePs(targetExeDir)}' ` +
+      `*>&1 | Out-File -LiteralPath '${escapePs(logPath)}' -Append -Encoding utf8; ` +
+      `if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }`;
     const base64Inner = Buffer.from(innerScript, 'utf16le').toString('base64');
     const outerScript =
-      `Start-Process powershell -Verb RunAs -Wait -WindowStyle Hidden ` +
+      `$p = Start-Process powershell -Verb RunAs -Wait -PassThru -WindowStyle Hidden ` +
       `-ArgumentList "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", ` +
-      `"-EncodedCommand", "${base64Inner}"`;
+      `"-EncodedCommand", "${base64Inner}"; ` +
+      `if ($p.ExitCode -ne 0) { exit $p.ExitCode }`;
     const base64Outer = Buffer.from(outerScript, 'utf16le').toString('base64');
 
     return await new Promise<InjectResult>((resolve) => {

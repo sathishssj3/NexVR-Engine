@@ -277,10 +277,39 @@ int main(int argc, char* argv[]) {
     }
 
 
-    // Copy dependencies if requested
+    // Auto-resolve copy paths if omitted
+    char selfExePath[MAX_PATH] = {0};
+    ::GetModuleFileNameA(NULL, selfExePath, MAX_PATH);
+    std::string selfDir = selfExePath;
+    size_t lastSlash = selfDir.find_last_of("\\/");
+    if (lastSlash != std::string::npos) {
+        selfDir = selfDir.substr(0, lastSlash);
+    }
+
+    if (copySrc.empty()) {
+        copySrc = selfDir;
+    }
+
+    if (copyDst.empty() && targetPid > 4) {
+        HANDLE hTargetProc = ::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, targetPid);
+        if (hTargetProc) {
+            char targetExeBuf[MAX_PATH] = {0};
+            DWORD bufSize = MAX_PATH;
+            if (::QueryFullProcessImageNameA(hTargetProc, 0, targetExeBuf, &bufSize)) {
+                std::string targetExeStr = targetExeBuf;
+                size_t slashPos = targetExeStr.find_last_of("\\/");
+                if (slashPos != std::string::npos) {
+                    copyDst = targetExeStr.substr(0, slashPos);
+                }
+            }
+            ::CloseHandle(hTargetProc);
+        }
+    }
+
+    // Copy dependencies to game directory using elevated permissions
     if (!copySrc.empty() && !copyDst.empty()) {
-        PrintInfo("Copying dependencies from %s to %s", copySrc.c_str(), copyDst.c_str());
-        const char* files[] = {"vrinject.dll", "onnxruntime.dll", "onnxruntime_providers_shared.dll", "openxr_loader.dll"};
+        PrintInfo("Synchronizing engine dependencies from %s to %s", copySrc.c_str(), copyDst.c_str());
+        const char* files[] = {"vrinject.dll", "onnxruntime.dll", "DirectML.dll", "vrinject.json"};
         for (const char* f : files) {
             std::string src = copySrc + "\\" + f;
             std::string dst = copyDst + "\\" + f;
@@ -294,14 +323,11 @@ int main(int argc, char* argv[]) {
                 
                 if (!::CopyFileA(src.c_str(), dst.c_str(), FALSE)) {
                     PrintWarn("Failed to copy %s (Error: %lu)", f, ::GetLastError());
+                } else {
+                    PrintOK("Deployed %s to target directory.", f);
                 }
             }
         }
-    }
-
-    if (!copySrc.empty() && !copyDst.empty()) {
-        PrintInfo("Sleeping for 1000ms to allow AV to release file locks...");
-        ::Sleep(1000);
     }
 
     // S3.3: Origin Restriction (Environment variable token and parent process check)
@@ -332,11 +358,16 @@ int main(int argc, char* argv[]) {
         ::QueryFullProcessImageNameW(hParent, 0, parentName, &size);
         ::CloseHandle(hParent);
         std::wstring pname = parentName;
-        if (pname.find(L"Antigravity") == std::wstring::npos &&
+        for (auto& c : pname) c = towlower(c);
+        if (pname.find(L"antigravity") == std::wstring::npos &&
             pname.find(L"electron")    == std::wstring::npos &&
+            pname.find(L"nexvr")       == std::wstring::npos &&
             pname.find(L"node")        == std::wstring::npos &&
-            pname.find(L"powershell")  == std::wstring::npos) {
-            PrintErr("[ERROR] Unauthorized caller \u2014 aborting");
+            pname.find(L"powershell")  == std::wstring::npos &&
+            pname.find(L"cmd")         == std::wstring::npos &&
+            pname.find(L"svchost")     == std::wstring::npos &&
+            pname.find(L"consent")     == std::wstring::npos) {
+            PrintErr("[ERROR] Unauthorized caller — aborting");
             return 22;
         }
     }
