@@ -29,7 +29,7 @@ if(NOT DXC_EXECUTABLE)
     message(WARNING "dxc.exe not found. DX12 shaders will not be recompiled.")
 endif()
 
-set(SHADER_SOURCE_DIR ${CMAKE_SOURCE_DIR}/shaders)
+set(SHADER_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
 set(SHADER_OUTPUT_DIR ${CMAKE_BINARY_DIR}/bin/vrinject_shaders)
 
 set(SHADER_SOURCES
@@ -55,7 +55,7 @@ foreach(shader_src ${SHADER_SOURCES})
 endforeach()
 
 # Copy Vulkan shaders
-file(COPY ${CMAKE_SOURCE_DIR}/shaders/vulkan DESTINATION ${SHADER_OUTPUT_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders/vulkan DESTINATION ${SHADER_OUTPUT_DIR})
 
 set(SHADER_OUTPUTS "")
 

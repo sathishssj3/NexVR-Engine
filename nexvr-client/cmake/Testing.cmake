@@ -75,7 +75,7 @@ target_link_libraries(stress_injector PRIVATE NexVRCore)
 # test file is picked up without a manual reconfigure. Suites needing ONNX
 # Runtime or a custom main() stay registered explicitly above and are skipped
 # here by the TARGET guard.
-file(GLOB AUTO_GTEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/test_*.cpp")
+file(GLOB AUTO_GTEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_*.cpp")
 
 # Standalone harnesses that provide their own main() — linking gtest_main would
 # duplicate the main symbol. Excluded from gtest auto-registration.

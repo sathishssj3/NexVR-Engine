@@ -1,0 +1,96 @@
+replicaCount: 3
+
+image:
+  repository: 123456789012.dkr.ecr.us-east-1.amazonaws.com/production-nexvr-backend
+  pullPolicy: IfNotPresent
+  tag: "v0.1.0"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: "nexvr-api"
+
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/production-nexvr-api-irsa
+  name: "nexvr-api-sa"
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "4000"
+  prometheus.io/path: "/metrics"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+
+service:
+  type: ClusterIP
+  port: 4000
+
+ingress:
+  enabled: true
+  className: "alb"
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/success-codes: '200'
+  hosts:
+    - host: api.nexvr.dev
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - hosts:
+        - api.nexvr.dev
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1024Mi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 15
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+tolerations: []
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - nexvr-services
+          topologyKey: "topology.kubernetes.io/zone"
+
+env:
+  NODE_ENV: "production"
+  PORT: "4000"
+  RATE_LIMIT_MAX: "200"
+  RATE_LIMIT_WINDOW_MS: "60000"
+
+secrets:
+  databaseUrlSecretName: "nexvr-db-secret"
+  jwtSecretName: "nexvr-jwt-secret"

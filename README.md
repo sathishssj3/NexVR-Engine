@@ -33,91 +33,59 @@ Project context, current roadmap, and prior audit decisions are tracked in [docs
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Monorepo Architecture
+
+NexVR is organized as an enterprise monorepo:
 
 ```text
-┌─────────────────────────────────────────────────────────┐
-│  Electron/React Launcher (launcher/)                    │
-│  ├── Game Library Browser (Steam auto-detect)           │
-│  ├── VR Settings Panel (per-game profiles)              │
-│  └── Live Session Log Viewer                            │
-└────────────────┬────────────────────────────────────────┘
-                 │  spawns vr-inject-cli.exe
-┌────────────────▼────────────────────────────────────────┐
-│  C++ Injection Engine (src/)                            │
-│  ├── DLL Injector (CreateRemoteThread)                  │
-│  ├── Graphics Hooks (DX11 / DX12 / Vulkan Present)     │
-│  ├── Stereo Pipeline (7 GPU compute shaders)            │
-│  ├── OpenXR Manager (headset session + frame submit)    │
-│  ├── Motion Predictor (IMU-fused head tracking)         │
-│  ├── Comfort Guard (motion-sickness reduction)          │
-│  ├── AI Matrix Classifier (view/projection detection)   │
-│  └── ImGui Overlay (in-game debug HUD)                  │
-└─────────────────────────────────────────────────────────┘
+NexVR-Engine/
+├── nexvr-client/         # 🎮 Windows Native C++ Engine, OpenXR Layer & Electron Launcher
+│   ├── src/              # C++ Direct3D 11/12, Vulkan & OpenXR hooks
+│   ├── shaders/          # Compute shaders (stereo warp, depth reprojection)
+│   └── launcher/         # Electron/React desktop app
+├── nexvr-backend/        # ☁️ Cloud Microservices Platform (Node.js/TypeScript)
+│   ├── src/gateway/      # API Gateway (Rate limiting, routing)
+│   ├── src/services/     # Auth, User, Game, Profile, Update, Telemetry
+│   └── prisma/           # PostgreSQL schema & migrations
+├── nexvr-infrastructure/ # 🌐 AWS Cloud Infrastructure (Terraform)
+│   ├── modules/          # VPC, EKS, ECR, Aurora Postgres, Redis, S3, CloudFront, WAF
+│   └── environments/     # Production & Staging root configurations
+├── nexvr-deployment/     # ☸️ Kubernetes, Helm, Argo CD & Monitoring
+│   ├── helm/             # Production Helm charts
+│   ├── argocd/           # GitOps application manifests
+│   └── monitoring/       # Prometheus rules & Grafana dashboards
+└── nexvr-docs/           # 📚 System Architecture & DevOps Playbooks
 ```
-
----
-
-## 📦 Installation
-
-1. Download the latest **NexVR Engine Setup.exe** from the [Releases](https://github.com/sathishssj3/NexVR-Engine/releases) page.
-2. Run the installer — it installs to your local AppData by default.
-3. Launch **NexVR Engine** from your Start Menu.
-
-### Requirements
-
-* Windows 10/11 (x64)
-* A VR headset with an OpenXR-compatible runtime (Meta Quest Link, SteamVR, or WMR)
-* DirectX 11/12 or Vulkan-based game
-* Steam (for auto-detection of game libraries)
-
----
-
-## 🚀 How to Use
-
-1. **Open the Launcher** — Ensure your VR headset is connected and your OpenXR runtime is running. The bottom-left status indicator should glow green.
-2. **Select a Game** — Browse your auto-detected Steam library in the sidebar.
-3. **Configure Settings** — Adjust VR-specific settings for the selected game.
-4. **Inject** — Click the **▶ INJECT** button. The launcher starts the game via Steam, locates its process, and injects the VR DLL.
-5. **Put on your Headset** — Once injected, the game submits frames directly to your headset!
-
-### Configuration Options
-
-| Setting | Description |
-| :--- | :--- |
-| **Use Recommended Resolution** | Overrides game render resolution to match headset native panel resolution |
-| **Motion Sensitivity** | Adjusts head-tracking and controller movement scaling |
-| **Raw Input Mode** | Bypasses Windows input processing for lower latency tracking |
-| **sRGB Correction** | Applies gamma correction to prevent washed-out VR colors |
-| **Depth Submission** | Submits depth buffer for SpaceWarp and improved reprojection |
-| **Auto-Inject on Launch** | Automatically injects when the game executable is detected |
 
 ---
 
 ## 🛠️ Building from Source
 
-### Prerequisites
-
-* **MSVC** (Visual Studio 2022 with C++ workload)
-* **CMake** 3.20+
-* **Node.js** 20+
-* **Vulkan SDK** (optional, for Vulkan backend)
-* **DXC** (DirectX Shader Compiler, downloaded automatically by CMake)
-
-### Build Steps
+### Native Windows Client (`nexvr-client`)
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/sathishssj3/NexVR-Engine.git
-cd NexVR-Engine
-
-# 2. Build the C++ engine (DLL, CLI, and injector)
+# 1. Build C++ Engine (Release x64) from repo root
 cmake -B build -S . -A x64
 cmake --build build --config Release
 
-# 3. Build and package the Electron launcher
-cd launcher
+# 2. Build and launch the Electron desktop app
+cd nexvr-client/launcher
 npm install
+npm run dev
+```
+
+### Cloud Services (`nexvr-backend`)
+
+```bash
+# 1. Start local PostgreSQL, Redis, and LocalStack
+cd nexvr-backend
+npm run docker:up
+
+# 2. Run database migrations & start API Gateway
+npm install
+npm run db:push
+npm run dev
+```
 npm run pack
 ```
 
@@ -145,8 +113,8 @@ The NSIS installer will be generated in `launcher/dist-electron/`.
 
 We welcome community contributions! You can add support for new games without writing a single line of C++ code by creating a profile in [`profiles/`](profiles/):
 - **Adding a Game**: See the [3-minute game profile guide](CONTRIBUTING.md#-how-to-add-a-new-game-profile-in-3-minutes).
-- **Subsystem Architecture**: Read the subsystem guides in [`src/core/`](src/core/README.md), [`src/hooks/`](src/hooks/README.md), [`src/rendering/`](src/rendering/README.md), and [`src/heuristics/`](src/heuristics/README.md).
-- **Developer Guide**: Check [CONTRIBUTING.md](CONTRIBUTING.md) for quickstart, build commands, and the 5 golden rules of NexVR Engine.
+- **Subsystem Architecture**: Read the subsystem guides in [`nexvr-client/src/core/`](nexvr-client/src/core/README.md), [`nexvr-client/src/hooks/`](nexvr-client/src/hooks/README.md), and [`nexvr-docs/architecture/`](nexvr-docs/architecture/system-overview.md).
+- **Enterprise Documentation**: Browse full guides in [`nexvr-docs/`](nexvr-docs/).
 
 ---
 

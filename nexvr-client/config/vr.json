@@ -1,0 +1,9 @@
+{
+  "ipd": 0.064,
+  "convergence": 10.0,
+  "motionAimSensitivity": 1.0,
+  "vrScaleFactor": 100.0,
+  "runtime": "OpenXR",
+  "enableImGuiOverlay": true,
+  "vrThreadPriority": 2
+}

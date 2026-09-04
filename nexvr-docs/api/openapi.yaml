@@ -1,0 +1,243 @@
+openapi: 3.0.3
+info:
+  title: NexVR Cloud Services API
+  description: Official OpenAPI 3.0 Specification for NexVR Cloud API Gateway, Authentication, Game Profiles, OTA Updates, and Telemetry Ingestion.
+  version: 0.1.0
+  contact:
+    name: NexVR Engineering Team
+    url: https://nexvr.dev
+    email: support@nexvr.dev
+
+servers:
+  - url: https://api.nexvr.dev/api/v1
+    description: Production API Gateway
+  - url: https://staging-api.nexvr.dev/api/v1
+    description: Staging API Gateway
+  - url: http://localhost:4000/api/v1
+    description: Local Development Gateway
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user account
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, email, password]
+              properties:
+                username:
+                  type: string
+                  example: vr_enthusiast
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: SuperSecret123!
+      responses:
+        '201':
+          description: User successfully registered with JWT tokens
+        '400':
+          description: Validation error
+        '409':
+          description: Username or email already registered
+
+  /auth/login:
+    post:
+      summary: Authenticate user and obtain tokens
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [emailOrUsername, password]
+              properties:
+                emailOrUsername:
+                  type: string
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: SuperSecret123!
+      responses:
+        '200':
+          description: Successfully authenticated
+        '401':
+          description: Invalid email or password
+
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: New access token issued
+        '401':
+          description: Invalid or expired refresh token
+
+  /user/me:
+    get:
+      summary: Retrieve current authenticated user profile
+      tags: [User]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile data
+        '401':
+          description: Unauthorized
+
+  /games:
+    get:
+      summary: List all supported games with compatibility information
+      tags: [Games]
+      responses:
+        '200':
+          description: Array of supported games
+
+  /games/detect:
+    get:
+      summary: Auto-detect game profile by target executable name
+      tags: [Games]
+      parameters:
+        - name: exe
+          in: query
+          required: true
+          schema:
+            type: string
+          example: sekiro.exe
+      responses:
+        '200':
+          description: Matched game configuration
+
+  /profiles/game/{gameId}:
+    get:
+      summary: Get community and official VR profiles for a specific game
+      tags: [Profiles]
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of profiles
+
+  /profiles:
+    post:
+      summary: Publish a new custom VR profile
+      tags: [Profiles]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gameId, name, configJson]
+              properties:
+                gameId:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+                description:
+                  type: string
+                configJson:
+                  type: object
+      responses:
+        '201':
+          description: Profile published
+
+  /update/check:
+    get:
+      summary: Check for new NexVR client releases and signed binary downloads
+      tags: [Update]
+      parameters:
+        - name: version
+          in: query
+          required: true
+          schema:
+            type: string
+          example: 0.1.1
+        - name: channel
+          in: query
+          schema:
+            type: string
+            enum: [STABLE, BETA, NIGHTLY]
+            default: STABLE
+      responses:
+        '200':
+          description: Release update status and signed download URLs
+
+  /telemetry/ingest:
+    post:
+      summary: Ingest client crash reports and GPU frame metrics
+      tags: [Telemetry]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [clientVersion, gpuName]
+              properties:
+                clientVersion:
+                  type: string
+                  example: 0.1.1
+                gpuName:
+                  type: string
+                  example: NVIDIA GeForce RTX 4090
+                driverVersion:
+                  type: string
+                  example: 552.22
+                gameTitle:
+                  type: string
+                  example: Sekiro
+                targetApi:
+                  type: string
+                  example: DX11
+                frameRate:
+                  type: number
+                  example: 89.9
+                frameTimeMs:
+                  type: number
+                  example: 11.12
+                isCrash:
+                  type: boolean
+                  default: false
+                errorDetails:
+                  type: string
+                stackTrace:
+                  type: string
+      responses:
+        '201':
+          description: Telemetry report recorded
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

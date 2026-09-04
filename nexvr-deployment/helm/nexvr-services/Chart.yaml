@@ -1,0 +1,9 @@
+apiVersion: v2
+name: nexvr-services
+description: Umbrella Helm Chart for NexVR Cloud API Gateway & Microservices
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+maintainers:
+  - name: NexVR DevOps Team
+    email: devops@nexvr.dev

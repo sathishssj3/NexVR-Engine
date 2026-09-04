@@ -63,10 +63,10 @@ jobs:
         shell: pwsh
         run: |
           pip install onnx
-          if (-not (Test-Path models)) { mkdir models }
-          python generate_dummy_onnx.py
-          Copy-Item models/dummy.onnx models/depth_inpainter.onnx
-          Copy-Item models/dummy_ui.onnx models/ui_synthesizer.onnx
+          if (-not (Test-Path nexvr-client/models)) { mkdir nexvr-client/models }
+          python nexvr-client/generate_dummy_onnx.py
+          Copy-Item nexvr-client/models/dummy.onnx nexvr-client/models/depth_inpainter.onnx
+          Copy-Item nexvr-client/models/dummy_ui.onnx nexvr-client/models/ui_synthesizer.onnx
 
       - name: Configure CMake
         run: cmake -B build -S . -A x64 -DDXC_EXECUTABLE="${{ github.workspace }}/dxc/bin/x64/dxc.exe"
@@ -89,18 +89,18 @@ jobs:
           node-version: '22'
 
       - name: Install Launcher Dependencies
-        working-directory: ./launcher
+        working-directory: ./nexvr-client/launcher
         run: npm install
 
       - name: Build and Package Electron App (NSIS Installer)
-        working-directory: ./launcher
+        working-directory: ./nexvr-client/launcher
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run pack -- --publish never
 
       - name: Standardize Setup.exe Filenames
         shell: pwsh
-        working-directory: ./launcher/dist-electron
+        working-directory: ./nexvr-client/launcher/dist-electron
         run: |
           $setupFile = Get-ChildItem -Filter "*Setup*.exe" | Select-Object -First 1
           if ($setupFile) {
@@ -118,11 +118,11 @@ jobs:
         with:
           name: NexVR-Engine-Setup
           path: |
-            launcher/dist-electron/NexVR-Engine-Setup.exe
-            launcher/dist-electron/NexVR.Engine.Setup.*.exe
-            launcher/dist-electron/NexVR Engine Setup*.exe
-            launcher/dist-electron/NexVR Engine Portable*.exe
-            launcher/dist-electron/*.zip
+            nexvr-client/launcher/dist-electron/NexVR-Engine-Setup.exe
+            nexvr-client/launcher/dist-electron/NexVR.Engine.Setup.*.exe
+            nexvr-client/launcher/dist-electron/NexVR Engine Setup*.exe
+            nexvr-client/launcher/dist-electron/NexVR Engine Portable*.exe
+            nexvr-client/launcher/dist-electron/*.zip
           retention-days: 30
 
       - name: Publish to NexVR-Engine Releases (Local Repo)
@@ -130,10 +130,10 @@ jobs:
         with:
           tag_name: ${{ inputs.release_tag || 'v0.1.0' }}
           files: |
-            launcher/dist-electron/NexVR-Engine-Setup.exe
-            launcher/dist-electron/NexVR.Engine.Setup.*.exe
-            launcher/dist-electron/NexVR Engine Portable*.exe
-            launcher/dist-electron/*.zip
+            nexvr-client/launcher/dist-electron/NexVR-Engine-Setup.exe
+            nexvr-client/launcher/dist-electron/NexVR.Engine.Setup.*.exe
+            nexvr-client/launcher/dist-electron/NexVR Engine Portable*.exe
+            nexvr-client/launcher/dist-electron/*.zip
 
       - name: Publish to NexVR-Engine-Releases Repo
         shell: pwsh
@@ -146,4 +146,5 @@ jobs:
             exit 0
           }
           $tagToUse = if ($env:TAG) { $env:TAG } else { "v0.1.0" }
-          ./scripts/upload_to_releases_repo.ps1 -Token $env:GH_TOKEN -Tag $tagToUse
+          $scriptPath = if (Test-Path ./nexvr-client/scripts/upload_to_releases_repo.ps1) { "./nexvr-client/scripts/upload_to_releases_repo.ps1" } else { "./scripts/upload_to_releases_repo.ps1" }
+          & $scriptPath -Token $env:GH_TOKEN -Tag $tagToUse

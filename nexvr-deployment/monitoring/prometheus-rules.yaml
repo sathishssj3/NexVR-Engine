@@ -1,0 +1,47 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: nexvr-api-alerts
+  namespace: monitoring
+  labels:
+    role: alert-rules
+    prometheus: k8s
+spec:
+  groups:
+    - name: nexvr-api-slo.rules
+      rules:
+        - alert: HighHttpErrorRate
+          expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) * 100 > 5
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "High HTTP 5xx error rate detected on NexVR API Gateway"
+            description: "5xx error rate is currently {{ $value }}% (threshold: 5%)."
+
+        - alert: HighApiLatencyP99
+          expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 0.5
+          for: 3m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High p99 latency on NexVR API Gateway"
+            description: "99th percentile response time is {{ $value }}s (threshold: 0.5s)."
+
+        - alert: PodCrashLooping
+          expr: rate(kube_pod_container_status_restarts_total{namespace=~"production|staging", container=~"nexvr.*"}[15m]) > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Pod {{ $labels.pod }} is crash looping"
+            description: "Container in pod {{ $labels.pod }} has restarted multiple times."
+
+        - alert: HighPostgresConnections
+          expr: pg_stat_activity_count / pg_settings_max_connections * 100 > 80
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Aurora PostgreSQL connection pool nearing saturation"
+            description: "Postgres connections are at {{ $value }}% of max capacity."

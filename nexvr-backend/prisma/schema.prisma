@@ -1,0 +1,131 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  DEVELOPER
+  ADMIN
+}
+
+enum Tier {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum ReleaseChannel {
+  STABLE
+  BETA
+  NIGHTLY
+}
+
+model User {
+  id           String         @id @default(uuid())
+  email        String         @unique
+  passwordHash String
+  username     String         @unique
+  role         Role           @default(USER)
+  tier         Tier           @default(FREE)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  tokens       RefreshToken[]
+  profiles     VRProfile[]
+  reports      TelemetryReport[]
+
+  @@index([email])
+  @@index([username])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+model Game {
+  id               String       @id @default(uuid())
+  title            String
+  slug             String       @unique
+  exeNames         String[]     // e.g. ["sekiro.exe", "eldenring.exe"]
+  graphicsApis     String[]     // e.g. ["DX11", "DX12", "Vulkan"]
+  antiCheat        String?      // e.g. "None", "EAC", "BattlEye"
+  supported        Boolean      @default(true)
+  defaultProfileId String?
+  profiles         VRProfile[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([slug])
+}
+
+model VRProfile {
+  id          String   @id @default(uuid())
+  gameId      String
+  game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  authorId    String?
+  author      User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  name        String
+  description String?
+  configJson  Json     // Full vrinject.json representation (fov, separation, hooks, depth, etc.)
+  isOfficial  Boolean  @default(false)
+  downloads   Int      @default(0)
+  rating      Float    @default(5.0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([gameId])
+  @@index([authorId])
+  @@index([isOfficial])
+}
+
+model Release {
+  id                 String         @id @default(uuid())
+  version            String         @unique // e.g. "0.1.2"
+  channel            ReleaseChannel @default(STABLE)
+  releaseNotes       String?
+  isMandatory        Boolean        @default(false)
+  windowsInstallerUrl String
+  cliUrl             String?
+  dllUrl             String?
+  sha256Hash         String         // Cryptographic integrity verification
+  downloadCount      Int            @default(0)
+  createdAt          DateTime       @default(now())
+
+  @@index([version])
+  @@index([channel])
+}
+
+model TelemetryReport {
+  id            String   @id @default(uuid())
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  clientVersion String
+  gpuName       String
+  driverVersion String?
+  gameTitle     String?
+  targetApi     String?  // DX11, DX12, Vulkan
+  frameRate     Float?
+  frameTimeMs   Float?
+  isCrash       Boolean  @default(false)
+  errorDetails  String?
+  stackTrace    String?
+  timestamp     DateTime @default(now())
+
+  @@index([clientVersion])
+  @@index([gameTitle])
+  @@index([isCrash])
+  @@index([timestamp])
+}

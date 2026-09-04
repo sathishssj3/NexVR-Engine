@@ -1,0 +1,10 @@
+{
+  "preferredBackend": "DX11",
+  "resolutionScale": 1.0,
+  "useRecommendedResolution": true,
+  "srgbCorrection": false,
+  "depthSubmission": false,
+  "enableASW": true,
+  "aswTargetFps": 90,
+  "depthBufferMaxSizeMultiplier": 16.0
+}

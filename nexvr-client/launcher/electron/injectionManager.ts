@@ -121,7 +121,9 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
       }
     });
 
-    const binSourceDir = isDev ? path.join(__dirname, '../../../build/bin') : process.resourcesPath;
+    const localClientBin = path.join(__dirname, '../../build/bin');
+    const rootBin = path.join(__dirname, '../../../build/bin');
+    const binSourceDir = isDev ? (fs.existsSync(localClientBin) ? localClientBin : rootBin) : process.resourcesPath;
     const canonicalBinSourceDir = canonicalExistingPath(binSourceDir, 'directory');
     const otaCli = path.join(app.getPath('userData'), 'updates', 'vr-inject-cli.exe');
     const cliSource = (fs.existsSync(otaCli) && fs.statSync(otaCli).size > 10000)

@@ -9,6 +9,7 @@ build_auto/
 out/
 bin/
 cmake/cmake-*/
+**/cmake-*/
 CMakeSettings.json
 compile_commands.json
 ctest_output.txt
@@ -21,8 +22,8 @@ ctest_output.txt
 *.exp
 *.ilk
 *.pdb
-*.obj
 *.zip
+scratch_*.ps1
 
 # ── Visual Studio ────────────────────────────────────────────
 .vs/
@@ -32,15 +33,17 @@ ctest_output.txt
 
 # ── Node.js & Electron (Launcher) ───────────────────────────
 node_modules/
-launcher/node_modules/
-launcher/dist/
-launcher/dist-*/
-launcher/frontend-dist/
-launcher/electron-dist/
-launcher/asar-out*/
-launcher/asar-test/
-launcher/temp_app/
-launcher/test-results/
+**/node_modules/
+dist/
+**/dist/
+dist-*/
+**/dist-*/
+**/frontend-dist/
+**/electron-dist/
+**/asar-out*/
+**/asar-test/
+**/temp_app/
+**/test-results/
 launcher/out.txt
 launcher/output.txt
 launcher/run_out.txt

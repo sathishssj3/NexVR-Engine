@@ -1,0 +1,31 @@
+name: Terraform Infrastructure CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'nexvr-infrastructure/**'
+      - '.github/workflows/infra-deploy.yml'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'nexvr-infrastructure/**'
+      - '.github/workflows/infra-deploy.yml'
+
+jobs:
+  terraform-plan:
+    name: Terraform Format and Plan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Terraform Format Check
+        working-directory: ./nexvr-infrastructure/terraform
+        run: terraform fmt -check -recursive

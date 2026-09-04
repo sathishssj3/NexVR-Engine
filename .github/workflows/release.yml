@@ -288,11 +288,11 @@ jobs:
         node-version: '24'
 
     - name: Install Launcher Dependencies
-      working-directory: ./launcher
+      working-directory: ./nexvr-client/launcher
       run: npm install
 
     - name: Build and Package Electron App
-      working-directory: ./launcher
+      working-directory: ./nexvr-client/launcher
       # This triggers vite build, tsc, and electron-builder
       run: npm run pack
 
@@ -301,15 +301,15 @@ jobs:
       with:
         name: nexvr-engine-installer
         path: |
-          launcher/dist-electron/NexVR Engine Setup*.exe
-          launcher/dist-electron/NexVR Engine Portable*.exe
-          launcher/dist-electron/*.zip
+          nexvr-client/launcher/dist-electron/NexVR Engine Setup*.exe
+          nexvr-client/launcher/dist-electron/NexVR Engine Portable*.exe
+          nexvr-client/launcher/dist-electron/*.zip
 
     - name: Upload to Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: |
-          launcher/dist-electron/NexVR Engine Setup*.exe
-          launcher/dist-electron/NexVR Engine Portable*.exe
-          launcher/dist-electron/*.zip
+          nexvr-client/launcher/dist-electron/NexVR Engine Setup*.exe
+          nexvr-client/launcher/dist-electron/NexVR Engine Portable*.exe
+          nexvr-client/launcher/dist-electron/*.zip
