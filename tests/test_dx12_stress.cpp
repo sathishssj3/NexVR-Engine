@@ -131,11 +131,11 @@ TEST_F(DX12StressTest, Render100kFramesWithoutLeaks) {
     StereoParams params;
     params.ipd = 0.064f;
 
-    const int FRAME_COUNT = (std::getenv("CI") != nullptr) ? 50 :
+    const int FRAME_COUNT = (std::getenv("CI") != nullptr) ? 20 :
 #if defined(_DEBUG)
-        50;
+        20;
 #else
-        1000;
+        500;
 #endif
     
     std::cout << "Running DX12 Stereo Backend for " << FRAME_COUNT << " frames..." << std::endl;

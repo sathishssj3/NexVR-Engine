@@ -126,9 +126,9 @@ jobs:
           retention-days: 30
 
       - name: Publish to NexVR-Engine Releases (Local Repo)
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ inputs.release_tag || 'v0.1.0' }}
           files: |
             launcher/dist-electron/NexVR-Engine-Setup.exe
             launcher/dist-electron/NexVR.Engine.Setup.*.exe
@@ -136,10 +136,10 @@ jobs:
             launcher/dist-electron/*.zip
 
       - name: Publish to NexVR-Engine-Releases Repo
-        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.publish_to_releases_repo == true) || startsWith(github.ref, 'refs/tags/') }}
+        if: ${{ secrets.RELEASES_REPO_TOKEN != '' }}
         shell: pwsh
         env:
-          GH_TOKEN: ${{ secrets.RELEASES_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASES_REPO_TOKEN }}
           TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           $tagToUse = if ($env:TAG) { $env:TAG } else { "v0.1.0" }
