@@ -1,7 +1,6 @@
 import { app, ipcMain, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as https from 'https';
 import { assertTrustedIpcSender } from './utils';
 
 export interface UpdateManifest {
@@ -24,8 +23,10 @@ export interface UpdateStatus {
   error?: string;
 }
 
-const MANIFEST_URL = 'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine-Releases/main/updates/manifest.json';
-const RAW_FILES_BASE = 'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine-Releases/main/updates/';
+const MANIFEST_URLS = [
+  'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine/main/updates/manifest.json',
+  'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine-Releases/main/updates/manifest.json',
+];
 
 function getUpdatesDir(): string {
   const dir = path.join(app.getPath('userData'), 'updates');
@@ -45,104 +46,101 @@ function getLocalManifest(): UpdateManifest | null {
   return null;
 }
 
-function fetchJson<T>(url: string): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const req = https.get(url, { headers: { 'User-Agent': 'NexVR-Launcher' }, timeout: 5000 }, (res) => {
-      if (res.statusCode === 404) {
-        resolve(null as any);
-        res.resume();
-        return;
-      }
-      if (res.statusCode !== 200) {
-        reject(new Error(`HTTP ${res.statusCode} from ${url}`));
-        res.resume();
-        return;
-      }
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try {
-          resolve(JSON.parse(data) as T);
-        } catch (e) {
-          reject(e);
-        }
-      });
+async function fetchWithTimeout(url: string, timeoutMs = 15000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'NexVR-Launcher' },
+      signal: controller.signal,
     });
-    req.on('error', reject);
-    req.on('timeout', () => {
-      req.destroy();
-      reject(new Error('Request timed out'));
-    });
-  });
+    return res;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
-function downloadFile(url: string, destPath: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const tempPath = `${destPath}.tmp`;
-    const fileStream = fs.createWriteStream(tempPath);
-    
-    const req = https.get(url, { headers: { 'User-Agent': 'NexVR-Launcher' }, timeout: 15000 }, (res) => {
-      if (res.statusCode !== 200) {
-        fileStream.close();
-        fs.unlink(tempPath, () => {});
-        reject(new Error(`HTTP ${res.statusCode} downloading ${url}`));
-        res.resume();
-        return;
+async function fetchRemoteManifest(): Promise<{ manifest: UpdateManifest; baseUrl: string } | null> {
+  for (const url of MANIFEST_URLS) {
+    try {
+      console.info(`[UpdateManager] Checking update channel: ${url}`);
+      const res = await fetchWithTimeout(url, 15000);
+      if (res.status === 404) {
+        continue;
       }
-      res.pipe(fileStream);
-      fileStream.on('finish', () => {
-        fileStream.close(() => {
-          try {
-            fs.renameSync(tempPath, destPath);
-            resolve();
-          } catch (err) {
-            reject(err);
-          }
-        });
-      });
-    });
-    req.on('error', (err) => {
-      fileStream.close();
-      fs.unlink(tempPath, () => {});
-      reject(err);
-    });
-    req.on('timeout', () => {
-      req.destroy();
-      fileStream.close();
-      fs.unlink(tempPath, () => {});
-      reject(new Error('Download timed out'));
-    });
-  });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      const manifest = await res.json() as UpdateManifest;
+      const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
+      return { manifest, baseUrl };
+    } catch (err: any) {
+      console.warn(`[UpdateManager] Channel fetch failed for ${url}:`, err?.message || err);
+    }
+  }
+  return null;
+}
+
+async function downloadFileWithFallback(fileName: string, baseUrls: string[], destPath: string): Promise<void> {
+  let lastErr: Error | null = null;
+  for (const base of baseUrls) {
+    const fileUrl = `${base}${fileName}`;
+    try {
+      const res = await fetchWithTimeout(fileUrl, 30000);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status} from ${fileUrl}`);
+      }
+      const buffer = Buffer.from(await res.arrayBuffer());
+      const tempPath = `${destPath}.tmp`;
+      fs.writeFileSync(tempPath, buffer);
+      fs.renameSync(tempPath, destPath);
+      return;
+    } catch (err: any) {
+      lastErr = err;
+      console.warn(`[UpdateManager] Failed downloading ${fileName} from ${base}:`, err?.message || err);
+    }
+  }
+  throw lastErr || new Error(`Failed to download ${fileName}`);
 }
 
 export async function checkForEngineHotfix(): Promise<UpdateStatus> {
   try {
-    const remote = await fetchJson<UpdateManifest>(MANIFEST_URL);
-    if (!remote) {
-      console.info('[UpdateManager] System is running the latest engine build.');
+    const remoteData = await fetchRemoteManifest();
+    if (!remoteData) {
+      console.info('[UpdateManager] Unable to reach update servers, keeping active local build.');
       const local = getLocalManifest();
       return {
         checking: false,
         hasUpdate: false,
-        updated: false,
+        updated: !!local,
         version: local?.engineVersion || '0.1.0',
+        changelog: local?.changelog,
+        features: local?.features,
+        fixes: local?.fixes,
       };
     }
+
+    const { manifest: remote, baseUrl } = remoteData;
     const local = getLocalManifest();
 
     if (!local || remote.timestamp > local.timestamp) {
       console.info(`[UpdateManager] New engine hotfix available: v${remote.engineVersion} (${remote.changelog})`);
       const updatesDir = getUpdatesDir();
 
-      // Download all files in manifest (e.g. vrinject.dll, shaders)
+      const candidateBases = [
+        baseUrl,
+        'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine/main/updates/',
+        'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine-Releases/main/updates/',
+      ];
+
+      // Download all files in manifest (e.g. vrinject.dll, vr-inject-cli.exe)
       for (const file of remote.files) {
-        const fileUrl = `${RAW_FILES_BASE}${file}`;
         const dest = path.join(updatesDir, file);
         const parentDir = path.dirname(dest);
         if (!fs.existsSync(parentDir)) {
           fs.mkdirSync(parentDir, { recursive: true });
         }
-        await downloadFile(fileUrl, dest);
+        await downloadFileWithFallback(file, candidateBases, dest);
         console.info(`[UpdateManager] Downloaded hotfix file: ${file}`);
       }
 
@@ -171,7 +169,7 @@ export async function checkForEngineHotfix(): Promise<UpdateStatus> {
       };
     }
   } catch (err: any) {
-    console.warn('[UpdateManager] Hotfix check skipped (offline or network error):', err.message);
+    console.warn('[UpdateManager] Hotfix check encountered an error:', err.message);
     const local = getLocalManifest();
     return {
       checking: false,
