@@ -401,9 +401,13 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
                 // For R10G10B10A2 family (24): must use 24.
                 // For R16G16B16A16_FLOAT family (10): must use 10.
                 std::vector<int64_t> familyPreference;
-                if (gameFormat == 28 || gameFormat == 29) {
+                if (gameFormat == 28) {
+                    familyPreference = {28, 29};
+                } else if (gameFormat == 29) {
                     familyPreference = {29, 28};
-                } else if (gameFormat == 87 || gameFormat == 91) {
+                } else if (gameFormat == 87) {
+                    familyPreference = {87, 91};
+                } else if (gameFormat == 91) {
                     familyPreference = {91, 87};
                 } else if (gameFormat == 24) {
                     familyPreference = {24};

@@ -1,4 +1,5 @@
 #include "openxr/openxr_frame_submitter.h"
+#include "core/logger.h"
 #include <iostream>
 #include <vector>
 
@@ -124,10 +125,30 @@ bool OpenXRFrameSubmitter::ReleaseAndEndDX11(
     ID3D11Texture2D* rightDest = swapchainManager->GetRightSwapchainImage(lastAcquiredRightIndex_);
 
     if (leftEyeTex && leftDest) {
-        context->CopyResource(leftDest, leftEyeTex);
+        D3D11_TEXTURE2D_DESC srcDesc = {};
+        D3D11_TEXTURE2D_DESC dstDesc = {};
+        leftEyeTex->GetDesc(&srcDesc);
+        leftDest->GetDesc(&dstDesc);
+        if (srcDesc.Format == dstDesc.Format && srcDesc.Width == dstDesc.Width && srcDesc.Height == dstDesc.Height) {
+            context->CopyResource(leftDest, leftEyeTex);
+        } else {
+            LOG_WARN("OpenXRFrameSubmitter: Left eye format (%u, %ux%u) != swapchain (%u, %ux%u). Attempting CopySubresourceRegion.",
+                     srcDesc.Format, srcDesc.Width, srcDesc.Height, dstDesc.Format, dstDesc.Width, dstDesc.Height);
+            context->CopySubresourceRegion(leftDest, 0, 0, 0, 0, leftEyeTex, 0, nullptr);
+        }
     }
     if (rightEyeTex && rightDest) {
-        context->CopyResource(rightDest, rightEyeTex);
+        D3D11_TEXTURE2D_DESC srcDesc = {};
+        D3D11_TEXTURE2D_DESC dstDesc = {};
+        rightEyeTex->GetDesc(&srcDesc);
+        rightDest->GetDesc(&dstDesc);
+        if (srcDesc.Format == dstDesc.Format && srcDesc.Width == dstDesc.Width && srcDesc.Height == dstDesc.Height) {
+            context->CopyResource(rightDest, rightEyeTex);
+        } else {
+            LOG_WARN("OpenXRFrameSubmitter: Right eye format (%u, %ux%u) != swapchain (%u, %ux%u). Attempting CopySubresourceRegion.",
+                     srcDesc.Format, srcDesc.Width, srcDesc.Height, dstDesc.Format, dstDesc.Width, dstDesc.Height);
+            context->CopySubresourceRegion(rightDest, 0, 0, 0, 0, rightEyeTex, 0, nullptr);
+        }
     }
 
     // 6. Release Images
