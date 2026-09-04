@@ -6,4 +6,4 @@ pages_build_output_dir = "."
 #   wrangler kv namespace create WAITLIST
 [[kv_namespaces]]
 binding = "WAITLIST"
-id = "PASTE_KV_NAMESPACE_ID_HERE"
+id = "7aa0442313fc4c069ed3fb48d612cb0c"
