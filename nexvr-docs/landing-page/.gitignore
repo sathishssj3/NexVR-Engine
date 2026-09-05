@@ -6,5 +6,11 @@ package-lock.json
 # Plugin scratch
 .claude-flow/
 
-# Throwaway screenshots and scripts (leading underscore = temporary)
-_*
+# Throwaway screenshots and scripts (leading underscore = temporary).
+# Anchored to this directory: an unanchored `_*` also matched
+# functions/_lib/, which is real source the deploy cannot build without.
+/_*
+
+# Local secrets for `wrangler pages dev` — holds the real admin password.
+# Never commit. Production secrets live in `wrangler pages secret put`.
+.dev.vars

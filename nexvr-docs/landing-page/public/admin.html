@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexVR Engine — Admin</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#050506">
+<link rel="icon" type="image/png" href="logo.png?v=2">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   NexVR Engine — admin console
+   Same palette and faces as the landing page, deliberately NOT
+   the same composition. This is a tool someone opens every day:
+   dense, quiet, scannable. No hero, no display type, no motion
+   that isn't answering a click.
+   ============================================================ */
+
+:root{
+  --void:#050506; --panel:#0C0C0F; --panel-2:#101014; --panel-3:#15151A;
+  --edge:rgba(255,255,255,.08); --edge-hot:rgba(255,42,31,.34);
+  --red:#FF2A1F; --red-deep:#8E0F09;
+  --white:#F2F2F3; --muted:#7A7A80; --dim:#5C5C64;
+  --display:'Chakra Petch',system-ui,sans-serif;
+  --body:'Inter',system-ui,-apple-system,sans-serif;
+  --mono:ui-monospace,'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --bar-h:3.5rem;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--void);color:var(--white);font-family:var(--body);
+     font-size:.9375rem;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+/* The UA rule for [hidden] is display:none, but ANY author display declaration
+   outranks it — .gate below sets display:grid, which would keep the login
+   screen on top of the dashboard forever. This puts the attribute back in
+   charge, so `el.hidden = true` means what it says. */
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+::selection{background:var(--red);color:#fff}
+
+.label{font-family:var(--display);font-size:.6875rem;font-weight:600;letter-spacing:.18em;
+       text-transform:uppercase;color:var(--muted)}
+.num{font-family:var(--display);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+
+/* ---------- login gate ---------- */
+.gate{min-height:100dvh;display:grid;place-items:center;padding:1.5rem}
+.gate form{width:100%;max-width:22rem;border:1px solid var(--edge);background:var(--panel);
+           padding:2rem}
+.gate .mark{display:flex;align-items:center;gap:.6rem;margin-bottom:1.75rem;
+            font-family:var(--display);font-weight:700;font-size:.9rem;letter-spacing:.02em}
+.gate img{width:2rem;height:2rem;border-radius:50%;display:block}
+.gate label{display:block;margin-bottom:.5rem}
+.gate input{width:100%;background:var(--void);border:1px solid var(--edge);color:var(--white);
+            font-family:var(--body);font-size:.9375rem;padding:.8rem .9rem;transition:border-color .25s}
+.gate input:focus{border-color:var(--red);outline:none}
+/* Reveal toggle. Sits inside the field so the input keeps its full width, and
+   is a type="button" so Enter in the password box still submits the form. */
+.pw-wrap{position:relative;display:flex;align-items:center}
+.pw-wrap input{width:100%;padding-right:2.8rem}
+.gate .pw-toggle{position:absolute;right:0;top:0;bottom:0;width:2.8rem;margin:0;
+           display:flex;align-items:center;justify-content:center;
+           background:transparent;border:0;color:var(--muted);cursor:pointer;
+           padding:0;transition:color .2s}
+.gate .pw-toggle:hover{color:var(--white)}
+.gate .pw-toggle svg{display:block;pointer-events:none}
+.gate button[type="submit"]{width:100%;margin-top:.9rem}
+.gate .err{font-size:.8125rem;color:var(--red);min-height:1.3em;margin:.8rem 0 0}
+
+/* ---------- buttons ---------- */
+.btn{font-family:var(--display);font-weight:600;font-size:.75rem;letter-spacing:.12em;
+     text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+     padding:.7rem 1.1rem;border:1px solid var(--edge);background:transparent;color:var(--white);
+     cursor:pointer;white-space:nowrap;transition:border-color .2s,background .2s,color .2s}
+.btn:hover{border-color:var(--red)}
+.btn:disabled{opacity:.5;cursor:default;border-color:var(--edge)}
+.btn-primary{border-color:var(--red);background:var(--red);color:#fff}
+.btn-primary:hover{background:#fff;color:var(--void);border-color:#fff}
+.btn-sm{padding:.42rem .7rem;font-size:.6875rem;letter-spacing:.1em}
+
+/* ---------- top bar ---------- */
+.bar{position:sticky;top:0;z-index:40;height:var(--bar-h);display:flex;align-items:center;
+     gap:1rem;padding:0 clamp(.9rem,2.5vw,1.6rem);background:rgba(8,8,11,.86);
+     backdrop-filter:blur(18px) saturate(130%);-webkit-backdrop-filter:blur(18px) saturate(130%);
+     border-bottom:1px solid var(--edge)}
+.bar .mark{display:flex;align-items:center;gap:.55rem;font-family:var(--display);font-weight:700;
+           font-size:.8125rem;letter-spacing:.04em;margin-right:auto;white-space:nowrap}
+.bar .mark img{width:1.7rem;height:1.7rem;border-radius:50%;display:block}
+.bar .mark i{font-style:normal;color:var(--dim);font-weight:600}
+/* Segmented range control — one control, three states, no dropdown to open. */
+.seg{display:flex;border:1px solid var(--edge)}
+.seg button{font-family:var(--display);font-size:.6875rem;font-weight:600;letter-spacing:.1em;
+            background:transparent;border:0;border-right:1px solid var(--edge);color:var(--muted);
+            padding:.45rem .75rem;cursor:pointer;transition:color .2s,background .2s}
+.seg button:last-child{border-right:0}
+.seg button:hover{color:var(--white)}
+.seg button[aria-pressed="true"]{background:var(--red);color:#fff}
+/* The wordmark, a three-way range control and two buttons do not fit across a
+   phone. Rather than hide controls an operator needs, the bar becomes two rows
+   and gives up its fixed height. Sticky still works — only `top` matters. */
+@media(max-width:700px){
+  .bar{height:auto;min-height:var(--bar-h);flex-wrap:wrap;padding-block:.5rem;gap:.5rem}
+  .bar .mark{font-size:.75rem}
+  .bar .mark span{display:none}
+  .seg button{padding:.45rem .6rem}
+  .btn-sm{padding:.42rem .6rem}
+}
+
+main{padding:clamp(1rem,2.5vw,1.8rem);max-width:1500px;margin-inline:auto}
+
+/* ---------- KPI strip ---------- */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--edge);
+      border:1px solid var(--edge);margin-bottom:1.5rem}
+@media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:620px){.kpis{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:380px){.kpis{grid-template-columns:1fr}}
+.kpi{background:var(--panel);padding:1.1rem clamp(.9rem,2vw,1.4rem)}
+.kpi .v{font-family:var(--display);font-weight:700;font-size:clamp(1.5rem,3vw,2rem);
+        line-height:1.1;letter-spacing:-.02em;display:block;margin:.5rem 0 .35rem;
+        font-variant-numeric:tabular-nums}
+.kpi .d{font-size:.75rem;color:var(--muted);display:flex;align-items:center;gap:.35rem}
+.kpi .d.up{color:var(--white)}
+.kpi .d b{font-weight:600;font-variant-numeric:tabular-nums}
+.kpi .sub{font-size:.75rem;color:var(--dim)}
+
+/* ---------- cards ---------- */
+.card{border:1px solid var(--edge);background:var(--panel);margin-bottom:1.5rem}
+.card-h{display:flex;align-items:baseline;gap:1rem;flex-wrap:wrap;
+        padding:.95rem clamp(.9rem,2vw,1.4rem);border-bottom:1px solid var(--edge)}
+.card-h .label{margin-right:auto}
+.card-h .hint{font-size:.75rem;color:var(--dim)}
+.card-b{padding:clamp(.9rem,2vw,1.4rem)}
+
+.panels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.5rem;align-items:start}
+@media(max-width:1100px){.panels{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:720px){.panels{grid-template-columns:minmax(0,1fr)}}
+.span-2{grid-column:span 2}
+@media(max-width:720px){.span-2{grid-column:span 1}}
+/* Same reason: a card must be allowed to be narrower than the widest thing
+   inside it, so wide tables scroll in their own box instead of the page. */
+.card{min-width:0}
+
+/* ---------- chart ---------- */
+.chart{width:100%;height:auto;display:block}
+.chart .vbar{fill:var(--red-deep);transition:fill .15s}
+.chart .col:hover .vbar{fill:var(--red)}
+.chart .uniq{fill:none;stroke:var(--white);stroke-width:1.5;
+             vector-effect:non-scaling-stroke;opacity:.8}
+.chart .grid-l{stroke:var(--edge);stroke-width:1;vector-effect:non-scaling-stroke}
+.chart .hit{fill:transparent}
+.chart-x{display:flex;justify-content:space-between;font-size:.6875rem;color:var(--dim);
+         margin-top:.5rem;font-variant-numeric:tabular-nums}
+.legend-row{display:flex;gap:1.2rem;font-size:.75rem;color:var(--muted);margin-top:.9rem}
+.legend-row i{display:inline-block;width:.7rem;height:.7rem;margin-right:.4rem;
+              vertical-align:-1px;font-style:normal}
+.sw-views{background:var(--red-deep)}
+.sw-uniq{background:var(--white)}
+
+/* ---------- data rows with an inline proportion bar ---------- */
+.rows{list-style:none;margin:0;padding:0;display:grid;gap:.55rem}
+.rows li{display:grid;grid-template-columns:1fr auto;gap:.4rem 1rem;align-items:baseline;
+         font-size:.8125rem}
+.rows .k{color:var(--white);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rows .n{color:var(--muted);font-variant-numeric:tabular-nums;font-family:var(--display);
+         font-weight:600;white-space:nowrap}
+.rows .track{grid-column:1/-1;height:2px;background:var(--edge);position:relative}
+.rows .track i{position:absolute;inset:0 auto 0 0;background:var(--red-deep);display:block}
+.rows li:first-child .track i{background:var(--red)}
+
+/* ---------- table ---------- */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.8125rem;min-width:30rem}
+th,td{text-align:left;padding:.6rem .9rem;border-bottom:1px solid var(--edge);vertical-align:top}
+thead th{font-family:var(--display);font-size:.6875rem;font-weight:600;letter-spacing:.14em;
+         text-transform:uppercase;color:var(--muted);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--panel-2)}
+td.email{font-family:var(--mono);font-size:.75rem;color:var(--white);word-break:break-all}
+td.when{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* ---------- states ---------- */
+.empty{padding:2.5rem 1.4rem;text-align:center;color:var(--muted);font-size:.875rem}
+.empty b{display:block;color:var(--white);font-family:var(--display);font-weight:600;
+         margin-bottom:.4rem;font-size:.9375rem}
+.setup{border:1px solid var(--edge-hot);background:linear-gradient(180deg,rgba(255,42,31,.05),transparent 60%);
+       padding:clamp(1.1rem,2.4vw,1.8rem);margin-bottom:1.5rem}
+.setup h2{font-family:var(--display);font-size:1rem;margin:0 0 .5rem}
+.setup p{color:var(--muted);font-size:.875rem;margin:0 0 1rem;max-width:70ch}
+.setup pre{font-family:var(--mono);font-size:.75rem;line-height:1.9;color:#A8A8B0;
+           background:var(--void);border:1px solid var(--edge);padding:1rem;overflow-x:auto;margin:0}
+.setup pre b{color:var(--red);font-weight:400}
+
+.spin{display:inline-block;width:.7rem;height:.7rem;border:1.5px solid var(--edge);
+      border-top-color:var(--red);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){ .spin{animation-duration:2s} *{transition-duration:.01ms!important} }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div class="gate" id="gate" hidden>
+  <form id="loginForm" novalidate>
+    <div class="mark"><img src="logo.png" alt="" width="256" height="256">NEXVR&nbsp;ADMIN</div>
+    <label class="label" for="pw">Password</label>
+    <div class="pw-wrap">
+      <input id="pw" type="password" autocomplete="current-password" required>
+      <button class="pw-toggle" id="pwToggle" type="button" aria-label="Show password" title="Show password">
+        <svg class="eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+          <line x1="1" y1="1" x2="23" y2="23"/>
+        </svg>
+        <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    </div>
+    <button class="btn btn-primary" type="submit" id="loginBtn"><span>Sign in</span></button>
+    <p class="err" id="loginErr" role="status"></p>
+  </form>
+</div>
+
+<!-- ============ DASHBOARD ============ -->
+<div id="app" hidden>
+  <header class="bar">
+    <div class="mark">
+      <img src="logo.png" alt="" width="256" height="256">
+      NEXVR <i>/</i> <span>ADMIN</span>
+    </div>
+    <div class="seg" id="range" role="group" aria-label="Date range">
+      <button type="button" data-days="7"  aria-pressed="false">7D</button>
+      <button type="button" data-days="30" aria-pressed="true">30D</button>
+      <button type="button" data-days="90" aria-pressed="false">90D</button>
+    </div>
+    <button class="btn btn-sm" id="refresh" type="button">Refresh</button>
+    <button class="btn btn-sm" id="logout" type="button">Sign out</button>
+  </header>
+
+  <main>
+    <div id="notice"></div>
+    <section class="kpis" id="kpis"></section>
+
+    <section class="card">
+      <div class="card-h">
+        <span class="label">Traffic</span>
+        <span class="hint" id="chartHint"></span>
+      </div>
+      <div class="card-b">
+        <div id="chart"></div>
+        <div class="legend-row">
+          <span><i class="sw-views"></i>Page views</span>
+          <span><i class="sw-uniq"></i>Unique visitors</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="panels">
+      <section class="card"><div class="card-h"><span class="label">Where they came from</span><span class="hint">unique visitors</span></div>
+        <div class="card-b" id="pRef"></div></section>
+
+      <section class="card"><div class="card-h"><span class="label">Countries</span><span class="hint">unique visitors</span></div>
+        <div class="card-b" id="pGeo"></div></section>
+
+      <section class="card"><div class="card-h"><span class="label">Devices</span><span class="hint">unique visitors</span></div>
+        <div class="card-b" id="pDev"></div></section>
+
+      <section class="card"><div class="card-h"><span class="label">Downloads</span>
+        <span class="hint" id="ghHint"></span></div>
+        <div class="card-b" id="pDl"></div></section>
+
+      <section class="card"><div class="card-h"><span class="label">How far they read</span><span class="hint">unique visitors</span></div>
+        <div class="card-b" id="pSec"></div></section>
+
+      <section class="card"><div class="card-h"><span class="label">Time on page</span></div>
+        <div class="card-b" id="pDwell"></div></section>
+
+      <section class="card span-2"><div class="card-h">
+          <span class="label">Waitlist</span>
+          <button class="btn btn-sm" id="csv" type="button">Export CSV</button>
+        </div>
+        <div id="pWait"></div></section>
+
+      <section class="card"><div class="card-h"><span class="label">Busiest hours (UTC)</span></div>
+        <div class="card-b" id="pHours"></div></section>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+/* ============================================================
+   No framework and no CDN. Every number on this page comes from
+   /api/admin/stats; nothing is computed from placeholder data,
+   and an empty database renders an empty state rather than a
+   plausible-looking zero.
+   ============================================================ */
+
+const $ = (id) => document.getElementById(id);
+const gate = $('gate'), app = $('app');
+
+const nf = new Intl.NumberFormat();
+const fmt = (n) => nf.format(Number(n) || 0);
+const pct = (a, b) => (b > 0 ? Math.round((a / b) * 100) : 0);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* Country codes are rendered as plain ISO-3166 alpha-2, deliberately.
+   Regional-indicator flag emoji have no font on Windows and degrade to the
+   two letters, which next to the code reads as "IN IN". The code alone is
+   unambiguous on every platform and needs no country-name table. */
+const cc2 = (cc) => (/^[A-Za-z]{2}$/.test(cc || '') ? cc.toUpperCase() : '??');
+
+let days = 30;
+let latest = null;
+
+/* ---------- session ---------- */
+
+async function api(path, opts = {}) {
+  const res = await fetch(`/api/admin/${path}`, { credentials: 'same-origin', ...opts });
+  if (res.status === 401) { showGate(); throw new Error('unauthorised'); }
+  return res;
+}
+
+function showGate() {
+  app.hidden = true; gate.hidden = false;
+  const input = $('pw'), btn = $('pwToggle');
+  input.type = 'password';
+  const eyeClosed = btn.querySelector('.eye-closed'), eyeOpen = btn.querySelector('.eye-open');
+  if (eyeClosed && eyeOpen) {
+    eyeClosed.style.display = 'block';
+    eyeOpen.style.display = 'none';
+    eyeClosed.hidden = false;
+    eyeOpen.hidden = true;
+  }
+  btn.setAttribute('aria-label', 'Show password');
+  btn.setAttribute('title', 'Show password');
+  setTimeout(() => input.focus(), 30);
+}
+
+async function boot() {
+  try {
+    const { authed } = await (await fetch('/api/admin/session', { credentials: 'same-origin' })).json();
+    if (!authed) return showGate();
+    gate.hidden = true; app.hidden = false;
+    await load();
+  } catch {
+    showGate();
+  }
+}
+
+$('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = $('loginBtn'), err = $('loginErr');
+  btn.disabled = true; err.textContent = '';
+  try {
+    const res = await fetch('/api/admin/login', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ password: $('pw').value }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { err.textContent = data.error || 'Sign in failed.'; return; }
+    $('pw').value = '';
+    $('pw').type = 'password';
+    const _ec = $('pwToggle').querySelector('.eye-closed'), _eo = $('pwToggle').querySelector('.eye-open');
+    if (_ec && _eo) {
+      _ec.style.display = 'block';
+      _eo.style.display = 'none';
+      _ec.hidden = false;
+      _eo.hidden = true;
+    }
+    gate.hidden = true; app.hidden = false;
+    await load();
+  } catch {
+    err.textContent = 'No connection. Check your network.';
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+/* Reveal what you typed. This only ever shows the characters already in the
+   box — it cannot read the stored password, which lives as a write-only
+   Cloudflare secret and is never sent to the browser. */
+$('pwToggle').addEventListener('click', () => {
+  const input = $('pw'), btn = $('pwToggle');
+  const eyeClosed = btn.querySelector('.eye-closed');
+  const eyeOpen = btn.querySelector('.eye-open');
+  const revealed = input.type === 'text';
+
+  if (revealed) {
+    input.type = 'password';
+    eyeClosed.style.display = 'block';
+    eyeOpen.style.display = 'none';
+    eyeClosed.hidden = false;
+    eyeOpen.hidden = true;
+    btn.setAttribute('aria-label', 'Show password');
+    btn.setAttribute('title', 'Show password');
+  } else {
+    input.type = 'text';
+    eyeClosed.style.display = 'none';
+    eyeOpen.style.display = 'block';
+    eyeClosed.hidden = true;
+    eyeOpen.hidden = false;
+    btn.setAttribute('aria-label', 'Hide password');
+    btn.setAttribute('title', 'Hide password');
+  }
+  input.focus();
+});
+
+$('logout').addEventListener('click', async () => {
+  await fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' });
+  showGate();
+});
+
+$('refresh').addEventListener('click', () => load());
+$('csv').addEventListener('click', () => { location.href = '/api/admin/waitlist.csv'; });
+
+$('range').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-days]');
+  if (!b) return;
+  days = Number(b.dataset.days);
+  [...$('range').children].forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  load();
+});
+
+/* ---------- load + render ---------- */
+
+async function load() {
+  $('refresh').disabled = true;
+  $('chartHint').innerHTML = '<span class="spin"></span>';
+  try {
+    const res = await api(`stats?days=${days}`);
+    latest = await res.json();
+    render(latest);
+  } catch (err) {
+    if (String(err.message) !== 'unauthorised') {
+      $('notice').innerHTML = `<div class="setup"><h2>Could not load stats</h2>
+        <p>${esc(err.message || 'Request failed.')}</p></div>`;
+    }
+  } finally {
+    $('refresh').disabled = false;
+  }
+}
+
+function render(d) {
+  $('notice').innerHTML = d.configured ? '' : setupNotice(d.note);
+  renderKpis(d);
+  if (d.configured) {
+    renderChart(d.series);
+    $('chartHint').textContent =
+      `${d.from} → today · ${fmt(d.totals.views)} views`;
+    rows($('pRef'), d.referrers, (r) => ({ k: r.src, n: r.u, sub: `${fmt(r.c)} views` }), 'No referrers yet. Direct visits and links that strip their referrer both land as “(direct)”.');
+    rows($('pGeo'), d.countries, (r) => ({ k: cc2(r.cc), n: r.u, sub: `${fmt(r.c)} views` }), 'No location data yet.');
+    rows($('pDev'), d.devices, (r) => ({ k: r.d, n: r.u }), 'No visits yet.');
+    rows($('pSec'), d.sections, (r) => ({ k: r.sec, n: r.u }), 'No section reads recorded yet.');
+    renderDwell(d.dwell);
+    renderHours(d.hours);
+  } else {
+    ['chart','pRef','pGeo','pDev','pSec','pDwell','pHours'].forEach((id) => { $(id).innerHTML = ''; });
+    $('chartHint').textContent = '';
+  }
+  renderDownloads(d);
+  renderWaitlist(d.waitlist);
+}
+
+function setupNotice(note) {
+  return `<div class="setup">
+    <h2>Analytics storage is not connected</h2>
+    <p>${esc(note || 'The ANALYTICS D1 binding is missing.')} Waitlist numbers below still work — they come from KV. Run these once, then redeploy:</p>
+    <pre><b>wrangler d1 create</b> nexvr-analytics
+<span style="color:#5C5C64"># paste the printed database_id into wrangler.toml</span>
+<b>wrangler d1 execute</b> nexvr-analytics --remote --file=./schema.sql
+<b>wrangler pages deploy</b> .</pre></div>`;
+}
+
+/* ---------- KPIs ---------- */
+
+function renderKpis(d) {
+  const t = d.totals || {}, p = d.previous || {};
+  const conv = pct(d.waitlist?.total ? (t.signups || 0) : (t.signups || 0), t.uniques || 0);
+
+  const tiles = [
+    { label: 'Page views', v: t.views, prev: p.views },
+    { label: 'Unique visitors', v: t.uniques, prev: p.uniques },
+    { label: 'Download clicks', v: t.downloads, prev: p.downloads,
+      sub: t.uniques ? `${pct(t.downloads || 0, t.uniques)}% of visitors` : '' },
+    { label: 'Waitlist signups', v: t.signups, prev: p.signups,
+      sub: conv ? `${conv}% of visitors` : '' },
+    { label: 'Waitlist total', v: d.waitlist?.total, sub: 'all time' },
+  ];
+
+  $('kpis').innerHTML = tiles.map((tile) => {
+    const v = Number(tile.v || 0);
+    let foot = tile.sub ? `<span class="sub">${esc(tile.sub)}</span>` : '';
+    if (tile.prev !== undefined && d.configured) {
+      const prev = Number(tile.prev || 0);
+      if (prev > 0) {
+        const change = Math.round(((v - prev) / prev) * 100);
+        const up = change >= 0;
+        foot = `<span class="d ${up ? 'up' : ''}">${up ? '▲' : '▼'}
+                  <b>${up ? '+' : '−'}${Math.abs(change)}%</b> vs previous ${d.days}d</span>`;
+      } else if (v > 0) {
+        foot = `<span class="d up"><b>new</b> no data in the previous ${d.days}d</span>`;
+      }
+    }
+    return `<div class="kpi"><span class="label">${esc(tile.label)}</span>
+      <span class="v">${fmt(v)}</span>${foot}</div>`;
+  }).join('');
+}
+
+/* ---------- chart: hand-rolled SVG, no library ---------- */
+
+function renderChart(series) {
+  if (!series?.length) { $('chart').innerHTML = empty('No traffic recorded yet.', 'The chart fills in as soon as someone opens the landing page.'); return; }
+
+  const W = 1000, H = 220, PAD = 4;
+  const max = Math.max(1, ...series.map((s) => s.views));
+  const n = series.length;
+  const cw = W / n;                      // column width including gap
+  const bw = Math.max(1, cw - Math.min(6, cw * 0.28));
+  const y = (v) => H - (v / max) * (H - 10);
+
+  const bars = series.map((s, i) => {
+    const x = i * cw + (cw - bw) / 2;
+    const h = Math.max(s.views > 0 ? 1 : 0, H - y(s.views));
+    const when = new Date(s.day + 'T00:00:00Z')
+      .toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+    return `<g class="col"><title>${esc(when)} — ${fmt(s.views)} views, ${fmt(s.uniques)} unique, ${fmt(s.downloads)} downloads, ${fmt(s.signups)} signups</title>
+      <rect class="hit" x="${i * cw}" y="0" width="${cw}" height="${H}"></rect>
+      <rect class="vbar" x="${x.toFixed(2)}" y="${(H - h).toFixed(2)}" width="${bw.toFixed(2)}" height="${h.toFixed(2)}"></rect></g>`;
+  }).join('');
+
+  // Uniques as a line over the bars — same scale, so the gap between the two
+  // reads directly as "how many visits were repeat visits".
+  const line = series.map((s, i) => `${(i * cw + cw / 2).toFixed(2)},${y(s.uniques).toFixed(2)}`).join(' ');
+
+  const grid = [0.25, 0.5, 0.75, 1].map((f) =>
+    `<line class="grid-l" x1="0" x2="${W}" y1="${(H - f * (H - 10)).toFixed(1)}" y2="${(H - f * (H - 10)).toFixed(1)}"></line>`).join('');
+
+  $('chart').innerHTML =
+    `<svg class="chart" viewBox="0 0 ${W} ${H + PAD}" role="img"
+          aria-label="Daily page views and unique visitors over the last ${n} days">
+       ${grid}${bars}<polyline class="uniq" points="${line}"></polyline>
+     </svg>
+     <div class="chart-x"><span>${esc(series[0].day)}</span>
+       <span>peak ${fmt(max)}/day</span><span>${esc(series[n - 1].day)}</span></div>`;
+}
+
+/* ---------- generic ranked rows ---------- */
+
+function rows(el, data, map, emptyMsg) {
+  if (!data?.length) { el.innerHTML = empty('Nothing here yet.', emptyMsg); return; }
+  const mapped = data.map(map);
+  const max = Math.max(1, ...mapped.map((m) => Number(m.n) || 0));
+  el.innerHTML = `<ul class="rows">${mapped.map((m) => `
+    <li>
+      <span class="k">${m.raw ? m.k : esc(m.k ?? '—')}</span>
+      <span class="n">${fmt(m.n)}${m.sub ? ` <span style="color:var(--dim);font-weight:400"> ${esc(m.sub)}</span>` : ''}</span>
+      <span class="track"><i style="width:${((Number(m.n) || 0) / max * 100).toFixed(1)}%"></i></span>
+    </li>`).join('')}</ul>`;
+}
+
+const empty = (title, msg) => `<div class="empty"><b>${esc(title)}</b>${esc(msg || '')}</div>`;
+
+/* ---------- downloads: clicks here vs completed downloads at GitHub ---------- */
+
+function renderDownloads(d) {
+  const clicks = d.downloads || [];
+  const gh = d.github || {};
+  $('ghHint').textContent = gh.available ? `${fmt(gh.total)} completed at GitHub` : '';
+
+  const NAMES = { installer: 'Installer (.exe)', releases: 'All versions page', repo: 'Repository' };
+  let html = '';
+
+  if (clicks.length) {
+    const max = Math.max(1, ...clicks.map((c) => c.c));
+    html += `<ul class="rows">${clicks.map((c) => `
+      <li><span class="k">${esc(NAMES[c.target] || c.target)}</span>
+        <span class="n">${fmt(c.c)}<span style="color:var(--dim);font-weight:400"> ${c.c === 1 ? 'click' : 'clicks'}</span></span>
+        <span class="track"><i style="width:${(c.c / max * 100).toFixed(1)}%"></i></span></li>`).join('')}</ul>`;
+  } else {
+    html += empty('No download clicks yet.', 'Every download button routes through /api/dl, so clicks are counted even with JavaScript off.');
+  }
+
+  if (gh.available && gh.releases?.length) {
+    html += `<div style="margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--edge)">
+      <p class="label" style="margin:0 0 .7rem">Completed downloads, per release</p>
+      <ul class="rows">${gh.releases.map((r) => `
+        <li><span class="k">${esc(r.tag || '—')}</span>
+          <span class="n">${fmt(r.downloads)}</span></li>`).join('')}</ul>
+      <p style="font-size:.75rem;color:var(--dim);margin:.9rem 0 0">
+        Clicks are people pressing the button here. Completed downloads are counted
+        by GitHub, and the gap between the two is how many changed their mind.</p></div>`;
+  }
+  $('pDl').innerHTML = html;
+}
+
+/* ---------- dwell + hours ---------- */
+
+function renderDwell(buckets) {
+  const ORDER = ['0-10s', '10-60s', '1-5m', '5m+'];
+  const LABEL = { '0-10s': 'Under 10 seconds', '10-60s': '10 – 60 seconds', '1-5m': '1 – 5 minutes', '5m+': 'Over 5 minutes' };
+  if (!buckets?.length) {
+    $('pDwell').innerHTML = empty('No reading time recorded yet.', 'Measured when the tab is closed or hidden.');
+    return;
+  }
+  const by = Object.fromEntries(buckets.map((b) => [b.bucket, b.c]));
+  const data = ORDER.filter((k) => by[k]).map((k) => ({ k: LABEL[k], n: by[k] }));
+  const total = data.reduce((s, r) => s + r.n, 0);
+  rows($('pDwell'), data, (r) => ({ k: r.k, n: r.n, sub: `${pct(r.n, total)}%` }));
+}
+
+function renderHours(hours) {
+  if (!hours?.length) { $('pHours').innerHTML = empty('No visits yet.', ''); return; }
+  const by = Object.fromEntries(hours.map((h) => [h.hr, h.c]));
+  const all = Array.from({ length: 24 }, (_, h) => ({ h, c: by[h] || 0 }));
+  const max = Math.max(1, ...all.map((a) => a.c));
+  $('pHours').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(24,1fr);gap:2px;align-items:end;height:5.5rem">
+      ${all.map((a) => `<div title="${String(a.h).padStart(2, '0')}:00 UTC — ${fmt(a.c)} views"
+        style="height:${Math.max(2, (a.c / max) * 100)}%;background:${a.c === max ? 'var(--red)' : 'var(--red-deep)'}"></div>`).join('')}
+    </div>
+    <div class="chart-x"><span>00</span><span>06</span><span>12</span><span>18</span><span>23</span></div>`;
+}
+
+/* ---------- waitlist ---------- */
+
+function renderWaitlist(w) {
+  if (!w?.configured) {
+    $('pWait').innerHTML = empty('Waitlist store not bound.', 'The WAITLIST KV namespace is missing from this deployment.');
+    return;
+  }
+  if (!w.recent?.length) {
+    $('pWait').innerHTML = empty('Nobody has signed up yet.', 'Addresses appear here the moment the form on the landing page is used.');
+    return;
+  }
+  $('pWait').innerHTML = `<div class="tbl-wrap"><table>
+    <thead><tr><th>Email</th><th>Signed up</th><th>From</th></tr></thead>
+    <tbody>${w.recent.map((r) => `<tr>
+      <td class="email">${esc(r.email)}</td>
+      <td class="when">${r.at ? esc(new Date(r.at).toLocaleString()) : '<span style="color:var(--dim)">unknown</span>'}</td>
+      <td>${r.country ? esc(cc2(r.country)) : '<span style="color:var(--dim)">—</span>'}</td>
+    </tr>`).join('')}</tbody></table></div>
+    <p style="font-size:.75rem;color:var(--dim);padding:.9rem 1.4rem;margin:0;border-top:1px solid var(--edge)">
+      Showing the ${w.recent.length} most recent of ${fmt(w.total)}. Export the full list as CSV.</p>`;
+}
+
+boot();
+</script>
+</body>
+</html>

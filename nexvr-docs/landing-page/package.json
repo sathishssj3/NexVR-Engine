@@ -4,10 +4,15 @@
   "description": "NexVR Engine marketing & waitlist landing page",
   "private": true,
   "scripts": {
-    "dev": "wrangler pages dev . --kv WAITLIST --port 8788",
-    "deploy": "wrangler pages deploy .",
+    "dev": "wrangler pages dev --kv WAITLIST --d1 ANALYTICS --port 8788",
+    "deploy": "wrangler pages deploy",
     "waitlist:list": "wrangler kv key list --binding WAITLIST",
-    "preview": "wrangler pages dev ."
+    "preview": "wrangler pages dev",
+    "db:init": "wrangler d1 execute nexvr-analytics --local --file=./schema.sql",
+    "db:init:remote": "wrangler d1 execute nexvr-analytics --remote --file=./schema.sql",
+    "admin:secret": "wrangler pages secret put ADMIN_PASSWORD",
+    "salt:secret": "wrangler pages secret put ANALYTICS_SALT",
+    "admin:password": "node scripts/show-password.js"
   },
   "devDependencies": {
     "wrangler": "^4.129.0"

@@ -25,7 +25,9 @@ const json = (body, status = 200) =>
     headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
   });
 
-export async function onRequest({ request, env }) {
+import { record } from '../_lib/analytics.js';
+
+export async function onRequest({ request, env, waitUntil }) {
   if (request.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed.' }), {
       status: 405,
@@ -73,10 +75,16 @@ export async function onRequest({ request, env }) {
   // Signing up twice is not an error — keep the first timestamp.
   const key = `email:${email}`;
   if (!(await env.WAITLIST.get(key))) {
-    await env.WAITLIST.put(
-      key,
-      JSON.stringify({ at: new Date().toISOString(), country: request.cf?.country ?? null })
-    );
+    const entry = { at: new Date().toISOString(), country: request.cf?.country ?? null };
+    // Written as both value and KV metadata. Metadata comes back inline from
+    // list(), so the admin page reads the whole waitlist in one call instead of
+    // one get() per address.
+    await env.WAITLIST.put(key, JSON.stringify(entry), { metadata: entry });
+
+    // Counted in D1 so the dashboard can plot signups on the same timeline as
+    // visits. The address itself never leaves KV.
+    const write = record(env, request, [{ type: 'waitlist', path: '/', ref: request.headers.get('referer') }]);
+    if (typeof waitUntil === 'function') waitUntil(write); else await write;
   }
 
   return json({ ok: true });

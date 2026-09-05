@@ -1,9 +1,20 @@
 name = "nexvr-engine"
 compatibility_date = "2026-01-01"
-pages_build_output_dir = "."
+# Only this directory is published. Everything else in the repo -- wrangler.toml,
+# package.json, schema.sql, .dev.vars -- stays off the public origin. Functions
+# are compiled from ./functions regardless of where the assets live.
+pages_build_output_dir = "public"
 
 # Waitlist storage. Create the namespace, then paste its id here:
 #   wrangler kv namespace create WAITLIST
 [[kv_namespaces]]
 binding = "WAITLIST"
 id = "7aa0442313fc4c069ed3fb48d612cb0c"
+
+# Analytics event store. Create the database, then paste its id here:
+#   wrangler d1 create nexvr-analytics
+#   wrangler d1 execute nexvr-analytics --remote --file=./schema.sql
+[[d1_databases]]
+binding = "ANALYTICS"
+database_name = "nexvr-analytics"
+database_id = "411efe0a-8fb5-463b-b6cf-18128a8fc196"

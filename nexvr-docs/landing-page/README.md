@@ -6,12 +6,28 @@ the same origin.
 
 ```text
 landing-page/
-├── index.html                  the whole page — markup, CSS and JS inline
-├── logo.png                    brand mark, 256px (from assets/logo.png)
-├── functions/api/waitlist.js   waitlist endpoint (Pages Function)
-├── wrangler.toml               KV binding config
+├── public/                     the ONLY directory published to the web
+│   ├── index.html              the landing page — markup, CSS and JS inline
+│   ├── admin.html              the admin console, served at /admin
+│   ├── logo.png                brand mark, 256px (from assets/logo.png)
+│   └── favicon.ico
+├── functions/
+│   ├── _lib/                   shared code; the underscore keeps it un-routed
+│   │   ├── analytics.js        event recording, bot filter, visitor hashing
+│   │   └── auth.js             password check, signed session cookie
+│   └── api/
+│       ├── waitlist.js         POST /api/waitlist
+│       ├── event.js            POST /api/event      (analytics beacon)
+│       ├── dl.js               GET  /api/dl?to=...  (counted download redirect)
+│       └── admin/[[route]].js  /api/admin/*         (login, stats, CSV)
+├── schema.sql                  D1 tables
+├── wrangler.toml               KV + D1 bindings
 └── README.md
 ```
+
+Nothing outside `public/` is reachable over HTTP. That matters: `wrangler.toml`
+carries binding ids and `.dev.vars` carries the real admin password, and with
+`pages_build_output_dir = "."` both were being served as static files.
 
 `logo.png` is a downscaled copy of `assets/logo.png` in the repository root.
 It has to live inside this folder because Cloudflare Pages only publishes the
@@ -110,3 +126,60 @@ update the four `NexVR-Releases` links in `index.html`.
 `LICENSE` is a proprietary agreement, but `README.md` in the repository root ends
 with "This project is licensed under the MIT License." Those cannot both be true,
 and the MIT line is the one that would let someone redistribute the engine.
+
+
+## Analytics and the admin console
+
+`/admin` shows traffic, downloads, waitlist signups and how far people read.
+It needs a D1 database and one secret. Run this once:
+
+```bash
+# 1. event store
+wrangler d1 create nexvr-analytics          # paste database_id into wrangler.toml
+wrangler d1 execute nexvr-analytics --remote --file=./schema.sql
+
+# 2. the admin password, and a salt for visitor hashing
+wrangler pages secret put ADMIN_PASSWORD
+wrangler pages secret put ANALYTICS_SALT    # any long random string
+
+# 3. ship it
+wrangler pages deploy
+```
+
+For local work, put the same values in `.dev.vars` (gitignored) and use the
+local database:
+
+```bash
+printf 'ADMIN_PASSWORD="dev"
+ANALYTICS_SALT="dev-salt"
+' > .dev.vars
+npm run db:init      # applies schema.sql to the LOCAL d1
+npm run dev
+```
+
+### What gets collected
+
+No cookies and no cross-day identifiers. A visitor is
+`SHA-256(day | ip | user-agent | salt)` truncated to 32 chars, which counts
+daily uniques and rotates at midnight UTC — it cannot be reversed to an address
+and cannot link one person across two days. Referrers are reduced to a bare
+hostname before storage, because full referrer URLs carry search terms. Raw
+events are deleted after 120 days by an opportunistic prune on ~1% of writes.
+
+Known bots are dropped before anything is written. That means analytics numbers
+are intentionally lower than raw request counts, and a signup made by something
+that looks like a bot still reaches the waitlist while being left out of the
+charts.
+
+### Downloads
+
+Every download button points at `/api/dl?to=installer`, which records the click
+and then 302s to GitHub. A JavaScript click handler would have missed anyone
+running an ad blocker, anyone with JS off, and every middle-click. The
+destination is looked up in a table inside `dl.js` and never taken from the
+query string — accepting a URL there would turn the endpoint into an open
+redirect.
+
+The dashboard shows those clicks next to GitHub's own completed-download counts
+(fetched from the public releases API, cached an hour in KV). The two numbers
+answer different questions and the gap between them is the interesting part.

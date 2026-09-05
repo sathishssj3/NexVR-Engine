@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexVR Engine — One Click. Any Game in VR.</title>
+<meta name="description" content="Universal VR injector. Hooks DirectX 11, DirectX 12 and Vulkan, and submits stereo frames straight to OpenXR. Play the games you already own in your headset.">
+<meta name="theme-color" content="#050506">
+
+<!-- NexVR Engine Brand Logo -->
+<link rel="icon" type="image/png" href="logo.png?v=2">
+<link rel="shortcut icon" type="image/x-icon" href="favicon.ico?v=2">
+<link rel="apple-touch-icon" href="logo.png?v=2">
+
+<meta property="og:title" content="NexVR Engine — One Click. Any Game in VR.">
+<meta property="og:description" content="Hooks DirectX 11, 12 and Vulkan. Submits stereo frames straight to OpenXR.">
+<meta property="og:type" content="website">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script>
+/* Runs before the deferred module, so it beats Chrome's scroll restore.
+   The hero is a scroll-driven animation — a restored position drops
+   returning visitors into the middle of it. */
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+</script>
+
+<style>
+/* ============================================================
+   NexVR Engine — landing page
+   Palette is strictly black / red / white. Red is never
+   decoration: it marks active state, the stereo ghost, and
+   the primary action. Nothing else.
+   ============================================================ */
+
+:root{
+  --void:#050506;
+  --panel:#0C0C0F;
+  --panel-2:#101014;
+  --edge:rgba(255,255,255,.08);
+  --edge-hot:rgba(255,42,31,.34);
+  --red:#FF2A1F;
+  --red-deep:#8E0F09;
+  --white:#F2F2F3;
+  --muted:#7A7A80;
+  --dim:#5C5C64;
+
+  --display:'Chakra Petch',system-ui,sans-serif;
+  --body:'Inter',system-ui,-apple-system,sans-serif;
+  /* System stack only — the page already emitted bare <code> in browser
+     default mono, so this is making an existing fact deliberate rather
+     than adding a third typeface to the brand. */
+  --mono:ui-monospace,'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+
+  --gutter:clamp(1.25rem,5vw,5rem);
+  --maxw:1280px;
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:auto;-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--void);color:var(--white);
+  font-family:var(--body);font-size:1.0625rem;line-height:1.65;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+img,canvas{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--red);color:#fff}
+
+:focus-visible{outline:2px solid var(--red);outline-offset:3px;border-radius:2px}
+
+/* ---------- shared rhythm (defined ONCE, never overridden) ---------- */
+.section{padding-block:clamp(5rem,11vw,9.5rem);position:relative;scroll-margin-top:4.25rem}
+/* Sections that continue the one above them rather than starting a new
+   idea — they share a heading and should not read as a separate beat. */
+.section.tight{padding-top:0}
+.wrap{width:100%;max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gutter)}
+
+/* ---------- type ---------- */
+.eyebrow{
+  font-family:var(--display);font-size:.6875rem;font-weight:600;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--muted);
+  display:flex;align-items:center;gap:.7rem;margin:0 0 1.5rem;
+}
+.eyebrow::before{content:"";width:1.75rem;height:1px;background:var(--red);flex:none}
+
+/* Sized to fill ~93% of the content column: "FLAT GAME IN." measures 6.36em,
+   so below the 1280px cap that lands on a constant 13.1vw. The max stops it
+   overflowing once the container stops growing. */
+.d1{font-family:var(--display);font-weight:700;font-size:clamp(2.1rem,13.1vw,10.3rem);
+    line-height:.9;letter-spacing:-.04em;margin:0}
+.d2{font-family:var(--display);font-weight:700;font-size:clamp(1.95rem,4.2vw,3.25rem);
+    line-height:1.02;letter-spacing:-.02em;margin:0 0 1.1rem}
+.d3{font-family:var(--display);font-weight:600;font-size:1.0625rem;
+    letter-spacing:-.01em;margin:0 0 .5rem}
+.d4{font-family:var(--display);font-weight:600;font-size:.8125rem;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin:0 0 1.1rem}
+.lede{color:var(--muted);font-size:clamp(1rem,1.35vw,1.15rem);max-width:46ch;margin:1.6rem 0 0}
+/* Wider than the body default so it reads as a base under the big title
+   rather than a narrow column stranded beneath it. */
+.hero .lede{max-width:58ch;margin-inline:auto}
+.small{font-size:.8125rem;color:var(--muted);line-height:1.6}
+.mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+.prose p{color:var(--muted);font-size:.9375rem;max-width:64ch}
+.prose p:last-child{margin-bottom:0}
+.prose strong{color:var(--white);font-weight:600}
+code{font-family:var(--mono)}
+
+/* ============================================================
+   SIGNATURE — anaglyph mis-convergence.
+   A red ghost sits behind the white text, offset horizontally,
+   then converges. This is what a wrong-IPD stereo view actually
+   looks like. Display type only, never body copy.
+   ============================================================ */
+.ghost{position:relative;display:block;isolation:isolate}
+.ghost>span{position:relative;z-index:2;display:block}
+.ghost::before{
+  content:attr(data-ghost);position:absolute;inset:0;z-index:1;
+  color:var(--red);opacity:.62;pointer-events:none;
+  transform:translate3d(var(--conv,4px),0,0);
+  transition:transform 1.15s var(--ease),opacity 1.15s var(--ease);
+  will-change:transform;
+}
+.ghost.pre::before{transform:translate3d(var(--conv-pre,18px),0,0);opacity:.9}
+/* The hero title runs ~2.5x the size of a section head, so a fixed 4px offset
+   reads as a hairline there. Scale it up to keep the mis-convergence legible. */
+.d1 .ghost{--conv:clamp(3px,.55vw,8px);--conv-pre:clamp(12px,2.4vw,34px)}
+
+/* ---------- nav ---------- */
+.nav{position:fixed;inset:0 0 auto;z-index:60;transition:background .35s,border-color .35s,backdrop-filter .35s}
+.nav-in{display:flex;align-items:center;gap:2rem;height:4.25rem;
+        width:100%;max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gutter)}
+.nav.stuck{
+  background:rgba(8,8,11,.62);backdrop-filter:blur(22px) saturate(130%);
+  -webkit-backdrop-filter:blur(22px) saturate(130%);
+  border-bottom:1px solid var(--edge);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+}
+.brand{font-family:var(--display);font-weight:700;letter-spacing:.02em;font-size:.95rem;
+       display:flex;align-items:center;gap:.6rem;margin-right:auto;transition:color .25s}
+/* The asset is a black rounded square, so it is clipped to a circle — the same
+   way the repo README presents it. alt="" because the adjacent text already
+   names the brand. */
+.brand-mark{width:2.15rem;height:2.15rem;border-radius:50%;flex:none;
+            display:block;object-fit:cover;
+            transition:transform .45s var(--ease),filter .45s var(--ease)}
+.brand:hover .brand-mark{transform:rotate(8deg) scale(1.08);filter:drop-shadow(0 0 10px rgba(255,42,31,.5))}
+.nav-links{display:flex;gap:1.65rem;list-style:none;margin:0;padding:0}
+.nav-links a{font-family:var(--display);font-size:.75rem;font-weight:600;letter-spacing:.14em;
+             text-transform:uppercase;color:var(--muted);position:relative;padding-block:.35rem;
+             transition:color .25s}
+.nav-links a::after{content:"";position:absolute;left:0;bottom:0;height:1px;width:100%;
+                    background:var(--red);transform:scaleX(0);transform-origin:left;
+                    transition:transform .35s var(--ease)}
+.nav-links a:hover{color:var(--white)}
+.nav-links a:hover::after{transform:scaleX(1)}
+@media(max-width:1040px){.nav-links{display:none}}
+
+/* ---------- buttons ---------- */
+.btn{
+  font-family:var(--display);font-weight:600;font-size:.8125rem;letter-spacing:.13em;
+  text-transform:uppercase;display:inline-flex;align-items:center;gap:.7rem;
+  padding:.95rem 1.6rem;border:1px solid var(--edge);background:transparent;color:var(--white);
+  position:relative;overflow:hidden;cursor:pointer;
+  transition:border-color .3s,color .3s,background .3s,transform .25s var(--ease),box-shadow .3s var(--ease);
+  white-space:nowrap;will-change:transform;
+}
+/* The nav bar is a fixed 4.25rem. Below ~560px "DOWNLOAD V0.1.3" no longer fits
+   beside the wordmark and wraps out of the bar, so the version is dropped and
+   the button tightened — the label alone still fits. */
+@media(max-width:560px){
+  .nav .btn-primary{padding:.7rem 1rem;font-size:.6875rem;letter-spacing:.1em}
+  .ver{display:none}
+  .brand{font-size:.8125rem;gap:.5rem}
+  .brand-mark{width:1.8rem;height:1.8rem}
+}
+.btn>*{position:relative;z-index:2}
+.btn::before{content:"";position:absolute;inset:0;z-index:1;background:var(--red);
+             transform:scaleX(0);transform-origin:left;transition:transform .45s var(--ease)}
+.btn:hover{border-color:var(--red);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.4),0 0 16px rgba(255,42,31,.2)}
+.btn:active{transform:translateY(0) scale(0.97);transition-duration:.1s}
+.btn:hover::before{transform:scaleX(1)}
+.btn-primary{border-color:var(--red);background:var(--red);color:#fff}
+.btn-primary::before{background:#fff}
+.btn-primary:hover{color:var(--void);box-shadow:0 8px 26px rgba(255,42,31,.4)}
+.btn-row{display:flex;flex-wrap:wrap;gap:.85rem;margin-top:2.4rem}
+.hero .btn-row{justify-content:center}
+
+/* ---------- hero ---------- */
+.hero{min-height:100vh;position:relative;display:grid;align-items:center}
+/* Deliberately wider than --maxw: the title bleeds past the body column so it
+   reads as the loudest thing on the page. It still lands inside the nav's
+   bounds, so nothing looks misaligned. */
+.hero-in{width:100%;max-width:1560px;margin-inline:auto;
+         padding:5.5rem var(--gutter) 4rem;text-align:center}
+.hero-copy{max-width:none}
+.hero-tag{font-family:var(--display);font-size:.7rem;font-weight:600;letter-spacing:.2em;
+          text-transform:uppercase;color:var(--muted);display:inline-flex;align-items:center;
+          gap:.6rem;border:1px solid var(--edge);padding:.45rem .8rem;margin-bottom:1.9rem;
+          cursor:default;transition:border-color .3s,background .3s,transform .3s var(--ease),box-shadow .3s var(--ease)}
+.hero-tag:hover{border-color:var(--edge-hot);background:rgba(255,42,31,.04);
+                transform:translateY(-1px);box-shadow:0 4px 18px rgba(255,42,31,.12)}
+.hero-tag b{color:var(--red);font-weight:600;display:inline-block;animation:radar-ping 2.2s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes radar-ping{
+  0%,100%{opacity:1;transform:scale(1);filter:drop-shadow(0 0 2px var(--red))}
+  50%{opacity:.4;transform:scale(0.85);filter:drop-shadow(0 0 8px var(--red))}
+}
+
+/* stat rail under the hero copy */
+.rail{display:flex;flex-wrap:wrap;gap:0;justify-content:center;margin:3.5rem auto 0;
+      width:fit-content;border-top:1px solid var(--edge)}
+.rail div{padding:1.15rem clamp(1.25rem,3vw,2.25rem) 0;border-right:1px solid var(--edge);
+          cursor:default;transition:transform .35s var(--ease),background .35s,border-color .35s}
+.rail div:hover{transform:translateY(-3px);background:rgba(255,255,255,.02)}
+.rail div:last-child{border-right:0}
+.rail b{font-family:var(--display);font-size:1.35rem;font-weight:700;display:block;line-height:1.1;
+        transition:color .3s,text-shadow .3s}
+.rail div:hover b{color:#fff;text-shadow:0 0 14px rgba(255,42,31,.45)}
+.rail span{font-size:.6875rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+           transition:color .3s}
+.rail div:hover span{color:var(--white)}
+
+@media(max-width:960px){
+  .hero-in{padding-block:7.5rem 4.5rem}
+}
+/* Once the rail wraps, the dividers land in the wrong places — drop them. */
+@media(max-width:560px){
+  .rail div{border-right:0;padding-bottom:.6rem}
+}
+
+/* ---------- pipeline ---------- */
+.pipe{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:clamp(2rem,6vw,5rem);align-items:start}
+.pipe-list{list-style:none;margin:0;padding:0;position:relative}
+.pipe-list::before{content:"";position:absolute;left:.44rem;top:.6rem;bottom:.6rem;width:1px;background:var(--edge)}
+.pipe-fill{position:absolute;left:.44rem;top:.6rem;width:1px;background:var(--red);height:0;
+           box-shadow:0 0 10px var(--red)}
+.step{position:relative;padding:0 0 2.15rem 2.6rem;transition:transform .35s var(--ease)}
+.step:hover{transform:translateX(5px)}
+.step:last-child{padding-bottom:0}
+.step::before{content:"";position:absolute;left:0;top:.42rem;width:.9rem;height:.9rem;
+  border:1px solid var(--edge);background:var(--void);transition:border-color .4s,background .4s,box-shadow .4s}
+.step.on::before{border-color:var(--red);background:var(--red);box-shadow:0 0 14px var(--red)}
+.step h3{font-family:var(--display);font-size:.9375rem;font-weight:600;letter-spacing:.03em;
+         text-transform:uppercase;margin:0 0 .35rem;color:var(--muted);transition:color .4s}
+.step.on h3{color:var(--white)}
+.step p{margin:0;font-size:.9375rem;color:var(--muted);max-width:44ch}
+/* The symbols each stage actually touches. Muted until the stage is live, so
+   the rail still reads as a single line of attention on scroll. */
+.step-meta{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.85rem;max-width:44ch}
+.step-meta code{font-family:var(--mono);font-size:.6625rem;line-height:1.5;color:var(--dim);
+  border:1px solid var(--edge);padding:.16rem .45rem;background:var(--panel);
+  white-space:nowrap;transition:color .3s,border-color .3s,background .3s,transform .2s var(--ease)}
+.step-meta code:hover{color:var(--white);border-color:var(--red);background:rgba(255,42,31,.08);transform:translateY(-1px)}
+.step.on .step-meta code{color:var(--muted);border-color:var(--edge-hot)}
+
+.budget{border:1px solid var(--edge);background:var(--panel);padding:clamp(1.5rem,3vw,2.4rem);
+        position:sticky;top:6rem;transition:border-color .35s,box-shadow .35s}
+.budget:hover{border-color:var(--edge-hot);box-shadow:0 16px 36px rgba(0,0,0,.5),0 0 24px rgba(255,42,31,.08)}
+.budget-n{font-family:var(--display);font-weight:700;font-size:clamp(3.2rem,7vw,5rem);
+          line-height:.9;letter-spacing:-.03em;margin:0}
+.budget-n em{font-style:normal;color:var(--red)}
+.budget hr{border:0;border-top:1px solid var(--edge);margin:1.6rem 0}
+.budget dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:.55rem 1.5rem;font-size:.8125rem}
+.budget dt{color:var(--muted);font-family:var(--display);letter-spacing:.1em;text-transform:uppercase;font-size:.6875rem}
+.budget dd{margin:0;text-align:right}
+@media(max-width:860px){.pipe{grid-template-columns:1fr}.budget{position:static}}
+
+/* Refresh rate → frame width. Bar length is proportional to milliseconds,
+   so the shrinking budget at higher rates is visible, not just stated. */
+.rates{list-style:none;margin:1.5rem 0 0;padding:0;display:grid;gap:.65rem;font-size:.8125rem}
+.rates li{display:grid;grid-template-columns:3.4rem 1fr auto;gap:.9rem;align-items:center;color:var(--muted);
+          transition:transform .25s var(--ease),color .25s;padding:.15rem .3rem;border-radius:2px}
+.rates li:hover{transform:translateX(4px);color:var(--white);background:rgba(255,255,255,.02)}
+.rates .hz{font-family:var(--display);font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.rates .track{height:1px;background:var(--edge);position:relative}
+.rates .track i{position:absolute;left:0;top:0;height:1px;background:var(--red-deep);display:block;
+                transition:box-shadow .3s,filter .3s}
+.rates li:hover .track i{box-shadow:0 0 10px var(--red);filter:brightness(1.25)}
+.rates .ms{font-family:var(--display);font-variant-numeric:tabular-nums;color:var(--muted)}
+.rates li.now .hz,.rates li.now .ms{color:var(--white)}
+.rates li.now .track i{background:var(--red);box-shadow:0 0 8px var(--red)}
+
+/* ---------- profile cards ---------- */
+.grid{display:grid;gap:1px;background:var(--edge);border:1px solid var(--edge)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:900px){.g3{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:620px){.g3,.g2{grid-template-columns:1fr}}
+
+.card{background:var(--panel);padding:clamp(1.4rem,2.4vw,2rem);position:relative;
+      transition:background .35s,transform .35s var(--ease),box-shadow .35s var(--ease),border-color .35s;
+      min-width:0;will-change:transform}
+.card:hover{background:var(--panel-2);transform:translateY(-4px);
+            box-shadow:0 12px 30px rgba(0,0,0,.6),0 0 0 1px rgba(255,42,31,.22);z-index:2}
+.card::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--red);
+             transform:scaleX(0);transform-origin:left;transition:transform .5s var(--ease)}
+.card:hover::after{transform:scaleX(1)}
+
+.card-top{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin-bottom:1.15rem}
+.tagpill{font-family:var(--display);font-size:.625rem;font-weight:600;letter-spacing:.14em;
+         border:1px solid var(--edge-hot);color:var(--red);padding:.22rem .5rem;flex:none;
+         transition:border-color .3s,background .3s,transform .3s var(--ease)}
+.card:hover .tagpill{border-color:var(--red);background:rgba(255,42,31,.12);transform:scale(1.05)}
+.card:hover .d3{color:var(--white)}
+.flags{list-style:none;margin:0;padding:0;display:grid;gap:.4rem;font-size:.75rem}
+.flags li{display:flex;justify-content:space-between;gap:1rem;color:var(--muted);
+          border-bottom:1px dashed rgba(255,255,255,.06);padding-bottom:.4rem;
+          transition:background .25s,padding-inline .25s}
+.card:hover .flags li:hover{background:rgba(255,255,255,.03);padding-inline:.3rem;border-radius:2px}
+.flags li:last-child{border-bottom:0;padding-bottom:0}
+.flags b{font-weight:500;font-family:var(--display);letter-spacing:.06em}
+.flags span{text-align:right;min-width:0}
+.on-v{color:var(--red)}
+.off-v{color:#4A4A50}
+
+/* ---------- feature cards ---------- */
+.feat p{margin:0;font-size:.9375rem;color:var(--muted)}
+.feat .n{font-family:var(--display);font-size:.6875rem;letter-spacing:.16em;color:var(--red);
+         display:inline-block;margin-bottom:1.1rem;transition:transform .3s var(--ease),text-shadow .3s}
+.feat:hover .n{transform:translateX(3px);text-shadow:0 0 8px rgba(255,42,31,.4)}
+/* One line of hard fact under each claim — the thing the card is actually
+   built on, named. */
+.feat .spec{margin:1.15rem 0 0;padding-top:.95rem;border-top:1px dashed rgba(255,255,255,.07);
+  font-family:var(--mono);font-size:.6625rem;color:var(--dim);letter-spacing:.01em;line-height:1.6}
+
+/* ---------- data table ---------- */
+.tbl-wrap{border:1px solid var(--edge);background:var(--panel);overflow-x:auto;
+          transition:border-color .35s,box-shadow .35s}
+.tbl-wrap:hover{border-color:rgba(255,255,255,.14);box-shadow:0 10px 28px rgba(0,0,0,.4)}
+.tbl{width:100%;border-collapse:collapse;font-size:.8125rem;min-width:34rem}
+.tbl th,.tbl td{text-align:left;padding:.85rem clamp(.9rem,2vw,1.4rem);
+                border-bottom:1px solid var(--edge);vertical-align:top}
+.tbl thead th{font-family:var(--display);font-size:.6875rem;font-weight:600;letter-spacing:.16em;
+              text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.tbl tbody tr{transition:background .25s}
+.tbl tbody tr:hover{background:rgba(255,42,31,.04)}
+.tbl tbody tr:hover td{color:var(--white)}
+.tbl tbody tr:hover .k{color:var(--red);text-shadow:0 0 8px rgba(255,42,31,.25)}
+.tbl tbody tr:last-child td{border-bottom:0}
+.tbl td{color:var(--muted)}
+.tbl .k{font-family:var(--display);font-weight:600;color:var(--white);letter-spacing:.02em;white-space:nowrap;
+        transition:color .25s,text-shadow .25s}
+.tbl code{font-size:.75rem;color:var(--muted)}
+
+/* ---------- code block ---------- */
+.code{font-family:var(--mono);font-size:.7625rem;line-height:1.85;color:#A8A8B0;
+      background:var(--panel);border:1px solid var(--edge);
+      padding:clamp(1.1rem,2.2vw,1.7rem);overflow-x:auto;margin:0;tab-size:2;
+      transition:border-color .35s,box-shadow .35s}
+.code:hover{border-color:rgba(255,255,255,.16);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.code .pk{color:var(--red)}
+.code .sv{color:var(--white)}
+.code .cm{color:#45454B}
+
+/* ---------- legend ---------- */
+.legend{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--edge);
+        border:1px solid var(--edge)}
+@media(max-width:760px){.legend{grid-template-columns:1fr}}
+.legend>div{background:var(--panel);padding:clamp(1.3rem,2.4vw,1.9rem);position:relative;
+            transition:background .35s,transform .35s var(--ease),box-shadow .35s var(--ease)}
+.legend>div:hover{background:var(--panel-2);transform:translateY(-3px);
+                  box-shadow:0 10px 24px rgba(0,0,0,.4),0 0 0 1px rgba(255,42,31,.18);z-index:1}
+.legend h4{font-family:var(--mono);font-size:.75rem;font-weight:400;letter-spacing:.03em;
+           color:var(--red);margin:0 0 .65rem;transition:color .3s,transform .3s var(--ease)}
+.legend>div:hover h4{transform:translateX(3px)}
+.legend p{margin:0;font-size:.875rem;color:var(--muted);max-width:54ch}
+
+/* ---------- two-column prose block ---------- */
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);
+       gap:clamp(2rem,5vw,4.5rem);align-items:start}
+@media(max-width:860px){.split{grid-template-columns:1fr}}
+
+/* ---------- numbered flow (a real sequence — install order matters) ---------- */
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--edge);
+      border:1px solid var(--edge)}
+@media(max-width:900px){.flow{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.flow{grid-template-columns:1fr}}
+.flow>div{background:var(--panel);padding:clamp(1.4rem,2.4vw,2rem);position:relative;
+          transition:background .35s,transform .35s var(--ease),box-shadow .35s var(--ease)}
+.flow>div:hover{background:var(--panel-2);transform:translateY(-4px);
+                box-shadow:0 12px 28px rgba(0,0,0,.5),0 0 0 1px rgba(255,42,31,.22);z-index:1}
+.flow .num{font-family:var(--display);font-weight:700;font-size:2.6rem;line-height:1;
+           display:block;margin-bottom:1.2rem;color:var(--red-deep);
+           transition:transform .35s var(--ease),filter .35s;transform-origin:left bottom}
+@supports(-webkit-text-stroke:1px red){
+  .flow .num{color:transparent;-webkit-text-stroke:1px var(--red)}
+}
+.flow>div:hover .num{transform:scale(1.08) translateY(-2px);filter:drop-shadow(0 0 10px rgba(255,42,31,.4))}
+.flow p{margin:0;font-size:.875rem;color:var(--muted)}
+.flow .d3{margin-bottom:.55rem}
+
+/* ---------- anti-cheat tiers ---------- */
+.tiers{display:grid;gap:1px;background:var(--edge);border:1px solid var(--edge);margin-top:1.6rem}
+.tiers>div{background:var(--panel);padding:1.1rem clamp(1.1rem,2.4vw,1.5rem);
+           display:grid;grid-template-columns:4.5rem 1fr auto;gap:1.2rem;align-items:center;
+           transition:background .3s,transform .3s var(--ease),box-shadow .3s}
+.tiers>div:hover{background:var(--panel-2);transform:translateX(4px);box-shadow:-2px 0 0 var(--red)}
+@media(max-width:620px){
+  .tiers>div{grid-template-columns:1fr auto;gap:.4rem 1rem}
+  .tiers .tier-n{grid-column:1/-1}
+}
+.tier-n{font-family:var(--display);font-size:.6875rem;font-weight:600;letter-spacing:.16em;
+        text-transform:uppercase;color:var(--muted)}
+/* 36em ≈ 72 characters at this face's average advance. Expressed in em rather
+   than ch because ch measures the digit glyph, which runs ~25% wide here. */
+.tier-b{font-size:.875rem;color:var(--muted);margin:0;max-width:36em}
+.tier-b b{color:var(--white);font-weight:600}
+.verdict{font-family:var(--display);font-size:.6625rem;font-weight:600;letter-spacing:.14em;
+         text-transform:uppercase;padding:.28rem .6rem;border:1px solid;white-space:nowrap;
+         transition:transform .25s var(--ease),box-shadow .25s,border-color .25s}
+.tiers>div:hover .verdict{transform:scale(1.05)}
+.v-yes{color:var(--white);border-color:var(--edge)}
+.v-warn{color:var(--muted);border-color:var(--edge)}
+.v-no{color:var(--red);border-color:var(--edge-hot)}
+
+/* ---------- safety ---------- */
+.warn{border:1px solid var(--edge-hot);background:linear-gradient(180deg,rgba(255,42,31,.05),transparent 60%);
+      padding:clamp(1.6rem,3.5vw,2.8rem);display:grid;grid-template-columns:auto 1fr;gap:clamp(1.2rem,3vw,2.4rem);
+      transition:border-color .35s,box-shadow .35s}
+.warn:hover{border-color:rgba(255,42,31,.55);box-shadow:0 0 30px rgba(255,42,31,.1)}
+.warn-mark{width:2.6rem;height:2.6rem;border:1px solid var(--red);display:grid;place-items:center;
+           font-family:var(--display);font-weight:700;color:var(--red);flex:none;
+           transition:transform .35s var(--ease),box-shadow .35s,background .35s}
+.warn:hover .warn-mark{transform:scale(1.08);box-shadow:0 0 14px rgba(255,42,31,.35);background:rgba(255,42,31,.08)}
+@media(max-width:620px){.warn{grid-template-columns:1fr}}
+
+/* ---------- accordion ---------- */
+.acc{border:1px solid var(--edge);background:var(--panel)}
+.acc details{border-bottom:1px solid var(--edge);position:relative;transition:background .35s,border-color .35s}
+.acc details:last-child{border-bottom:0}
+.acc details[open]{background:rgba(255,42,31,.025)}
+.acc details[open]::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;
+                           background:var(--red);box-shadow:0 0 10px var(--red)}
+.acc summary{list-style:none;cursor:pointer;display:flex;align-items:flex-start;gap:1rem;
+             padding:1.15rem clamp(1.1rem,2.4vw,1.8rem);
+             font-family:var(--display);font-weight:600;font-size:.9375rem;letter-spacing:.01em;
+             color:var(--white);transition:background .3s,color .3s}
+.acc summary::-webkit-details-marker{display:none}
+.acc summary::after{content:"+";margin-left:auto;flex:none;color:var(--red);
+                    font-family:var(--display);font-size:1.15rem;line-height:1.2;
+                    transition:transform .35s var(--ease)}
+.acc details[open] summary::after{transform:rotate(45deg)}
+.acc summary:hover{background:var(--panel-2)}
+.acc .a{margin:0;padding:0 clamp(1.1rem,2.4vw,1.8rem) 1.4rem;
+        font-size:.9375rem;color:var(--muted);max-width:36em}
+.acc details[open] .a{animation:acc-drop .38s var(--ease) forwards}
+@keyframes acc-drop{
+  from{opacity:0;transform:translateY(-8px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.acc .a+.a{padding-top:.9rem}
+.acc .a code{font-size:.8125rem;color:var(--white)}
+
+/* ---------- download ---------- */
+.dl{display:grid;grid-template-columns:1.25fr 1fr;gap:1px;background:var(--edge);border:1px solid var(--edge)}
+@media(max-width:860px){.dl{grid-template-columns:1fr}}
+.dl>div{background:var(--panel);padding:clamp(1.8rem,4vw,3.2rem);transition:box-shadow .35s}
+.dl>div:hover{box-shadow:inset 0 0 30px rgba(255,255,255,.01)}
+.reqs{list-style:none;margin:0;padding:0;display:grid;gap:.7rem;font-size:.875rem;color:var(--muted)}
+.reqs li{display:flex;gap:.75rem;align-items:flex-start;transition:transform .2s var(--ease),color .2s}
+.reqs li:hover{transform:translateX(3px);color:var(--white)}
+.reqs li::before{content:"";width:.4rem;height:.4rem;background:var(--red);margin-top:.55rem;flex:none;
+                 transition:transform .25s var(--ease),box-shadow .25s}
+.reqs li:hover::before{transform:scale(1.35);box-shadow:0 0 8px var(--red)}
+.reqs b{color:var(--white);font-weight:600}
+
+.form{display:flex;gap:.6rem;margin-top:1.4rem;flex-wrap:wrap}
+.form input{flex:1 1 12rem;min-width:0;background:var(--void);border:1px solid var(--edge);
+  color:var(--white);font-family:var(--body);font-size:.9375rem;padding:.9rem 1rem;
+  transition:border-color .3s,box-shadow .3s,background .3s}
+.form input::placeholder{color:#55555C}
+.form input:focus{border-color:var(--red);background:#08080B;outline:none;
+                  box-shadow:0 0 18px rgba(255,42,31,.22)}
+.form-note{font-size:.75rem;color:var(--muted);margin:.9rem 0 0;min-height:1.2em;transition:color .3s}
+.form-note.ok{color:var(--white)}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none}
+
+/* ---------- footer ---------- */
+.foot{border-top:1px solid var(--edge);padding-block:3.5rem 3rem}
+.foot-grid{display:grid;grid-template-columns:1.5fr repeat(3,1fr);gap:clamp(1.8rem,4vw,3rem);
+           margin-bottom:2.8rem}
+@media(max-width:860px){.foot-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.foot-grid{grid-template-columns:1fr}}
+.foot-grid h4{font-family:var(--display);font-size:.6875rem;font-weight:600;letter-spacing:.18em;
+              text-transform:uppercase;color:var(--muted);margin:0 0 1.15rem}
+.foot-grid ul{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;font-size:.875rem}
+.foot-grid a{color:var(--muted);transition:color .25s,transform .25s var(--ease);display:inline-block}
+.foot-grid a:hover{color:var(--white);transform:translateX(3px)}
+.foot-in{display:flex;flex-wrap:wrap;gap:1.5rem;justify-content:space-between;align-items:center;
+         border-top:1px solid var(--edge);padding-top:2.4rem}
+
+/* ---------- reveal ---------- */
+.rv{opacity:0;transform:translate3d(0,26px,0);
+    transition:opacity .85s var(--ease),transform .85s var(--ease);
+    will-change:opacity,transform}
+.rv.in{opacity:1;transform:none}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}
+  .rv{opacity:1;transform:none}
+  .ghost::before{transform:translate3d(3px,0,0)!important}
+  .hero{min-height:auto}
+  .hero-in{position:static;height:auto;padding-block:8rem 4rem}
+  .hero-tag b{animation:none!important}
+  .acc details[open] .a{animation:none!important}
+  .card:hover,.flow>div:hover,.legend>div:hover,.btn:hover{transform:none!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<nav class="nav" id="nav">
+  <div class="nav-in">
+    <a class="brand" href="#top"><img class="brand-mark" src="logo.png" alt="" width="256" height="256">NEXVR&nbsp;ENGINE</a>
+    <ul class="nav-links">
+      <li><a href="#pipeline">Pipeline</a></li>
+      <li><a href="#backends">Backends</a></li>
+      <li><a href="#games">Games</a></li>
+      <li><a href="#engine">Engine</a></li>
+      <li><a href="#setup">Setup</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+    <a class="btn btn-primary" href="/api/dl?to=installer"><span>Download<span class="ver">&nbsp;v0.1.3</span></span></a>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<header class="hero" id="top">
+  <div class="hero-in">
+
+    <div class="hero-copy">
+      <span class="hero-tag"><b>●</b> OpenXR · DX11 · DX12 · Vulkan</span>
+
+      <h1 class="d1">
+        <span class="ghost pre" data-ghost="ONE CLICK."><span>ONE CLICK.</span></span>
+        <span class="ghost pre" data-ghost="ANY GAME IN VR."><span>ANY GAME IN VR.</span></span>
+      </h1>
+
+      <p class="lede">
+        Turn your entire flat PC library into immersive 6DOF VR with a single click.
+        NexVR Engine hooks the graphics pipeline while your game runs, reconstructs
+        real-time stereo depth, and hands it straight to your OpenXR headset.
+      </p>
+
+      <div class="btn-row">
+        <a class="btn btn-primary" href="/api/dl?to=installer"><span>Download for Windows</span></a>
+        <a class="btn" href="#pipeline"><span>See how it works</span></a>
+      </div>
+
+      <div class="rail">
+        <div><b class="mono">3</b><span>Graphics APIs</span></div>
+        <div><b class="mono">6</b><span>Shipped profiles</span></div>
+        <div><b class="mono">11.1<small>ms</small></b><span>Frame budget</span></div>
+      </div>
+    </div>
+
+  </div>
+</header>
+
+<!-- ============ PIPELINE ============ -->
+<section class="section" id="pipeline">
+  <div class="wrap">
+    <p class="eyebrow rv">What happens per frame</p>
+    <h2 class="d2 rv">
+      <span class="ghost" data-ghost="Six stages, one frame."><span>Six stages, one frame.</span></span>
+    </h2>
+    <p class="lede rv" style="margin-bottom:clamp(2.5rem,5vw,4rem)">
+      The game never knows it is being watched. NexVR detours the swapchain,
+      finds the camera on its own, and rebuilds the frame in stereo before the
+      game's own present call ever returns.
+    </p>
+
+    <div class="pipe">
+      <ol class="pipe-list" id="pipeList">
+        <div class="pipe-fill" id="pipeFill"></div>
+
+        <li class="step">
+          <h3>Present() hooked</h3>
+          <p>A MinHook detour lands on the swapchain's present call. One hook
+             manager owns the whole lifecycle — installation, trampolines and
+             teardown — so nothing is left patched in the process on exit.</p>
+          <div class="step-meta">
+            <code>HookManager</code><code>MH_Initialize</code><code>IDXGISwapChain::Present</code><code>vkQueuePresentKHR</code>
+          </div>
+        </li>
+
+        <li class="step">
+          <h3>Backbuffer acquired</h3>
+          <p>The lifecycle manager validates the epoch and pulls the live
+             backbuffer — the exact surface the game was about to show your
+             monitor. A resize or a device reset bumps the epoch, and every
+             cached view is dropped rather than reused.</p>
+          <div class="step-meta">
+            <code>Dx11LifecycleManager</code><code>Dx12LifecycleManager</code><code>VulkanLifecycleManager</code>
+          </div>
+        </li>
+
+        <li class="step">
+          <h3>View matrix locked</h3>
+          <p>Candidate matrices are collected from constant buffers and scored
+             until the real view and projection lock in. Scoring is what makes
+             this general: no per-game patching, no hex editing, no signature
+             that breaks on the next update.</p>
+          <div class="step-meta">
+            <code>CandidateCollector</code><code>CameraLockManager</code>
+          </div>
+        </li>
+
+        <li class="step">
+          <h3>Depth reconstructed</h3>
+          <p>The depth buffer is identified the same way — candidates in,
+             scored, locked. Depth is what turns a flat image into geometry your
+             eyes can actually converge on. Without it both eyes receive almost
+             the same picture and the scene reads as a photograph.</p>
+          <div class="step-meta">
+            <code>DepthCandidateCollector</code><code>DepthLockManager</code>
+          </div>
+        </li>
+
+        <li class="step">
+          <h3>Stereo pair warped</h3>
+          <p>Compute shaders reproject the frame into a left and a right eye,
+             then fill the disocclusions that reprojection opens up along every
+             silhouette edge — the slivers of world that one eye can see and the
+             other never had pixels for.</p>
+          <div class="step-meta">
+            <code>FrameCoordinator</code><code>Reprojection CS</code><code>Disocclusion fill</code>
+          </div>
+        </li>
+
+        <li class="step">
+          <h3>Submitted to OpenXR</h3>
+          <p>Both eyes go to your runtime — SteamVR, Meta Quest Link, WMR — in
+             the runtime's own frame loop rather than on the game's clock. Depth
+             ships alongside the colour layer so the runtime's spacewarp has
+             something to reproject against when a frame runs late.</p>
+          <div class="step-meta">
+            <code>xrWaitFrame</code><code>xrBeginFrame</code><code>xrEndFrame</code><code>OpenXRFrameSubmitter</code>
+          </div>
+        </li>
+      </ol>
+
+      <aside class="budget rv">
+        <p class="eyebrow" style="margin-bottom:1rem">The deadline</p>
+        <p class="budget-n mono">11.1<em>ms</em></p>
+        <p class="small" style="margin:.9rem 0 0">
+          At 90&nbsp;Hz a frame is 1000&nbsp;÷&nbsp;90 milliseconds wide. Every stage above
+          runs inside that window. Miss it and your headset shows you the last
+          frame again — which your inner ear notices immediately.
+        </p>
+
+        <hr>
+
+        <p class="eyebrow" style="margin-bottom:.4rem">Budget by refresh rate</p>
+        <ul class="rates">
+          <li><span class="hz">72 Hz</span><span class="track"><i style="width:100%"></i></span><span class="ms">13.9 ms</span></li>
+          <li><span class="hz">80 Hz</span><span class="track"><i style="width:90%"></i></span><span class="ms">12.5 ms</span></li>
+          <li class="now"><span class="hz">90 Hz</span><span class="track"><i style="width:80%"></i></span><span class="ms">11.1 ms</span></li>
+          <li><span class="hz">120 Hz</span><span class="track"><i style="width:60%"></i></span><span class="ms">8.3 ms</span></li>
+        </ul>
+        <p class="small" style="margin:1rem 0 0">
+          The budget is the whole frame, not NexVR's share of it. The game still
+          has to render inside the same window — which is why headroom on the
+          flat game is the single best predictor of a comfortable result.
+        </p>
+
+        <hr>
+
+        <dl>
+          <dt>Backends</dt><dd>DX11 · DX12 · Vulkan</dd>
+          <dt>Submission</dt><dd>Native OpenXR</dd>
+          <dt>Queue model</dt><dd class="mono">Single, FIFO</dd>
+          <dt>Spacewarp</dt><dd>Asynchronous</dd>
+          <dt>Depth layer</dt><dd>Submitted</dd>
+          <dt>Hooking</dt><dd>MinHook detour</dd>
+          <dt>Injection</dt><dd>Runtime, live process</dd>
+        </dl>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BACKENDS ============ -->
+<section class="section" id="backends">
+  <div class="wrap">
+    <p class="eyebrow rv">Three graphics APIs</p>
+    <h2 class="d2 rv">
+      <span class="ghost" data-ghost="One pipeline, three doors."><span>One pipeline, three doors.</span></span>
+    </h2>
+    <p class="lede rv" style="margin-bottom:clamp(2.5rem,5vw,4rem)">
+      The six stages are the same everywhere. What changes is where the hook
+      lands and what the API demands in return — DirectX 12 and Vulkan hand you
+      explicit control of submission, and getting that ordering wrong is how an
+      injector deadlocks a game instead of rendering it.
+    </p>
+
+    <div class="grid g3 rv">
+      <div class="card">
+        <div class="card-top">
+          <h3 class="d3" style="margin:0">DirectX 11</h3>
+          <span class="tagpill">DX11</span>
+        </div>
+        <ul class="flags">
+          <li><b>Hook point</b><span><code>Present</code> · <code>ResizeBuffers</code></span></li>
+          <li><b>Context</b><span>Immediate</span></li>
+          <li><b>State</b><span>Saved and restored</span></li>
+          <li><b>Resource access</b><span>Direct from swapchain</span></li>
+        </ul>
+        <p class="small" style="margin:1.15rem 0 0">
+          The forgiving one. The runtime manages submission, so the work is
+          mostly state hygiene — capture what the game had bound, do the stereo
+          pass, put it all back exactly as found.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <h3 class="d3" style="margin:0">DirectX 12</h3>
+          <span class="tagpill">DX12</span>
+        </div>
+        <ul class="flags">
+          <li><b>Hook point</b><span><code>Present</code> · <code>Present1</code></span></li>
+          <li><b>Queue</b><span>Game's main queue</span></li>
+          <li><b>Ordering</b><span class="on-v">STRICT FIFO</span></li>
+          <li><b>Barriers</b><span>Explicit transitions</span></li>
+        </ul>
+        <p class="small" style="margin:1.15rem 0 0">
+          Every stereo dispatch and copy is submitted to the game's own command
+          queue rather than a private one. A second queue would race the game's
+          rendering and tear; single-queue FIFO is the contract that keeps the
+          frame coherent.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <h3 class="d3" style="margin:0">Vulkan</h3>
+          <span class="tagpill">VK</span>
+        </div>
+        <ul class="flags">
+          <li><b>Hook point</b><span><code>vkQueuePresentKHR</code></span></li>
+          <li><b>Mechanism</b><span>Dispatch table</span></li>
+          <li><b>Untracked devices</b><span>Pass-through</span></li>
+          <li><b>Recursion guard</b><span class="on-v">TRAMPOLINE</span></li>
+        </ul>
+        <p class="small" style="margin:1.15rem 0 0">
+          Resolution goes through the original
+          <code>vkGetDeviceProcAddr</code>, never the hooked one — returning a
+          patched pointer to a lookup for that same pointer is an infinite
+          recursion. Devices created before injection are passed through
+          untouched.
+        </p>
+      </div>
+    </div>
+
+    <p class="small rv" style="margin-top:1.5rem;max-width:64ch">
+      A wrapper that targets a game engine only works on that engine. Hooking at
+      the API layer means the engine underneath — Unreal, Unity, RE Engine,
+      something in-house — stops being a question the injector has to answer.
+    </p>
+  </div>
+</section>
+
+<!-- ============ PASSTHROUGH ============ -->
+<section class="section" id="passthrough">
+  <div class="wrap">
+    <p class="eyebrow rv">Before the lock</p>
+    <h2 class="d2 rv">
+      <span class="ghost" data-ghost="Never a black screen."><span>Never a black screen.</span></span>
+    </h2>
+
+    <div class="split rv" style="margin-top:clamp(2.5rem,5vw,4rem)">
+      <div class="prose">
+        <p>
+          Stereo needs two locks: the view matrix and the depth buffer. Menus,
+          loading screens, launchers and pre-rendered cutscenes often present
+          neither — there is no camera in a main menu and nothing to reconstruct
+          depth from.
+        </p>
+        <p>
+          The wrong answer is to stop submitting frames. A headset with no
+          incoming frames goes black, the runtime starts warning about a lost
+          session, and the user concludes the injector crashed. So when stereo
+          is unavailable NexVR keeps submitting: the flat backbuffer is copied
+          into <strong>both</strong> eye swapchain images, and you get the game
+          on a screen in front of you instead of a void.
+        </p>
+        <p>
+          The transition into stereo is therefore something you see happen. The
+          flat panel gains depth the moment both locks land — usually a second
+          or two into actual gameplay.
+        </p>
+      </div>
+
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr><th>State</th><th>What you see</th><th>Why</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="k">No locks</td>
+              <td>Flat frame, both eyes</td>
+              <td>Menu or loading screen — no camera is being presented</td>
+            </tr>
+            <tr>
+              <td class="k">Camera only</td>
+              <td>Flat frame, both eyes</td>
+              <td>View matrix found, depth not yet identified</td>
+            </tr>
+            <tr>
+              <td class="k">Camera + depth</td>
+              <td>Stereo, reprojected</td>
+              <td>Both locks held — the full pipeline runs</td>
+            </tr>
+            <tr>
+              <td class="k">Lock lost</td>
+              <td>Falls back to flat</td>
+              <td>Scene change or device reset invalidated the candidates</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GAMES ============ -->
+<section class="section" id="games">
+  <div class="wrap">
+    <p class="eyebrow rv">Shipped profiles</p>
+    <h2 class="d2 rv">
+      <span class="ghost" data-ghost="Tuned, not guessed."><span>Tuned, not guessed.</span></span>
+    </h2>
+    <p class="lede rv" style="margin-bottom:clamp(2.5rem,5vw,4rem)">
+      Every game hands its matrices over differently. A profile records what that
+      game does — depth direction, matrix order, colour space — so NexVR gets it
+      right on the first launch instead of the fifth. These ship in the box.
+    </p>
+
+    <div class="grid g3 rv" id="gameGrid"></div>
+
+    <p class="small rv" style="margin-top:1.5rem;max-width:62ch">
+      Profiles are plain JSON in <code>profiles/</code>. Adding a game takes about
+      three minutes and no C++. Game names are used only to identify compatibility;
+      all trademarks belong to their respective owners, who are not affiliated with
+      this project.
+    </p>
+  </div>
+</section>
+
+<!-- ============ FLAG GLOSSARY ============ -->
+<section class="section tight" id="flags">
+  <div class="wrap">
+    <p class="eyebrow rv" style="margin-top:clamp(3rem,6vw,5rem)">What the flags mean</p>
+    <h2 class="d2 rv" style="font-size:clamp(1.5rem,2.6vw,2rem);margin-bottom:1.4rem">
+      Four questions per game.
+    </h2>
+    <p class="lede rv" style="margin-bottom:clamp(2rem,4vw,3rem)">
+      Each flag is a convention the game chose and never documented. Guess wrong
+      and the failure is specific and recognisable — which is what makes these
+      worth reading before you file a bug.
+    </p>
+
+    <div class="legend rv">
+      <div>
+        <h4>reverseZ</h4>
+        <p>
+          Depth stored from 1 at the near plane to 0 at the far plane instead of
+          the other way around — it buys back floating-point precision in the
+          distance. Read it backwards and the world turns inside out: distant
+          geometry converges in front of your face.
+        </p>
+      </div>
+      <div>
+        <h4>rowMajor</h4>
+        <p>
+          Which way the matrix is laid out in memory. Transposed against the
+          game's actual convention, the extracted camera basis is wrong in a very
+          visible way — the horizon tilts, or the view ends up rotated ninety
+          degrees off.
+        </p>
+      </div>
+      <div>
+        <h4>srgb</h4>
+        <p>
+          Whether the backbuffer is already gamma-encoded by the time NexVR sees
+          it. Apply the transform twice and the image washes out; skip one that
+          was needed and the blacks crush and the midtones go muddy.
+        </p>
+      </div>
+      <div>
+        <h4>depth</h4>
+        <p>
+          Whether the depth buffer is submitted to OpenXR alongside the colour
+          layer. Runtimes use it for spacewarp and late-stage reprojection, so
+          submitting it is what keeps motion smooth when the GPU misses the
+          deadline.
+        </p>
+      </div>
+    </div>
+
+    <div class="split rv" style="margin-top:clamp(2.5rem,5vw,3.5rem)">
+      <div class="prose">
+        <h3 class="d4">Writing one yourself</h3>
+        <p>
+          A profile is the seven fields the cards above are drawn from, and
+          nothing else. Drop the file in <code>profiles/</code> and restart the
+          launcher — there is no build step, no registration list, and no C++.
+        </p>
+        <p>
+          An unprofiled game is not blocked. The matrix and depth search runs
+          regardless; a profile just means the search starts from known-correct
+          answers instead of converging on them. Unprofiled titles are more
+          likely to lock slowly, lock wrong, or not lock at all.
+        </p>
+      </div>
+      <pre class="code"><code><span class="cm">// profiles/palworld.json</span>
+{
+  <span class="pk">"name"</span>:     <span class="sv">"Palworld"</span>,
+  <span class="pk">"engine"</span>:   <span class="sv">"Unreal Engine 5"</span>,
+  <span class="pk">"api"</span>:      <span class="sv">"DX12"</span>,
+  <span class="pk">"reverseZ"</span>: <span class="sv">true</span>,
+  <span class="pk">"rowMajor"</span>: <span class="sv">true</span>,
+  <span class="pk">"srgb"</span>:     <span class="sv">true</span>,
+  <span class="pk">"depth"</span>:    <span class="sv">true</span>
+}</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ENGINE ============ -->
+<section class="section" id="engine">
+  <div class="wrap">
+    <p class="eyebrow rv">Inside the engine</p>
+    <h2 class="d2 rv" style="margin-bottom:clamp(2.5rem,5vw,4rem)">
+      <span class="ghost" data-ghost="Built for the whole library."><span>Built for the whole library.</span></span>
+    </h2>
+
+    <div class="grid g3 rv">
+      <div class="card feat">
+        <span class="n">API-level hook</span>
+        <h3 class="d3">Not locked to one engine</h3>
+        <p>Wrappers that target Unreal only work on Unreal games. NexVR hooks at the DirectX and Vulkan layer instead, so the engine underneath stops mattering.</p>
+        <p class="spec">DX11 · DX12 · Vulkan — MinHook detour</p>
+      </div>
+      <div class="card feat">
+        <span class="n">Comfort guard</span>
+        <h3 class="d3">Keeps your stomach out of it</h3>
+        <p>Dedicated shaders watch for the motion that causes sickness and vignette the periphery before it reaches you.</p>
+        <p class="spec">Peripheral vignette — strength adjustable</p>
+      </div>
+      <div class="card feat">
+        <span class="n">Spacewarp</span>
+        <h3 class="d3">Frames that hold up</h3>
+        <p>Adaptive interpolation fills in for the frames a heavy scene cannot deliver, so the headset stays at rate even when the GPU does not.</p>
+        <p class="spec">Depth layer submitted with every frame</p>
+      </div>
+      <div class="card feat">
+        <span class="n">Steam scan</span>
+        <h3 class="d3">Finds your library itself</h3>
+        <p>The launcher reads your local Steam libraries, matches what it finds against known profiles, and lists what it can run.</p>
+        <p class="spec">Reads libraryfolders.vdf from disk</p>
+      </div>
+      <div class="card feat">
+        <span class="n">Runtime detect</span>
+        <h3 class="d3">Knows your headset</h3>
+        <p>Reads the active OpenXR runtime from the registry — Quest Link, SteamVR, WMR — instead of asking you which one you use.</p>
+        <p class="spec">ActiveRuntime, resolved at launch</p>
+      </div>
+      <div class="card feat">
+        <span class="n">Live logs</span>
+        <h3 class="d3">Shows its work</h3>
+        <p>Hook state, matrix locks and submission errors stream into the launcher as they happen. When something fails you can see the stage it failed at.</p>
+        <p class="spec">Per-stage, streamed while attached</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COMFORT ============ -->
+<section class="section" id="comfort">
+  <div class="wrap">
+    <p class="eyebrow rv">Comfort</p>
+    <h2 class="d2 rv">
+      <span class="ghost" data-ghost="Motion sickness is a bug."><span>Motion sickness is a bug.</span></span>
+    </h2>
+
+    <div class="split rv" style="margin-top:clamp(2.5rem,5vw,4rem)">
+      <div class="prose">
+        <p>
+          Simulator sickness is a conflict, not a preference. Your eyes report
+          motion; your inner ear reports none; the mismatch is read as poisoning
+          and your body responds accordingly. A flat game converted to VR
+          produces that conflict constantly, because the camera moves in ways no
+          head ever does — mouse-look accelerations, scripted camera shake,
+          cutscene pans, vehicle motion.
+        </p>
+        <p>
+          Two things help more than anything else, and neither is resolution.
+          The first is <strong>holding the frame rate</strong>: a dropped frame in
+          VR is not a stutter, it is the world briefly detaching from your head.
+          The second is <strong>shrinking the field of view during motion</strong>,
+          because peripheral vision is where optical flow is read most strongly.
+        </p>
+        <p>
+          Both are what the engine spends its comfort budget on — spacewarp for
+          the first, a peripheral vignette that tightens under motion for the
+          second.
+        </p>
+      </div>
+
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr><th>Trigger</th><th>Why it hurts</th><th>Mitigation</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="k">Dropped frames</td>
+              <td>The world detaches from your head for a beat</td>
+              <td>Spacewarp reprojection</td>
+            </tr>
+            <tr>
+              <td class="k">Fast strafing</td>
+              <td>Heavy optical flow across the periphery</td>
+              <td>Vignette under motion</td>
+            </tr>
+            <tr>
+              <td class="k">Camera shake</td>
+              <td>Motion your neck never produced</td>
+              <td>Turn it off in the game</td>
+            </tr>
+            <tr>
+              <td class="k">Wrong depth</td>
+              <td>Eyes fight to converge on a bad disparity</td>
+              <td>Use a profile</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="border-top:1px solid var(--edge);padding:1.1rem clamp(.9rem,2vw,1.4rem)">
+          <p class="small" style="margin:0">
+            Start with short sessions. Tolerance genuinely builds with exposure,
+            and pushing through nausea is the one approach that reliably makes it
+            worse.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SAFETY ============ -->
+<section class="section">
+  <div class="wrap">
+    <div class="warn rv">
+      <div class="warn-mark">!</div>
+      <div>
+        <h2 class="d3" style="font-size:1.25rem;margin-bottom:.7rem">Single-player only. This is enforced, not advised.</h2>
+        <p class="small" style="max-width:64ch;margin:0 0 1rem">
+          Injecting into a multiplayer game protected by Easy Anti-Cheat, BattlEye
+          or Vanguard can get your account permanently banned. NexVR detects those
+          systems and refuses to inject — there is no override switch and no flag
+          to turn it off. Use it on single-player and unprotected titles.
+        </p>
+        <p class="small" style="max-width:64ch;margin:0 0 1.4rem">
+          It also will not attempt to defeat kernel-level anti-cheat, and it never
+          will. That is a line the project does not cross.
+        </p>
+
+        <div class="tiers">
+          <div>
+            <span class="tier-n">Tier 1</span>
+            <p class="tier-b"><b>Single-player, no anti-cheat.</b> Nothing is watching the process and nothing can be banned.</p>
+            <span class="verdict v-yes">Supported</span>
+          </div>
+          <div>
+            <span class="tier-n">Tier 2</span>
+            <p class="tier-b"><b>Anti-cheat present but inactive</b> — offline mode, or a launch option that disables it. Detection may still fire and refuse to attach.</p>
+            <span class="verdict v-warn">Not supported</span>
+          </div>
+          <div>
+            <span class="tier-n">Tier 3</span>
+            <p class="tier-b"><b>Kernel-level anti-cheat, or any online multiplayer.</b> Injection is refused at the process level.</p>
+            <span class="verdict v-no">Refused</span>
+          </div>
+        </div>
+
+        <p class="small" style="margin:1.4rem 0 0;max-width:64ch">
+          The check runs before any hook is installed, on the target process
+          rather than on a list of game names — so a title that adds anti-cheat
+          in a later patch is covered without waiting for an update here.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SETUP ============ -->
+<section class="section" id="setup">
+  <div class="wrap">
+    <p class="eyebrow rv">Setup</p>
+    <h2 class="d2 rv" style="margin-bottom:clamp(2.5rem,5vw,4rem)">
+      <span class="ghost" data-ghost="Four steps, once."><span>Four steps, once.</span></span>
+    </h2>
+
+    <div class="flow rv">
+      <div>
+        <span class="num">01</span>
+        <h3 class="d3">Install</h3>
+        <p>Run the Windows installer. It places the launcher, the injector DLL
+           and all six shipped profiles. Nothing is installed into your games.</p>
+      </div>
+      <div>
+        <span class="num">02</span>
+        <h3 class="d3">Open the launcher</h3>
+        <p>It reads your Steam libraries from disk and lists the titles it
+           recognises, along with which of them have a profile.</p>
+      </div>
+      <div>
+        <span class="num">03</span>
+        <h3 class="d3">Start your runtime</h3>
+        <p>Quest Link, SteamVR or WMR — whichever you already use. The active
+           OpenXR runtime is detected from the registry, not asked for.</p>
+      </div>
+      <div>
+        <span class="num">04</span>
+        <h3 class="d3">Pick a game and inject</h3>
+        <p>Launch the game, then attach. Watch the log for the camera and depth
+           locks; when both land, the flat panel resolves into stereo.</p>
+      </div>
+    </div>
+
+    <p class="small rv" style="margin-top:1.5rem;max-width:64ch">
+      Attaching to an already-running game is the supported path. Injection is
+      runtime — the DLL is loaded into the live process, no game files are
+      modified, and closing the game unloads everything.
+    </p>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="section" id="faq">
+  <div class="wrap">
+    <p class="eyebrow rv">Troubleshooting</p>
+    <h2 class="d2 rv" style="margin-bottom:clamp(2.5rem,5vw,4rem)">
+      <span class="ghost" data-ghost="When it goes wrong."><span>When it goes wrong.</span></span>
+    </h2>
+
+    <div class="acc rv">
+      <details>
+        <summary>Will this get my account banned?</summary>
+        <p class="a">
+          On a single-player game with no anti-cheat there is nothing watching the
+          process and nothing to ban. On a protected multiplayer game, injecting a
+          DLL into the render pipeline is precisely the behaviour anti-cheat
+          exists to catch — which is why NexVR refuses to attach to those
+          processes at all. Treat any title shipping Easy Anti-Cheat, BattlEye or
+          Vanguard as off-limits.
+        </p>
+      </details>
+
+      <details>
+        <summary>The game runs, but the headset shows it flat — like a cinema screen.</summary>
+        <p class="a">
+          That is the passthrough fallback, working as designed. Stereo engages
+          only once both the view matrix and the depth buffer are locked, and
+          menus, loading screens and cutscenes frequently present neither. Rather
+          than go black, the flat frame is copied into both eyes. Move into actual
+          gameplay and it should converge within a second or two.
+        </p>
+      </details>
+
+      <details>
+        <summary>Everything looks like a photograph pasted at one distance.</summary>
+        <p class="a">
+          The camera locked, depth did not. With no depth buffer there is nothing
+          to reproject against, so both eyes receive nearly identical images and
+          the scene has no volume.
+        </p>
+        <p class="a">
+          Check the launcher log for the depth stage, and check whether the title
+          has a shipped profile — <code>depth</code> in the profile is exactly
+          this setting.
+        </p>
+      </details>
+
+      <details>
+        <summary>The world is inverted, tilted, or lying on its side.</summary>
+        <p class="a">
+          Matrix convention mismatch. <code>rowMajor</code> controls whether the
+          matrix is transposed before use; <code>reverseZ</code> controls whether
+          the near and far planes are the way round the game expects. Both are
+          per-game, and on an unprofiled title both are inferred rather than
+          known.
+        </p>
+      </details>
+
+      <details>
+        <summary>Colours are washed out, or the blacks are crushed.</summary>
+        <p class="a">
+          <code>srgb</code>. The backbuffer may already be gamma-encoded before
+          NexVR ever sees it. Applying the transform a second time washes the
+          image out; skipping one that was needed crushes it. One flag, two
+          symptoms, opposite directions.
+        </p>
+      </details>
+
+      <details>
+        <summary>My game isn't in the list. Does it still work?</summary>
+        <p class="a">
+          It may. Profiles are an accelerant, not a requirement — the matrix and
+          depth search runs on every title. A profile means the search starts from
+          known-correct answers instead of converging on them, so unprofiled games
+          are more likely to lock slowly, lock wrong, or fail to lock.
+        </p>
+        <p class="a">
+          If it works, the settings that made it work are a profile. Write them
+          down and drop the JSON in <code>profiles/</code>.
+        </p>
+      </details>
+
+      <details>
+        <summary>Does it need an internet connection?</summary>
+        <p class="a">
+          No. Injection, profile matching and OpenXR submission are entirely
+          local. The launcher reads your Steam library from disk and your active
+          runtime from the registry.
+        </p>
+      </details>
+
+      <details>
+        <summary>Why Windows only?</summary>
+        <p class="a">
+          Two of the three backends are DirectX, and DirectX is Windows. The
+          Vulkan path is portable in principle, but the launcher, the installer
+          and the anti-cheat detection are not — and shipping a third of a
+          product is worse than shipping none of it.
+        </p>
+      </details>
+
+      <details>
+        <summary>Will it run on my GPU?</summary>
+        <p class="a">
+          Stereo asks for close to twice the pixels of the flat game. Reprojection
+          and spacewarp absorb some of that cost, not all of it. The reliable
+          predictor is headroom: if the game already runs comfortably above your
+          headset's refresh rate on a flat monitor, you have somewhere to spend.
+          If it barely holds 60, stereo will not rescue it.
+        </p>
+      </details>
+
+      <details>
+        <summary>Does it modify my game files?</summary>
+        <p class="a">
+          No. The DLL is loaded into the running process at runtime and every hook
+          is removed on exit — the hook manager owns installation and teardown as
+          one lifecycle specifically so nothing is left patched behind. Closing the
+          game returns it to exactly the state it shipped in.
+        </p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DOWNLOAD ============ -->
+<section class="section" id="get">
+  <div class="wrap">
+    <p class="eyebrow rv">Get it</p>
+    <h2 class="d2 rv" style="margin-bottom:clamp(2rem,4vw,3rem)">
+      <span class="ghost" data-ghost="Install it. Pick a game."><span>Install it. Pick a game.</span></span>
+      <span class="ghost" data-ghost="Put the headset on."><span>Put the headset on.</span></span>
+    </h2>
+
+    <div class="dl rv">
+      <div>
+        <h3 class="d3" style="font-size:1.125rem">NexVR Engine v0.1.3</h3>
+        <p class="small" style="margin:.5rem 0 0;max-width:44ch">
+          Windows installer. Ships with the launcher, the injector and all six
+          game profiles.
+        </p>
+        <div class="btn-row" style="margin-top:2rem">
+          <a class="btn btn-primary" href="/api/dl?to=installer"><span>Download installer</span></a>
+          <a class="btn" href="/api/dl?to=releases"><span>All versions</span></a>
+        </div>
+
+        <hr style="border:0;border-top:1px solid var(--edge);margin:2.2rem 0 1.6rem">
+
+        <p class="eyebrow" style="margin-bottom:.9rem">What the installer places</p>
+        <ul class="reqs">
+          <li><b>Launcher</b> — library scan, runtime detection, live log</li>
+          <li><b>Injector</b> — the DLL loaded into the game process</li>
+          <li><b>Profiles</b> — six JSON files in <code>profiles/</code></li>
+        </ul>
+        <p class="small" style="margin:1.1rem 0 0;max-width:44ch">
+          Nothing is written into your game directories, and no launch options
+          are changed.
+        </p>
+
+        <hr style="border:0;border-top:1px solid var(--edge);margin:2.2rem 0 1.6rem">
+
+        <p class="eyebrow" style="margin-bottom:.9rem">Your game not on the list?</p>
+        <p class="small" style="margin:0;max-width:44ch">
+          Leave an address and you get one message when Engine lands — nothing else.
+        </p>
+        <form class="form" id="waitForm" novalidate>
+          <input type="email" id="waitEmail" placeholder="you@domain.com" aria-label="Email address" autocomplete="email" required>
+          <!-- Honeypot: off-screen and skipped by keyboard, so only bots fill it. -->
+          <input class="hp" id="waitHp" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <button class="btn" type="submit"><span>Notify me</span></button>
+        </form>
+        <p class="form-note" id="waitNote" role="status"></p>
+      </div>
+
+      <div>
+        <p class="eyebrow" style="margin-bottom:1.2rem">Requirements</p>
+        <ul class="reqs">
+          <li>Windows 10 or 11, 64-bit</li>
+          <li>A headset with an OpenXR runtime — Quest Link, SteamVR or WMR</li>
+          <li>A game running DirectX 11, DirectX 12 or Vulkan</li>
+          <li>Steam, for library auto-detection</li>
+          <li>GPU headroom on the flat game — stereo roughly doubles the pixels</li>
+        </ul>
+
+        <hr style="border:0;border-top:1px solid var(--edge);margin:1.8rem 0">
+
+        <p class="eyebrow" style="margin-bottom:1.2rem">Known headsets</p>
+        <ul class="reqs">
+          <li>Meta Quest 3 — Link or Virtual Desktop</li>
+          <li>Valve Index — SteamVR</li>
+          <li>Bigscreen Beyond — SteamVR</li>
+          <li>Anything else exposing an OpenXR runtime</li>
+        </ul>
+
+        <hr style="border:0;border-top:1px solid var(--edge);margin:1.8rem 0">
+
+        <p class="eyebrow" style="margin-bottom:1.2rem">Runtimes</p>
+        <ul class="reqs">
+          <li><b>Meta Quest Link</b> — wired, or Air Link over Wi-Fi 6</li>
+          <li><b>SteamVR</b> — Index, Vive, and most third-party headsets</li>
+          <li><b>Windows Mixed Reality</b> — where still supported by the OS</li>
+          <li><b>Virtual Desktop</b> — via its own OpenXR runtime</li>
+        </ul>
+        <p class="small" style="margin:1.2rem 0 0">
+          Whichever one is registered as active is the one that gets the frames.
+          Set it in your runtime's own settings before attaching.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="#top" style="margin-bottom:1.1rem"><img class="brand-mark" src="logo.png" alt="" width="256" height="256">NEXVR&nbsp;ENGINE</a>
+        <p class="small" style="margin:0;max-width:32ch">
+          A universal VR injector for games that were never built for a headset.
+        </p>
+      </div>
+      <div>
+        <h4>How it works</h4>
+        <ul>
+          <li><a href="#pipeline">The six stages</a></li>
+          <li><a href="#backends">Graphics backends</a></li>
+          <li><a href="#passthrough">Before the lock</a></li>
+          <li><a href="#comfort">Comfort</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Games</h4>
+        <ul>
+          <li><a href="#games">Shipped profiles</a></li>
+          <li><a href="#flags">What the flags mean</a></li>
+          <li><a href="#flags">Writing a profile</a></li>
+          <li><a href="#get">Request a game</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Get it</h4>
+        <ul>
+          <li><a href="/api/dl?to=installer">Download for Windows</a></li>
+          <li><a href="/api/dl?to=releases">All versions</a></li>
+          <li><a href="#setup">Setup</a></li>
+          <li><a href="#faq">Troubleshooting</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="foot-in">
+      <p class="small" style="margin:0;max-width:60ch">
+        Single-player graphics hook injector. Not affiliated with or endorsed by any
+        game publisher. © 2026 NexVR Lab.
+      </p>
+      <p class="small" style="margin:0">Windows 10 / 11 · 64-bit · v0.1.3</p>
+    </div>
+  </div>
+</footer>
+
+<!-- ============ SCRIPT ============ -->
+<script type="module">
+import gsap from 'https://cdn.jsdelivr.net/npm/gsap@3.12.5/+esm';
+import ScrollTrigger from 'https://cdn.jsdelivr.net/npm/gsap@3.12.5/ScrollTrigger.js/+esm';
+import Lenis from 'https://cdn.jsdelivr.net/npm/lenis@1.1.14/+esm';
+
+gsap.registerPlugin(ScrollTrigger);
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+if (!location.hash) { scrollTo(0, 0); addEventListener('load', () => scrollTo(0, 0)); }
+
+/* Same-origin Cloudflare Pages Function — see functions/api/waitlist.js */
+const WAITLIST_ENDPOINT = '/api/waitlist';
+
+/* ---------- game profiles: mirrors profiles/*.json ---------- */
+const PROFILES = [
+  {name:'Cyberpunk 2077',  engine:'Generic',        api:'DX12', reverseZ:1, rowMajor:0, srgb:0, depth:1},
+  {name:'Elden Ring',      engine:'Generic',        api:'DX12', reverseZ:1, rowMajor:0, srgb:1, depth:0},
+  {name:'Hogwarts Legacy', engine:'Unreal Engine 4',api:'DX12', reverseZ:1, rowMajor:1, srgb:1, depth:1},
+  {name:'Atomic Heart',    engine:'Unreal Engine 4',api:'DX12', reverseZ:1, rowMajor:1, srgb:1, depth:1},
+  {name:'Palworld',        engine:'Unreal Engine 5',api:'DX12', reverseZ:1, rowMajor:1, srgb:1, depth:1},
+  {name:'Mortal Shell',    engine:'Unreal Engine 4',api:'DX11', reverseZ:1, rowMajor:1, srgb:1, depth:0},
+];
+const flag = v => v
+  ? '<span class="on-v">ON</span>'
+  : '<span class="off-v">OFF</span>';
+
+document.getElementById('gameGrid').innerHTML = PROFILES.map(p=>`
+  <article class="card">
+    <div class="card-top">
+      <h3 class="d3" style="margin:0">${p.name}</h3>
+      <span class="tagpill">${p.api}</span>
+    </div>
+    <ul class="flags">
+      <li><b>Engine</b><span>${p.engine}</span></li>
+      <li><b>Reverse&nbsp;Z</b>${flag(p.reverseZ)}</li>
+      <li><b>Row&nbsp;major</b>${flag(p.rowMajor)}</li>
+      <li><b>sRGB fix</b>${flag(p.srgb)}</li>
+      <li><b>Depth submit</b>${flag(p.depth)}</li>
+    </ul>
+  </article>`).join('');
+
+/* ---------- smooth scroll ---------- */
+if(!reduced){
+  const lenis = new Lenis({duration:1.05, smoothWheel:true});
+  lenis.on('scroll', ScrollTrigger.update);
+  gsap.ticker.add(t => lenis.raf(t*1000));
+  gsap.ticker.lagSmoothing(0);
+}
+
+/* ---------- nav ---------- */
+const nav = document.getElementById('nav');
+addEventListener('scroll', () => nav.classList.toggle('stuck', scrollY > 24), {passive:true});
+
+/* ---------- reveal ---------- */
+const io = new IntersectionObserver((es)=>{
+  es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
+},{rootMargin:'0px 0px -12% 0px'});
+document.querySelectorAll('.rv').forEach((el,i)=>{
+  el.style.transitionDelay = (i%3)*70 + 'ms';
+  io.observe(el);
+});
+
+/* ---------- signature: converge the anaglyph ghost on load ---------- */
+addEventListener('load', ()=>{
+  setTimeout(()=>document.querySelectorAll('.ghost.pre')
+    .forEach((g,i)=>setTimeout(()=>g.classList.remove('pre'), i*130)), 180);
+});
+const ghostIO = new IntersectionObserver((es)=>{
+  es.forEach(e=>{
+    if(!e.isIntersecting) return;
+    e.target.classList.add('pre');
+    requestAnimationFrame(()=>requestAnimationFrame(()=>e.target.classList.remove('pre')));
+    ghostIO.unobserve(e.target);
+  });
+},{rootMargin:'0px 0px -20% 0px'});
+/* Every section head carrying the signature, including the ones added later —
+   scoped by section so the hero's load-time convergence is not re-triggered. */
+document.querySelectorAll(
+  '#pipeline .ghost, #backends .ghost, #passthrough .ghost, #games .ghost, ' +
+  '#engine .ghost, #comfort .ghost, #setup .ghost, #faq .ghost, #get .ghost'
+).forEach(g=>ghostIO.observe(g));
+
+/* ---------- pipeline rail ---------- */
+{
+  const list = document.getElementById('pipeList');
+  const fill = document.getElementById('pipeFill');
+  const steps = [...list.querySelectorAll('.step')];
+  ScrollTrigger.create({
+    trigger:list, start:'top 72%', end:'bottom 62%',
+    onUpdate:s=>{
+      const p = s.progress;
+      fill.style.height = (p*100)+'%';
+      steps.forEach((st,i)=>st.classList.toggle('on', p >= (i+.55)/steps.length));
+    }
+  });
+}
+
+/* ---------- FAQ: one answer open at a time ----------
+   Native <details> has no grouping without a shared name attribute, which is
+   still uneven across browsers. Closing siblings on open keeps the section
+   from turning into a wall of text mid-read. */
+{
+  const items = [...document.querySelectorAll('.acc details')];
+  items.forEach(d => d.addEventListener('toggle', () => {
+    if (!d.open) return;
+    items.forEach(o => { if (o !== d) o.open = false; });
+  }));
+}
+
+/* ---------- analytics beacon ----------
+   Cookieless. The server derives a visitor id from a salted daily hash, so
+   nothing is stored on this device and nothing follows anyone between days.
+   Downloads are NOT counted here — those go through /api/dl, which counts the
+   ad-blocked, the JS-disabled and the middle-clickers too. */
+{
+  const post = (payload) => {
+    const body = JSON.stringify({ path: location.pathname, ref: document.referrer, ...payload });
+    try {
+      // sendBeacon survives the tab closing mid-request; fetch would be cancelled.
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/api/event', new Blob([body], { type: 'application/json' }));
+      } else {
+        fetch('/api/event', {
+          method: 'POST', body, keepalive: true,
+          headers: { 'content-type': 'application/json' },
+        }).catch(() => {});
+      }
+    } catch { /* analytics must never break the page */ }
+  };
+
+  post({ type: 'view' });
+
+  /* Which sections actually got read, and for how long. Collected as the
+     visitor scrolls and sent as ONE request when they leave, rather than a
+     dozen while they are still reading. */
+  const opened = Date.now();
+  const read = new Set();
+  let flushed = false;
+
+  const seen = new IntersectionObserver((es) => {
+    for (const e of es) {
+      if (!e.isIntersecting) continue;
+      seen.unobserve(e.target);
+      read.add(e.target.id);
+    }
+  }, { threshold: .4 });
+  document.querySelectorAll('section[id], header[id]').forEach((s) => seen.observe(s));
+
+  const flush = () => {
+    if (flushed) return;
+    flushed = true;
+    post({ sections: [...read], dwell: Math.round((Date.now() - opened) / 1000) });
+  };
+  /* visibilitychange is the only one of these that fires reliably on mobile —
+     pagehide is the desktop backstop. */
+  addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
+  addEventListener('pagehide', flush);
+}
+
+/* ---------- waitlist ---------- */
+const form = document.getElementById('waitForm');
+const note = document.getElementById('waitNote');
+const btn  = form.querySelector('button');
+
+const say = (msg, ok = false) => {
+  note.className = ok ? 'form-note ok' : 'form-note';
+  note.textContent = msg;
+};
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('waitEmail').value.trim();
+
+  /* Checked again on the server — this is only to save a round trip. */
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    return say('That address does not look right. Check it and try again.');
+  }
+
+  btn.disabled = true;
+  say('Sending…');
+  try {
+    const res = await fetch(WAITLIST_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, company: document.getElementById('waitHp').value })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return say(data.error || 'That did not go through. Try again in a moment.');
+    say('You are on the list. One message when Engine lands.', true);
+    form.reset();
+  } catch {
+    say('No connection. Check your network and try again.');
+  } finally {
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
