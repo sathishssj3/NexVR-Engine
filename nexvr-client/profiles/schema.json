@@ -35,6 +35,12 @@
       "default": true,
       "description": "Whether camera matrices are row-major (true for UE) or column-major (false for Unity)."
     },
+    "matrixPrecision": {
+      "type": "string",
+      "enum": ["Float32", "Double64", "Auto"],
+      "default": "Float32",
+      "description": "Matrix precision layout in memory (Float32 for UE4 and typical engines, Double64 for UE5 large world coordinates)."
+    },
     "motionAimSensitivity": {
       "type": "number",
       "minimum": 0.1,

@@ -6,6 +6,7 @@
   "api": "DX11",
   "reverseZ": false,
   "rowMajorMatrices": false,
+  "matrixPrecision": "Float32",
   "motionAimSensitivity": 1.0,
   "useRecommendedResolution": true,
   "srgbCorrection": false,

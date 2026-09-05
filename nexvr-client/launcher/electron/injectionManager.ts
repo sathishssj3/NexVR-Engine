@@ -289,49 +289,32 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
         } catch {}
       }
 
-      if (validId === '814380') {
-        baseProfile = {
-          id: '814380',
-          name: 'Sekiro: Shadows Die Twice',
-          engine: 'Generic',
-          api: 'DX11',
-          reverseZ: false,
-          rowMajorMatrices: false,
-          motionAimSensitivity: 1.0,
-          useRecommendedResolution: true,
-          srgbCorrection: false,
-          depthSubmission: false,
-          rawInputMode: true,
-          autoInjectOnLaunch: true,
-          ...baseProfile,
-        };
-      }
-
-      if (!fs.existsSync(rootConfigPath) && Object.keys(baseProfile).length > 0) {
-        try {
-          fs.writeFileSync(rootConfigPath, JSON.stringify(baseProfile, null, 2), 'utf-8');
-        } catch (e) {}
-      }
-
+      let activeConfig: Record<string, any> = { ...baseProfile };
       if (fs.existsSync(rootConfigPath)) {
-        if (validId === '814380') {
-          try {
-            const cur = JSON.parse(fs.readFileSync(rootConfigPath, 'utf-8'));
-            if (cur.reverseZ !== false || cur.engine !== 'Generic') {
-              cur.reverseZ = false;
-              cur.rowMajorMatrices = false;
-              cur.engine = 'Generic';
-              cur.srgbCorrection = false;
-              fs.writeFileSync(rootConfigPath, JSON.stringify(cur, null, 2), 'utf-8');
-            }
-          } catch {}
-        }
+        try {
+          const cur = JSON.parse(fs.readFileSync(rootConfigPath, 'utf-8'));
+          // Preserve user preferences while enforcing curated profile architectural invariants
+          activeConfig = {
+            ...cur,
+            ...(baseProfile.engine ? { engine: baseProfile.engine } : {}),
+            ...(baseProfile.api ? { api: baseProfile.api } : {}),
+            ...(baseProfile.reverseZ !== undefined ? { reverseZ: baseProfile.reverseZ } : {}),
+            ...(baseProfile.rowMajorMatrices !== undefined ? { rowMajorMatrices: baseProfile.rowMajorMatrices } : {}),
+            ...(baseProfile.matrixPrecision ? { matrixPrecision: baseProfile.matrixPrecision } : {}),
+          };
+        } catch {}
+      }
+
+      if (Object.keys(activeConfig).length > 0) {
+        try {
+          fs.writeFileSync(rootConfigPath, JSON.stringify(activeConfig, null, 2), 'utf-8');
+        } catch (e) {}
 
         for (const d of targetDirs) {
           const destCfg = path.join(d, 'vrinject.json');
           if (destCfg !== rootConfigPath) {
             try {
-              fs.copyFileSync(rootConfigPath, destCfg);
+              fs.writeFileSync(destCfg, JSON.stringify(activeConfig, null, 2), 'utf-8');
             } catch (e) {}
           }
         }

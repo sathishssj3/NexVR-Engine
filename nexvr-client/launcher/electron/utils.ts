@@ -39,7 +39,7 @@ export function validateConfig(cfg: unknown): VRConfig {
   const c = cfg as Record<string, unknown>;
   const sens = Number(c.motionAimSensitivity);
   if (isNaN(sens) || sens < 0.1 || sens > 10.0) throw new Error('motionAimSensitivity out of range');
-  return {
+  const res: VRConfig = {
     motionAimSensitivity: sens,
     useRecommendedResolution: Boolean(c.useRecommendedResolution),
     srgbCorrection: Boolean(c.srgbCorrection),
@@ -47,6 +47,12 @@ export function validateConfig(cfg: unknown): VRConfig {
     rawInputMode: Boolean(c.rawInputMode),
     autoInjectOnLaunch: Boolean(c.autoInjectOnLaunch),
   };
+  if (typeof c.engine === 'string') res.engine = c.engine;
+  if (typeof c.api === 'string') res.api = c.api;
+  if (typeof c.reverseZ === 'boolean') res.reverseZ = c.reverseZ;
+  if (typeof c.rowMajorMatrices === 'boolean') res.rowMajorMatrices = c.rowMajorMatrices;
+  if (typeof c.matrixPrecision === 'string') res.matrixPrecision = c.matrixPrecision;
+  return res;
 }
 
 export function safeGamePath(installPath: string, filename: string): string {

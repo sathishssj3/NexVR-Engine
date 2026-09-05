@@ -91,6 +91,8 @@ bool ConfigManager::Load(const std::string& moduleDir) {
 
         // Per-game engine profile overrides
         m_config.engineType = j.value("engine", "");
+        m_config.api = j.value("api", "");
+        m_config.matrixPrecision = j.value("matrixPrecision", "Float32");
         if (j.contains("reverseZ")) {
             m_config.hasReverseZOverride = true;
             m_config.reverseZ = j.value("reverseZ", true);
@@ -138,6 +140,8 @@ bool ConfigManager::Save() {
         j["depthBufferMaxSizeMultiplier"] = m_config.depthBufferMaxSizeMultiplier;
 
         if (!m_config.engineType.empty()) j["engine"] = m_config.engineType;
+        if (!m_config.api.empty()) j["api"] = m_config.api;
+        if (!m_config.matrixPrecision.empty()) j["matrixPrecision"] = m_config.matrixPrecision;
         if (m_config.hasReverseZOverride) j["reverseZ"] = m_config.reverseZ;
         if (m_config.hasRowMajorOverride) j["rowMajorMatrices"] = m_config.rowMajorMatrices;
         

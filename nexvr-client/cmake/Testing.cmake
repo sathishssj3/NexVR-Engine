@@ -11,6 +11,7 @@ add_nexvr_gtest(test_compatibility_scorer tests/test_compatibility_scorer.cpp)
 add_nexvr_gtest(test_engine_detector tests/test_engine_detector.cpp)
 add_nexvr_gtest(test_frame_timing_manager tests/test_frame_timing_manager.cpp)
 add_nexvr_gtest(test_logger tests/test_logger.cpp)
+add_nexvr_gtest(test_game_profiles_regression tests/test_game_profiles_regression.cpp)
 
 add_executable(test_adaptive_quality tests/test_adaptive_quality.cpp)
 # PROJECT_SOURCE_DIR (not just /src) because this suite includes headers by

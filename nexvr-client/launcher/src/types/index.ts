@@ -33,6 +33,11 @@ export interface VRConfig {
   depthSubmission:         boolean;  // default false
   rawInputMode:            boolean;  // default true
   autoInjectOnLaunch:      boolean;  // default true
+  engine?:                 string;
+  api?:                    string;
+  reverseZ?:               boolean;
+  rowMajorMatrices?:       boolean;
+  matrixPrecision?:        string;
 }
 
 export interface VRStatus {

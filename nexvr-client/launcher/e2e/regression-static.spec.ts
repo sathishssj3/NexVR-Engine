@@ -117,6 +117,24 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     expect(injectionManager).toContain('resolveWithinRoot(installPath, path.relative(installPath, customExe))');
   });
 
+  test('curated profiles preserve engine invariants and matrix precision', () => {
+    const configManager = readRepoFile('launcher', 'electron', 'configManager.ts');
+    const injectionManager = readRepoFile('launcher', 'electron', 'injectionManager.ts');
+    const cameraTracker = readRepoFile('src', 'memory_scanner', 'camera_delta_tracker.cpp');
+
+    // configManager must preserve engine metadata and precision on write
+    expect(configManager).toContain('validCfg.matrixPrecision ?? baseProfile.matrixPrecision');
+    expect(configManager).toContain('validCfg.engine ?? baseProfile.engine');
+
+    // injectionManager must enforce curated engine and matrix precision to target directories
+    expect(injectionManager).toContain('baseProfile.matrixPrecision');
+    expect(injectionManager).toContain('baseProfile.engine');
+
+    // camera tracker must respect explicit matrixPrecision configuration over UE5 heuristics
+    expect(cameraTracker).toContain('matrixPrecision == "Double64"');
+    expect(cameraTracker).toContain('matrixPrecision == "Float32"');
+  });
+
   test('frameCoordinator guards OpenXR runtime access on early frames', () => {
     const frameCoord = readRepoFile('src', 'core', 'frame_coordinator.cpp');
 

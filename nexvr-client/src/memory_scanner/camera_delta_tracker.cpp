@@ -2,6 +2,7 @@
 #include "memory_scanner/page_scanner.h"
 #include "core/seh_shield.h"
 #include "core/engine_detector.h"
+#include "core/config_manager.h"
 #include "core/subsystem_context.h"
 #include <cmath>
 #include <algorithm>
@@ -34,10 +35,19 @@ bool CameraDeltaTracker::SafeReadMatrix(uint8_t* address, bool isDouble, Matrix4
 }
 
 void CameraDeltaTracker::PollAndTrackCandidates() {
-    // Determine engine type once (Gap 3 Disambiguation)
-    // Assume SubsystemContext::Get().GetEngineDetector()->GetEngineType() exists and returns an enum. 
-    // We'll hardcode checking against UE5 for now or use a heuristic if detector unavailable.
+    // Determine engine type and explicit matrix precision from config
     m_isEngineUE5 = (SubsystemContext::Get().GetEngineDetector()->GetEngineType() == EngineType::UnrealEngine5);
+
+    bool isDoubleExpected = m_isEngineUE5;
+    const auto* configMgr = SubsystemContext::Get().GetConfig();
+    if (configMgr) {
+        const auto& config = configMgr->GetConfig();
+        if (config.matrixPrecision == "Double64") {
+            isDoubleExpected = true;
+        } else if (config.matrixPrecision == "Float32") {
+            isDoubleExpected = false;
+        }
+    }
 
     auto newPointers = SubsystemContext::Get().GetPageScanner()->GetCandidateStaticPointers();
     
@@ -45,10 +55,7 @@ void CameraDeltaTracker::PollAndTrackCandidates() {
         if (m_candidates.find(ptr) == m_candidates.end()) {
             DynamicCandidate c;
             c.staticPointer = ptr;
-            // For now we assume if it's UE5 it's a double candidate, otherwise float.
-            // Ideally MemoryScanner tags them, but we'll try reading both and validate.
-            // Since the design says "disambiguate if both exist", we track them.
-            c.isDoublePrecision = m_isEngineUE5; 
+            c.isDoublePrecision = isDoubleExpected; 
             c.temporalScore = 0.5f;
             c.hasPrevious = false;
             m_candidates[ptr] = c;
@@ -72,11 +79,10 @@ void CameraDeltaTracker::PollAndTrackCandidates() {
 
         UpdateCandidateMotion(it->second, currentMatrix, mouseDeltaX, mouseDeltaY);
 
-        // Gap 3 Disambiguation:
-        // If engine is explicitly UE5, and we have a double candidate, it gets a massive boost.
+        // Disambiguation: boost candidates that match the profile-declared precision
         float score = it->second.temporalScore;
-        if (m_isEngineUE5 && it->second.isDoublePrecision) score += 10.0f;
-        else if (!m_isEngineUE5 && !it->second.isDoublePrecision) score += 10.0f;
+        if (isDoubleExpected && it->second.isDoublePrecision) score += 10.0f;
+        else if (!isDoubleExpected && !it->second.isDoublePrecision) score += 10.0f;
 
         if (score > bestScore) {
             bestScore = score;

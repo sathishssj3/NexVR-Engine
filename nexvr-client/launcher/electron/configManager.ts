@@ -16,6 +16,11 @@ const defaultVRConfig: VRConfig = {
 const curatedProfiles: Record<string, Partial<VRConfig>> = {
   // Hogwarts Legacy (Steam / Epic)
   '990080': {
+    engine: 'UnrealEngine4',
+    api: 'DX12',
+    reverseZ: true,
+    rowMajorMatrices: true,
+    matrixPrecision: 'Float32',
     motionAimSensitivity: 1.0,
     useRecommendedResolution: true,
     srgbCorrection: true,
@@ -24,6 +29,11 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     autoInjectOnLaunch: true,
   },
   'd0614ddf466b44a2a229a43a75db9efd': {
+    engine: 'UnrealEngine4',
+    api: 'DX12',
+    reverseZ: true,
+    rowMajorMatrices: true,
+    matrixPrecision: 'Float32',
     motionAimSensitivity: 1.0,
     useRecommendedResolution: true,
     srgbCorrection: true,
@@ -33,6 +43,11 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
   },
   // Cyberpunk 2077
   '1091500': {
+    engine: 'Generic',
+    api: 'DX12',
+    reverseZ: true,
+    rowMajorMatrices: true,
+    matrixPrecision: 'Float32',
     motionAimSensitivity: 1.2,
     useRecommendedResolution: true,
     srgbCorrection: false,
@@ -42,6 +57,11 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
   },
   // Elden Ring
   '1245620': {
+    engine: 'Generic',
+    api: 'DX12',
+    reverseZ: true,
+    rowMajorMatrices: true,
+    matrixPrecision: 'Float32',
     motionAimSensitivity: 0.9,
     useRecommendedResolution: true,
     srgbCorrection: true,
@@ -51,6 +71,11 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
   },
   // Atomic Heart
   '668580': {
+    engine: 'UnrealEngine4',
+    api: 'DX12',
+    reverseZ: true,
+    rowMajorMatrices: true,
+    matrixPrecision: 'Float32',
     motionAimSensitivity: 1.1,
     useRecommendedResolution: true,
     srgbCorrection: true,
@@ -60,6 +85,11 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
   },
   // Mortal Shell
   '1110910': {
+    engine: 'UnrealEngine4',
+    api: 'DX11',
+    reverseZ: true,
+    rowMajorMatrices: true,
+    matrixPrecision: 'Float32',
     motionAimSensitivity: 1.0,
     useRecommendedResolution: true,
     srgbCorrection: true,
@@ -69,6 +99,11 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
   },
   // Palworld
   '1623730': {
+    engine: 'UnrealEngine5',
+    api: 'DX12',
+    reverseZ: true,
+    rowMajorMatrices: true,
+    matrixPrecision: 'Float32',
     motionAimSensitivity: 1.0,
     useRecommendedResolution: true,
     srgbCorrection: true,
@@ -78,6 +113,11 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
   },
   // Sekiro: Shadows Die Twice
   '814380': {
+    engine: 'Generic',
+    api: 'DX11',
+    reverseZ: false,
+    rowMajorMatrices: false,
+    matrixPrecision: 'Float32',
     motionAimSensitivity: 1.0,
     useRecommendedResolution: true,
     srgbCorrection: false,
@@ -111,6 +151,11 @@ function loadProfilesFromDisk(): Record<string, Partial<VRConfig>> {
                   depthSubmission: Boolean(data.depthSubmission),
                   rawInputMode: data.rawInputMode !== false,
                   autoInjectOnLaunch: data.autoInjectOnLaunch !== false,
+                  engine: typeof data.engine === 'string' ? data.engine : undefined,
+                  api: typeof data.api === 'string' ? data.api : undefined,
+                  reverseZ: typeof data.reverseZ === 'boolean' ? data.reverseZ : undefined,
+                  rowMajorMatrices: typeof data.rowMajorMatrices === 'boolean' ? data.rowMajorMatrices : undefined,
+                  matrixPrecision: typeof data.matrixPrecision === 'string' ? data.matrixPrecision : undefined,
                 };
               }
             } catch {}
@@ -175,10 +220,20 @@ ipcMain.handle('config:write', async (event, id: string, cfg: unknown) => {
       if (fs.existsSync(subDir)) dirsToSync.add(subDir);
     }
 
+    const baseProfile = activeProfiles[validId] || {};
+    const finalCfg: VRConfig = {
+      ...validCfg,
+      engine: validCfg.engine ?? baseProfile.engine,
+      api: validCfg.api ?? baseProfile.api,
+      reverseZ: validCfg.reverseZ ?? baseProfile.reverseZ,
+      rowMajorMatrices: validCfg.rowMajorMatrices ?? baseProfile.rowMajorMatrices,
+      matrixPrecision: validCfg.matrixPrecision ?? baseProfile.matrixPrecision,
+    };
+
     for (const dir of dirsToSync) {
       const cfgPath = path.join(dir, 'vrinject.json');
       const tempPath = path.join(dir, `vrinject.${process.pid}.tmp`);
-      fs.writeFileSync(tempPath, JSON.stringify(validCfg, null, 2));
+      fs.writeFileSync(tempPath, JSON.stringify(finalCfg, null, 2));
       fs.renameSync(tempPath, cfgPath);
       try {
         fs.chmodSync(cfgPath, 0o600); // S6.3: Owner rw only

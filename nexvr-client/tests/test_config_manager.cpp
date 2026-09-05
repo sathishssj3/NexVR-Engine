@@ -205,3 +205,28 @@ TEST_F(ConfigManagerTest, PerGameEngineProfileOverrides) {
     EXPECT_TRUE(cfg.hasRowMajorOverride);
     EXPECT_FALSE(cfg.rowMajorMatrices);
 }
+
+TEST_F(ConfigManagerTest, PerGameMatrixPrecisionAndApiOverrides) {
+    std::ofstream outFile(configPath);
+    outFile << R"({
+        "engine": "UnrealEngine4",
+        "api": "DX12",
+        "reverseZ": true,
+        "rowMajorMatrices": true,
+        "matrixPrecision": "Float32"
+    })";
+    outFile.close();
+
+    vrinject::ConfigManager& config = (*vrinject::SubsystemContext::Get().GetConfig());
+    bool result = config.Load(testDir.string());
+
+    EXPECT_TRUE(result);
+    const auto& cfg = config.GetConfig();
+    EXPECT_EQ(cfg.engineType, "UnrealEngine4");
+    EXPECT_EQ(cfg.apiType, "DX12");
+    EXPECT_TRUE(cfg.hasReverseZOverride);
+    EXPECT_TRUE(cfg.reverseZ);
+    EXPECT_TRUE(cfg.hasRowMajorOverride);
+    EXPECT_TRUE(cfg.rowMajorMatrices);
+    EXPECT_EQ(cfg.matrixPrecision, "Float32");
+}
