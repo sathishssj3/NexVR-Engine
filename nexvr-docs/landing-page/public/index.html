@@ -474,6 +474,24 @@ code{font-family:var(--mono)}
 .form input::placeholder{color:#55555C}
 .form input:focus{border-color:var(--red);background:#08080B;outline:none;
                   box-shadow:0 0 18px rgba(255,42,31,.22)}
+@keyframes input-pulse-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 42, 31, 0.75);
+    border-color: var(--red);
+  }
+  50% {
+    box-shadow: 0 0 26px 6px rgba(255, 42, 31, 0.5);
+    border-color: var(--red);
+    background: #110c0c;
+  }
+  100% {
+    box-shadow: 0 0 18px rgba(255, 42, 31, 0.22);
+    border-color: var(--red);
+  }
+}
+.form input.pulse-glow {
+  animation: input-pulse-glow 1.2s ease-out;
+}
 .form-note{font-size:.75rem;color:var(--muted);margin:.9rem 0 0;min-height:1.2em;transition:color .3s}
 .form-note.ok{color:var(--white)}
 .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none}
@@ -524,7 +542,7 @@ code{font-family:var(--mono)}
       <li><a href="#setup">Setup</a></li>
       <li><a href="#faq">FAQ</a></li>
     </ul>
-    <a class="btn btn-primary" href="/api/dl?to=installer"><span>Download<span class="ver">&nbsp;v0.1.3</span></span></a>
+    <a class="btn btn-primary btn-notify" href="#waitForm"><span>Notify me</span></a>
   </div>
 </nav>
 
@@ -547,7 +565,7 @@ code{font-family:var(--mono)}
       </p>
 
       <div class="btn-row">
-        <a class="btn btn-primary" href="/api/dl?to=installer"><span>Download for Windows</span></a>
+        <a class="btn btn-primary btn-notify" href="#waitForm"><span>Notify me</span></a>
         <a class="btn" href="#pipeline"><span>See how it works</span></a>
       </div>
 
@@ -1284,8 +1302,7 @@ code{font-family:var(--mono)}
           game profiles.
         </p>
         <div class="btn-row" style="margin-top:2rem">
-          <a class="btn btn-primary" href="/api/dl?to=installer"><span>Download installer</span></a>
-          <a class="btn" href="/api/dl?to=releases"><span>All versions</span></a>
+          <a class="btn btn-primary btn-notify" href="#waitForm"><span>Notify me</span></a>
         </div>
 
         <hr style="border:0;border-top:1px solid var(--edge);margin:2.2rem 0 1.6rem">
@@ -1385,8 +1402,7 @@ code{font-family:var(--mono)}
       <div>
         <h4>Get it</h4>
         <ul>
-          <li><a href="/api/dl?to=installer">Download for Windows</a></li>
-          <li><a href="/api/dl?to=releases">All versions</a></li>
+          <li><a class="btn-notify" href="#waitForm">Notify me</a></li>
           <li><a href="#setup">Setup</a></li>
           <li><a href="#faq">Troubleshooting</a></li>
         </ul>
@@ -1446,8 +1462,9 @@ document.getElementById('gameGrid').innerHTML = PROFILES.map(p=>`
   </article>`).join('');
 
 /* ---------- smooth scroll ---------- */
+let lenis = null;
 if(!reduced){
-  const lenis = new Lenis({duration:1.05, smoothWheel:true});
+  lenis = new Lenis({duration:1.05, smoothWheel:true});
   lenis.on('scroll', ScrollTrigger.update);
   gsap.ticker.add(t => lenis.raf(t*1000));
   gsap.ticker.lagSmoothing(0);
@@ -1599,6 +1616,31 @@ form.addEventListener('submit', async (e) => {
   } finally {
     btn.disabled = false;
   }
+});
+
+/* ---------- smooth drag/scroll to waitlist email section ---------- */
+const scrollToEmail = (e) => {
+  if (e) e.preventDefault();
+  const formEl = document.getElementById('waitForm');
+  const inputEl = document.getElementById('waitEmail');
+  if (!formEl || !inputEl) return;
+
+  if (lenis) {
+    lenis.scrollTo(formEl, { offset: -160, duration: 1.15, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+  } else {
+    formEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  setTimeout(() => {
+    inputEl.focus();
+    inputEl.classList.remove('pulse-glow');
+    void inputEl.offsetWidth;
+    inputEl.classList.add('pulse-glow');
+  }, lenis ? 650 : 350);
+};
+
+document.querySelectorAll('.btn-notify, a[href="#waitForm"], a[href="#waitEmail"]').forEach(el => {
+  el.addEventListener('click', scrollToEmail);
 });
 </script>
 </body>
