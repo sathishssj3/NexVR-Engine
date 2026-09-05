@@ -92,6 +92,7 @@ bool ConfigManager::Load(const std::string& moduleDir) {
         // Per-game engine profile overrides
         m_config.engineType = j.value("engine", "");
         m_config.api = j.value("api", "");
+        m_config.apiType = m_config.api;
         m_config.matrixPrecision = j.value("matrixPrecision", "Float32");
         if (j.contains("reverseZ")) {
             m_config.hasReverseZOverride = true;

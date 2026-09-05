@@ -223,6 +223,7 @@ TEST_F(ConfigManagerTest, PerGameMatrixPrecisionAndApiOverrides) {
     EXPECT_TRUE(result);
     const auto& cfg = config.GetConfig();
     EXPECT_EQ(cfg.engineType, "UnrealEngine4");
+    EXPECT_EQ(cfg.api, "DX12");
     EXPECT_EQ(cfg.apiType, "DX12");
     EXPECT_TRUE(cfg.hasReverseZOverride);
     EXPECT_TRUE(cfg.reverseZ);

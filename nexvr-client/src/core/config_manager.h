@@ -28,6 +28,7 @@ struct VRConfig {
     // Per-game engine profile overrides (isolates games from global heuristic drift)
     std::string engineType = ""; // Optional override: "UnrealEngine4", "UnrealEngine5", "Unity", "Generic"
     std::string api = "";        // Optional API override: "DX11", "DX12", "Vulkan"
+    std::string apiType = "";    // Canonical alias matching engineType naming
     std::string matrixPrecision = "Float32"; // "Float32", "Double64", "Auto"
     bool hasReverseZOverride = false;
     bool reverseZ = true;

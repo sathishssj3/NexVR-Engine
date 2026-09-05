@@ -61,7 +61,7 @@ void EngineDetector::Detect() {
         if (!config.engineType.empty()) {
             std::string eng = ToLower(config.engineType);
             EngineDetection profileDetection{};
-            if (eng.find("unreal5") != std::string::npos || eng.find("ue5") != std::string::npos) {
+            if (eng.find("unrealengine5") != std::string::npos || eng.find("unreal5") != std::string::npos || eng.find("ue5") != std::string::npos) {
                 profileDetection.type = EngineType::UnrealEngine5;
                 profileDetection.versionString = "UE5.x (Profile Override)";
             } else if (eng.find("unreal") != std::string::npos || eng.find("ue4") != std::string::npos) {
