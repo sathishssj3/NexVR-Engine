@@ -260,7 +260,7 @@ export function SettingsView({
                 ◈ WHAT'S NEW & FIXED IN THIS BUILD
               </div>
               <span style={{ fontSize: 10, color: 'var(--ag-text-muted)', fontFamily: 'var(--ag-font-mono)' }}>
-                Release: v0.1.1 Hotfix
+                Release: {updateStatus?.version ? `v${updateStatus.version} Hotfix` : 'v0.1.6 Hotfix'}
               </span>
             </div>
 
@@ -278,15 +278,26 @@ export function SettingsView({
                   <span>✓</span> PROBLEMS FIXED
                 </div>
                 <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: 'var(--ag-text-primary)', lineHeight: 1.6 }}>
-                  <li>
-                    <strong style={{ color: '#fff' }}>Sekiro: Shadows Die Twice (DX11)</strong>: Fixed OpenXR format negotiation failure (DXGI_FORMAT_R8G8B8A8_UNORM swapchain matching). Game now displays stereoscopic 3D properly in headset.
-                  </li>
-                  <li>
-                    <strong style={{ color: '#fff' }}>OpenXR Frame Submitter</strong>: Added resilient CopySubresourceRegion fallback and format validation to eliminate black screens in HMD.
-                  </li>
-                  <li>
-                    <strong style={{ color: '#fff' }}>WARP Headless Stress Tests</strong>: Optimized 50-frame flight fence recycling for MSVC debug test execution.
-                  </li>
+                  {updateStatus?.fixes && updateStatus.fixes.length > 0 ? (
+                    updateStatus.fixes.map((fix, idx) => (
+                      <li key={idx}>
+                        <strong style={{ color: '#fff' }}>{fix.split(':')[0]}</strong>
+                        {fix.includes(':') ? `:${fix.split(':').slice(1).join(':')}` : ''}
+                      </li>
+                    ))
+                  ) : (
+                    <>
+                      <li>
+                        <strong style={{ color: '#fff' }}>Universal Machine Compatibility</strong>: Fixed Error 22 (Unauthorized caller) on tester machines with standard Windows UAC.
+                      </li>
+                      <li>
+                        <strong style={{ color: '#fff' }}>Protected Game Directories</strong>: Fixed silent injection failure in Sekiro caused by missing elevated permissions to write to Steam directories.
+                      </li>
+                      <li>
+                        <strong style={{ color: '#fff' }}>Dependency Synchronization</strong>: Automatically syncs DirectML.dll, onnxruntime.dll, and vrinject.json into protected target folders.
+                      </li>
+                    </>
+                  )}
                 </ul>
               </div>
 
@@ -303,15 +314,26 @@ export function SettingsView({
                   <span>★</span> NEWLY ADDED FEATURES
                 </div>
                 <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: 'var(--ag-text-primary)', lineHeight: 1.6 }}>
-                  <li>
-                    <strong style={{ color: '#fff' }}>Verified Sekiro Profile</strong>: Added tuned profile (<code>814380_sekiro.json</code>) with column-major matrix and linear depth conventions.
-                  </li>
-                  <li>
-                    <strong style={{ color: '#fff' }}>Over-The-Air (OTA) Updates</strong>: Instant engine updates download automatically on launcher startup without requiring Setup.exe reinstall.
-                  </li>
-                  <li>
-                    <strong style={{ color: '#fff' }}>Multi-Size Favicon & Web Portal</strong>: Official branding deployed live to Cloudflare Pages (<code>nexvr-engine.pages.dev</code>).
-                  </li>
+                  {updateStatus?.features && updateStatus.features.length > 0 ? (
+                    updateStatus.features.map((feat, idx) => (
+                      <li key={idx}>
+                        <strong style={{ color: '#fff' }}>{feat.split(':')[0]}</strong>
+                        {feat.includes(':') ? `:${feat.split(':').slice(1).join(':')}` : ''}
+                      </li>
+                    ))
+                  ) : (
+                    <>
+                      <li>
+                        <strong style={{ color: '#fff' }}>Universal Multi-Machine Injection</strong>: Allowed UAC elevation services (svchost, consent) and NexVR launcher names across all Windows installations.
+                      </li>
+                      <li>
+                        <strong style={{ color: '#fff' }}>Real Exit Code Propagation</strong>: Propagates actual UAC injection exit codes directly to the launcher UI.
+                      </li>
+                      <li>
+                        <strong style={{ color: '#fff' }}>Auto-resolving Copy Paths</strong>: Resolves executable directories automatically if CLI flags are omitted.
+                      </li>
+                    </>
+                  )}
                 </ul>
               </div>
             </div>
