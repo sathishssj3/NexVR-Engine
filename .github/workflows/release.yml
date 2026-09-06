@@ -6,13 +6,21 @@ on:
     branches: [ "main" ]
     tags:
       - 'v*'
+    paths-ignore:
+      - 'nexvr-docs/**'
+      - 'docs/**'
+      - '*.md'
   pull_request:
     branches: [ "main" ]
+    paths-ignore:
+      - 'nexvr-docs/**'
+      - 'docs/**'
+      - '*.md'
   workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build-and-test:

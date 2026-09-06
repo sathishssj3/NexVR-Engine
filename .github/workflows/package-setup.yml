@@ -18,10 +18,14 @@ on:
       - 'v*'
     branches:
       - 'main'
+    paths-ignore:
+      - 'nexvr-docs/**'
+      - 'docs/**'
+      - '*.md'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: write
