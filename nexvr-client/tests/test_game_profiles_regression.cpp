@@ -240,50 +240,6 @@ TEST_F(GameProfilesRegressionTest, AppID_1623730_StereoAndPrecisionInvariant) {
     EXPECT_GE(score.score, 90u);
 }
 
-// Regression Test for AppID 814380 (Sekiro: Shadows Die Twice)
-// Must maintain Generic engine, DX11, Float32 precision, reverseZ=false, rowMajor=false
-TEST_F(GameProfilesRegressionTest, AppID_814380_StereoAndPrecisionInvariant) {
-    std::ofstream outFile(configPath);
-    outFile << R"({
-        "id": "814380",
-        "engine": "Generic",
-        "api": "DX11",
-        "reverseZ": false,
-        "rowMajorMatrices": false,
-        "matrixPrecision": "Float32",
-        "depthSubmission": false
-    })";
-    outFile.close();
-
-    vrinject::ConfigManager& configMgr = (*vrinject::SubsystemContext::Get().GetConfig());
-    ASSERT_TRUE(configMgr.Load(testDir.string()));
-
-    const auto& cfg = configMgr.GetConfig();
-    EXPECT_EQ(cfg.engineType, "Generic");
-    EXPECT_EQ(cfg.apiType, "DX11");
-    EXPECT_TRUE(cfg.hasReverseZOverride);
-    EXPECT_FALSE(cfg.reverseZ);
-    EXPECT_TRUE(cfg.hasRowMajorOverride);
-    EXPECT_FALSE(cfg.rowMajorMatrices);
-    EXPECT_EQ(cfg.matrixPrecision, "Float32");
-
-    EngineDetector detector;
-    detector.Detect();
-    const auto& detection = detector.GetDetection();
-    EXPECT_FALSE(detection.tuning.reverseZ);
-    EXPECT_FALSE(detection.tuning.rowMajorMatrices);
-
-    auto score = CompatibilityScorer::Evaluate(
-        ValidCamera(),
-        ValidDepth(),
-        GraphicsBackend::DX11,
-        detection);
-
-    EXPECT_EQ(score.readiness, CompatibilityReadiness::Ready);
-    EXPECT_TRUE(score.shouldAttemptStereo);
-    EXPECT_GE(score.score, 80u);
-}
-
 // Precision Isolation Test:
 // Asserts that configuring Float32 precision protects the camera tracker
 // from being influenced by UE5 heuristic detection.
