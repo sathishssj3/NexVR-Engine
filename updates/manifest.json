@@ -1,21 +1,29 @@
 {
-  "engineVersion": "0.1.7",
-  "timestamp": 1788700742529,
-  "changelog": "Sekiro Verified Library Support & Launcher Compatibility v0.1.7",
+  "engineVersion": "0.1.8",
+  "timestamp": 1788703981550,
+  "changelog": "Hogwarts Legacy & Universal Steam OTA Injection Hotfix v0.1.8",
   "features": [
-    "Sekiro Steam Library Verification: Added Steam App ID 814380 to default verified compatibility list",
-    "Enhanced Custom Game Scanner: Automatically maps manually added Sekiro executables to DX11 and verified compatibility",
-    "Universal Machine Compatibility: Allowed UAC elevation services (svchost, consent) and NexVR launcher names",
-    "Elevated Dependency Synchronization: Automatically deploys onnxruntime, DirectML, and vrinject.json to protected Program Files directories"
+    "Resilient Host Executable Discovery: ConfigManager automatically discovers per-game profiles from host process executable directory, eliminating OTA config loss",
+    "Elevated DLL Deployment: vr-inject-cli automatically synchronizes and deploys updated vrinject.dll directly to protected game directories without stale downgrades",
+    "Profile Invariant Protection: Engine dependency synchronization preserves existing per-game vrinject.json without overwriting",
+    "OTA Profile Distribution: Dynamic over-the-air synchronization of curated game profiles to client AppData"
   ],
   "fixes": [
-    "Fixed Sekiro game not displaying as verified in tester library",
-    "Fixed icon extraction for Sekiro executable in launcher custom library",
-    "Fixed Error 22 (Unauthorized caller) on tester machines with standard Windows UAC",
-    "Fixed silent injection failure in Sekiro caused by missing elevated permissions to write to Steam game directories"
+    "Fixed Hogwarts Legacy and Steam titles failing to display in VR after OTA launcher push update",
+    "Fixed stale vrinject.dll from resourcesPath clobbering updated hotfixed engine binaries",
+    "Fixed ConfigManager defaulting to generic DX11 profile when injected from outside game directory",
+    "Fixed launcher profile search paths to include downloaded OTA profiles"
   ],
   "files": [
     "vrinject.dll",
-    "vr-inject-cli.exe"
+    "vr-inject-cli.exe",
+    "profiles/990080_hogwarts_legacy.json",
+    "profiles/814380_sekiro.json",
+    "profiles/1091500_cyberpunk_2077.json",
+    "profiles/1623730_palworld.json",
+    "profiles/668580_atomic_heart.json",
+    "profiles/1110910_mortal_shell.json",
+    "profiles/1245620_elden_ring.json",
+    "profiles/schema.json"
   ]
 }

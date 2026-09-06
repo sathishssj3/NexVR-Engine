@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { app, ipcMain } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import { VRConfig } from '../src/types';
@@ -130,8 +130,14 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
 function loadProfilesFromDisk(): Record<string, Partial<VRConfig>> {
   const profiles: Record<string, Partial<VRConfig>> = { ...curatedProfiles };
   try {
-    // Check root profiles directory (development and packaged resources)
+    let userUpdatesProfiles = '';
+    try {
+      userUpdatesProfiles = path.join(app.getPath('userData'), 'updates', 'profiles');
+    } catch {}
+
+    // Check root profiles directory (development, packaged resources, and OTA updates)
     const candidateDirs = [
+      ...(userUpdatesProfiles ? [userUpdatesProfiles] : []),
       path.resolve(__dirname, '../../../profiles'),
       path.resolve(__dirname, '../../profiles'),
       path.join(process.resourcesPath, 'profiles'),

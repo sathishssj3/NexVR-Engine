@@ -309,24 +309,102 @@ int main(int argc, char* argv[]) {
     // Copy dependencies to game directory using elevated permissions
     if (!copySrc.empty() && !copyDst.empty()) {
         PrintInfo("Synchronizing engine dependencies from %s to %s", copySrc.c_str(), copyDst.c_str());
-        const char* files[] = {"vrinject.dll", "onnxruntime.dll", "DirectML.dll", "vrinject.json"};
-        for (const char* f : files) {
-            std::string src = copySrc + "\\" + f;
-            std::string dst = copyDst + "\\" + f;
-            if (::GetFileAttributesA(src.c_str()) != INVALID_FILE_ATTRIBUTES) {
-                // Rename existing file to .old to bypass file lock if it's loaded in the target process
-                if (::GetFileAttributesA(dst.c_str()) != INVALID_FILE_ATTRIBUTES) {
-                    std::string dstOld = dst + ".old";
-                    ::DeleteFileA(dstOld.c_str()); // Remove previous .old if it exists
-                    ::MoveFileA(dst.c_str(), dstOld.c_str());
-                }
-                
-                if (!::CopyFileA(src.c_str(), dst.c_str(), FALSE)) {
-                    PrintWarn("Failed to copy %s (Error: %lu)", f, ::GetLastError());
-                } else {
-                    PrintOK("Deployed %s to target directory.", f);
+
+        // Parse semicolon- or comma-separated source directories
+        std::vector<std::string> srcDirs;
+        size_t start = 0;
+        while (start < copySrc.size()) {
+            size_t delim = copySrc.find_first_of(";,\n\r", start);
+            std::string dir = (delim == std::string::npos) ? copySrc.substr(start) : copySrc.substr(start, delim - start);
+            while (!dir.empty() && (dir.front() == ' ' || dir.front() == '"' || dir.front() == '\'')) dir.erase(dir.begin());
+            while (!dir.empty() && (dir.back() == ' ' || dir.back() == '"' || dir.back() == '\'')) dir.pop_back();
+            if (!dir.empty() && ::GetFileAttributesA(dir.c_str()) != INVALID_FILE_ATTRIBUTES) {
+                srcDirs.push_back(dir);
+            }
+            if (delim == std::string::npos) break;
+            start = delim + 1;
+        }
+        if (srcDirs.empty()) {
+            srcDirs.push_back(selfDir);
+        }
+
+        // 1. Deploy vrinject.dll: prioritize the explicit dllPath requested by launcher
+        std::string targetDllDst = copyDst + "\\vrinject.dll";
+        std::string dllSourceToDeploy = "";
+        if (!dllPath.empty() && ::GetFileAttributesA(dllPath.c_str()) != INVALID_FILE_ATTRIBUTES) {
+            char fullDllPath[MAX_PATH] = {0};
+            char fullDstPath[MAX_PATH] = {0};
+            ::GetFullPathNameA(dllPath.c_str(), MAX_PATH, fullDllPath, nullptr);
+            ::GetFullPathNameA(targetDllDst.c_str(), MAX_PATH, fullDstPath, nullptr);
+            if (_stricmp(fullDllPath, fullDstPath) != 0) {
+                dllSourceToDeploy = dllPath;
+            }
+        }
+        if (dllSourceToDeploy.empty()) {
+            for (const auto& d : srcDirs) {
+                std::string cand = d + "\\vrinject.dll";
+                if (::GetFileAttributesA(cand.c_str()) != INVALID_FILE_ATTRIBUTES) {
+                    char fullCandPath[MAX_PATH] = {0};
+                    char fullDstPath[MAX_PATH] = {0};
+                    ::GetFullPathNameA(cand.c_str(), MAX_PATH, fullCandPath, nullptr);
+                    ::GetFullPathNameA(targetDllDst.c_str(), MAX_PATH, fullDstPath, nullptr);
+                    if (_stricmp(fullCandPath, fullDstPath) != 0) {
+                        dllSourceToDeploy = cand;
+                        break;
+                    }
                 }
             }
+        }
+
+        if (!dllSourceToDeploy.empty()) {
+            if (::GetFileAttributesA(targetDllDst.c_str()) != INVALID_FILE_ATTRIBUTES) {
+                std::string dstOld = targetDllDst + ".old";
+                ::DeleteFileA(dstOld.c_str());
+                ::MoveFileA(targetDllDst.c_str(), dstOld.c_str());
+            }
+            if (::CopyFileA(dllSourceToDeploy.c_str(), targetDllDst.c_str(), FALSE)) {
+                PrintOK("Deployed vrinject.dll to target directory from %s", dllSourceToDeploy.c_str());
+                dllPath = targetDllDst;
+            } else {
+                PrintWarn("Could not deploy vrinject.dll to target directory (Error: %lu). Retaining source DLL path.", ::GetLastError());
+            }
+        }
+
+        // 2. Synchronize support runtime DLLs (onnxruntime.dll, DirectML.dll)
+        const char* supportDlls[] = {"onnxruntime.dll", "DirectML.dll"};
+        for (const char* f : supportDlls) {
+            std::string dst = copyDst + "\\" + f;
+            for (const auto& d : srcDirs) {
+                std::string src = d + "\\" + f;
+                if (::GetFileAttributesA(src.c_str()) != INVALID_FILE_ATTRIBUTES) {
+                    if (::GetFileAttributesA(dst.c_str()) != INVALID_FILE_ATTRIBUTES) {
+                        std::string dstOld = dst + ".old";
+                        ::DeleteFileA(dstOld.c_str());
+                        ::MoveFileA(dst.c_str(), dstOld.c_str());
+                    }
+                    if (::CopyFileA(src.c_str(), dst.c_str(), FALSE)) {
+                        PrintOK("Deployed %s to target directory.", f);
+                    }
+                    break;
+                }
+            }
+        }
+
+        // 3. Synchronize vrinject.json ONLY if destination does not already exist
+        // NEVER overwrite existing per-game tuned configurations (e.g. Hogwarts Legacy UE4/reverseZ/Float32)
+        std::string jsonDst = copyDst + "\\vrinject.json";
+        if (::GetFileAttributesA(jsonDst.c_str()) == INVALID_FILE_ATTRIBUTES) {
+            for (const auto& d : srcDirs) {
+                std::string jsonSrc = d + "\\vrinject.json";
+                if (::GetFileAttributesA(jsonSrc.c_str()) != INVALID_FILE_ATTRIBUTES) {
+                    if (::CopyFileA(jsonSrc.c_str(), jsonDst.c_str(), FALSE)) {
+                        PrintOK("Deployed initial vrinject.json to target directory.");
+                    }
+                    break;
+                }
+            }
+        } else {
+            PrintInfo("Preserving existing per-game vrinject.json in target directory.");
         }
     }
 

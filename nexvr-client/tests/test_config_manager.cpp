@@ -231,3 +231,31 @@ TEST_F(ConfigManagerTest, PerGameMatrixPrecisionAndApiOverrides) {
     EXPECT_TRUE(cfg.rowMajorMatrices);
     EXPECT_EQ(cfg.matrixPrecision, "Float32");
 }
+
+TEST_F(ConfigManagerTest, HostExecutableDirectoryFallbackDiscovery) {
+    // Simulate an external OTA update folder without vrinject.json
+    fs::path emptyExternalDir = testDir / "external_ota_dir";
+    fs::create_directories(emptyExternalDir);
+
+    // Simulate game directory where host game executable resides
+    fs::path gameExeDir = testDir / "Phoenix" / "Binaries" / "Win64";
+    fs::create_directories(gameExeDir);
+    std::ofstream outFile(gameExeDir / "vrinject.json");
+    outFile << R"({
+        "engine": "UnrealEngine4",
+        "api": "DX12",
+        "reverseZ": true,
+        "matrixPrecision": "Float32"
+    })";
+    outFile.close();
+
+    // When ConfigManager loads with an external moduleDir, it discovers vrinject.json from hostExeDir
+    vrinject::ConfigManager& config = (*vrinject::SubsystemContext::Get().GetConfig());
+    bool result = config.Load(emptyExternalDir.string(), gameExeDir.string());
+
+    EXPECT_TRUE(result);
+    EXPECT_EQ(config.GetConfig().engineType, "UnrealEngine4");
+    EXPECT_EQ(config.GetConfig().api, "DX12");
+    EXPECT_TRUE(config.GetConfig().reverseZ);
+    EXPECT_EQ(config.GetConfig().matrixPrecision, "Float32");
+}

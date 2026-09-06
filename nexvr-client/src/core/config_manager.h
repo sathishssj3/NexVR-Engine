@@ -39,8 +39,9 @@ struct VRConfig {
 class ConfigManager {
 public:
 
-    // Loads configuration from a vrinject.json file located in the provided moduleDir.
-    bool Load(const std::string& moduleDir);
+    // Loads configuration from a vrinject.json file located in the provided moduleDir,
+    // with hierarchical fallback to hostExeDir or the host process executable directory.
+    bool Load(const std::string& moduleDir, const std::string& hostExeDir = "");
     
     // Saves current configuration to vrinject.json.
     bool Save();

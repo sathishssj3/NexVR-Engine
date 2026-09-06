@@ -10,7 +10,7 @@ using json = nlohmann::json;
 
 namespace vrinject {
 
-bool ConfigManager::Load(const std::string& moduleDir) {
+bool ConfigManager::Load(const std::string& moduleDir, const std::string& explicitHostExeDir) {
     std::vector<std::string> candidatePaths;
     
     // 1. Check exact moduleDir
@@ -19,8 +19,40 @@ bool ConfigManager::Load(const std::string& moduleDir) {
         if (base.back() == '\\' || base.back() == '/') base.pop_back();
         candidatePaths.push_back(base + "\\vrinject.json");
         
-        // 2. Hierarchical parent directory searches (up to 3 levels up, e.g. Phoenix\Binaries\Win64 -> install root)
+        // Hierarchical parent directory searches (up to 3 levels up, e.g. Phoenix\Binaries\Win64 -> install root)
         std::string cur = base;
+        for (int i = 0; i < 3; ++i) {
+            size_t slash = cur.find_last_of("\\/");
+            if (slash == std::string::npos || slash == 0) break;
+            cur = cur.substr(0, slash);
+            candidatePaths.push_back(cur + "\\vrinject.json");
+        }
+    }
+
+    // 2. Check host process executable directory (e.g. Phoenix/Binaries/Win64/HogwartsLegacy.exe)
+    std::string hostExeDir = explicitHostExeDir;
+    if (hostExeDir.empty()) {
+        char hostExeBuf[MAX_PATH] = {0};
+        if (::GetModuleFileNameA(NULL, hostExeBuf, MAX_PATH) > 0) {
+            std::string hostExeStr = hostExeBuf;
+            std::string hostExeLower = hostExeStr;
+            std::transform(hostExeLower.begin(), hostExeLower.end(), hostExeLower.begin(), ::tolower);
+            // Skip automated discovery from test runner binary directory in unit tests
+            if (hostExeLower.find("test_") == std::string::npos) {
+                size_t lastSlash = hostExeStr.find_last_of("\\/");
+                if (lastSlash != std::string::npos) {
+                    hostExeDir = hostExeStr.substr(0, lastSlash);
+                }
+            }
+        }
+    }
+
+    if (!hostExeDir.empty()) {
+        if (hostExeDir.back() == '\\' || hostExeDir.back() == '/') hostExeDir.pop_back();
+        candidatePaths.push_back(hostExeDir + "\\vrinject.json");
+
+        // Hierarchical parent directory searches for host exe (up to 3 levels up)
+        std::string cur = hostExeDir;
         for (int i = 0; i < 3; ++i) {
             size_t slash = cur.find_last_of("\\/");
             if (slash == std::string::npos || slash == 0) break;

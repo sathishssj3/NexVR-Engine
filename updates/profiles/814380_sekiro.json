@@ -1,0 +1,16 @@
+{
+  "$schema": "./schema.json",
+  "id": "814380",
+  "name": "Sekiro: Shadows Die Twice",
+  "engine": "Generic",
+  "api": "DX11",
+  "reverseZ": false,
+  "rowMajorMatrices": false,
+  "matrixPrecision": "Float32",
+  "motionAimSensitivity": 1.0,
+  "useRecommendedResolution": true,
+  "srgbCorrection": false,
+  "depthSubmission": false,
+  "rawInputMode": true,
+  "autoInjectOnLaunch": true
+}

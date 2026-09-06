@@ -1,0 +1,16 @@
+{
+  "$schema": "./schema.json",
+  "id": "990080",
+  "name": "Hogwarts Legacy",
+  "engine": "UnrealEngine4",
+  "api": "DX12",
+  "reverseZ": true,
+  "rowMajorMatrices": true,
+  "matrixPrecision": "Float32",
+  "motionAimSensitivity": 1.0,
+  "useRecommendedResolution": true,
+  "srgbCorrection": true,
+  "depthSubmission": true,
+  "rawInputMode": true,
+  "autoInjectOnLaunch": true
+}

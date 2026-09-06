@@ -1,0 +1,16 @@
+{
+  "$schema": "./schema.json",
+  "id": "custom_1788291330738",
+  "name": "MECCHA CHAMELEON",
+  "engine": "UnrealEngine5",
+  "api": "DX12",
+  "reverseZ": true,
+  "rowMajorMatrices": true,
+  "matrixPrecision": "Double64",
+  "motionAimSensitivity": 1.0,
+  "useRecommendedResolution": true,
+  "srgbCorrection": true,
+  "depthSubmission": true,
+  "rawInputMode": true,
+  "autoInjectOnLaunch": true
+}

@@ -271,6 +271,7 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
       let baseProfile: Record<string, any> = {};
 
       const profileDirs = [
+        path.join(app.getPath('userData'), 'updates', 'profiles'),
         path.resolve(__dirname, '../../../profiles'),
         path.resolve(__dirname, '../../profiles'),
         path.join(process.resourcesPath, 'profiles'),
@@ -436,10 +437,13 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     }
 
     const escapePs = (str: string) => str.replace(/'/g, "''");
+    const updatesDir = path.join(app.getPath('userData'), 'updates');
+    const copySources = [updatesDir, canonicalBinSourceDir].filter(d => fs.existsSync(d)).join(';');
+    const effectiveCopySrc = copySources || canonicalBinSourceDir;
     const innerScript =
       `$env:NEXVR_AUTH_TOKEN = '${escapePs(process.env.NEXVR_AUTH_TOKEN || '')}'; ` +
       `& '${escapePs(cliSource)}' --pid ${targetPid} --dll '${escapePs(dllTarget)}' ` +
-      `--copy-src '${escapePs(canonicalBinSourceDir)}' --copy-dst '${escapePs(targetExeDir)}' ` +
+      `--copy-src '${escapePs(effectiveCopySrc)}' --copy-dst '${escapePs(targetExeDir)}' ` +
       `*>&1 | Out-File -LiteralPath '${escapePs(logPath)}' -Append -Encoding utf8; ` +
       `if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }`;
     const base64Inner = Buffer.from(innerScript, 'utf16le').toString('base64');
