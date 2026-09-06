@@ -1,17 +1,18 @@
 {
-  "engineVersion": "0.1.6",
-  "timestamp": 1788539422014,
-  "changelog": "Universal Multi-Machine Injection & Admin Dependency Sync v0.1.6",
+  "engineVersion": "0.1.7",
+  "timestamp": 1788700742529,
+  "changelog": "Sekiro Verified Library Support & Launcher Compatibility v0.1.7",
   "features": [
+    "Sekiro Steam Library Verification: Added Steam App ID 814380 to default verified compatibility list",
+    "Enhanced Custom Game Scanner: Automatically maps manually added Sekiro executables to DX11 and verified compatibility",
     "Universal Machine Compatibility: Allowed UAC elevation services (svchost, consent) and NexVR launcher names",
-    "Elevated Dependency Synchronization: Automatically deploys onnxruntime, DirectML, and vrinject.json to protected Program Files directories",
-    "Real Exit Code Propagation: Propagates actual UAC injection exit codes to the launcher UI",
-    "Auto-resolving Copy Paths: Resolves executable directories automatically if CLI flags are omitted"
+    "Elevated Dependency Synchronization: Automatically deploys onnxruntime, DirectML, and vrinject.json to protected Program Files directories"
   ],
   "fixes": [
+    "Fixed Sekiro game not displaying as verified in tester library",
+    "Fixed icon extraction for Sekiro executable in launcher custom library",
     "Fixed Error 22 (Unauthorized caller) on tester machines with standard Windows UAC",
-    "Fixed silent injection failure in Sekiro caused by missing elevated permissions to write to Steam game directories",
-    "Fixed missing DirectML.dll and vrinject.json synchronization in game folder"
+    "Fixed silent injection failure in Sekiro caused by missing elevated permissions to write to Steam game directories"
   ],
   "files": [
     "vrinject.dll",
