@@ -11,10 +11,15 @@
     "db:init": "wrangler d1 execute nexvr-analytics --local --file=./schema.sql",
     "db:init:remote": "wrangler d1 execute nexvr-analytics --remote --file=./schema.sql",
     "admin:secret": "wrangler pages secret put ADMIN_PASSWORD",
-    "salt:secret": "wrangler pages secret put ANALYTICS_SALT",
-    "admin:password": "node scripts/show-password.js"
+    "admin:password": "node scripts/show-password.js",
+    "waitlist:export": "node scripts/export-waitlist.mjs",
+    "broadcast:preview": "node scripts/send-release-broadcast.mjs --preview",
+    "broadcast:dry-run": "node scripts/send-release-broadcast.mjs --dry-run",
+    "broadcast:test": "node scripts/send-release-broadcast.mjs",
+    "broadcast:send": "node scripts/send-release-broadcast.mjs --send"
   },
   "devDependencies": {
+    "playwright": "^1.63.0",
     "wrangler": "^4.129.0"
   }
 }

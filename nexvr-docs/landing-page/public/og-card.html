@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NexVR Engine — OG Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  width: 1200px;
+  height: 630px;
+  overflow: hidden;
+  background-color: #050506;
+  color: #F2F2F3;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-font-smoothing: antialiased;
+}
+
+.card {
+  width: 1200px;
+  height: 630px;
+  position: relative;
+  background: 
+    radial-gradient(circle 480px at 50% 45%, rgba(255, 42, 31, 0.16) 0%, transparent 70%),
+    radial-gradient(circle 800px at 50% 50%, rgba(20, 20, 26, 0.6) 0%, transparent 100%),
+    #050506;
+  border: none;
+  padding: 54px 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  text-align: center;
+  overflow: hidden;
+}
+
+/* Header */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 10px 22px;
+  border-radius: 999px;
+  position: relative;
+  z-index: 2;
+}
+
+.brand img {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+}
+
+.brand-name {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #FFFFFF;
+}
+
+.brand-sep {
+  color: rgba(255, 255, 255, 0.2);
+  margin-inline: 4px;
+}
+
+.brand-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: #FF2A1F;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+/* Center Hero - Safe Zone */
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  max-width: 860px;
+  position: relative;
+  z-index: 2;
+  margin-block: auto;
+}
+
+.title {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 68px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  color: #FFFFFF;
+  text-transform: uppercase;
+}
+
+.desc {
+  font-size: 21px;
+  line-height: 1.5;
+  color: #A0A0A8;
+  max-width: 680px;
+}
+
+.spec-pills {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: #D0D0D8;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.pill.highlight {
+  background: rgba(255, 42, 31, 0.14);
+  color: #FF5A50;
+}
+
+/* Footer Stats Rail */
+.footer-rail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 56px;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+}
+
+.stat {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.stat-num {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 24px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.stat-num small {
+  font-size: 15px;
+  color: #FF2A1F;
+}
+
+.stat-label {
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: #7A7A82;
+  text-transform: uppercase;
+}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">
+      <img src="logo.png" alt="NexVR Logo">
+      <span class="brand-name">NEXVR ENGINE</span>
+      <span class="brand-sep">/</span>
+      <span class="brand-tag">VR INJECTOR</span>
+    </div>
+
+    <div class="hero">
+      <h1 class="title">
+        ONE CLICK.<br>
+        ANY GAME IN VR.
+      </h1>
+      <p class="desc">
+        Universal graphics hook injector for PC games. Real-time stereo reprojection, depth reconstruction, and native 6DOF OpenXR submission.
+      </p>
+      <div class="spec-pills">
+        <span class="pill">DirectX 11</span>
+        <span class="pill">DirectX 12</span>
+        <span class="pill">Vulkan</span>
+        <span class="pill highlight">→ OpenXR 6DOF</span>
+      </div>
+    </div>
+
+    <div class="footer-rail">
+      <div class="stat">
+        <span class="stat-num">3</span>
+        <span class="stat-label">Graphics APIs</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">6</span>
+        <span class="stat-label">Shipped Profiles</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">11.1<small>ms</small></span>
+        <span class="stat-label">Frame Budget</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

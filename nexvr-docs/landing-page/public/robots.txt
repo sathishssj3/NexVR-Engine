@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin.html
+Disallow: /api/
+
+Sitemap: https://nexvr-engine.pages.dev/sitemap.xml

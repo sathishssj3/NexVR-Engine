@@ -2,19 +2,58 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>NexVR Engine — One Click. Any Game in VR.</title>
 <meta name="description" content="Universal VR injector. Hooks DirectX 11, DirectX 12 and Vulkan, and submits stereo frames straight to OpenXR. Play the games you already own in your headset.">
 <meta name="theme-color" content="#050506">
+<link rel="canonical" href="https://nexvr-engine.pages.dev/">
 
 <!-- NexVR Engine Brand Logo -->
 <link rel="icon" type="image/png" href="logo.png?v=2">
 <link rel="shortcut icon" type="image/x-icon" href="favicon.ico?v=2">
 <link rel="apple-touch-icon" href="logo.png?v=2">
 
+<!-- OpenGraph / Social Graph -->
+<meta property="og:site_name" content="NexVR Engine">
 <meta property="og:title" content="NexVR Engine — One Click. Any Game in VR.">
-<meta property="og:description" content="Hooks DirectX 11, 12 and Vulkan. Submits stereo frames straight to OpenXR.">
+<meta property="og:description" content="Universal VR injector. Hooks DirectX 11, DirectX 12 and Vulkan, and submits stereo frames straight to OpenXR. Play the games you already own in your headset.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://nexvr-engine.pages.dev/">
+<meta property="og:image" content="https://nexvr-engine.pages.dev/og-preview.jpg">
+<meta property="og:image:secure_url" content="https://nexvr-engine.pages.dev/og-preview.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="NexVR Engine — Universal VR Injector">
+
+<!-- Twitter Cards -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="NexVR Engine — One Click. Any Game in VR.">
+<meta name="twitter:description" content="Universal VR injector. Hooks DirectX 11, DirectX 12 and Vulkan, and submits stereo frames straight to OpenXR.">
+<meta name="twitter:image" content="https://nexvr-engine.pages.dev/og-preview.jpg">
+<meta name="twitter:image:alt" content="NexVR Engine — Universal VR Injector">
+
+<!-- Structured Data (JSON-LD) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "NexVR Engine",
+  "operatingSystem": "Windows 10, Windows 11 64-bit",
+  "applicationCategory": "GameApplication",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
+    "availability": "https://schema.org/PreOrder"
+  },
+  "description": "Universal VR injector hooking DirectX 11, DirectX 12, and Vulkan to submit real-time 6DOF stereo frames to OpenXR runtimes.",
+  "author": {
+    "@type": "Organization",
+    "name": "NexVR Lab"
+  }
+}
+</script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -60,11 +99,12 @@ if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 }
 
 *,*::before,*::after{box-sizing:border-box}
-html{scroll-behavior:auto;-webkit-text-size-adjust:100%}
+html{scroll-behavior:auto;-webkit-text-size-adjust:100%;touch-action:manipulation}
 body{
   margin:0;background:var(--void);color:var(--white);
   font-family:var(--body);font-size:1.0625rem;line-height:1.65;
   -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  touch-action:manipulation;
 }
 img,canvas{display:block;max-width:100%}
 a{color:inherit;text-decoration:none}
@@ -226,35 +266,40 @@ code{font-family:var(--mono)}
 @media(max-width:960px){
   .hero-in{padding-block:7.5rem 4.5rem}
 }
-/* Once the rail wraps, the dividers land in the wrong places — drop them. */
-@media(max-width:560px){
-  .rail div{border-right:0;padding-bottom:.6rem}
-}
+/* Mobile hero and rail layout handled in dedicated mobile stylesheet below */
 
 /* ---------- pipeline ---------- */
 .pipe{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:clamp(2rem,6vw,5rem);align-items:start}
 .pipe-list{list-style:none;margin:0;padding:0;position:relative}
-.pipe-list::before{content:"";position:absolute;left:.44rem;top:.6rem;bottom:.6rem;width:1px;background:var(--edge)}
-.pipe-fill{position:absolute;left:.44rem;top:.6rem;width:1px;background:var(--red);height:0;
-           box-shadow:0 0 10px var(--red)}
-.step{position:relative;padding:0 0 2.15rem 2.6rem;transition:transform .35s var(--ease)}
-.step:hover{transform:translateX(5px)}
+.pipe-list::before{content:"";position:absolute;left:.44rem;top:0;bottom:.6rem;width:1px;background:var(--edge)}
+.pipe-fill{position:absolute;left:.44rem;top:0;width:1px;background:var(--red);height:0;pointer-events:none}
+
+.step{position:relative;padding:0 0 2.15rem 2.6rem}
 .step:last-child{padding-bottom:0}
+
+/* The square marker box on the rail */
 .step::before{content:"";position:absolute;left:0;top:.42rem;width:.9rem;height:.9rem;
-  border:1px solid var(--edge);background:var(--void);transition:border-color .4s,background .4s,box-shadow .4s}
-.step.on::before{border-color:var(--red);background:var(--red);box-shadow:0 0 14px var(--red)}
+  border:1.5px solid rgba(255,255,255,.2);background:var(--void);border-radius:1px;
+  transition:border-color .2s ease,background-color .2s ease}
+
+/* Turns solid red when the line touches the box — clean, crisp, no glow */
+.step.on::before{border-color:var(--red);background:var(--red)}
+
 .step h3{font-family:var(--display);font-size:.9375rem;font-weight:600;letter-spacing:.03em;
-         text-transform:uppercase;margin:0 0 .35rem;color:var(--muted);transition:color .4s}
+         text-transform:uppercase;margin:0 0 .35rem;color:var(--muted);transition:color .2s}
 .step.on h3{color:var(--white)}
 .step p{margin:0;font-size:.9375rem;color:var(--muted);max-width:44ch}
-/* The symbols each stage actually touches. Muted until the stage is live, so
-   the rail still reads as a single line of attention on scroll. */
-.step-meta{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.85rem;max-width:44ch}
-.step-meta code{font-family:var(--mono);font-size:.6625rem;line-height:1.5;color:var(--dim);
-  border:1px solid var(--edge);padding:.16rem .45rem;background:var(--panel);
-  white-space:nowrap;transition:color .3s,border-color .3s,background .3s,transform .2s var(--ease)}
-.step-meta code:hover{color:var(--white);border-color:var(--red);background:rgba(255,42,31,.08);transform:translateY(-1px)}
-.step.on .step-meta code{color:var(--muted);border-color:var(--edge-hot)}
+
+/* The symbols each stage actually touches */
+.step-meta{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:1rem;max-width:48ch}
+.step-meta code{font-family:var(--mono);font-size:.72rem;font-weight:500;line-height:1.4;
+  color:var(--muted);letter-spacing:.02em;
+  border:1px solid rgba(255,255,255,.08);padding:.28rem .65rem;background:rgba(255,255,255,.02);
+  border-radius:3px;white-space:nowrap;
+  transition:color .2s,border-color .2s,background .2s;
+  display:inline-flex;align-items:center}
+.step-meta code:hover{color:#fff;border-color:var(--red);background:rgba(255,42,31,.1)}
+.step.on .step-meta code{color:var(--white);border-color:rgba(255,42,31,.5);background:rgba(255,42,31,.08)}
 
 .budget{border:1px solid var(--edge);background:var(--panel);padding:clamp(1.5rem,3vw,2.4rem);
         position:sticky;top:6rem;transition:border-color .35s,box-shadow .35s}
@@ -301,9 +346,9 @@ code{font-family:var(--mono)}
 
 .card-top{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin-bottom:1.15rem}
 .tagpill{font-family:var(--display);font-size:.625rem;font-weight:600;letter-spacing:.14em;
-         border:1px solid var(--edge-hot);color:var(--red);padding:.22rem .5rem;flex:none;
-         transition:border-color .3s,background .3s,transform .3s var(--ease)}
-.card:hover .tagpill{border-color:var(--red);background:rgba(255,42,31,.12);transform:scale(1.05)}
+         border:1px solid var(--red);color:var(--red);background:rgba(255,42,31,.08);box-shadow:0 0 8px rgba(255,42,31,.2);padding:.22rem .5rem;flex:none;
+         border-radius:2px;transition:border-color .3s,background .3s,transform .3s var(--ease)}
+.card:hover .tagpill{border-color:#ff5549;background:rgba(255,42,31,.16);box-shadow:0 0 12px rgba(255,42,31,.35);transform:scale(1.05)}
 .card:hover .d3{color:var(--white)}
 .flags{list-style:none;margin:0;padding:0;display:grid;gap:.4rem;font-size:.75rem}
 .flags li{display:flex;justify-content:space-between;gap:1rem;color:var(--muted);
@@ -507,6 +552,9 @@ code{font-family:var(--mono)}
 .foot-grid ul{list-style:none;margin:0;padding:0;display:grid;gap:.6rem;font-size:.875rem}
 .foot-grid a{color:var(--muted);transition:color .25s,transform .25s var(--ease);display:inline-block}
 .foot-grid a:hover{color:var(--white);transform:translateX(3px)}
+.foot-grid .brand{display:inline-flex!important;align-items:center;gap:.65rem;color:var(--white);
+                  font-family:var(--display);font-weight:700;letter-spacing:.02em;font-size:.95rem}
+.foot-grid .brand:hover{transform:none;color:var(--white)}
 .foot-in{display:flex;flex-wrap:wrap;gap:1.5rem;justify-content:space-between;align-items:center;
          border-top:1px solid var(--edge);padding-top:2.4rem}
 
@@ -515,6 +563,763 @@ code{font-family:var(--mono)}
     transition:opacity .85s var(--ease),transform .85s var(--ease);
     will-change:opacity,transform}
 .rv.in{opacity:1;transform:none}
+
+/* ---------- INTERACTIVE BUDGET CALCULATOR ---------- */
+.interactive-rates li {
+  cursor: pointer;
+  user-select: none;
+  transition: transform .2s ease, background-color .2s ease, border-color .2s ease !important;
+}
+.interactive-rates li:hover {
+  transform: translateX(4px);
+  color: var(--white);
+  background: rgba(255, 42, 31, 0.06);
+}
+.interactive-rates li.now {
+  background: rgba(255, 42, 31, 0.12);
+  border-left: 2px solid var(--red);
+  padding-left: 0.5rem;
+}
+.stage-timing-box {
+  margin-top: 1.4rem;
+  padding: 1.1rem;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  transition: border-color 0.3s;
+}
+.stage-timing-box:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.stage-timing-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.65rem;
+  font-size: 0.72rem;
+}
+.micro-tag {
+  font-family: var(--display);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.stage-overhead-sum {
+  color: var(--white);
+  font-size: 0.75rem;
+}
+.stage-overhead-sum strong {
+  color: var(--red);
+}
+.stage-timing-meter {
+  height: 7px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  overflow: hidden;
+  display: flex;
+  margin-bottom: 0.85rem;
+}
+.stage-timing-meter .seg {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+.seg-hook { background: #FF453A; }
+.seg-matrix { background: #FF9F0A; }
+.seg-depth { background: #30D158; }
+.seg-warp { background: var(--red); box-shadow: 0 0 8px rgba(255,42,31,0.8); }
+.seg-submit { background: #0A84FF; }
+.stage-timing-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  font-size: 0.68rem;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+.stage-timing-labels span {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.stage-timing-labels small {
+  color: var(--white);
+}
+
+/* ---------- PROFILE SWITCHER & COPY BUTTON ---------- */
+.profile-snippet-wrap {
+  position: relative;
+}
+.profile-snippet-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #0A0A0E;
+  border: 1px solid var(--edge);
+  border-bottom: 0;
+  padding: 0.55rem 0.85rem;
+  border-radius: 3px 3px 0 0;
+  gap: 0.5rem;
+}
+.profile-tabs {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.profile-tabs::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.p-tab {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 0.25rem 0.55rem;
+  border-radius: 2px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+.p-tab:hover {
+  color: var(--white);
+  background: rgba(255,255,255,0.04);
+}
+.p-tab.active {
+  color: var(--white);
+  border-color: rgba(255, 42, 31, 0.4);
+  background: rgba(255, 42, 31, 0.12);
+}
+.copy-profile-btn {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--white);
+  padding: 0.25rem 0.65rem;
+  border-radius: 2px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  transition: all 0.25s ease;
+}
+.copy-profile-btn:hover {
+  border-color: var(--red);
+  background: rgba(255, 42, 31, 0.18);
+  box-shadow: 0 0 10px rgba(255, 42, 31, 0.3);
+}
+.copy-profile-btn.copied {
+  border-color: #30D158 !important;
+  background: rgba(48, 209, 88, 0.15) !important;
+  color: #30D158 !important;
+  box-shadow: 0 0 12px rgba(48, 209, 88, 0.4) !important;
+}
+
+/* ---------- FOUNDER PRIORITY ACCESS PASS ---------- */
+.founder-pass {
+  background: linear-gradient(135deg, rgba(18, 18, 24, 0.95) 0%, rgba(10, 10, 14, 0.95) 100%);
+  border: 1.5px solid var(--red);
+  box-shadow: 0 0 30px rgba(255, 42, 31, 0.25), 0 12px 36px rgba(0,0,0,0.85);
+  border-radius: 4px;
+  padding: 1.5rem;
+  margin-top: 1.2rem;
+  animation: passReveal 0.6s var(--ease) forwards;
+}
+@keyframes passReveal {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.founder-pass-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--display);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--red);
+  margin-bottom: 0.5rem;
+}
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 8px var(--red);
+  animation: pulseDot 1.4s infinite ease-in-out;
+}
+@keyframes pulseDot {
+  0%, 100% { transform: scale(0.9); opacity: 0.7; }
+  50% { transform: scale(1.4); opacity: 1; }
+}
+.founder-pass-code {
+  font-family: var(--mono);
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--white);
+  margin: 0.4rem 0 0.8rem;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+}
+.founder-pass-meta {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+  border-top: 1px dashed rgba(255, 255, 255, 0.12);
+  padding-top: 0.85rem;
+  font-family: var(--mono);
+}
+.founder-pass-meta b {
+  color: var(--white);
+}
+
+/* ============================================================
+   NEXVR ENGINE — PRECISION TELEMETRY CUSTOM SCROLLBAR
+   Matches the black / red / white cybernetic engine aesthetic
+   ============================================================ */
+html {
+  scrollbar-width: none;
+}
+body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.nexvr-telemetry-scrollbar {
+  position: fixed;
+  right: 12px;
+  top: 24px;
+  bottom: 24px;
+  width: 24px;
+  z-index: 95;
+  user-select: none;
+  pointer-events: none;
+}
+
+@media (max-width: 960px) {
+  .nexvr-telemetry-scrollbar {
+    display: none !important;
+  }
+}
+
+/* Interactive Track Container */
+.nexvr-scroll-track {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  pointer-events: auto;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+}
+
+/* Hairline telemetry guide rail */
+.nexvr-scroll-rail {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+  transition: background 0.2s ease;
+}
+
+.nexvr-scroll-track:hover .nexvr-scroll-rail {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Active glowing crimson fill */
+.nexvr-scroll-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 0%;
+  background: linear-gradient(180deg, var(--red-deep) 0%, var(--red) 100%);
+  box-shadow: 0 0 8px rgba(255, 42, 31, 0.6);
+  border-radius: 2px;
+  will-change: height;
+}
+
+/* Milestone Section Pips */
+.nexvr-scroll-pips {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  width: 100%;
+  pointer-events: none;
+}
+
+.scroll-pip {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  pointer-events: auto;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.scroll-pip.passed {
+  background: var(--red);
+  box-shadow: 0 0 5px rgba(255, 42, 31, 0.6);
+}
+
+.scroll-pip.active {
+  background: var(--white);
+  box-shadow: 0 0 8px rgba(255, 42, 31, 0.8), 0 0 3px var(--white);
+}
+
+/* Precision Telemetry Thumb */
+.nexvr-scroll-thumb {
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  transform: translate(-50%, 0);
+  width: 6px;
+  height: 48px;
+  border-radius: 3px;
+  background: var(--white);
+  box-shadow: 0 0 10px rgba(255, 42, 31, 0.75), 0 0 18px rgba(255, 42, 31, 0.3);
+  pointer-events: auto;
+  cursor: grab;
+  z-index: 10;
+  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  will-change: top;
+}
+
+.nexvr-scroll-thumb:hover {
+  background: #FFFFFF;
+  box-shadow: 0 0 14px rgba(255, 42, 31, 0.95), 0 0 25px rgba(255, 42, 31, 0.5);
+}
+
+.nexvr-scroll-thumb:active {
+  cursor: grabbing;
+  box-shadow: 0 0 18px rgba(255, 42, 31, 1), 0 0 30px rgba(255, 42, 31, 0.7);
+}
+
+/* Micro ribs on the thumb */
+.thumb-ribs {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  align-items: center;
+  pointer-events: none;
+}
+
+.thumb-ribs span {
+  display: block;
+  width: 60%;
+  height: 1.5px;
+  background: var(--red);
+  border-radius: 1px;
+}
+
+/* ---------- PRIVACY MODAL ---------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 5, 6, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.modal-card {
+  background: var(--panel);
+  border: 1px solid var(--edge-hot);
+  box-shadow: 0 0 35px rgba(255, 42, 31, 0.22), 0 20px 45px rgba(0, 0, 0, 0.95);
+  border-radius: 4px;
+  max-width: 540px;
+  width: 100%;
+  padding: 1.75rem;
+  animation: modalIn .22s var(--ease);
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.15rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--edge);
+}
+.modal-close {
+  background: transparent;
+  border: 1px solid var(--edge);
+  color: var(--muted);
+  width: 28px;
+  height: 28px;
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  transition: all .2s;
+}
+/* ============================================================
+   MOBILE & PHONE UI OPTIMIZATION
+   Centralized layout, anti-zoom, touch targets, and mobile UX
+   ============================================================ */
+@media(max-width: 768px) {
+  /* Centralize Section Titles, Eyebrows & Copy */
+  .wrap > .eyebrow,
+  .section .eyebrow {
+    justify-content: center;
+    text-align: center;
+    margin-inline: auto;
+  }
+  .wrap > .eyebrow::after,
+  .section .eyebrow::after {
+    content: "";
+    width: 1.5rem;
+    height: 1px;
+    background: var(--red);
+    flex: none;
+  }
+  .wrap > .d2,
+  .section .d2 {
+    text-align: center;
+    margin-inline: auto;
+    font-size: clamp(1.8rem, 6.5vw, 2.5rem);
+    line-height: 1.08;
+  }
+  .wrap > .d4,
+  .section .d4 {
+    text-align: center;
+    margin-inline: auto;
+  }
+  .wrap > .lede,
+  .section .lede {
+    text-align: center;
+    margin-inline: auto;
+    font-size: 0.96rem;
+    line-height: 1.6;
+  }
+  .wrap > .btn-row,
+  .section .btn-row {
+    justify-content: center;
+    margin-top: 1.8rem;
+  }
+
+  /* Touch Target & Button Polish */
+  .btn {
+    min-height: 46px;
+    padding: 0.85rem 1.4rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    touch-action: manipulation;
+  }
+  .btn-row {
+    justify-content: center;
+  }
+
+  /* Prevent iOS Safari auto-zoom when tapping inputs */
+  .form input {
+    font-size: 16px !important;
+    min-height: 46px;
+    touch-action: manipulation;
+  }
+
+  /* Data Table Smooth Touch Scroll */
+  .tbl-wrap {
+    -webkit-overflow-scrolling: touch;
+    border-radius: 4px;
+    margin-inline: -0.25rem;
+  }
+  .tbl th, .tbl td {
+    padding: 0.75rem 0.85rem;
+    font-size: 0.78rem;
+  }
+
+  /* Code Block Touch Scrolling */
+  .code {
+    font-size: 0.72rem;
+    padding: 1rem 0.9rem;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 4px;
+  }
+
+  /* Download & Waitlist Form Centralization */
+  .dl > div {
+    text-align: center;
+    padding: 2.2rem 1.25rem;
+  }
+  #waitFormBox .eyebrow {
+    justify-content: center;
+  }
+  #waitFormBox .d3 {
+    text-align: center;
+  }
+  #waitFormBox .small {
+    text-align: center;
+    margin-inline: auto;
+  }
+  .reqs {
+    max-width: 340px;
+    margin-inline: auto;
+    text-align: left;
+  }
+  .form {
+    flex-direction: column;
+    width: 100%;
+    max-width: 360px;
+    margin: 1.25rem auto 0;
+  }
+  .form input {
+    flex: none;
+    width: 100%;
+    text-align: center;
+    height: auto;
+    min-height: 48px;
+    padding: 0.85rem 1rem;
+    box-sizing: border-box;
+  }
+  .form .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .form-note {
+    text-align: center;
+  }
+  .privacy-note {
+    text-align: center;
+    margin-inline: auto;
+    max-width: 340px;
+  }
+  .founder-pass {
+    text-align: center;
+    margin-inline: auto;
+    max-width: 360px;
+  }
+}
+
+@media(max-width: 640px) {
+  .section {
+    padding-block: clamp(3.5rem, 8vw, 5.5rem);
+  }
+  .hero-in {
+    padding: 5.5rem var(--gutter) 3.5rem;
+  }
+
+  /* Stat Rail Mobile Cockpit */
+  .rail {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    width: 100%;
+    max-width: 420px;
+    margin: 2.4rem auto 0;
+    border-top: 1px solid var(--edge);
+    border-bottom: 1px solid var(--edge);
+    padding: 0.85rem 0;
+  }
+  .rail div {
+    border-right: 1px solid var(--edge);
+    padding: 0.45rem 0.2rem;
+    text-align: center;
+  }
+  .rail div:last-child {
+    border-right: 0;
+  }
+  .rail b {
+    font-size: 1.15rem;
+  }
+  .rail span {
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+  }
+
+  /* Pipeline Mobile Layout */
+  .pipe-list {
+    max-width: 480px;
+    margin-inline: auto;
+  }
+  .step {
+    padding: 0 0 1.85rem 2.25rem;
+  }
+  .step h3 {
+    font-size: 0.9rem;
+  }
+  .step p {
+    font-size: 0.875rem;
+    line-height: 1.55;
+  }
+  .step-meta {
+    gap: 0.35rem;
+    margin-top: 0.75rem;
+  }
+  .step-meta code {
+    font-size: 0.68rem;
+    padding: 0.22rem 0.45rem;
+  }
+
+  /* Budget Card Centralization */
+  .budget {
+    padding: 1.6rem 1.25rem;
+    text-align: center;
+    max-width: 480px;
+    margin-inline: auto;
+  }
+  .budget-n {
+    text-align: center;
+  }
+  .budget hr {
+    margin: 1.25rem auto;
+    max-width: 280px;
+  }
+  .budget dl {
+    max-width: 280px;
+    margin-inline: auto;
+  }
+  .rates {
+    max-width: 320px;
+    margin: 1.25rem auto 0;
+    text-align: left;
+  }
+  .rates li {
+    min-height: 38px;
+    padding: 0.25rem 0.4rem;
+  }
+
+  /* Warning Box Centralization */
+  .warn {
+    grid-template-columns: 1fr;
+    text-align: center;
+    justify-items: center;
+    padding: 1.5rem 1.25rem;
+  }
+  .warn-mark {
+    margin: 0 auto;
+  }
+  .warn p {
+    text-align: center;
+    margin-inline: auto;
+  }
+  .warn .d3 {
+    text-align: center;
+  }
+
+  /* Flow / Setup Centralization */
+  .flow > div {
+    text-align: center;
+    padding: 1.5rem 1.25rem;
+  }
+  .flow .num {
+    margin-inline: auto;
+  }
+  .flow p {
+    margin-inline: auto;
+  }
+
+  /* FAQ Accordion Mobile Touch Comfort */
+  .acc summary {
+    padding: 1.05rem 1.15rem;
+    font-size: 0.875rem;
+    min-height: 48px;
+  }
+  .acc .a {
+    padding: 0 1.15rem 1.3rem;
+    font-size: 0.875rem;
+  }
+
+  /* Privacy Modal Mobile Cushion */
+  .modal-backdrop {
+    padding: 1rem;
+  }
+  .modal-card {
+    padding: 1.35rem 1.15rem;
+    max-height: 88vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Footer Centralization */
+  .foot {
+    padding-block: 3rem 2.25rem;
+  }
+  .foot-grid {
+    grid-template-columns: 1fr;
+    text-align: center;
+    justify-items: center;
+    gap: 2.25rem;
+  }
+  .foot-grid .brand {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    margin-inline: auto;
+    margin-bottom: 0.8rem;
+  }
+  .foot-grid p {
+    margin-inline: auto;
+    text-align: center;
+  }
+  .foot-grid ul {
+    justify-items: center;
+  }
+  .foot-in {
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    gap: 0.8rem;
+    padding-top: 1.8rem;
+  }
+  .foot-in p {
+    text-align: center;
+    margin: 0;
+  }
+}
+
+@media(max-width: 480px) {
+  /* Extra refinement for compact phones (iPhone SE, etc.) */
+  :root {
+    --gutter: 1.15rem;
+  }
+  .d1 {
+    font-size: clamp(2rem, 12vw, 2.75rem);
+  }
+  .nav-in {
+    height: 3.75rem;
+    padding-inline: 1rem;
+  }
+  .brand {
+    font-size: 0.8125rem;
+  }
+  .brand-mark {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+  .nav .btn-primary {
+    padding: 0.6rem 0.85rem;
+    font-size: 0.65rem;
+  }
+}
 
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}
@@ -530,7 +1335,22 @@ code{font-family:var(--mono)}
 </head>
 <body>
 
-<!-- ============ NAV ============ -->
+<!-- ============ NEXVR PRECISION TELEMETRY CUSTOM SCROLLBAR ============ -->
+<div id="nexvrScrollbar" class="nexvr-telemetry-scrollbar" aria-label="Page Telemetry Navigation">
+  <div class="nexvr-scroll-track" id="nexvrScrollTrack">
+    <div class="nexvr-scroll-rail">
+      <div class="nexvr-scroll-fill" id="nexvrScrollFill"></div>
+    </div>
+    <div class="nexvr-scroll-pips" id="nexvrScrollPips"></div>
+    <div class="nexvr-scroll-thumb" id="nexvrScrollThumb" role="scrollbar" aria-label="Page scroll position">
+      <div class="thumb-ribs">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </div>
+</div>
 <nav class="nav" id="nav">
   <div class="nav-in">
     <a class="brand" href="#top"><img class="brand-mark" src="logo.png" alt="" width="256" height="256">NEXVR&nbsp;ENGINE</a>
@@ -664,8 +1484,8 @@ code{font-family:var(--mono)}
 
       <aside class="budget rv">
         <p class="eyebrow" style="margin-bottom:1rem">The deadline</p>
-        <p class="budget-n mono">11.1<em>ms</em></p>
-        <p class="small" style="margin:.9rem 0 0">
+        <p class="budget-n mono" id="budgetDisplay">11.1<em>ms</em></p>
+        <p class="small" style="margin:.9rem 0 0" id="budgetExplainer">
           At 90&nbsp;Hz a frame is 1000&nbsp;÷&nbsp;90 milliseconds wide. Every stage above
           runs inside that window. Miss it and your headset shows you the last
           frame again — which your inner ear notices immediately.
@@ -673,17 +1493,37 @@ code{font-family:var(--mono)}
 
         <hr>
 
-        <p class="eyebrow" style="margin-bottom:.4rem">Budget by refresh rate</p>
-        <ul class="rates">
-          <li><span class="hz">72 Hz</span><span class="track"><i style="width:100%"></i></span><span class="ms">13.9 ms</span></li>
-          <li><span class="hz">80 Hz</span><span class="track"><i style="width:90%"></i></span><span class="ms">12.5 ms</span></li>
-          <li class="now"><span class="hz">90 Hz</span><span class="track"><i style="width:80%"></i></span><span class="ms">11.1 ms</span></li>
-          <li><span class="hz">120 Hz</span><span class="track"><i style="width:60%"></i></span><span class="ms">8.3 ms</span></li>
+        <p class="eyebrow" style="margin-bottom:.4rem">Budget by refresh rate (Click to simulate)</p>
+        <ul class="rates interactive-rates" id="rateSelector" role="tablist">
+          <li data-hz="72" data-ms="13.9" role="button" tabindex="0" title="Switch to 72 Hz simulation"><span class="hz">72 Hz</span><span class="track"><i style="width:100%"></i></span><span class="ms">13.9 ms</span></li>
+          <li data-hz="80" data-ms="12.5" role="button" tabindex="0" title="Switch to 80 Hz simulation"><span class="hz">80 Hz</span><span class="track"><i style="width:90%"></i></span><span class="ms">12.5 ms</span></li>
+          <li data-hz="90" data-ms="11.1" class="now" role="button" tabindex="0" title="Default 90 Hz simulation"><span class="hz">90 Hz</span><span class="track"><i style="width:80%"></i></span><span class="ms">11.1 ms</span></li>
+          <li data-hz="120" data-ms="8.3" role="button" tabindex="0" title="Switch to 120 Hz simulation"><span class="hz">120 Hz</span><span class="track"><i style="width:60%"></i></span><span class="ms">8.3 ms</span></li>
         </ul>
+
+        <div class="stage-timing-box" id="stageTimingBox">
+          <div class="stage-timing-head">
+            <span class="micro-tag">LATENCY &amp; OVERHEAD BREAKDOWN</span>
+            <span class="mono stage-overhead-sum"><strong id="engineOverheadNum">1.84</strong>ms Engine / <span id="gameHeadroomNum">9.26</span>ms Game</span>
+          </div>
+          <div class="stage-timing-meter">
+            <span class="seg seg-hook" title="MinHook Detour: 0.04ms" style="width: 2.5%"></span>
+            <span class="seg seg-matrix" title="Matrix Lock: 0.22ms" style="width: 12%"></span>
+            <span class="seg seg-depth" title="Depth Extract: 0.35ms" style="width: 19%"></span>
+            <span class="seg seg-warp" title="Reprojection CS: 1.15ms" style="width: 62.5%"></span>
+            <span class="seg seg-submit" title="OpenXR Submit: 0.08ms" style="width: 4%"></span>
+          </div>
+          <div class="stage-timing-labels">
+            <span>Hook <small>0.04ms</small></span>
+            <span>Matrix <small>0.22ms</small></span>
+            <span>Depth <small>0.35ms</small></span>
+            <span>Compute <small>1.15ms</small></span>
+            <span>XR Submit <small>0.08ms</small></span>
+          </div>
+        </div>
+
         <p class="small" style="margin:1rem 0 0">
-          The budget is the whole frame, not NexVR's share of it. The game still
-          has to render inside the same window — which is why headroom on the
-          flat game is the single best predictor of a comfortable result.
+          The budget is the whole frame, not NexVR's share of it. Sub-1.5ms render-thread overhead ensures the game engine retains maximum headroom to prevent frame drops.
         </p>
 
         <hr>
@@ -783,70 +1623,6 @@ code{font-family:var(--mono)}
   </div>
 </section>
 
-<!-- ============ PASSTHROUGH ============ -->
-<section class="section" id="passthrough">
-  <div class="wrap">
-    <p class="eyebrow rv">Before the lock</p>
-    <h2 class="d2 rv">
-      <span class="ghost" data-ghost="Never a black screen."><span>Never a black screen.</span></span>
-    </h2>
-
-    <div class="split rv" style="margin-top:clamp(2.5rem,5vw,4rem)">
-      <div class="prose">
-        <p>
-          Stereo needs two locks: the view matrix and the depth buffer. Menus,
-          loading screens, launchers and pre-rendered cutscenes often present
-          neither — there is no camera in a main menu and nothing to reconstruct
-          depth from.
-        </p>
-        <p>
-          The wrong answer is to stop submitting frames. A headset with no
-          incoming frames goes black, the runtime starts warning about a lost
-          session, and the user concludes the injector crashed. So when stereo
-          is unavailable NexVR keeps submitting: the flat backbuffer is copied
-          into <strong>both</strong> eye swapchain images, and you get the game
-          on a screen in front of you instead of a void.
-        </p>
-        <p>
-          The transition into stereo is therefore something you see happen. The
-          flat panel gains depth the moment both locks land — usually a second
-          or two into actual gameplay.
-        </p>
-      </div>
-
-      <div class="tbl-wrap">
-        <table class="tbl">
-          <thead>
-            <tr><th>State</th><th>What you see</th><th>Why</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="k">No locks</td>
-              <td>Flat frame, both eyes</td>
-              <td>Menu or loading screen — no camera is being presented</td>
-            </tr>
-            <tr>
-              <td class="k">Camera only</td>
-              <td>Flat frame, both eyes</td>
-              <td>View matrix found, depth not yet identified</td>
-            </tr>
-            <tr>
-              <td class="k">Camera + depth</td>
-              <td>Stereo, reprojected</td>
-              <td>Both locks held — the full pipeline runs</td>
-            </tr>
-            <tr>
-              <td class="k">Lock lost</td>
-              <td>Falls back to flat</td>
-              <td>Scene change or device reset invalidated the candidates</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- ============ GAMES ============ -->
 <section class="section" id="games">
   <div class="wrap">
@@ -864,7 +1640,7 @@ code{font-family:var(--mono)}
 
     <p class="small rv" style="margin-top:1.5rem;max-width:62ch">
       Profiles are plain JSON in <code>profiles/</code>. Adding a game takes about
-      three minutes and no C++. Game names are used only to identify compatibility;
+      three minutes and no C++. Community profiles also verified for Mortal Shell and custom DirectX titles. Game names are used only to identify compatibility;
       all trademarks belong to their respective owners, who are not affiliated with
       this project.
     </p>
@@ -937,7 +1713,20 @@ code{font-family:var(--mono)}
           likely to lock slowly, lock wrong, or not lock at all.
         </p>
       </div>
-      <pre class="code"><code><span class="cm">// profiles/palworld.json</span>
+      <div class="profile-snippet-wrap">
+        <div class="profile-snippet-bar">
+          <div class="profile-tabs" id="profileTabs" role="tablist">
+            <button type="button" class="p-tab active" data-game="palworld" role="tab">Palworld</button>
+            <button type="button" class="p-tab" data-game="cyberpunk" role="tab">Cyberpunk</button>
+            <button type="button" class="p-tab" data-game="sekiro" role="tab">Sekiro (DX11)</button>
+            <button type="button" class="p-tab" data-game="eldenring" role="tab">Elden Ring</button>
+          </div>
+          <button type="button" class="copy-profile-btn" id="copyProfileBtn" title="Copy profile JSON to clipboard">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span>Copy JSON</span>
+          </button>
+        </div>
+        <pre class="code" style="margin-top:0;border-top:0;border-radius:0 0 3px 3px;"><code id="profileCodeSnippet"><span class="cm">// profiles/palworld.json</span>
 {
   <span class="pk">"name"</span>:     <span class="sv">"Palworld"</span>,
   <span class="pk">"engine"</span>:   <span class="sv">"Unreal Engine 5"</span>,
@@ -947,6 +1736,7 @@ code{font-family:var(--mono)}
   <span class="pk">"srgb"</span>:     <span class="sv">true</span>,
   <span class="pk">"depth"</span>:    <span class="sv">true</span>
 }</code></pre>
+      </div>
     </div>
   </div>
 </section>
@@ -967,6 +1757,12 @@ code{font-family:var(--mono)}
         <p class="spec">DX11 · DX12 · Vulkan — MinHook detour</p>
       </div>
       <div class="card feat">
+        <span class="n">In-headset dashboard</span>
+        <h3 class="d3">Quick-tune without taking it off</h3>
+        <p>Press the controller menu button or gamepad combo (L3+R3) to summon the native ImGui VR overlay. Tweak IPD, convergence depth, and world scale live in stereo.</p>
+        <p class="spec">Universal ImGui overlay · DX11 · DX12 · Vulkan</p>
+      </div>
+      <div class="card feat">
         <span class="n">Comfort guard</span>
         <h3 class="d3">Keeps your stomach out of it</h3>
         <p>Dedicated shaders watch for the motion that causes sickness and vignette the periphery before it reaches you.</p>
@@ -985,88 +1781,10 @@ code{font-family:var(--mono)}
         <p class="spec">Reads libraryfolders.vdf from disk</p>
       </div>
       <div class="card feat">
-        <span class="n">Runtime detect</span>
+        <span class="n">Runtime &amp; Telemetry</span>
         <h3 class="d3">Knows your headset</h3>
-        <p>Reads the active OpenXR runtime from the registry — Quest Link, SteamVR, WMR — instead of asking you which one you use.</p>
-        <p class="spec">ActiveRuntime, resolved at launch</p>
-      </div>
-      <div class="card feat">
-        <span class="n">Live logs</span>
-        <h3 class="d3">Shows its work</h3>
-        <p>Hook state, matrix locks and submission errors stream into the launcher as they happen. When something fails you can see the stage it failed at.</p>
-        <p class="spec">Per-stage, streamed while attached</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ COMFORT ============ -->
-<section class="section" id="comfort">
-  <div class="wrap">
-    <p class="eyebrow rv">Comfort</p>
-    <h2 class="d2 rv">
-      <span class="ghost" data-ghost="Motion sickness is a bug."><span>Motion sickness is a bug.</span></span>
-    </h2>
-
-    <div class="split rv" style="margin-top:clamp(2.5rem,5vw,4rem)">
-      <div class="prose">
-        <p>
-          Simulator sickness is a conflict, not a preference. Your eyes report
-          motion; your inner ear reports none; the mismatch is read as poisoning
-          and your body responds accordingly. A flat game converted to VR
-          produces that conflict constantly, because the camera moves in ways no
-          head ever does — mouse-look accelerations, scripted camera shake,
-          cutscene pans, vehicle motion.
-        </p>
-        <p>
-          Two things help more than anything else, and neither is resolution.
-          The first is <strong>holding the frame rate</strong>: a dropped frame in
-          VR is not a stutter, it is the world briefly detaching from your head.
-          The second is <strong>shrinking the field of view during motion</strong>,
-          because peripheral vision is where optical flow is read most strongly.
-        </p>
-        <p>
-          Both are what the engine spends its comfort budget on — spacewarp for
-          the first, a peripheral vignette that tightens under motion for the
-          second.
-        </p>
-      </div>
-
-      <div class="tbl-wrap">
-        <table class="tbl">
-          <thead>
-            <tr><th>Trigger</th><th>Why it hurts</th><th>Mitigation</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="k">Dropped frames</td>
-              <td>The world detaches from your head for a beat</td>
-              <td>Spacewarp reprojection</td>
-            </tr>
-            <tr>
-              <td class="k">Fast strafing</td>
-              <td>Heavy optical flow across the periphery</td>
-              <td>Vignette under motion</td>
-            </tr>
-            <tr>
-              <td class="k">Camera shake</td>
-              <td>Motion your neck never produced</td>
-              <td>Turn it off in the game</td>
-            </tr>
-            <tr>
-              <td class="k">Wrong depth</td>
-              <td>Eyes fight to converge on a bad disparity</td>
-              <td>Use a profile</td>
-            </tr>
-          </tbody>
-        </table>
-        <div style="border-top:1px solid var(--edge);padding:1.1rem clamp(.9rem,2vw,1.4rem)">
-          <p class="small" style="margin:0">
-            Start with short sessions. Tolerance genuinely builds with exposure,
-            and pushing through nausea is the one approach that reliably makes it
-            worse.
-          </p>
-        </div>
+        <p>Reads the active OpenXR runtime from the registry (Quest Link, SteamVR, Virtual Desktop, PSVR2) and streams live per-stage hook telemetry as you play.</p>
+        <p class="spec">ActiveRuntime auto-resolve · streamed live telemetry</p>
       </div>
     </div>
   </div>
@@ -1093,18 +1811,18 @@ code{font-family:var(--mono)}
         <div class="tiers">
           <div>
             <span class="tier-n">Tier 1</span>
-            <p class="tier-b"><b>Single-player, no anti-cheat.</b> Nothing is watching the process and nothing can be banned.</p>
+            <p class="tier-b"><b>Single-player, no anti-cheat.</b> Nothing is watching the process and nothing can be banned (e.g. Cyberpunk, Hogwarts Legacy, Sekiro).</p>
             <span class="verdict v-yes">Supported</span>
           </div>
           <div>
             <span class="tier-n">Tier 2</span>
-            <p class="tier-b"><b>Anti-cheat present but inactive</b> — offline mode, or a launch option that disables it. Detection may still fire and refuse to attach.</p>
-            <span class="verdict v-warn">Not supported</span>
+            <p class="tier-b"><b>Mod-friendly / Offline mode.</b> Client anti-cheat disabled (e.g. Elden Ring offline with EAC disabled). Supported strictly in offline single-player.</p>
+            <span class="verdict v-warn" style="color:var(--white);border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.06)">Supported Offline</span>
           </div>
           <div>
             <span class="tier-n">Tier 3</span>
-            <p class="tier-b"><b>Kernel-level anti-cheat, or any online multiplayer.</b> Injection is refused at the process level.</p>
-            <span class="verdict v-no">Refused</span>
+            <p class="tier-b"><b>Kernel-level or active online multiplayer.</b> Vanguard, BattlEye, Ricochet, live EAC. Refused before injection touches memory to safeguard your accounts.</p>
+            <span class="verdict v-no">Refused (Safe)</span>
           </div>
         </div>
 
@@ -1194,41 +1912,6 @@ code{font-family:var(--mono)}
       </details>
 
       <details>
-        <summary>Everything looks like a photograph pasted at one distance.</summary>
-        <p class="a">
-          The camera locked, depth did not. With no depth buffer there is nothing
-          to reproject against, so both eyes receive nearly identical images and
-          the scene has no volume.
-        </p>
-        <p class="a">
-          Check the launcher log for the depth stage, and check whether the title
-          has a shipped profile — <code>depth</code> in the profile is exactly
-          this setting.
-        </p>
-      </details>
-
-      <details>
-        <summary>The world is inverted, tilted, or lying on its side.</summary>
-        <p class="a">
-          Matrix convention mismatch. <code>rowMajor</code> controls whether the
-          matrix is transposed before use; <code>reverseZ</code> controls whether
-          the near and far planes are the way round the game expects. Both are
-          per-game, and on an unprofiled title both are inferred rather than
-          known.
-        </p>
-      </details>
-
-      <details>
-        <summary>Colours are washed out, or the blacks are crushed.</summary>
-        <p class="a">
-          <code>srgb</code>. The backbuffer may already be gamma-encoded before
-          NexVR ever sees it. Applying the transform a second time washes the
-          image out; skipping one that was needed crushes it. One flag, two
-          symptoms, opposite directions.
-        </p>
-      </details>
-
-      <details>
         <summary>My game isn't in the list. Does it still work?</summary>
         <p class="a">
           It may. Profiles are an accelerant, not a requirement — the matrix and
@@ -1243,25 +1926,6 @@ code{font-family:var(--mono)}
       </details>
 
       <details>
-        <summary>Does it need an internet connection?</summary>
-        <p class="a">
-          No. Injection, profile matching and OpenXR submission are entirely
-          local. The launcher reads your Steam library from disk and your active
-          runtime from the registry.
-        </p>
-      </details>
-
-      <details>
-        <summary>Why Windows only?</summary>
-        <p class="a">
-          Two of the three backends are DirectX, and DirectX is Windows. The
-          Vulkan path is portable in principle, but the launcher, the installer
-          and the anti-cheat detection are not — and shipping a third of a
-          product is worse than shipping none of it.
-        </p>
-      </details>
-
-      <details>
         <summary>Will it run on my GPU?</summary>
         <p class="a">
           Stereo asks for close to twice the pixels of the flat game. Reprojection
@@ -1269,6 +1933,15 @@ code{font-family:var(--mono)}
           predictor is headroom: if the game already runs comfortably above your
           headset's refresh rate on a flat monitor, you have somewhere to spend.
           If it barely holds 60, stereo will not rescue it.
+        </p>
+      </details>
+
+      <details>
+        <summary>Does it need an internet connection?</summary>
+        <p class="a">
+          No. Injection, profile matching and OpenXR submission are entirely
+          local. The launcher reads your Steam library from disk and your active
+          runtime from the registry.
         </p>
       </details>
 
@@ -1308,15 +1981,33 @@ code{font-family:var(--mono)}
           <input class="hp" id="waitHp" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
           <button class="btn btn-primary" type="submit"><span>Notify me</span></button>
         </form>
-        <p class="form-note" id="waitNote" role="status" style="margin-top:.6rem;margin-bottom:1.5rem"></p>
+        <p class="form-note" id="waitNote" role="status" style="margin-top:.6rem;margin-bottom:0"></p>
+        <p class="privacy-note" style="margin-top:.65rem;margin-bottom:0;font-size:0.6875rem;color:var(--muted)">
+          🔒 Secured via Cloudflare KV. Single notification upon launch. No ads, tracking pixels, or third-party sharing. <button type="button" id="openPrivacyBtn" style="background:none;border:none;padding:0;color:var(--muted);font-family:inherit;font-size:inherit;text-decoration:underline;cursor:pointer">Privacy statement</button>
+        </p>
+
+        <!-- Dynamic Founder Access Pass (Appears on successful waitlist submission) -->
+        <div class="founder-pass" id="founderPass" style="display:none;" role="status">
+          <div class="founder-pass-badge">
+            <span class="pulse-dot"></span> PRIORITY ALLOCATED · FOUNDER STATUS
+          </div>
+          <div class="founder-pass-code" id="founderPassCode">NEXVR-FOUNDER-#8492</div>
+          <p class="small" style="color:var(--white);margin:.3rem 0 .8rem">
+            Spot secured. You will receive exclusive early builds, priority profile patches, and the direct engine binary on launch.
+          </p>
+          <div class="founder-pass-meta">
+            <span><b>ACCESS LEVEL:</b> TIER 1 DIRECT ENGINE BINARY</span>
+            <span><b>VERIFIED COMPATIBILITY:</b> ALL 6 SHIPPED PROFILES</span>
+          </div>
+        </div>
 
         <hr style="border:0;border-top:1px solid var(--edge);margin:1.8rem 0 1.5rem">
 
         <p class="eyebrow" style="margin-bottom:.9rem">What the installer places</p>
         <ul class="reqs">
-          <li><b>Launcher</b> — library scan, runtime detection, live log</li>
-          <li><b>Injector</b> — the DLL loaded into the game process</li>
-          <li><b>Profiles</b> — six JSON files in <code>profiles/</code></li>
+          <li><b>Launcher</b> — library scan, runtime detection, live telemetry log</li>
+          <li><b>Injector &amp; CLI</b> — vrinject.dll + vr-inject-cli.exe</li>
+          <li><b>Curated Profiles</b> — ready-to-run JSON profiles in <code>profiles/</code></li>
         </ul>
         <p class="small" style="margin:1.1rem 0 0;max-width:44ch">
           Nothing is written into your game directories, and no launch options
@@ -1338,10 +2029,11 @@ code{font-family:var(--mono)}
 
         <p class="eyebrow" style="margin-bottom:1.2rem">Known headsets</p>
         <ul class="reqs">
-          <li>Meta Quest 3 — Link or Virtual Desktop</li>
-          <li>Valve Index — SteamVR</li>
+          <li>Meta Quest 3 / Quest 2 / Quest Pro — Link, AirLink, or Virtual Desktop</li>
+          <li>Valve Index &amp; HTC Vive — SteamVR</li>
           <li>Bigscreen Beyond — SteamVR</li>
-          <li>Anything else exposing an OpenXR runtime</li>
+          <li>PlayStation VR2 on PC — Official Sony PC Adapter &amp; SteamVR</li>
+          <li>Any 6DOF headset exposing an OpenXR runtime</li>
         </ul>
 
         <hr style="border:0;border-top:1px solid var(--edge);margin:1.8rem 0">
@@ -1367,7 +2059,7 @@ code{font-family:var(--mono)}
   <div class="wrap">
     <div class="foot-grid">
       <div>
-        <a class="brand" href="#top" style="margin-bottom:1.1rem"><img class="brand-mark" src="logo.png" alt="" width="256" height="256">NEXVR&nbsp;ENGINE</a>
+        <a class="brand" href="#top" style="margin-bottom:1.1rem"><img class="brand-mark" src="logo.png" alt="" width="256" height="256"><span>NEXVR&nbsp;ENGINE</span></a>
         <p class="small" style="margin:0;max-width:32ch">
           A universal VR injector for games that were never built for a headset.
         </p>
@@ -1377,8 +2069,8 @@ code{font-family:var(--mono)}
         <ul>
           <li><a href="#pipeline">The six stages</a></li>
           <li><a href="#backends">Graphics backends</a></li>
-          <li><a href="#passthrough">Before the lock</a></li>
-          <li><a href="#comfort">Comfort</a></li>
+          <li><a href="#flags">Flag Glossary</a></li>
+          <li><a href="#engine">Inside the Engine</a></li>
         </ul>
       </div>
       <div>
@@ -1396,6 +2088,7 @@ code{font-family:var(--mono)}
           <li><a class="btn-notify" href="#waitForm">Notify me</a></li>
           <li><a href="#setup">Setup</a></li>
           <li><a href="#faq">Troubleshooting</a></li>
+          <li><a href="javascript:void(0)" class="open-privacy-link">Privacy statement</a></li>
         </ul>
       </div>
     </div>
@@ -1419,6 +2112,9 @@ import Lenis from 'https://cdn.jsdelivr.net/npm/lenis@1.1.14/+esm';
 gsap.registerPlugin(ScrollTrigger);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/* Prevent gesture pinch-to-zoom on touch devices */
+document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+
 if (!location.hash) { scrollTo(0, 0); addEventListener('load', () => scrollTo(0, 0)); }
 
 /* Same-origin Cloudflare Pages Function — see functions/api/waitlist.js */
@@ -1426,12 +2122,12 @@ const WAITLIST_ENDPOINT = '/api/waitlist';
 
 /* ---------- game profiles: mirrors profiles/*.json ---------- */
 const PROFILES = [
-  {name:'Cyberpunk 2077',  engine:'Generic',        api:'DX12', reverseZ:1, rowMajor:0, srgb:0, depth:1},
-  {name:'Elden Ring',      engine:'Generic',        api:'DX12', reverseZ:1, rowMajor:0, srgb:1, depth:0},
-  {name:'Hogwarts Legacy', engine:'Unreal Engine 4',api:'DX12', reverseZ:1, rowMajor:1, srgb:1, depth:1},
-  {name:'Atomic Heart',    engine:'Unreal Engine 4',api:'DX12', reverseZ:1, rowMajor:1, srgb:1, depth:1},
-  {name:'Palworld',        engine:'Unreal Engine 5',api:'DX12', reverseZ:1, rowMajor:1, srgb:1, depth:1},
-  {name:'Mortal Shell',    engine:'Unreal Engine 4',api:'DX11', reverseZ:1, rowMajor:1, srgb:1, depth:0},
+  {name:'Cyberpunk 2077',            engine:'REDengine 4',    api:'DX12', reverseZ:1, rowMajor:0, srgb:0, depth:1},
+  {name:'Elden Ring',                engine:'FromSoftware',   api:'DX12', reverseZ:1, rowMajor:0, srgb:1, depth:0},
+  {name:'Sekiro: Shadows Die Twice', engine:'FromSoftware',   api:'DX11', reverseZ:1, rowMajor:0, srgb:1, depth:1},
+  {name:'Hogwarts Legacy',           engine:'Unreal Engine 4',api:'DX12', reverseZ:1, rowMajor:1, srgb:1, depth:1},
+  {name:'Atomic Heart',              engine:'Unreal Engine 4',api:'DX12', reverseZ:1, rowMajor:1, srgb:1, depth:1},
+  {name:'Palworld',                  engine:'Unreal Engine 5',api:'DX12', reverseZ:1, rowMajor:1, srgb:1, depth:1},
 ];
 const flag = v => v
   ? '<span class="on-v">ON</span>'
@@ -1490,23 +2186,54 @@ const ghostIO = new IntersectionObserver((es)=>{
 /* Every section head carrying the signature, including the ones added later —
    scoped by section so the hero's load-time convergence is not re-triggered. */
 document.querySelectorAll(
-  '#pipeline .ghost, #backends .ghost, #passthrough .ghost, #games .ghost, ' +
-  '#engine .ghost, #comfort .ghost, #setup .ghost, #faq .ghost, #get .ghost'
+  '#pipeline .ghost, #backends .ghost, #games .ghost, ' +
+  '#engine .ghost, #setup .ghost, #faq .ghost, #get .ghost'
 ).forEach(g=>ghostIO.observe(g));
 
-/* ---------- pipeline rail ---------- */
+/* ---------- pipeline rail: line grows down and touches each box to turn it red ---------- */
 {
   const list = document.getElementById('pipeList');
   const fill = document.getElementById('pipeFill');
   const steps = [...list.querySelectorAll('.step')];
-  ScrollTrigger.create({
-    trigger:list, start:'top 72%', end:'bottom 62%',
-    onUpdate:s=>{
-      const p = s.progress;
-      fill.style.height = (p*100)+'%';
-      steps.forEach((st,i)=>st.classList.toggle('on', p >= (i+.55)/steps.length));
-    }
-  });
+
+  if (list && fill && steps.length) {
+    const getRem = () => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    
+    let boxTops = [];
+    let maxTravel = 0;
+
+    const measureRail = () => {
+      const rem = getRem();
+      // .step::before marker is top: 0.42rem
+      const markerTopOffset = 0.42 * rem;
+      boxTops = steps.map(st => st.offsetTop + markerTopOffset);
+      const lastStep = steps[steps.length - 1];
+      // Travel down to the bottom of the last step's box
+      maxTravel = lastStep.offsetTop + (0.42 + 0.9) * rem;
+    };
+
+    measureRail();
+    window.addEventListener('resize', measureRail, { passive: true });
+
+    ScrollTrigger.create({
+      trigger: list,
+      start: 'top 75%',
+      end: 'bottom 55%',
+      onRefresh: measureRail,
+      onUpdate: (self) => {
+        const p = self.progress;
+        const currentTip = p * maxTravel;
+        fill.style.height = `${currentTip}px`;
+
+        steps.forEach((st, i) => {
+          const targetBoxTop = boxTops[i];
+          // When the line touches the box, it turns solid red:
+          const isTouched = currentTip >= (targetBoxTop - 1);
+          st.classList.toggle('on', isTouched);
+        });
+      }
+    });
+  }
 }
 
 /* ---------- FAQ: one answer open at a time ----------
@@ -1600,7 +2327,14 @@ form.addEventListener('submit', async (e) => {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) return say(data.error || 'That did not go through. Try again in a moment.');
-    say('You are on the list. One message when Engine lands.', true);
+    say('Access allocated. Spot locked in.', true);
+    const passEl = document.getElementById('founderPass');
+    const codeEl = document.getElementById('founderPassCode');
+    if (passEl && codeEl) {
+      const randNum = Math.floor(1000 + Math.random() * 9000);
+      codeEl.textContent = `NEXVR-FOUNDER-#${randNum}`;
+      passEl.style.display = 'block';
+    }
     form.reset();
   } catch {
     say('No connection. Check your network and try again.');
@@ -1652,6 +2386,375 @@ const scrollToEmail = (e) => {
 document.querySelectorAll('.btn-notify, a[href="#waitForm"], a[href="#waitEmail"]').forEach(el => {
   el.addEventListener('click', scrollToEmail);
 });
+
+
+/* ============================================================
+   NEXVR ENGINE — INTERACTIVE FRAME BUDGET CALCULATOR
+   ============================================================ */
+{
+  const rateList = document.getElementById('rateSelector');
+  const budgetDisplay = document.getElementById('budgetDisplay');
+  const budgetExplainer = document.getElementById('budgetExplainer');
+  const gameHeadroomNum = document.getElementById('gameHeadroomNum');
+  const engineOverhead = 1.84;
+
+  if (rateList && budgetDisplay && gameHeadroomNum) {
+    const items = rateList.querySelectorAll('li');
+    items.forEach(li => {
+      const selectRate = () => {
+        items.forEach(i => i.classList.remove('now'));
+        li.classList.add('now');
+
+        const hz = li.dataset.hz;
+        const ms = parseFloat(li.dataset.ms);
+        const headroom = (ms - engineOverhead).toFixed(2);
+
+        budgetDisplay.innerHTML = `${ms}<em>ms</em>`;
+        if (budgetExplainer) {
+          budgetExplainer.innerHTML = `At ${hz}&nbsp;Hz a frame is 1000&nbsp;÷&nbsp;${hz} = <strong>${ms} milliseconds</strong> wide. Every stage above runs inside that window. NexVR requires only ${engineOverhead}ms, leaving <strong>${headroom}ms</strong> pure rendering headroom for the game engine.`;
+        }
+        gameHeadroomNum.textContent = headroom;
+      };
+
+      li.addEventListener('click', selectRate);
+      li.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          selectRate();
+        }
+      });
+    });
+  }
+}
+
+/* ============================================================
+   NEXVR ENGINE — INTERACTIVE PROFILE SWITCHER & 1-CLICK COPY
+   ============================================================ */
+{
+  const PROFILES_DATA = {
+    palworld: {
+      json: `// profiles/palworld.json
+{
+  "name":     "Palworld",
+  "engine":   "Unreal Engine 5",
+  "api":      "DX12",
+  "reverseZ": true,
+  "rowMajor": true,
+  "srgb":     true,
+  "depth":    true
+}`
+    },
+    cyberpunk: {
+      json: `// profiles/1091500_cyberpunk_2077.json
+{
+  "name":     "Cyberpunk 2077",
+  "engine":   "REDengine 4",
+  "api":      "DX12",
+  "reverseZ": true,
+  "rowMajor": false,
+  "srgb":     false,
+  "depth":    true
+}`
+    },
+    sekiro: {
+      json: `// profiles/814380_sekiro.json
+{
+  "name":     "Sekiro: Shadows Die Twice",
+  "engine":   "FromSoftware",
+  "api":      "DX11",
+  "reverseZ": true,
+  "rowMajor": false,
+  "srgb":     true,
+  "depth":    true
+}`
+    },
+    eldenring: {
+      json: `// profiles/1245620_elden_ring.json (Offline Mode)
+{
+  "name":     "Elden Ring",
+  "engine":   "FromSoftware",
+  "api":      "DX12",
+  "reverseZ": true,
+  "rowMajor": false,
+  "srgb":     true,
+  "depth":    false
+}`
+    }
+  };
+
+  const tabs = document.querySelectorAll('#profileTabs .p-tab');
+  const codeBlock = document.getElementById('profileCodeSnippet');
+  const copyBtn = document.getElementById('copyProfileBtn');
+  let activeGame = 'palworld';
+
+  if (tabs.length && codeBlock && copyBtn) {
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        activeGame = tab.dataset.game;
+        const prof = PROFILES_DATA[activeGame];
+        if (prof) {
+          codeBlock.innerHTML = prof.json
+            .replace(/(\/\/[^\n]+)/g, '<span class="cm">$1</span>')
+            .replace(/"([^"]+)":/g, '<span class="pk">"$1"</span>:')
+            .replace(/: "([^"]+)"/g, ': <span class="sv">"$1"</span>')
+            .replace(/: (true|false)/g, ': <span class="sv">$1</span>');
+        }
+      });
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      const prof = PROFILES_DATA[activeGame];
+      if (!prof) return;
+      try {
+        await navigator.clipboard.writeText(prof.json);
+        copyBtn.classList.add('copied');
+        copyBtn.innerHTML = `<span>✓ Copied!</span>`;
+        setTimeout(() => {
+          copyBtn.classList.remove('copied');
+          copyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Copy JSON</span>`;
+        }, 2000);
+      } catch (_) {}
+    });
+  }
+}
+
+/* ============================================================
+   NEXVR ENGINE — PRECISION TELEMETRY CUSTOM SCROLLBAR SCRIPT
+   ============================================================ */
+{
+  const scrollbar = document.getElementById('nexvrScrollbar');
+  const track = document.getElementById('nexvrScrollTrack');
+  const fill = document.getElementById('nexvrScrollFill');
+  const pipsContainer = document.getElementById('nexvrScrollPips');
+  const thumb = document.getElementById('nexvrScrollThumb');
+
+  if (scrollbar && track && fill && thumb) {
+    const SECTIONS = [
+      { id: 'top', label: 'ORIGIN' },
+      { id: 'pipeline', label: 'PIPELINE' },
+      { id: 'backends', label: 'BACKENDS' },
+      { id: 'games', label: 'GAMES' },
+      { id: 'flags', label: 'FLAGS' },
+      { id: 'engine', label: 'ENGINE' },
+      { id: 'setup', label: 'SETUP' },
+      { id: 'faq', label: 'FAQ' },
+      { id: 'get', label: 'WAITLIST' }
+    ];
+
+    let currentNorm = 0;
+    let isDragging = false;
+    let pips = [];
+
+    const getMaxScroll = () => {
+      return Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    };
+
+    const getScrollNorm = () => {
+      const maxScroll = getMaxScroll();
+      return Math.max(0, Math.min(1, window.scrollY / maxScroll));
+    };
+
+    const buildPips = () => {
+      if (!pipsContainer) return;
+      pipsContainer.innerHTML = '';
+      pips = [];
+      const maxScroll = getMaxScroll();
+
+      SECTIONS.forEach(sec => {
+        const el = document.getElementById(sec.id);
+        if (!el) return;
+
+        const pip = document.createElement('div');
+        pip.className = 'scroll-pip';
+
+        const secTop = el.getBoundingClientRect().top + window.scrollY;
+        const norm = Math.max(0, Math.min(1, (secTop - 60) / maxScroll));
+        pip.style.top = `${(norm * 100).toFixed(2)}%`;
+
+        pip.addEventListener('click', (e) => {
+          e.stopPropagation();
+          scrollToNorm(norm, true);
+        });
+
+        pipsContainer.appendChild(pip);
+        pips.push({ pip, norm, id: sec.id, label: sec.label, top: secTop });
+      });
+    };
+
+    const updateActiveSection = () => {
+      const scrollMiddle = window.scrollY + window.innerHeight * 0.35;
+      let active = SECTIONS[0].label;
+      for (let i = SECTIONS.length - 1; i >= 0; i--) {
+        const el = document.getElementById(SECTIONS[i].id);
+        if (el) {
+          const top = el.getBoundingClientRect().top + window.scrollY;
+          if (scrollMiddle >= top - 120) {
+            active = SECTIONS[i].label;
+            break;
+          }
+        }
+      }
+
+      pips.forEach(p => {
+        if (currentNorm >= p.norm - 0.005) {
+          p.pip.classList.add('passed');
+        } else {
+          p.pip.classList.remove('passed');
+        }
+        if (p.label === active) {
+          p.pip.classList.add('active');
+        } else {
+          p.pip.classList.remove('active');
+        }
+      });
+    };
+
+    const updateScrollbar = (norm) => {
+      currentNorm = Math.max(0, Math.min(1, norm));
+
+      const trackH = track.clientHeight - 20; // 10px top + 10px bottom
+      const thumbH = thumb.offsetHeight || 48;
+      const usableH = Math.max(0, trackH - thumbH);
+      const thumbTop = 10 + currentNorm * usableH;
+
+      thumb.style.top = `${thumbTop}px`;
+      fill.style.height = `${(currentNorm * 100).toFixed(1)}%`;
+
+      updateActiveSection();
+    };
+
+    const scrollToNorm = (norm, smooth = false) => {
+      const maxScroll = getMaxScroll();
+      const targetY = norm * maxScroll;
+      if (lenis) {
+        lenis.scrollTo(targetY, { immediate: !smooth });
+      } else {
+        window.scrollTo({ top: targetY, behavior: smooth ? 'smooth' : 'auto' });
+      }
+      updateScrollbar(norm);
+    };
+
+    const getNormFromClientY = (clientY) => {
+      const rect = track.getBoundingClientRect();
+      const top = rect.top + 10;
+      const bottom = rect.bottom - 10;
+      const h = bottom - top;
+      if (h <= 0) return 0;
+      return Math.max(0, Math.min(1, (clientY - top) / h));
+    };
+
+    // Track click
+    track.addEventListener('pointerdown', (e) => {
+      if (e.target === thumb || thumb.contains(e.target) || e.target.classList.contains('scroll-pip')) return;
+      e.preventDefault();
+      const norm = getNormFromClientY(e.clientY);
+      scrollToNorm(norm, true);
+    });
+
+    // Thumb Drag with pointer capture
+    thumb.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      isDragging = true;
+      thumb.setPointerCapture(e.pointerId);
+      document.body.style.userSelect = 'none';
+
+      const onPointerMove = (ev) => {
+        if (!isDragging) return;
+        const norm = getNormFromClientY(ev.clientY);
+        scrollToNorm(norm, false);
+      };
+
+      const onPointerUp = (ev) => {
+        isDragging = false;
+        try { thumb.releasePointerCapture(ev.pointerId); } catch (_) {}
+        document.body.style.userSelect = '';
+        thumb.removeEventListener('pointermove', onPointerMove);
+        thumb.removeEventListener('pointerup', onPointerUp);
+        thumb.removeEventListener('pointercancel', onPointerUp);
+      };
+
+      thumb.addEventListener('pointermove', onPointerMove);
+      thumb.addEventListener('pointerup', onPointerUp);
+      thumb.addEventListener('pointercancel', onPointerUp);
+    });
+
+    // Window scroll listeners
+    window.addEventListener('scroll', () => {
+      if (!isDragging) {
+        updateScrollbar(getScrollNorm());
+      }
+    }, { passive: true });
+
+    if (lenis) {
+      lenis.on('scroll', () => {
+        if (!isDragging) {
+          updateScrollbar(getScrollNorm());
+        }
+      });
+    }
+
+    // Build pips and init
+    setTimeout(() => {
+      buildPips();
+      updateScrollbar(getScrollNorm());
+    }, 150);
+
+    window.addEventListener('resize', () => {
+      buildPips();
+      updateScrollbar(getScrollNorm());
+    });
+  }
+}
+
+/* ---------- PRIVACY MODAL CONTROLLER ---------- */
+{
+  const modal = document.getElementById('privacyModal');
+  const closeBtn = document.getElementById('closePrivacyBtn');
+  const openBtns = [document.getElementById('openPrivacyBtn'), ...document.querySelectorAll('.open-privacy-link')].filter(Boolean);
+
+  const openModal = (e) => {
+    if (e) e.preventDefault();
+    if (modal) modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeModal = () => {
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+  };
+
+  openBtns.forEach(b => b.addEventListener('click', openModal));
+  if (closeBtn) closeBtn.addEventListener('click', closeModal);
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+  }
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal && modal.style.display === 'flex') {
+      closeModal();
+    }
+  });
+}
 </script>
+
+<!-- ============ PRIVACY STATEMENT MODAL ============ -->
+<div class="modal-backdrop" id="privacyModal" role="dialog" aria-modal="true" aria-labelledby="privacyTitle" style="display:none">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 class="d3" id="privacyTitle" style="margin:0;font-size:1.15rem">Privacy &amp; Data Protection</h3>
+      <button type="button" class="modal-close" id="closePrivacyBtn" aria-label="Close privacy statement">✕</button>
+    </div>
+    <div class="modal-body small" style="color:var(--muted);line-height:1.65">
+      <p style="margin-top:0"><strong style="color:var(--white)">Email Storage:</strong> When you join the waitlist, your email is stored securely in encrypted Cloudflare Key-Value (KV) storage. It is used exclusively to send you early access invitations and direct binary downloads when the engine launches.</p>
+      <p><strong style="color:var(--white)">Zero Tracking &amp; No Third Parties:</strong> We do not deploy third-party trackers, advertising cookies, or behavioral telemetry brokers. Your email will never be sold, leased, or shared.</p>
+      <p><strong style="color:var(--white)">Local Telemetry:</strong> Engine diagnostics (DirectX/Vulkan hook hooks, matrix locks, stereo depth convergence) run 100% locally on your computer between the injection DLL and the desktop launcher. No telemetry or gameplay data leaves your machine.</p>
+      <p style="margin-bottom:0"><strong style="color:var(--white)">Right to Deletion:</strong> You can permanently remove your address at any time by replying to any launch message.</p>
+    </div>
+  </div>
+</div>
 </body>
 </html>

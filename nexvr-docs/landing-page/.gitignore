@@ -11,6 +11,15 @@ package-lock.json
 # functions/_lib/, which is real source the deploy cannot build without.
 /_*
 
-# Local secrets for `wrangler pages dev` — holds the real admin password.
-# Never commit. Production secrets live in `wrangler pages secret put`.
+# Local secrets and environment files — holds real admin credentials and API keys.
 .dev.vars
+.env
+.env.*
+*.env
+
+# Sensitive customer data and database exports
+waitlist-subscribers*.json
+*.csv
+*.sql
+release-email-preview.html
+

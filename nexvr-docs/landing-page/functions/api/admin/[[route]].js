@@ -17,6 +17,7 @@ import {
   verifySession, issueSession, sessionCookie, clearCookie,
   timingSafeEqual, loginThrottled, clearLoginThrottle,
 } from '../../_lib/auth.js';
+import { buildEmailHtml, buildPlainText, DEFAULT_CONFIG } from '../../_lib/email-template.js';
 
 const RANGES = new Set([7, 30, 90]);
 const GITHUB_REPO = 'sathishssj3/NexVR-Engine-Releases';
@@ -62,6 +63,9 @@ export async function onRequest(ctx) {
 
   if (route === 'stats' && method === 'GET') return stats(request, env);
   if (route === 'waitlist.csv' && method === 'GET') return waitlistCsv(env);
+  if (route === 'waitlist/delete' && method === 'POST') return deleteWaitlistEmail(request, env);
+  if (route === 'reset-data' && method === 'POST') return resetData(request, env);
+  if (route === 'send-email' && method === 'POST') return sendEmail(request, env);
 
   return json({ error: 'Not found.' }, 404);
 }
@@ -223,7 +227,7 @@ async function waitlistStats(env) {
   try {
     const all = await listWaitlist(env);
     all.sort((a, b) => String(b.at ?? '').localeCompare(String(a.at ?? '')));
-    return { configured: true, total: all.length, recent: all.slice(0, 25) };
+    return { configured: true, total: all.length, recent: all.slice(0, 500) };
   } catch (err) {
     console.error('waitlist read failed:', err?.message || err);
     return { configured: false, total: 0, recent: [] };
@@ -253,6 +257,204 @@ async function waitlistCsv(env) {
       'content-disposition': `attachment; filename="nexvr-waitlist-${new Date().toISOString().slice(0, 10)}.csv"`,
       'cache-control': 'no-store',
     },
+  });
+}
+
+/* ---------- remove single waitlist email ---------- */
+
+async function deleteWaitlistEmail(request, env) {
+  if (!env.WAITLIST) return json({ error: 'Waitlist store is not bound.' }, 503);
+  let body;
+  try { body = await request.json(); } catch { body = {}; }
+  const email = (body.email || '').trim().toLowerCase();
+  if (!email) return json({ error: 'Email address is required.' }, 400);
+
+  await env.WAITLIST.delete(`email:${email}`);
+  return json({ ok: true, email, message: `Removed ${email} from waitlist.` });
+}
+
+/* ---------- data reset (analytics events and/or waitlist) ---------- */
+
+async function resetData(request, env) {
+  let body;
+  try { body = await request.json(); } catch { body = {}; }
+  const target = body.target || 'analytics'; // 'analytics' | 'waitlist' | 'all'
+
+  let analyticsCleared = false;
+  let waitlistCount = 0;
+
+  // 1. Reset Analytics Data (Events table in D1)
+  if (target === 'analytics' || target === 'all') {
+    if (env.ANALYTICS) {
+      try {
+        await env.ANALYTICS.prepare('DELETE FROM events').run();
+        analyticsCleared = true;
+      } catch (err) {
+        console.error('Failed to clear events:', err?.message || err);
+      }
+    }
+  }
+
+  // 2. Reset Waitlist Data (email:* keys in KV)
+  if (target === 'waitlist' || target === 'all') {
+    if (env.WAITLIST) {
+      try {
+        const all = await listWaitlist(env);
+        for (const item of all) {
+          await env.WAITLIST.delete(`email:${item.email}`);
+        }
+        waitlistCount = all.length;
+      } catch (err) {
+        console.error('Failed to clear waitlist:', err?.message || err);
+      }
+    }
+  }
+
+  return json({
+    ok: true,
+    target,
+    analyticsCleared,
+    waitlistCount,
+    message: target === 'all'
+      ? `Full data reset complete: analytics events cleared and ${waitlistCount} waitlist subscribers removed.`
+      : target === 'analytics'
+      ? 'Analytics events data successfully reset to 0.'
+      : `${waitlistCount} waitlist subscriber(s) removed.`,
+  });
+}
+
+/* ---------- email broadcast & test send via Resend API ---------- */
+
+async function sendEmail(request, env) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    body = {};
+  }
+
+  const apiKey = (body.apiKey || env.RESEND_API_KEY || '').trim();
+  if (!apiKey) {
+    return json({ error: 'RESEND_API_KEY is not configured on this server.' }, 400);
+  }
+
+  const fromEmail = (body.fromEmail || env.FROM_EMAIL || 'onboarding@resend.dev').trim();
+  const fromName = 'Stereo Engine';
+  const version = (body.version || 'v0.1.3').trim();
+  const subject = (body.subject || `Stereo Engine ${version} — Early Access Build`).trim();
+  const isBroadcast = Boolean(body.isBroadcast);
+  const recipient = (body.recipient || '').trim();
+
+  const websiteUrl = DEFAULT_CONFIG.websiteUrl;
+
+  // Mode A: Single / Test Send
+  if (!isBroadcast) {
+    if (!recipient || !recipient.includes('@')) {
+      return json({ error: 'A valid recipient email address is required for test send.' }, 400);
+    }
+
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: `${fromName} <${fromEmail}>`,
+          to: [recipient],
+          subject,
+          html: buildEmailHtml(recipient, version),
+          text: buildPlainText(recipient, version),
+          headers: {
+            'List-Unsubscribe': `<mailto:unsubscribe@resend.dev?subject=unsubscribe>, <${websiteUrl}#unsubscribe>`,
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+          },
+        }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        let parsed = null;
+        try { parsed = JSON.parse(errText); } catch {}
+        if (parsed?.message && parsed.message.includes('You can only send testing emails to your own email address')) {
+          return json({
+            error: `Resend Sandbox Limit: 'onboarding@resend.dev' can only send emails to your registered account (${parsed.message.match(/\(([^)]+)\)/)?.[1] || 'sathish6383349@gmail.com'}). To send to '${recipient}', please verify a custom domain at resend.com/domains.`,
+            isSandboxRestriction: true,
+          }, 403);
+        }
+        return json({ error: `Resend API error: ${parsed?.message || errText}` }, 400);
+      }
+
+      const data = await res.json();
+      return json({
+        ok: true,
+        isBroadcast: false,
+        recipient,
+        messageId: data.id,
+        message: `Test email successfully sent to ${recipient}!`,
+      });
+    } catch (err) {
+      return json({ error: err.message || 'Network error communicating with Resend.' }, 500);
+    }
+  }
+
+  // Mode B: Live Broadcast to All Waitlist Subscribers
+  if (!env.WAITLIST) {
+    return json({ error: 'WAITLIST KV store is not configured.' }, 500);
+  }
+
+  const subscribers = await listWaitlist(env);
+  if (!subscribers.length) {
+    return json({ error: 'No subscribers found on waitlist.' }, 400);
+  }
+
+  let sent = 0;
+  let failed = 0;
+  const errors = [];
+
+  for (const sub of subscribers) {
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: `${fromName} <${fromEmail}>`,
+          to: [sub.email],
+          subject,
+          html: buildEmailHtml(sub.email, version),
+          text: buildPlainText(sub.email, version),
+          headers: {
+            'List-Unsubscribe': `<mailto:unsubscribe@resend.dev?subject=unsubscribe>, <${websiteUrl}#unsubscribe>`,
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+          },
+        }),
+      });
+
+      if (res.ok) {
+        sent++;
+      } else {
+        const errText = await res.text();
+        failed++;
+        errors.push(`${sub.email}: ${errText}`);
+      }
+    } catch (err) {
+      failed++;
+      errors.push(`${sub.email}: ${err.message}`);
+    }
+  }
+
+  return json({
+    ok: true,
+    isBroadcast: true,
+    total: subscribers.length,
+    sent,
+    failed,
+    errors: errors.slice(0, 5),
+    message: `Broadcast complete: ${sent} sent, ${failed} failed out of ${subscribers.length} subscribers.`,
   });
 }
 

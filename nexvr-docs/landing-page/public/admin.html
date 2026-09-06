@@ -200,6 +200,48 @@ td.when{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
       border-top-color:var(--red);border-radius:50%;animation:sp .7s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){ .spin{animation-duration:2s} *{transition-duration:.01ms!important} }
+
+/* ---------- search bar ---------- */
+.search-box{display:inline-flex;align-items:center;gap:.45rem;background:var(--void);
+            border:1px solid var(--edge);padding:.35rem .65rem;border-radius:2px;
+            margin-inline:auto;max-width:22rem;width:100%;transition:border-color .2s}
+.search-box:focus-within{border-color:var(--red)}
+.search-box input{background:transparent;border:0;outline:none;color:var(--white);
+                  font-family:var(--body);font-size:.8125rem;width:100%}
+.search-box input::placeholder{color:var(--dim)}
+.search-badge{font-family:var(--display);font-size:.6875rem;font-weight:600;color:var(--muted);
+              white-space:nowrap;padding-left:.25rem}
+
+/* ---------- broadcast form ---------- */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.1rem}
+.ctrl-input{width:100%;background:var(--void);border:1px solid var(--edge);color:var(--white);
+            font-family:var(--body);font-size:.875rem;padding:.55rem .75rem;border-radius:2px;
+            transition:border-color .2s}
+.ctrl-input:focus{border-color:var(--red);outline:none}
+.email-result{position:relative;margin-top:1rem;padding:.85rem 2.5rem .85rem 1rem;font-size:.8125rem;border-radius:2px;
+              border:1px solid var(--edge);background:var(--panel-2);line-height:1.5}
+.email-result.success{border-color:rgba(46,160,67,.5);color:#7EE787;background:rgba(46,160,67,.06)}
+.email-result.error{border-color:rgba(255,42,31,.5);color:#FFA39E;background:rgba(255,42,31,.06)}
+.result-close{position:absolute;top:.55rem;right:.65rem;background:rgba(255,255,255,.08);
+              border:1px solid rgba(255,255,255,.2);color:#fff;cursor:pointer;
+              font-size:.85rem;line-height:1;width:24px;height:24px;
+              display:inline-flex;align-items:center;justify-content:center;
+              border-radius:3px;transition:all .15s;font-weight:700;z-index:2}
+.result-close:hover{background:var(--red);border-color:var(--red);color:#fff}
+
+/* ---------- waitlist remove & reset actions ---------- */
+.btn-del{padding:.25rem .55rem;font-size:.6875rem;letter-spacing:.06em;color:var(--muted);
+         border:1px solid transparent;background:transparent;border-radius:2px;cursor:pointer;
+         transition:all .2s;text-transform:uppercase;font-family:var(--display);font-weight:600}
+.btn-del:hover{color:var(--red);border-color:rgba(255,42,31,.35);background:rgba(255,42,31,.08)}
+.btn-danger{border-color:rgba(255,42,31,.35);color:#FF7B72}
+.btn-danger:hover{border-color:var(--red);background:rgba(255,42,31,.12);color:#fff}
+
+.modal{border:1px solid var(--edge-hot);background:var(--panel);color:var(--white);
+       padding:0;max-width:32rem;width:92vw;border-radius:2px;box-shadow:0 18px 50px rgba(0,0,0,.85);
+       box-sizing:border-box;overflow:hidden}
+.modal *{box-sizing:border-box}
+.modal::backdrop{background:rgba(5,5,6,.8);backdrop-filter:blur(6px)}
 </style>
 </head>
 <body>
@@ -240,6 +282,7 @@ td.when{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
       <button type="button" data-days="90" aria-pressed="false">90D</button>
     </div>
     <button class="btn btn-sm" id="refresh" type="button">Refresh</button>
+    <button class="btn btn-sm btn-danger" id="btnOpenResetModal" type="button" title="Reset recorded analytics and/or waitlist data">Reset Data</button>
     <button class="btn btn-sm" id="logout" type="button">Sign out</button>
   </header>
 
@@ -281,16 +324,130 @@ td.when{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
       <section class="card"><div class="card-h"><span class="label">Time on page</span></div>
         <div class="card-b" id="pDwell"></div></section>
 
-      <section class="card span-2"><div class="card-h">
+      <section class="card span-2" id="waitlistSection"><div class="card-h">
           <span class="label">Waitlist</span>
+          <div class="search-box">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted);flex-shrink:0"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="search" id="waitlistSearch" placeholder="Search emails or country..." autocomplete="off">
+            <span id="searchBadge" class="search-badge" style="display:none"></span>
+          </div>
           <button class="btn btn-sm" id="csv" type="button">Export CSV</button>
         </div>
         <div id="pWait"></div></section>
+
+      <section class="card span-2" id="broadcastSection">
+        <div class="card-h">
+          <span class="label">Send Release Email</span>
+          <span class="hint" id="broadcastHint">Resend API Delivery</span>
+        </div>
+        <div class="card-b">
+          <form id="broadcastForm" novalidate>
+            <div class="form-grid">
+              <div>
+                <label class="label" style="display:block;margin-bottom:.45rem">Sending Mode</label>
+                <div class="seg" id="modeSeg" role="group" aria-label="Sending mode">
+                  <button type="button" id="btnModeTest" class="seg-item" aria-pressed="true">Single / Test Email</button>
+                  <button type="button" id="btnModeAll" class="seg-item" aria-pressed="false">Broadcast to All</button>
+                </div>
+              </div>
+
+              <div id="recipientFieldWrap">
+                <label class="label" style="display:block;margin-bottom:.45rem" for="emailRecipient">Recipient Email</label>
+                <input type="email" id="emailRecipient" class="ctrl-input" placeholder="e.g. you@gmail.com" value="sathish6383349@gmail.com">
+              </div>
+
+              <div>
+                <label class="label" style="display:block;margin-bottom:.45rem" for="emailVersion">Engine Version</label>
+                <input type="text" id="emailVersion" class="ctrl-input" value="v0.1.3">
+              </div>
+
+              <div>
+                <label class="label" style="display:block;margin-bottom:.45rem" for="fromEmailInput">From Address</label>
+                <input type="text" id="fromEmailInput" class="ctrl-input" placeholder="onboarding@resend.dev (or verified domain)" value="onboarding@resend.dev">
+              </div>
+
+              <div>
+                <label class="label" style="display:block;margin-bottom:.45rem" for="resendApiKey">Resend API Key</label>
+                <input type="password" id="resendApiKey" class="ctrl-input" placeholder="re_... (or leave blank to use server key)" value="">
+              </div>
+
+              <div style="grid-column: 1 / -1">
+                <label class="label" style="display:block;margin-bottom:.45rem" for="emailSubject">Subject Line</label>
+                <input type="text" id="emailSubject" class="ctrl-input" value="Stereo Engine v0.1.3 — Early Access Build">
+              </div>
+            </div>
+
+            <div id="sandboxNoticeBox" style="position:relative;font-size:.8125rem;color:var(--muted);background:var(--void);border:1px solid var(--edge);padding:.75rem 2.5rem .75rem 1rem;border-radius:2px;margin-top:1rem;line-height:1.5">
+              <button type="button" class="result-close" onclick="this.parentElement.style.display='none'" aria-label="Dismiss" title="Dismiss">✕</button>
+              <strong style="color:#FFA39E">ℹ️ Resend Sandbox Notice:</strong> With default <code>onboarding@resend.dev</code>, Resend only permits test sends to the account owner (<strong>sathish6383349@gmail.com</strong>). To send to other emails (like <code>tharunvignesh72@gmail.com</code>) or broadcast to all waitlist users, verify your custom domain on <a href="https://resend.com/domains" target="_blank" style="color:var(--red);text-decoration:underline">resend.com/domains</a>, then set your custom sender address in the <em>From Address</em> field above.
+            </div>
+
+            <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-top:1.2rem">
+              <button class="btn btn-primary" id="sendEmailBtn" type="submit">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                <span id="sendEmailBtnText">Send Test Email</span>
+              </button>
+              <a class="btn btn-sm" href="/release-email-preview.html" target="_blank" title="Open rendered email preview in new tab">
+                Preview Template ↗
+              </a>
+              <span id="broadcastAudience" class="hint" style="margin-left:auto">Target: sathish6383349@gmail.com</span>
+            </div>
+
+            <div id="emailSendResult" class="email-result" style="display:none" role="status"></div>
+          </form>
+        </div>
+      </section>
 
       <section class="card"><div class="card-h"><span class="label">Busiest hours (UTC)</span></div>
         <div class="card-b" id="pHours"></div></section>
     </div>
   </main>
+
+  <!-- ============ RESET DATA MODAL ============ -->
+  <dialog id="resetModal" class="modal">
+    <div style="padding:1.3rem 1.6rem;border-bottom:1px solid var(--edge);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-family:var(--display);font-size:.9375rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#FF7B72">
+        ⚠️ Reset Recorded Data
+      </div>
+      <button type="button" id="closeResetModal" style="background:transparent;border:0;color:var(--muted);font-size:1.4rem;cursor:pointer;line-height:1;padding:0">&times;</button>
+    </div>
+    <div style="padding:1.4rem 1.6rem;font-size:.875rem;line-height:1.6;color:var(--muted)">
+      <p style="margin:0 0 1.2rem">
+        Choose which recorded data to wipe. System configurations, passwords, and server setup will <strong style="color:var(--white)">NOT</strong> be touched.
+      </p>
+
+      <div style="display:grid;gap:.85rem;box-sizing:border-box">
+        <button type="button" class="btn btn-danger" id="btnResetAnalytics" style="width:100%;justify-content:flex-start;padding:.85rem 1rem;white-space:normal;text-align:left;box-sizing:border-box">
+          <div>
+            <div style="font-weight:700;color:#fff">Reset Analytics Events Only</div>
+            <div style="font-size:.6875rem;text-transform:none;color:var(--muted);letter-spacing:normal;margin-top:.2rem">
+              Clears page views, unique visitors, clicks, dwell, and traffic charts back to 0. Waitlist subscribers are preserved.
+            </div>
+          </div>
+        </button>
+
+        <button type="button" class="btn btn-danger" id="btnResetWaitlist" style="width:100%;justify-content:flex-start;padding:.85rem 1rem;white-space:normal;text-align:left;box-sizing:border-box">
+          <div>
+            <div style="font-weight:700;color:#fff">Reset Waitlist Test Subscribers Only</div>
+            <div style="font-size:.6875rem;text-transform:none;color:var(--muted);letter-spacing:normal;margin-top:.2rem">
+              Clears all registered test emails in the KV store. Analytics events are preserved.
+            </div>
+          </div>
+        </button>
+
+        <button type="button" class="btn btn-danger" id="btnResetAll" style="width:100%;justify-content:flex-start;padding:.85rem 1rem;border-color:var(--red);background:rgba(255,42,31,.1);white-space:normal;text-align:left;box-sizing:border-box">
+          <div>
+            <div style="font-weight:700;color:var(--red)">Full Data Reset (Analytics + Waitlist)</div>
+            <div style="font-size:.6875rem;text-transform:none;color:var(--muted);letter-spacing:normal;margin-top:.2rem">
+              Wipes all test analytics events and all waitlist test emails for a 100% fresh launch state.
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <div id="resetStatusMsg" style="margin-top:1rem;display:none" class="email-result"></div>
+    </div>
+  </dialog>
 </div>
 
 <script type="module">
@@ -418,7 +575,10 @@ $('logout').addEventListener('click', async () => {
   showGate();
 });
 
-$('refresh').addEventListener('click', () => load());
+$('refresh').addEventListener('click', () => {
+  dismissAllResults();
+  load();
+});
 $('csv').addEventListener('click', () => { location.href = '/api/admin/waitlist.csv'; });
 
 $('range').addEventListener('click', (e) => {
@@ -427,6 +587,37 @@ $('range').addEventListener('click', (e) => {
   days = Number(b.dataset.days);
   [...$('range').children].forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
   load();
+});
+
+/* ---------- dismissible result boxes ---------- */
+
+function dismissAllResults() {
+  document.querySelectorAll('.email-result').forEach((el) => {
+    el.style.display = 'none';
+    el.innerHTML = '';
+  });
+  const sandbox = $('sandboxNoticeBox');
+  if (sandbox) sandbox.style.display = 'none';
+  const notice = $('notice');
+  if (notice && notice.querySelector('.setup')) notice.innerHTML = '';
+}
+
+function showResult(box, type, html) {
+  if (!box) return;
+  box.style.display = 'block';
+  box.className = `email-result ${type}`;
+  box.innerHTML = html + '<button type="button" class="result-close" aria-label="Dismiss message" title="Dismiss message">✕</button>';
+}
+
+document.addEventListener('click', (e) => {
+  const closeBtn = e.target.closest('.result-close');
+  if (!closeBtn) return;
+  const parent = closeBtn.closest('.email-result, #sandboxNoticeBox, .setup, .notice-box');
+  if (parent) {
+    parent.style.display = 'none';
+  } else if (closeBtn.parentElement) {
+    closeBtn.parentElement.style.display = 'none';
+  }
 });
 
 /* ---------- load + render ---------- */
@@ -440,7 +631,9 @@ async function load() {
     render(latest);
   } catch (err) {
     if (String(err.message) !== 'unauthorised') {
-      $('notice').innerHTML = `<div class="setup"><h2>Could not load stats</h2>
+      $('notice').innerHTML = `<div class="setup" style="position:relative">
+        <button type="button" class="result-close" onclick="this.parentElement.remove()" aria-label="Dismiss message" title="Dismiss message">✕</button>
+        <h2>Could not load stats</h2>
         <p>${esc(err.message || 'Request failed.')}</p></div>`;
     }
   } finally {
@@ -629,27 +822,305 @@ function renderHours(hours) {
     <div class="chart-x"><span>00</span><span>06</span><span>12</span><span>18</span><span>23</span></div>`;
 }
 
-/* ---------- waitlist ---------- */
+/* ---------- waitlist with real-time search ---------- */
+
+let currentWaitlist = null;
 
 function renderWaitlist(w) {
+  currentWaitlist = w;
   if (!w?.configured) {
     $('pWait').innerHTML = empty('Waitlist store not bound.', 'The WAITLIST KV namespace is missing from this deployment.');
+    $('searchBadge').style.display = 'none';
     return;
   }
   if (!w.recent?.length) {
     $('pWait').innerHTML = empty('Nobody has signed up yet.', 'Addresses appear here the moment the form on the landing page is used.');
+    $('searchBadge').style.display = 'none';
     return;
   }
+  
+  // Update broadcast form audience count
+  if ($('btnModeAll')?.getAttribute('aria-pressed') === 'true') {
+    $('broadcastAudience').textContent = `Target: All ${fmt(w.total || w.recent.length)} Waitlist Subscribers`;
+  }
+
+  applyWaitlistFilter();
+}
+
+function applyWaitlistFilter() {
+  if (!currentWaitlist?.recent) return;
+  const q = ($('waitlistSearch')?.value || '').trim().toLowerCase();
+  const all = currentWaitlist.recent;
+  const badge = $('searchBadge');
+
+  const filtered = q
+    ? all.filter((r) => r.email.toLowerCase().includes(q) || (r.country || '').toLowerCase().includes(q))
+    : all;
+
+  if (q) {
+    badge.style.display = 'inline-block';
+    badge.textContent = `${filtered.length} of ${all.length}`;
+  } else {
+    badge.style.display = 'none';
+  }
+
+  if (!filtered.length) {
+    $('pWait').innerHTML = empty(`No subscribers matching “${esc(q)}”`, 'Try a different search term or clear the box.');
+    return;
+  }
+
   $('pWait').innerHTML = `<div class="tbl-wrap"><table>
-    <thead><tr><th>Email</th><th>Signed up</th><th>From</th></tr></thead>
-    <tbody>${w.recent.map((r) => `<tr>
-      <td class="email">${esc(r.email)}</td>
+    <thead><tr><th>Email</th><th>Signed up</th><th>From</th><th style="text-align:right">Action</th></tr></thead>
+    <tbody>${filtered.map((r) => `<tr>
+      <td class="email">${highlightMatch(r.email, q)}</td>
       <td class="when">${r.at ? esc(new Date(r.at).toLocaleString()) : '<span style="color:var(--dim)">unknown</span>'}</td>
       <td>${r.country ? esc(cc2(r.country)) : '<span style="color:var(--dim)">—</span>'}</td>
+      <td style="text-align:right">
+        <button type="button" class="btn btn-del" data-del="${esc(r.email)}" title="Delete ${esc(r.email)} from waitlist">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px;vertical-align:-1px"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>Remove
+        </button>
+      </td>
     </tr>`).join('')}</tbody></table></div>
     <p style="font-size:.75rem;color:var(--dim);padding:.9rem 1.4rem;margin:0;border-top:1px solid var(--edge)">
-      Showing the ${w.recent.length} most recent of ${fmt(w.total)}. Export the full list as CSV.</p>`;
+      ${q ? `Showing ${filtered.length} matching result(s). ` : `Showing ${filtered.length} subscriber(s). `}
+      Export full list as CSV.
+    </p>`;
 }
+
+function highlightMatch(text, query) {
+  const safeText = esc(text);
+  if (!query) return safeText;
+  const safeQuery = esc(query);
+  const regex = new RegExp(`(${safeQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  return safeText.replace(regex, '<b style="color:var(--red);background:rgba(255,42,31,.15);padding:1px 3px;border-radius:2px">$1</b>');
+}
+
+$('waitlistSearch')?.addEventListener('input', () => applyWaitlistFilter());
+$('waitlistSearch')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    e.target.value = '';
+    applyWaitlistFilter();
+  }
+});
+
+/* ---------- remove single waitlist email listener ---------- */
+
+$('pWait')?.addEventListener('click', async (e) => {
+  const btn = e.target.closest('button[data-del]');
+  if (!btn) return;
+  const email = btn.dataset.del;
+  if (!email) return;
+
+  const confirmed = confirm(`Are you sure you want to remove "${email}" from the waitlist?`);
+  if (!confirmed) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Removing...';
+
+  try {
+    const res = await api('waitlist/delete', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    if (res.ok) {
+      if (currentWaitlist?.recent) {
+        currentWaitlist.recent = currentWaitlist.recent.filter((r) => r.email.toLowerCase() !== email.toLowerCase());
+        if (currentWaitlist.total) currentWaitlist.total = Math.max(0, currentWaitlist.total - 1);
+      }
+      applyWaitlistFilter();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || 'Failed to remove subscriber.');
+      btn.disabled = false;
+      btn.textContent = 'Remove';
+    }
+  } catch (err) {
+    alert(err.message || 'Network error removing subscriber.');
+    btn.disabled = false;
+    btn.textContent = 'Remove';
+  }
+});
+
+/* ---------- reset data controller ---------- */
+
+const resetModal = $('resetModal');
+$('btnOpenResetModal')?.addEventListener('click', () => {
+  $('resetStatusMsg').style.display = 'none';
+  resetModal.showModal();
+});
+
+$('closeResetModal')?.addEventListener('click', () => {
+  resetModal.close();
+});
+
+resetModal?.addEventListener('click', (e) => {
+  if (e.target === resetModal) resetModal.close();
+});
+
+async function triggerReset(target, confirmMsg) {
+  const confirmed = confirm(confirmMsg);
+  if (!confirmed) return;
+
+  const statusMsg = $('resetStatusMsg');
+  statusMsg.style.display = 'block';
+  statusMsg.className = 'email-result';
+  statusMsg.innerHTML = '<span class="spin"></span> Resetting data...';
+
+  try {
+    const res = await api('reset-data', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ target }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.ok) {
+      showResult(statusMsg, 'success', `✓ ${esc(data.message)}`);
+      setTimeout(async () => {
+        resetModal.close();
+        await load();
+      }, 1200);
+    } else {
+      showResult(statusMsg, 'error', esc(data.error || 'Reset failed.'));
+    }
+  } catch (err) {
+    showResult(statusMsg, 'error', esc(err.message || 'Network error performing data reset.'));
+  }
+}
+
+$('btnResetAnalytics')?.addEventListener('click', () => {
+  triggerReset(
+    'analytics',
+    '⚠️ RESET ANALYTICS DATA:\n\nThis will clear all recorded page views, unique visitors, clicks, dwell times, and traffic charts back to 0.\n\nWaitlist subscribers will NOT be affected.\n\nAre you sure you want to proceed?'
+  );
+});
+
+$('btnResetWaitlist')?.addEventListener('click', () => {
+  triggerReset(
+    'waitlist',
+    '⚠️ RESET WAITLIST TEST SUBSCRIBERS:\n\nThis will permanently delete all registered test emails from the waitlist database.\n\nAnalytics traffic data will NOT be affected.\n\nAre you sure you want to proceed?'
+  );
+});
+
+$('btnResetAll')?.addEventListener('click', () => {
+  triggerReset(
+    'all',
+    '🚨 FULL DATA RESET:\n\nThis will wipe all recorded analytics traffic AND all waitlist subscriber emails back to a clean 0 launch state.\n\nYour admin password and system configuration will NOT be affected.\n\nAre you sure you want to proceed?'
+  );
+});
+
+/* ---------- release email broadcast console ---------- */
+
+let isBroadcastMode = false;
+
+$('btnModeTest')?.addEventListener('click', () => {
+  isBroadcastMode = false;
+  $('btnModeTest').setAttribute('aria-pressed', 'true');
+  $('btnModeAll').setAttribute('aria-pressed', 'false');
+  $('recipientFieldWrap').style.display = 'block';
+  $('sendEmailBtnText').textContent = 'Send Test Email';
+  const recipient = $('emailRecipient').value.trim() || 'sathish6383349@gmail.com';
+  $('broadcastAudience').textContent = `Target: ${recipient}`;
+});
+
+$('btnModeAll')?.addEventListener('click', () => {
+  isBroadcastMode = true;
+  $('btnModeAll').setAttribute('aria-pressed', 'true');
+  $('btnModeTest').setAttribute('aria-pressed', 'false');
+  $('recipientFieldWrap').style.display = 'none';
+  const total = currentWaitlist?.total || currentWaitlist?.recent?.length || 0;
+  $('sendEmailBtnText').textContent = `Broadcast to All (${total} Subscribers)`;
+  $('broadcastAudience').textContent = `Target: All ${total} Waitlist Subscribers`;
+});
+
+$('emailRecipient')?.addEventListener('input', (e) => {
+  if (!isBroadcastMode) {
+    $('broadcastAudience').textContent = `Target: ${e.target.value.trim() || 'None'}`;
+  }
+});
+
+$('broadcastForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = $('sendEmailBtn');
+  const btnText = $('sendEmailBtnText');
+  const resultBox = $('emailSendResult');
+  const recipient = $('emailRecipient').value.trim();
+  const version = $('emailVersion').value.trim() || 'v0.1.3';
+  const subject = $('emailSubject').value.trim() || `Stereo Engine ${version} — Early Access Build`;
+
+  if (!isBroadcastMode && (!recipient || !recipient.includes('@'))) {
+    showResult(resultBox, 'error', 'Please enter a valid recipient email address.');
+    $('emailRecipient').focus();
+    return;
+  }
+
+  if (isBroadcastMode) {
+    const total = currentWaitlist?.total || currentWaitlist?.recent?.length || 0;
+    const confirmed = confirm(
+      `⚠️ CONFIRM BROADCAST:\n\nAre you sure you want to send the release announcement email (${version}) to all ${total} registered waitlist subscribers?`
+    );
+    if (!confirmed) return;
+  }
+
+  btn.disabled = true;
+  const originalText = btnText.textContent;
+  btnText.innerHTML = '<span class="spin"></span> Sending...';
+  resultBox.style.display = 'none';
+
+  try {
+    const apiKey = ($('resendApiKey')?.value || '').trim();
+    if (apiKey) localStorage.setItem('resend_api_key', apiKey);
+    const fromEmail = ($('fromEmailInput')?.value || '').trim();
+    if (fromEmail) localStorage.setItem('resend_from_email', fromEmail);
+
+    const res = await api('send-email', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        apiKey,
+        fromEmail,
+        isBroadcast: isBroadcastMode,
+        recipient,
+        version,
+        subject,
+      }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    resultBox.style.display = 'block';
+
+    if (res.ok && data.ok) {
+      if (data.isBroadcast) {
+        showResult(resultBox, 'success', `<strong>✓ Broadcast Complete:</strong> Successfully sent to ${data.sent} subscribers. (${data.failed} failed out of ${data.total}).`);
+      } else {
+        showResult(resultBox, 'success', `<strong>✓ Success:</strong> Test email delivered to <code>${esc(data.recipient)}</code>.<br><span style="font-size:11px;color:var(--muted)">Resend Message ID: ${esc(data.messageId)}</span>`);
+      }
+    } else {
+      if (data.isSandboxRestriction) {
+        showResult(resultBox, 'error', `<strong>⚠️ Resend Sandbox Restriction:</strong> When sending from <code>onboarding@resend.dev</code>, Resend only permits delivery to your registered account email (<strong>sathish6383349@gmail.com</strong>).<br><br>To send to <code>${esc(recipient)}</code> or broadcast to all waitlist users, please verify your custom domain on <a href="https://resend.com/domains" target="_blank" style="color:#FFA39E;text-decoration:underline">resend.com/domains</a>, then enter your verified sender address in the <em>From Address</em> field.`);
+      } else {
+        showResult(resultBox, 'error', esc(data.error || 'Failed to send email. Check your Resend API configuration.'));
+      }
+    }
+  } catch (err) {
+    showResult(resultBox, 'error', esc(err.message || 'Network error communicating with the admin API.'));
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = originalText;
+  }
+});
+
+const _storedKey = localStorage.getItem('resend_api_key');
+if (_storedKey && $('resendApiKey')) $('resendApiKey').value = _storedKey;
+$('resendApiKey')?.addEventListener('input', (e) => {
+  localStorage.setItem('resend_api_key', e.target.value.trim());
+});
+
+const _storedFrom = localStorage.getItem('resend_from_email');
+if (_storedFrom && $('fromEmailInput')) $('fromEmailInput').value = _storedFrom;
+$('fromEmailInput')?.addEventListener('input', (e) => {
+  localStorage.setItem('resend_from_email', e.target.value.trim());
+});
 
 boot();
 </script>

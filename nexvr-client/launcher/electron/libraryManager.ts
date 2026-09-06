@@ -268,6 +268,7 @@ ipcMain.handle('library:scan', async (event): Promise<{ active: GameEntry[], wai
     '864c7bc2c2394f7dbd1b534aa068ff56': 'verified',
     '1091500': 'verified',
     '1245620': 'verified',
+    '814380': 'verified',
     '668580': 'verified',
     '1110910': 'verified',
     '1623730': 'verified',
@@ -626,20 +627,19 @@ ipcMain.handle('library:addCustom', async (event): Promise<{ success: boolean }>
   
   let iconBase64 = undefined;
   try {
-     if (!name.toLowerCase().includes('sekiro')) {
-        const icon = await app.getFileIcon(exePath, { size: 'large' });
-        iconBase64 = icon.toDataURL();
-     }
+    const icon = await app.getFileIcon(exePath, { size: 'large' });
+    iconBase64 = icon.toDataURL();
   } catch(e) {}
   
+  const isSekiro = name.toLowerCase().includes('sekiro') || exePath.toLowerCase().includes('sekiro');
   const newGame: GameEntry = {
     id,
     name,
     installPath,
     executablePath: exePath,
     sizeGB: 0,
-    api,
-    compat: 'unknown',
+    api: isSekiro ? 'DX11' : api,
+    compat: isSekiro ? 'verified' : 'unknown',
     hasInjector,
     iconBase64
   };
