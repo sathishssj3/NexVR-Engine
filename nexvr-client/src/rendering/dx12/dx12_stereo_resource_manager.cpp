@@ -1,5 +1,7 @@
 #include "rendering/dx12/dx12_stereo_resource_manager.h"
 #include "rendering/dx12/dx12_lifecycle_manager.h"
+#include "core/subsystem_context.h"
+#include "core/config_manager.h"
 #include <iostream>
 
 namespace vrinject {
@@ -224,6 +226,8 @@ void DX12StereoResourceManager::UpdateFrameResources(
         consts.width = m_currentWidth;
         consts.height = m_currentHeight;
         consts.shouldAttemptStereo = shouldAttemptStereo ? 1 : 0;
+        const auto* cfg = SubsystemContext::Get().GetConfig();
+        consts.srgbCorrection = (cfg && cfg->GetConfig().srgbCorrection) ? 1 : 0;
         memcpy(m_mappedConstantBuffer, &consts, sizeof(DX12StereoShaderConstants));
     }
 

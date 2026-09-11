@@ -35,7 +35,7 @@ struct StereoShaderConstants {
     uint32_t width;
     uint32_t height;
     uint32_t shouldAttemptStereo;
-    float pad3;
+    uint32_t srgbCorrection;
 };
 
 class StereoRenderer {

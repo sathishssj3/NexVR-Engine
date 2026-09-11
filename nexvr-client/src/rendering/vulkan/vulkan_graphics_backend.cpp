@@ -22,6 +22,8 @@
 #include "openxr/openxr_frame_submitter.h"
 #include "rendering/vulkan/imgui_vulkan_integration.h"
 #include "core/overlay_manager.h"
+#include "core/subsystem_context.h"
+#include "core/config_manager.h"
 #include <iostream>
 
 namespace vrinject {
@@ -379,6 +381,8 @@ void VulkanGraphicsBackend::RenderStereo(
         shaderConsts.width = m_resourceManager->GetWidth();
         shaderConsts.height = m_resourceManager->GetHeight();
         shaderConsts.shouldAttemptStereo = shouldAttemptStereo ? 1 : 0;
+        const auto* cfg = SubsystemContext::Get().GetConfig();
+        shaderConsts.srgbCorrection = (cfg && cfg->GetConfig().srgbCorrection) ? 1 : 0;
 
         auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(m_device);
         if (!dt) return;

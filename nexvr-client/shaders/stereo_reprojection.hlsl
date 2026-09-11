@@ -22,7 +22,7 @@ VK_BINDING(0) cbuffer StereoConstants : register(b0)
     uint Width;
     uint Height;
     uint ShouldAttemptStereo;
-    float Padding;
+    uint SrgbCorrection;
 };
 
 VK_BINDING(1) Texture2D<float4> GameColor : register(t0);
@@ -92,6 +92,10 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
         // 100% Full FOV in 2D mode - no letterboxing or black bars
         float4 outColor = baseColor;
         outColor.a = 1.0f;
+        if (SrgbCorrection != 0)
+        {
+            outColor.rgb = pow(max(outColor.rgb, 0.0f), 2.2f);
+        }
         
         OutLeftEye[pixelPos] = outColor;
         OutRightEye[pixelPos] = outColor;
@@ -105,6 +109,10 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
     {
         float4 hudColor = baseColor;
         hudColor.a = 1.0f;
+        if (SrgbCorrection != 0)
+        {
+            hudColor.rgb = pow(max(hudColor.rgb, 0.0f), 2.2f);
+        }
         OutLeftEye[pixelPos] = hudColor;
         OutRightEye[pixelPos] = hudColor;
         return;
@@ -151,7 +159,13 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
         }
     }
     
-    // Preserve native game lighting, darks, fog, and specular highlights without artificial gamma squaring
+    // Apply sRGB tonemapping curve per-game based on profile configuration (e.g. Hogwarts Legacy UE4 DX12 linear surface)
+    if (SrgbCorrection != 0)
+    {
+        leftColor.rgb = pow(max(leftColor.rgb, 0.0f), 2.2f);
+        rightColor.rgb = pow(max(rightColor.rgb, 0.0f), 2.2f);
+    }
+
     leftColor.a = 1.0f;
     rightColor.a = 1.0f;
 

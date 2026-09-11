@@ -1,5 +1,7 @@
 #include "rendering/stereo/stereo_renderer.h"
 #include "core/logger.h"
+#include "core/subsystem_context.h"
+#include "core/config_manager.h"
 #include <cstring>
 
 namespace vrinject {
@@ -30,6 +32,8 @@ bool StereoRenderer::UpdateConstantBuffer(ID3D11DeviceContext* context,
     constants->width = frameCtx.viewport.width;
     constants->height = frameCtx.viewport.height;
     constants->shouldAttemptStereo = shouldAttemptStereo ? 1 : 0;
+    const auto* cfg = SubsystemContext::Get().GetConfig();
+    constants->srgbCorrection = (cfg && cfg->GetConfig().srgbCorrection) ? 1 : 0;
 
     context->Unmap(cb, 0);
     return true;

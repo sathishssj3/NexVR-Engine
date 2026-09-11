@@ -141,4 +141,28 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     expect(frameCoord).toMatch(/if\s*\(\s*m_oxrRuntime\s*\)\s*\{[\s\S]*m_oxrRuntime->GetState\(\)\s*==\s*openxr::RuntimeState::SYSTEM_SELECTED/);
     expect(frameCoord).toMatch(/bool\s+xrReady\s*=\s*m_oxrRuntime\s*&&/);
   });
+
+  test('shader and renderer preserve per-game sRGB tonemapping isolation without cross-game regression', () => {
+    const shader = readRepoFile('shaders', 'stereo_reprojection.hlsl');
+    const dx12ManagerH = readRepoFile('src', 'rendering', 'dx12', 'dx12_stereo_resource_manager.h');
+    const dx12ManagerCpp = readRepoFile('src', 'rendering', 'dx12', 'dx12_stereo_resource_manager.cpp');
+    const stereoRendererH = readRepoFile('src', 'rendering', 'stereo', 'stereo_renderer.h');
+    const stereoRendererCpp = readRepoFile('src', 'rendering', 'stereo', 'stereo_renderer.cpp');
+
+    // Shader constant buffer must declare SrgbCorrection
+    expect(shader).toContain('uint SrgbCorrection;');
+    expect(shader).toContain('if (SrgbCorrection != 0)');
+
+    // C++ structs must declare srgbCorrection at offset 252 (matching HLSL layout)
+    expect(dx12ManagerH).toContain('uint32_t srgbCorrection;');
+    expect(dx12ManagerCpp).toContain('consts.srgbCorrection');
+    expect(stereoRendererH).toContain('uint32_t srgbCorrection;');
+    expect(stereoRendererCpp).toContain('constants->srgbCorrection');
+
+    // Curated profiles must isolate Sekiro (false) and Hogwarts Legacy (true)
+    const sekiroProfile = JSON.parse(readRepoFile('profiles', '814380_sekiro.json'));
+    const hogwartsProfile = JSON.parse(readRepoFile('profiles', '990080_hogwarts_legacy.json'));
+    expect(sekiroProfile.srgbCorrection).toBe(false);
+    expect(hogwartsProfile.srgbCorrection).toBe(true);
+  });
 });

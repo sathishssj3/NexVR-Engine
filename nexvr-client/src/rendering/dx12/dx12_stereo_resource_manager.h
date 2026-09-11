@@ -34,7 +34,7 @@ struct DX12StereoShaderConstants {
     uint32_t width;
     uint32_t height;
     uint32_t shouldAttemptStereo;
-    float padding;
+    uint32_t srgbCorrection;
 };
 
 class DX12StereoResourceManager {
