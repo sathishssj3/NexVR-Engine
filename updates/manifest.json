@@ -1,7 +1,7 @@
 {
-  "engineVersion": "0.2.0",
-  "timestamp": 1789134449092,
-  "changelog": "Sekiro VR Native Color Fidelity & Gamma Fix v0.2.0",
+  "engineVersion": "0.1.10",
+  "timestamp": 1789134929097,
+  "changelog": "Sekiro VR Native Color Fidelity & Gamma Fix v0.1.10",
   "features": [
     "Native Color Fidelity: Eliminated double-gamma pow(2.2) crush in VR reprojection shaders",
     "Restored Daylight & Atmosphere: Foliage, sky, temples, and background scenery render with 100% monitor-accurate brightness and lighting",
