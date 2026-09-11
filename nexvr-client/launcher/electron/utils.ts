@@ -52,6 +52,9 @@ export function validateConfig(cfg: unknown): VRConfig {
   if (typeof c.reverseZ === 'boolean') res.reverseZ = c.reverseZ;
   if (typeof c.rowMajorMatrices === 'boolean') res.rowMajorMatrices = c.rowMajorMatrices;
   if (typeof c.matrixPrecision === 'string') res.matrixPrecision = c.matrixPrecision;
+  if (c.contrast !== undefined && !isNaN(Number(c.contrast))) res.contrast = Math.max(0.5, Math.min(2.0, Number(c.contrast)));
+  if (c.saturation !== undefined && !isNaN(Number(c.saturation))) res.saturation = Math.max(0.5, Math.min(2.0, Number(c.saturation)));
+  if (c.brightness !== undefined && !isNaN(Number(c.brightness))) res.brightness = Math.max(0.5, Math.min(2.0, Number(c.brightness)));
   return res;
 }
 

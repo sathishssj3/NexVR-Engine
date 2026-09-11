@@ -402,6 +402,9 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
           depthSubmission: true,
           rawInputMode: true,
           autoInjectOnLaunch: true,
+          contrast: 1.20,
+          saturation: 1.15,
+          brightness: 1.0,
         };
       }
 
@@ -419,6 +422,9 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
             ...(baseProfile.matrixPrecision ? { matrixPrecision: baseProfile.matrixPrecision } : {}),
             ...(baseProfile.srgbCorrection !== undefined ? { srgbCorrection: baseProfile.srgbCorrection } : {}),
             ...(baseProfile.depthSubmission !== undefined ? { depthSubmission: baseProfile.depthSubmission } : {}),
+            ...(cur.contrast !== undefined ? { contrast: cur.contrast } : (baseProfile.contrast !== undefined ? { contrast: baseProfile.contrast } : {})),
+            ...(cur.saturation !== undefined ? { saturation: cur.saturation } : (baseProfile.saturation !== undefined ? { saturation: baseProfile.saturation } : {})),
+            ...(cur.brightness !== undefined ? { brightness: cur.brightness } : (baseProfile.brightness !== undefined ? { brightness: baseProfile.brightness } : {})),
           };
         } catch {}
       }

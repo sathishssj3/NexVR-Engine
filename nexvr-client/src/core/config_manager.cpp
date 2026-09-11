@@ -112,6 +112,9 @@ bool ConfigManager::Load(const std::string& moduleDir, const std::string& explic
             
         m_config.useRecommendedResolution = j.value("useRecommendedResolution", true);
         m_config.srgbCorrection = j.value("srgbCorrection", false);
+        m_config.contrast = std::clamp(j.value("contrast", 1.0f), 0.5f, 2.0f);
+        m_config.saturation = std::clamp(j.value("saturation", 1.0f), 0.5f, 2.0f);
+        m_config.brightness = std::clamp(j.value("brightness", 1.0f), 0.5f, 2.0f);
         m_config.depthSubmission = j.value("depthSubmission", false);
         m_config.rawInputMode = j.value("rawInputMode", true);
         m_config.autoInjectOnLaunch = j.value("autoInjectOnLaunch", false);
@@ -163,6 +166,9 @@ bool ConfigManager::Save() {
         
         j["useRecommendedResolution"] = m_config.useRecommendedResolution;
         j["srgbCorrection"] = m_config.srgbCorrection;
+        j["contrast"] = m_config.contrast;
+        j["saturation"] = m_config.saturation;
+        j["brightness"] = m_config.brightness;
         j["depthSubmission"] = m_config.depthSubmission;
         j["rawInputMode"] = m_config.rawInputMode;
         j["autoInjectOnLaunch"] = m_config.autoInjectOnLaunch;

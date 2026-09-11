@@ -11,6 +11,9 @@ const defaultVRConfig: VRConfig = {
   depthSubmission: false,
   rawInputMode: true,
   autoInjectOnLaunch: true,
+  contrast: 1.0,
+  saturation: 1.0,
+  brightness: 1.0,
 };
 
 const curatedProfiles: Record<string, Partial<VRConfig>> = {
@@ -23,10 +26,13 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     matrixPrecision: 'Float32',
     motionAimSensitivity: 1.0,
     useRecommendedResolution: true,
-    srgbCorrection: true,
+    srgbCorrection: false,
     depthSubmission: true,
     rawInputMode: true,
     autoInjectOnLaunch: true,
+    contrast: 1.20,
+    saturation: 1.15,
+    brightness: 1.0,
   },
   'd0614ddf466b44a2a229a43a75db9efd': {
     engine: 'UnrealEngine4',
@@ -36,10 +42,13 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     matrixPrecision: 'Float32',
     motionAimSensitivity: 1.0,
     useRecommendedResolution: true,
-    srgbCorrection: true,
+    srgbCorrection: false,
     depthSubmission: true,
     rawInputMode: true,
     autoInjectOnLaunch: true,
+    contrast: 1.20,
+    saturation: 1.15,
+    brightness: 1.0,
   },
   // Cyberpunk 2077
   '1091500': {
@@ -162,6 +171,9 @@ function loadProfilesFromDisk(): Record<string, Partial<VRConfig>> {
                   reverseZ: typeof data.reverseZ === 'boolean' ? data.reverseZ : undefined,
                   rowMajorMatrices: typeof data.rowMajorMatrices === 'boolean' ? data.rowMajorMatrices : undefined,
                   matrixPrecision: typeof data.matrixPrecision === 'string' ? data.matrixPrecision : undefined,
+                  contrast: typeof data.contrast === 'number' ? data.contrast : undefined,
+                  saturation: typeof data.saturation === 'number' ? data.saturation : undefined,
+                  brightness: typeof data.brightness === 'number' ? data.brightness : undefined,
                 };
               }
             } catch {}

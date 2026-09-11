@@ -227,7 +227,11 @@ void DX12StereoResourceManager::UpdateFrameResources(
         consts.height = m_currentHeight;
         consts.shouldAttemptStereo = shouldAttemptStereo ? 1 : 0;
         const auto* cfg = SubsystemContext::Get().GetConfig();
-        consts.srgbCorrection = (cfg && cfg->GetConfig().srgbCorrection) ? 1 : 0;
+        const auto& c = cfg ? cfg->GetConfig() : VRConfig{};
+        consts.contrast = (c.contrast > 0.0f) ? c.contrast : 1.0f;
+        consts.saturation = (c.saturation > 0.0f) ? c.saturation : 1.0f;
+        consts.brightness = (c.brightness > 0.0f) ? c.brightness : 1.0f;
+        consts.srgbCorrection = c.srgbCorrection ? 1 : 0;
         memcpy(m_mappedConstantBuffer, &consts, sizeof(DX12StereoShaderConstants));
     }
 

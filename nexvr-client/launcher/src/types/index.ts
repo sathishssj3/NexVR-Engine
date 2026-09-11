@@ -38,6 +38,9 @@ export interface VRConfig {
   reverseZ?:               boolean;
   rowMajorMatrices?:       boolean;
   matrixPrecision?:        string;
+  contrast?:               number;
+  saturation?:             number;
+  brightness?:             number;
 }
 
 export interface VRStatus {

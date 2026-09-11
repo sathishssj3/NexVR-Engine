@@ -151,21 +151,41 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
 
     // Shader constant buffer must declare SrgbCorrection for ABI alignment
     expect(shader).toContain('uint SrgbCorrection;');
+    expect(shader).toContain('float Contrast;');
+    expect(shader).toContain('float Saturation;');
+    expect(shader).toContain('float Brightness;');
+    expect(shader).toContain('ApplyPerceptualGrading');
+
     // Reprojection shader must NOT perform artificial double-gamma pow 2.2 crush
     expect(shader).not.toContain('pow(max(outColor.rgb, 0.0f), 2.2f)');
     expect(shader).not.toContain('pow(max(leftColor.rgb, 0.0f), 2.2f)');
 
-    // C++ structs must declare srgbCorrection at offset 252 (matching HLSL layout)
+    // C++ structs must declare contrast, saturation, brightness and srgbCorrection
+    expect(dx12ManagerH).toContain('float contrast;');
+    expect(dx12ManagerH).toContain('float saturation;');
+    expect(dx12ManagerH).toContain('float brightness;');
     expect(dx12ManagerH).toContain('uint32_t srgbCorrection;');
+    expect(dx12ManagerCpp).toContain('consts.contrast');
+    expect(dx12ManagerCpp).toContain('consts.saturation');
+    expect(dx12ManagerCpp).toContain('consts.brightness');
     expect(dx12ManagerCpp).toContain('consts.srgbCorrection');
+
+    expect(stereoRendererH).toContain('float contrast;');
+    expect(stereoRendererH).toContain('float saturation;');
+    expect(stereoRendererH).toContain('float brightness;');
     expect(stereoRendererH).toContain('uint32_t srgbCorrection;');
+    expect(stereoRendererCpp).toContain('constants->contrast');
+    expect(stereoRendererCpp).toContain('constants->saturation');
+    expect(stereoRendererCpp).toContain('constants->brightness');
     expect(stereoRendererCpp).toContain('constants->srgbCorrection');
 
-    // Curated profiles must ensure authentic desktop colors without gamma crush (both Sekiro and Hogwarts Legacy false)
+    // Curated profiles: Sekiro untouched (srgbCorrection false, contrast 1.0 default); Hogwarts Legacy calibrated to desktop richness
     const sekiroProfile = JSON.parse(readRepoFile('profiles', '814380_sekiro.json'));
     const hogwartsProfile = JSON.parse(readRepoFile('profiles', '990080_hogwarts_legacy.json'));
     expect(sekiroProfile.srgbCorrection).toBe(false);
     expect(hogwartsProfile.srgbCorrection).toBe(false);
+    expect(hogwartsProfile.contrast).toBe(1.20);
+    expect(hogwartsProfile.saturation).toBe(1.15);
   });
 
   test('OTA manifest and injectionManager prevent stale cache shadowing and cross-game contamination', () => {

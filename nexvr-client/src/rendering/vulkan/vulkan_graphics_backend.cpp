@@ -382,7 +382,11 @@ void VulkanGraphicsBackend::RenderStereo(
         shaderConsts.height = m_resourceManager->GetHeight();
         shaderConsts.shouldAttemptStereo = shouldAttemptStereo ? 1 : 0;
         const auto* cfg = SubsystemContext::Get().GetConfig();
-        shaderConsts.srgbCorrection = (cfg && cfg->GetConfig().srgbCorrection) ? 1 : 0;
+        const auto& c = cfg ? cfg->GetConfig() : VRConfig{};
+        shaderConsts.contrast = (c.contrast > 0.0f) ? c.contrast : 1.0f;
+        shaderConsts.saturation = (c.saturation > 0.0f) ? c.saturation : 1.0f;
+        shaderConsts.brightness = (c.brightness > 0.0f) ? c.brightness : 1.0f;
+        shaderConsts.srgbCorrection = c.srgbCorrection ? 1 : 0;
 
         auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(m_device);
         if (!dt) return;

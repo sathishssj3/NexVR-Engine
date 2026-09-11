@@ -26,11 +26,11 @@ struct DX12StereoShaderConstants {
     Matrix4x4 leftViewProj;
     Matrix4x4 rightViewProj;
     Vector3 originalEyePos;
-    float pad0;
+    float contrast;
     Vector3 leftEyePos;
-    float pad1;
+    float saturation;
     Vector3 rightEyePos;
-    float pad2;
+    float brightness;
     uint32_t width;
     uint32_t height;
     uint32_t shouldAttemptStereo;

@@ -33,7 +33,11 @@ bool StereoRenderer::UpdateConstantBuffer(ID3D11DeviceContext* context,
     constants->height = frameCtx.viewport.height;
     constants->shouldAttemptStereo = shouldAttemptStereo ? 1 : 0;
     const auto* cfg = SubsystemContext::Get().GetConfig();
-    constants->srgbCorrection = (cfg && cfg->GetConfig().srgbCorrection) ? 1 : 0;
+    const auto& c = cfg ? cfg->GetConfig() : VRConfig{};
+    constants->contrast = (c.contrast > 0.0f) ? c.contrast : 1.0f;
+    constants->saturation = (c.saturation > 0.0f) ? c.saturation : 1.0f;
+    constants->brightness = (c.brightness > 0.0f) ? c.brightness : 1.0f;
+    constants->srgbCorrection = c.srgbCorrection ? 1 : 0;
 
     context->Unmap(cb, 0);
     return true;

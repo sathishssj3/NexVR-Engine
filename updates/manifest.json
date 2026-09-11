@@ -1,17 +1,17 @@
 {
-  "engineVersion": "0.1.11",
-  "timestamp": 1789159949731,
-  "changelog": "Hogwarts Legacy Native Contrast & Universal Gamma Fix v0.1.11",
+  "engineVersion": "0.1.12",
+  "timestamp": 1789161275935,
+  "changelog": "Perceptual Desktop Color Calibration & In-Headset Lighting Controls v0.1.12",
   "features": [
-    "Native Game Color Fidelity: Preserves monitor-accurate lighting and colors directly from game backbuffers without artificial gamma squaring",
-    "Zero Cross-Game Regressions: Universal default srgbCorrection=false prevents crushed blacks across DX11, DX12, and future titles",
-    "Live In-Game Toggle: In-headset VR overlay allows real-time sRGB toggle if desired",
-    "OTA & Bundle Parity: Packaged releases and OTA updates synchronize clean configuration invariants"
+    "Perceptual Contrast & Saturation Calibration: Real-time Hermite curve tone-mapping matches desktop monitor lighting without crushed blacks",
+    "In-Headset Real-Time Calibration Controls: Live sliders for Contrast (0.7x-1.6x), Saturation (0.7x-1.6x), and Brightness directly in the VR overlay",
+    "Zero-Regression Architecture: Unprofiled games and Sekiro default to 1.0x identity with zero distortion",
+    "Hardware Swapchain Parity: Constant buffer ABI alignment across D3D11, D3D12, and Vulkan backends"
   ],
   "fixes": [
-    "Fixed Hogwarts Legacy appearing with pitch-black crushed shadows, restoring natural desktop lighting and wall textures",
-    "Guaranteed Sekiro and all other titles maintain authentic desktop-quality lighting without gamma crush",
-    "Hardened launcher fallback profiles for Hogwarts Legacy and Sekiro"
+    "Eliminated low-contrast/washed-out lighting in Hogwarts Legacy in VR, matching desktop game richness",
+    "Prevented all gamma-crush artifacts across existing and fresh new titles",
+    "Updated Hogwarts Legacy profile with calibrated contrast 1.20x and saturation 1.15x"
   ],
   "files": [
     "vrinject.dll",
@@ -35,19 +35,19 @@
     "shaders/asw_shader.hlsl",
     "shaders/depth_reprojection.hlsl"
   ],
-  "date": "2026-09-11T20:52:29.731Z",
+  "date": "2026-09-11T21:14:35.935Z",
   "hashes": {
-    "vrinject.dll": "42c83d9bded1743d6e5b96d0ec1b161579e20f8e7eb35203ad2d53fdd44b047e",
-    "vr-inject-cli.exe": "32f4dd2ee943f11009eb220d1b71d5c35873689302c71a5a59543eebe806d4bd",
+    "vrinject.dll": "88a31a15779e38bfd5375dfc60aab1c6c09aa79894ed7da0faaa8c5c59b1ee2d",
+    "vr-inject-cli.exe": "358586a933e3b48415c10c958d2c0bff7eab4b2eccb29b488de350553f6b5d22",
     "profiles/814380_sekiro.json": "6463c079fb200fdb895edf96cdc54249d3e1d93c9fce6fbad87da9cfd7f46ff3",
-    "profiles/990080_hogwarts_legacy.json": "c678a5bccd76bab2046ac0e3a33534470c357ee69863ef26aa889805a5ed8dc5",
+    "profiles/990080_hogwarts_legacy.json": "2cc042a63f450ea64cc3fc8b444d947e4f7b2a5030ec3deaa0af186b8dd470bb",
     "profiles/1091500_cyberpunk_2077.json": "42a448270d17b59f9a910903043ca93b212cdae9c75fbf3400c1ef4346590601",
     "profiles/1623730_palworld.json": "70c398e7106163a537ea6a9d695edd6d7cf38176ef6e4dc4951148d942e85b7d",
     "profiles/668580_atomic_heart.json": "06b41603134c4045a3eafce9f011facd4e871f46662d74bbe9235121f825aa1b",
     "profiles/1110910_mortal_shell.json": "c8027d7cb90c314da9ddeefb8ccc94e8c2935d738c4e1e0541fd410ede3e59bc",
     "profiles/1245620_elden_ring.json": "43726a56aaa1ec5a166d1f6c17b0fe81090847c075603222ac066e0e47a1d6d0",
-    "profiles/schema.json": "1a37259bfa11d7ff061feba14f92e55e1cb901043e62534b37c1e5f2cbcbc808",
-    "shaders/stereo_reprojection.hlsl": "f3869f75197032d2049e9b48826767e6ce13c16e164e5a8a4679f490f0eb774c",
+    "profiles/schema.json": "a6e1c619de549cb36e13e6bcddc796afc205e9fa66c08542d586dbb4f995bd8e",
+    "shaders/stereo_reprojection.hlsl": "8d7422771f7107cf8ab8d500fa22f36ccfb7627a0ea10dc92a552e7177fc02bd",
     "shaders/tonemap.hlsl": "a886e9369ac38e15171a03f6d55681897a2c2580e573fd5fa7d5552344a1cd5f",
     "shaders/stereo_resolve.hlsl": "b9787aa73933055a08e6ed372c7a83c0626462bb4a0f0bba9c734309b53b9dcf",
     "shaders/stereo_warp.hlsl": "0575ea5d393ac74782409acba603a8c687f271489935622de0392daa072a6c74",

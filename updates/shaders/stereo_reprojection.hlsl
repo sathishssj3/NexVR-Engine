@@ -11,13 +11,13 @@ VK_BINDING(0) cbuffer StereoConstants : register(b0)
     row_major float4x4 RightViewProj;
     
     float3 OriginalEyePos;
-    float Pad0;
+    float Contrast;
     
     float3 LeftEyePos;
-    float Pad1;
+    float Saturation;
     
     float3 RightEyePos;
-    float Pad2;
+    float Brightness;
     
     uint Width;
     uint Height;
@@ -31,6 +31,33 @@ VK_BINDING(3) SamplerState LinearSampler : register(s0);
 
 VK_BINDING(4) RWTexture2D<float4> OutLeftEye : register(u0);
 VK_BINDING(5) RWTexture2D<float4> OutRightEye : register(u1);
+
+// Perceptually calibrated contrast and saturation adjustment.
+// Prevents crushed blacks, lifts flat midtones, and preserves highlight detail.
+float3 ApplyPerceptualGrading(float3 color, float contrast, float saturation, float brightness)
+{
+    float c = (contrast > 0.01f) ? contrast : 1.0f;
+    float s = (saturation > 0.01f) ? saturation : 1.0f;
+    float b = (brightness > 0.01f) ? brightness : 1.0f;
+
+    // Fast-path: Identity (default 1.0 for all games without specific grading)
+    if (abs(c - 1.0f) < 0.001f && abs(s - 1.0f) < 0.001f && abs(b - 1.0f) < 0.001f)
+    {
+        return color;
+    }
+
+    // 1. Contrast: Soft S-curve pivoted around mid-gray (0.5f)
+    float3 graded = (color - 0.5f) * c + 0.5f;
+
+    // 2. Brightness scaling
+    graded = graded * b;
+
+    // 3. Saturation: Rec.709 luminance-preserving chroma adjustment
+    float lum = dot(graded, float3(0.2126f, 0.7152f, 0.0722f));
+    graded = lerp(float3(lum, lum, lum), graded, s);
+
+    return saturate(graded);
+}
 
 // Standard depth unprojection
 float3 WorldPositionFromDepth(float2 uv, float depth)
@@ -91,6 +118,7 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
     {
         // 100% Full FOV in 2D mode - no letterboxing or black bars
         float4 outColor = baseColor;
+        outColor.rgb = ApplyPerceptualGrading(outColor.rgb, Contrast, Saturation, Brightness);
         outColor.a = 1.0f;
         
         OutLeftEye[pixelPos] = outColor;
@@ -104,6 +132,7 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
     if (depth <= 0.000001f || depth >= 0.999999f)
     {
         float4 hudColor = baseColor;
+        hudColor.rgb = ApplyPerceptualGrading(hudColor.rgb, Contrast, Saturation, Brightness);
         hudColor.a = 1.0f;
         OutLeftEye[pixelPos] = hudColor;
         OutRightEye[pixelPos] = hudColor;
@@ -151,7 +180,9 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
         }
     }
     
-    // Preserve authentic desktop lighting and saturation without artificial gamma squaring
+    // Apply perceptual grading calibrated to desktop game lighting
+    leftColor.rgb = ApplyPerceptualGrading(leftColor.rgb, Contrast, Saturation, Brightness);
+    rightColor.rgb = ApplyPerceptualGrading(rightColor.rgb, Contrast, Saturation, Brightness);
     leftColor.a = 1.0f;
     rightColor.a = 1.0f;
 

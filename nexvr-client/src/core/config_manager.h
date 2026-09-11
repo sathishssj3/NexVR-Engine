@@ -16,6 +16,9 @@ struct VRConfig {
     float motionAimSensitivity = 1.0f;
     bool useRecommendedResolution = true;
     bool srgbCorrection = false;
+    float contrast = 1.0f;
+    float saturation = 1.0f;
+    float brightness = 1.0f;
     bool depthSubmission = false;
     bool rawInputMode = true;
     bool autoInjectOnLaunch = false;

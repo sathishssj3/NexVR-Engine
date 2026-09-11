@@ -82,6 +82,27 @@
       "type": "number",
       "default": 10.0,
       "description": "Focal convergence distance in meters."
+    },
+    "contrast": {
+      "type": "number",
+      "minimum": 0.5,
+      "maximum": 2.0,
+      "default": 1.0,
+      "description": "Perceptual contrast adjustment factor."
+    },
+    "saturation": {
+      "type": "number",
+      "minimum": 0.5,
+      "maximum": 2.0,
+      "default": 1.0,
+      "description": "Rec.709 luminance-preserving saturation factor."
+    },
+    "brightness": {
+      "type": "number",
+      "minimum": 0.5,
+      "maximum": 2.0,
+      "default": 1.0,
+      "description": "Brightness scaling factor."
     }
   },
   "additionalProperties": false

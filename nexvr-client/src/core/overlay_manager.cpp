@@ -230,13 +230,74 @@ void OverlayManager::Render() {
 
                 ImGui::Spacing();
 
-                // 4. Vibrant Colors
+                // 4. Color & Contrast Calibration
+                ImGui::TextColored(ImVec4(0.00f, 0.85f, 1.00f, 1.0f), "Display & Lighting Calibration");
+                ImGui::Separator();
+
+                // Contrast slider
+                float contrastVal = cfg.contrast;
+                ImGui::Text("Perceptual Contrast: %.2fx", contrastVal);
+                if (ImGui::SliderFloat("##contrast", &contrastVal, 0.70f, 1.60f, "%.2fx")) {
+                    cfg.contrast = contrastVal;
+                    cfgManager->Save();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Rich (1.20x)##btnContrastRich")) {
+                    cfg.contrast = 1.20f;
+                    cfgManager->Save();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("1.0x##btnContrastReset")) {
+                    cfg.contrast = 1.0f;
+                    cfgManager->Save();
+                }
+                ImGui::TextDisabled("Calibrates shadow depth and midtone richness to match the desktop monitor without black crush.");
+
+                ImGui::Spacing();
+
+                // Saturation slider
+                float satVal = cfg.saturation;
+                ImGui::Text("Color Saturation: %.2fx", satVal);
+                if (ImGui::SliderFloat("##saturation", &satVal, 0.70f, 1.60f, "%.2fx")) {
+                    cfg.saturation = satVal;
+                    cfgManager->Save();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Rich (1.15x)##btnSatRich")) {
+                    cfg.saturation = 1.15f;
+                    cfgManager->Save();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("1.0x##btnSatReset")) {
+                    cfg.saturation = 1.0f;
+                    cfgManager->Save();
+                }
+                ImGui::TextDisabled("Adjusts vibrant game colors using Rec.709 luminance preservation.");
+
+                ImGui::Spacing();
+
+                // Brightness slider
+                float brightVal = cfg.brightness;
+                ImGui::Text("VR Brightness: %.2fx", brightVal);
+                if (ImGui::SliderFloat("##brightness", &brightVal, 0.70f, 1.40f, "%.2fx")) {
+                    cfg.brightness = brightVal;
+                    cfgManager->Save();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("1.0x##btnBrightReset")) {
+                    cfg.brightness = 1.0f;
+                    cfgManager->Save();
+                }
+                ImGui::TextDisabled("Scales overall scene brightness in headset.");
+
+                ImGui::Spacing();
+
                 bool srgb = cfg.srgbCorrection;
-                if (ImGui::Checkbox("Vibrant Game Colors & Contrast (sRGB Tonemapping)", &srgb)) {
+                if (ImGui::Checkbox("Legacy sRGB Gamma Correction", &srgb)) {
                     cfg.srgbCorrection = srgb;
                     cfgManager->Save();
                 }
-                ImGui::TextDisabled("Restores deep rich blacks and authentic lighting matching the original game.");
+                ImGui::TextDisabled("Legacy toggle for older non-linear titles (keep off for modern UE4/UE5/DX12 titles).");
 
                 ImGui::EndTabItem();
             }
@@ -301,6 +362,9 @@ void OverlayManager::Render() {
                     cfg.convergence = 10.0f;
                     cfg.vrScaleFactor = 100.0f;
                     cfg.resolutionScale = 1.0f;
+                    cfg.contrast = 1.0f;
+                    cfg.saturation = 1.0f;
+                    cfg.brightness = 1.0f;
                     cfg.srgbCorrection = false;
                     cfg.enableNeuralInpainter = true;
                     cfgManager->Save();
