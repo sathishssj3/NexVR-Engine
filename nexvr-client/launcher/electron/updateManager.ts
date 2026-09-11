@@ -28,15 +28,33 @@ const MANIFEST_URLS = [
   'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine-Releases/main/updates/manifest.json',
 ];
 
-function getUpdatesDir(): string {
-  const dir = path.join(app.getPath('userData'), 'updates');
+export function getUpdatesDir(): string {
+  const userData = app?.getPath ? app.getPath('userData') : path.join(process.env.APPDATA || process.cwd(), 'NexVR Engine');
+  const dir = path.join(userData, 'updates');
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
   return dir;
 }
 
-function getLocalManifest(): UpdateManifest | null {
+export function parseSemver(v: string): number[] {
+  const clean = v.replace(/^v/i, '').trim();
+  const parts = clean.split('.').map(p => Number.parseInt(p, 10) || 0);
+  while (parts.length < 3) parts.push(0);
+  return parts;
+}
+
+export function compareSemver(v1: string, v2: string): number {
+  const p1 = parseSemver(v1);
+  const p2 = parseSemver(v2);
+  for (let i = 0; i < 3; i++) {
+    if (p1[i] > p2[i]) return 1;
+    if (p1[i] < p2[i]) return -1;
+  }
+  return 0;
+}
+
+export function getLocalManifest(): UpdateManifest | null {
   try {
     const file = path.join(getUpdatesDir(), 'installed_manifest.json');
     if (fs.existsSync(file)) {
@@ -45,6 +63,37 @@ function getLocalManifest(): UpdateManifest | null {
   } catch {}
   return null;
 }
+
+export function purgeStaleOtaCacheIfAppNewer(): void {
+  try {
+    const local = getLocalManifest();
+    const appVer = app?.getVersion ? app.getVersion() : '';
+    if (!appVer) return;
+
+    // If local cached OTA belongs to an older version than the installed app,
+    // clear outdated cached binaries so the bundled assets are guaranteed to run.
+    if (local && compareSemver(appVer, local.engineVersion) > 0) {
+      console.info(`[UpdateManager] Current app (v${appVer}) is newer than cached OTA (v${local.engineVersion}). Purging stale OTA cache.`);
+      const updatesDir = getUpdatesDir();
+      const filesToPurge = ['vrinject.dll', 'vr-inject-cli.exe', 'vrinject.json', 'installed_manifest.json'];
+      for (const f of filesToPurge) {
+        const fp = path.join(updatesDir, f);
+        if (fs.existsSync(fp)) {
+          try { fs.unlinkSync(fp); } catch {}
+        }
+      }
+      const shadersDir = path.join(updatesDir, 'shaders');
+      if (fs.existsSync(shadersDir)) {
+        try { fs.rmSync(shadersDir, { recursive: true, force: true }); } catch {}
+      }
+    }
+  } catch (err) {
+    console.warn('[UpdateManager] Error during stale OTA cache check:', err);
+  }
+}
+
+// Purge obsolete OTA cache on module startup
+purgeStaleOtaCacheIfAppNewer();
 
 async function fetchWithTimeout(url: string, timeoutMs = 15000): Promise<Response> {
   const controller = new AbortController();
@@ -83,8 +132,9 @@ async function fetchRemoteManifest(): Promise<{ manifest: UpdateManifest; baseUr
 
 async function downloadFileWithFallback(fileName: string, baseUrls: string[], destPath: string): Promise<void> {
   let lastErr: Error | null = null;
+  const normalizedFile = fileName.replace(/\\/g, '/');
   for (const base of baseUrls) {
-    const fileUrl = `${base}${fileName}`;
+    const fileUrl = `${base.replace(/\/+$/, '')}/${normalizedFile}`;
     try {
       const res = await fetchWithTimeout(fileUrl, 30000);
       if (!res.ok) {
@@ -122,6 +172,19 @@ export async function checkForEngineHotfix(): Promise<UpdateStatus> {
 
     const { manifest: remote, baseUrl } = remoteData;
     const local = getLocalManifest();
+    const appVer = app.getVersion() || '0.1.10';
+
+    // Prevent older remote hotfix from downgrading a newer packaged installation
+    if (compareSemver(appVer, remote.engineVersion) > 0) {
+      console.info(`[UpdateManager] Remote hotfix v${remote.engineVersion} is older than bundled app v${appVer}. Skipping hotfix.`);
+      return {
+        checking: false,
+        hasUpdate: false,
+        updated: false,
+        version: appVer,
+        changelog: 'Bundled release is up-to-date',
+      };
+    }
 
     if (!local || remote.timestamp > local.timestamp) {
       console.info(`[UpdateManager] New engine hotfix available: v${remote.engineVersion} (${remote.changelog})`);
@@ -185,25 +248,27 @@ export async function checkForEngineHotfix(): Promise<UpdateStatus> {
 }
 
 // IPC Handlers
-ipcMain.handle('update:check', async (event) => {
-  assertTrustedIpcSender(event);
-  return await checkForEngineHotfix();
-});
+if (ipcMain) {
+  ipcMain.handle('update:check', async (event) => {
+    assertTrustedIpcSender(event);
+    return await checkForEngineHotfix();
+  });
 
-ipcMain.handle('update:getStatus', async (event) => {
-  assertTrustedIpcSender(event);
-  const local = getLocalManifest();
-  return {
-    version: local?.engineVersion || app.getVersion() || '0.1.10',
-    timestamp: local?.timestamp || 0,
-    changelog: local?.changelog || '',
-    features: local?.features || [],
-    fixes: local?.fixes || [],
-  };
-});
+  ipcMain.handle('update:getStatus', async (event) => {
+    assertTrustedIpcSender(event);
+    const local = getLocalManifest();
+    return {
+      version: local?.engineVersion || (app?.getVersion ? app.getVersion() : '0.1.10') || '0.1.10',
+      timestamp: local?.timestamp || 0,
+      changelog: local?.changelog || '',
+      features: local?.features || [],
+      fixes: local?.fixes || [],
+    };
+  });
 
-ipcMain.handle('update:openFolder', async (event) => {
-  assertTrustedIpcSender(event);
-  const dir = getUpdatesDir();
-  shell.openPath(dir);
-});
+  ipcMain.handle('update:openFolder', async (event) => {
+    assertTrustedIpcSender(event);
+    const dir = getUpdatesDir();
+    if (shell?.openPath) shell.openPath(dir);
+  });
+}

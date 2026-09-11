@@ -126,16 +126,30 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run pack -- --publish never
 
+      - name: Determine Release Tag
+        id: release_info
+        shell: pwsh
+        run: |
+          $pkgVersion = (Get-Content ./nexvr-client/launcher/package.json | ConvertFrom-Json).version
+          if ([string]::IsNullOrWhiteSpace($pkgVersion)) { $pkgVersion = "0.1.10" }
+          $tag = if ('${{ inputs.release_tag }}') { '${{ inputs.release_tag }}' } else { "v$pkgVersion" }
+          echo "tag=$tag" >> $env:GITHUB_OUTPUT
+          echo "RELEASE_TAG=$tag" >> $env:GITHUB_ENV
+          Write-Host "Computed release tag: $tag (package version: $pkgVersion)"
+
       - name: Standardize Setup.exe Filenames
         shell: pwsh
         working-directory: ./nexvr-client/launcher/dist-electron
         run: |
+          $pkgVersion = (Get-Content ../package.json | ConvertFrom-Json).version
+          if ([string]::IsNullOrWhiteSpace($pkgVersion)) { $pkgVersion = "0.1.10" }
           $setupFile = Get-ChildItem -Filter "*Setup*.exe" | Select-Object -First 1
           if ($setupFile) {
-            Write-Host "Discovered NSIS installer: $($setupFile.Name)"
+            Write-Host "Discovered NSIS installer: $($setupFile.Name) for version $pkgVersion"
             Copy-Item $setupFile.FullName "NexVR-Engine-Setup.exe" -Force
+            Copy-Item $setupFile.FullName "NexVR.Engine.Setup.$pkgVersion.exe" -Force
             Copy-Item $setupFile.FullName "NexVR.Engine.Setup.0.1.0.exe" -Force
-            Write-Host "Created canonical download targets: NexVR-Engine-Setup.exe and NexVR.Engine.Setup.0.1.0.exe"
+            Write-Host "Created canonical download targets: NexVR-Engine-Setup.exe and NexVR.Engine.Setup.$pkgVersion.exe"
           } else {
             Write-Host "::error::No Setup.exe was found in dist-electron!"
             exit 1
@@ -157,7 +171,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || inputs.release_tag != ''
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.release_tag || 'v0.1.0' }}
+          tag_name: ${{ steps.release_info.outputs.tag }}
           files: |
             nexvr-client/launcher/dist-electron/NexVR-Engine-Setup.exe
             nexvr-client/launcher/dist-electron/NexVR.Engine.Setup.*.exe
@@ -169,12 +183,12 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets['RELEASES_REPO_TOKEN'] || '' }}
-          TAG: ${{ inputs.release_tag || 'v0.1.0' }}
+          TAG: ${{ steps.release_info.outputs.tag }}
         run: |
           if ([string]::IsNullOrWhiteSpace($env:GH_TOKEN)) {
             Write-Host "No RELEASES_REPO_TOKEN secret found. Skipping cross-repo release upload."
             exit 0
           }
-          $tagToUse = if ($env:TAG) { $env:TAG } else { "v0.1.0" }
+          $tagToUse = if ($env:TAG) { $env:TAG } else { "v0.1.10" }
           $scriptPath = if (Test-Path ./nexvr-client/scripts/upload_to_releases_repo.ps1) { "./nexvr-client/scripts/upload_to_releases_repo.ps1" } else { "./scripts/upload_to_releases_repo.ps1" }
           & $scriptPath -Token $env:GH_TOKEN -Tag $tagToUse

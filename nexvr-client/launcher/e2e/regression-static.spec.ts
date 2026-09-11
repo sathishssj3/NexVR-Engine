@@ -165,4 +165,29 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     expect(sekiroProfile.srgbCorrection).toBe(false);
     expect(hogwartsProfile.srgbCorrection).toBe(true);
   });
+
+  test('OTA manifest and injectionManager prevent stale cache shadowing and cross-game contamination', () => {
+    const manifest = JSON.parse(readRepoFile('..', 'updates', 'manifest.json'));
+    const updateMgr = readRepoFile('launcher', 'electron', 'updateManager.ts');
+    const injectionMgr = readRepoFile('launcher', 'electron', 'injectionManager.ts');
+    const workflow = readRepoFile('..', '.github', 'workflows', 'package-setup.yml');
+
+    // Manifest must include shader assets for dynamic compilation
+    expect(manifest.files).toContain('shaders/stereo_reprojection.hlsl');
+
+    // updateManager must purge stale OTA cache when installed app is newer
+    expect(updateMgr).toContain('purgeStaleOtaCacheIfAppNewer');
+    expect(updateMgr).toContain('compareSemver');
+
+    // injectionManager must enforce srgbCorrection and depthSubmission invariants
+    expect(injectionMgr).toContain('baseProfile.srgbCorrection !== undefined');
+    expect(injectionMgr).toContain('baseProfile.depthSubmission !== undefined');
+
+    // injectionManager must NOT write to global stageCfg vrinject.json that causes cross-game contamination
+    expect(injectionMgr).not.toContain("const stageCfg = path.join(updatesDir, 'vrinject.json')");
+
+    // package-setup.yml must dynamically determine release tag
+    expect(workflow).toContain('Determine Release Tag');
+    expect(workflow).toContain('RELEASE_TAG');
+  });
 });

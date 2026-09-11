@@ -14,6 +14,7 @@ import {
   validateGameId,
 } from './utils';
 import { detectAntiCheat } from './libraryManager';
+import { getLocalManifest, compareSemver } from './updateManager';
 
 const execFileAsync = util.promisify(child_process.execFile);
 const isDev = !app.isPackaged;
@@ -39,7 +40,17 @@ export function pickPreferredAsset(canonicalPath: string, otaPath: string, minSi
     return canonicalPath;
   }
 
-  // In packaged mode, prefer OTA only if it's newer than the bundled binary
+  // In packaged mode, if the app version matches or exceeds the OTA manifest version,
+  // the bundled binaries are up-to-date and MUST take precedence over stale cached files!
+  try {
+    const local = getLocalManifest();
+    const appVer = app.getVersion();
+    if (local && appVer && compareSemver(appVer, local.engineVersion) >= 0) {
+      return canonicalPath;
+    }
+  } catch {}
+
+  // If OTA is strictly newer than the bundled binary by timestamp, use OTA hotfix
   try {
     const otaMtime = fs.statSync(otaPath).mtimeMs;
     const canonMtime = fs.statSync(canonicalPath).mtimeMs;
@@ -387,6 +398,8 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
             ...(baseProfile.reverseZ !== undefined ? { reverseZ: baseProfile.reverseZ } : {}),
             ...(baseProfile.rowMajorMatrices !== undefined ? { rowMajorMatrices: baseProfile.rowMajorMatrices } : {}),
             ...(baseProfile.matrixPrecision ? { matrixPrecision: baseProfile.matrixPrecision } : {}),
+            ...(baseProfile.srgbCorrection !== undefined ? { srgbCorrection: baseProfile.srgbCorrection } : {}),
+            ...(baseProfile.depthSubmission !== undefined ? { depthSubmission: baseProfile.depthSubmission } : {}),
           };
         } catch {}
       }
@@ -405,9 +418,12 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
           }
         }
 
+        // Clean up any stale global vrinject.json in updates directory to avoid cross-game configuration contamination
         try {
-          const stageCfg = path.join(updatesDir, 'vrinject.json');
-          fs.writeFileSync(stageCfg, JSON.stringify(activeConfig, null, 2), 'utf-8');
+          const staleStageCfg = path.join(updatesDir, 'vrinject.json');
+          if (fs.existsSync(staleStageCfg)) {
+            fs.unlinkSync(staleStageCfg);
+          }
         } catch (e) {}
       }
     } catch (error) {

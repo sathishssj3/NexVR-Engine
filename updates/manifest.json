@@ -23,6 +23,16 @@
     "profiles/668580_atomic_heart.json",
     "profiles/1110910_mortal_shell.json",
     "profiles/1245620_elden_ring.json",
-    "profiles/schema.json"
+    "profiles/schema.json",
+    "shaders/stereo_reprojection.hlsl",
+    "shaders/tonemap.hlsl",
+    "shaders/stereo_resolve.hlsl",
+    "shaders/stereo_warp.hlsl",
+    "shaders/disocclusion_fill.hlsl",
+    "shaders/bilateral_blur.hlsl",
+    "shaders/bilateral_blend.hlsl",
+    "shaders/comfort_guard_analysis.hlsl",
+    "shaders/asw_shader.hlsl",
+    "shaders/depth_reprojection.hlsl"
   ]
 }

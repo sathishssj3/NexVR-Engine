@@ -77,7 +77,7 @@ module.exports = {
   publish: {
     provider: 'github',
     owner: 'sathishssj3',
-    repo: 'NexVR-Engine-Releases',
+    repo: 'NexVR-Engine',
     releaseType: 'release',
   },
 };
