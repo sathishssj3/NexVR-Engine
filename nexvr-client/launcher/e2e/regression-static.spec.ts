@@ -149,9 +149,11 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     const stereoRendererH = readRepoFile('src', 'rendering', 'stereo', 'stereo_renderer.h');
     const stereoRendererCpp = readRepoFile('src', 'rendering', 'stereo', 'stereo_renderer.cpp');
 
-    // Shader constant buffer must declare SrgbCorrection
+    // Shader constant buffer must declare SrgbCorrection for ABI alignment
     expect(shader).toContain('uint SrgbCorrection;');
-    expect(shader).toContain('if (SrgbCorrection != 0)');
+    // Reprojection shader must NOT perform artificial double-gamma pow 2.2 crush
+    expect(shader).not.toContain('pow(max(outColor.rgb, 0.0f), 2.2f)');
+    expect(shader).not.toContain('pow(max(leftColor.rgb, 0.0f), 2.2f)');
 
     // C++ structs must declare srgbCorrection at offset 252 (matching HLSL layout)
     expect(dx12ManagerH).toContain('uint32_t srgbCorrection;');

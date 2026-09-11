@@ -1,7 +1,7 @@
 {
-  "engineVersion": "0.1.10",
-  "timestamp": 1789151825551,
-  "changelog": "Hogwarts Legacy & Universal Native Game Contrast Fix v0.1.10",
+  "engineVersion": "0.1.11",
+  "timestamp": 1789159949731,
+  "changelog": "Hogwarts Legacy Native Contrast & Universal Gamma Fix v0.1.11",
   "features": [
     "Native Game Color Fidelity: Preserves monitor-accurate lighting and colors directly from game backbuffers without artificial gamma squaring",
     "Zero Cross-Game Regressions: Universal default srgbCorrection=false prevents crushed blacks across DX11, DX12, and future titles",
@@ -35,5 +35,27 @@
     "shaders/asw_shader.hlsl",
     "shaders/depth_reprojection.hlsl"
   ],
-  "date": "2026-09-11T20:19:16.420Z"
+  "date": "2026-09-11T20:52:29.731Z",
+  "hashes": {
+    "vrinject.dll": "42c83d9bded1743d6e5b96d0ec1b161579e20f8e7eb35203ad2d53fdd44b047e",
+    "vr-inject-cli.exe": "32f4dd2ee943f11009eb220d1b71d5c35873689302c71a5a59543eebe806d4bd",
+    "profiles/814380_sekiro.json": "6463c079fb200fdb895edf96cdc54249d3e1d93c9fce6fbad87da9cfd7f46ff3",
+    "profiles/990080_hogwarts_legacy.json": "c678a5bccd76bab2046ac0e3a33534470c357ee69863ef26aa889805a5ed8dc5",
+    "profiles/1091500_cyberpunk_2077.json": "42a448270d17b59f9a910903043ca93b212cdae9c75fbf3400c1ef4346590601",
+    "profiles/1623730_palworld.json": "70c398e7106163a537ea6a9d695edd6d7cf38176ef6e4dc4951148d942e85b7d",
+    "profiles/668580_atomic_heart.json": "06b41603134c4045a3eafce9f011facd4e871f46662d74bbe9235121f825aa1b",
+    "profiles/1110910_mortal_shell.json": "c8027d7cb90c314da9ddeefb8ccc94e8c2935d738c4e1e0541fd410ede3e59bc",
+    "profiles/1245620_elden_ring.json": "43726a56aaa1ec5a166d1f6c17b0fe81090847c075603222ac066e0e47a1d6d0",
+    "profiles/schema.json": "1a37259bfa11d7ff061feba14f92e55e1cb901043e62534b37c1e5f2cbcbc808",
+    "shaders/stereo_reprojection.hlsl": "f3869f75197032d2049e9b48826767e6ce13c16e164e5a8a4679f490f0eb774c",
+    "shaders/tonemap.hlsl": "a886e9369ac38e15171a03f6d55681897a2c2580e573fd5fa7d5552344a1cd5f",
+    "shaders/stereo_resolve.hlsl": "b9787aa73933055a08e6ed372c7a83c0626462bb4a0f0bba9c734309b53b9dcf",
+    "shaders/stereo_warp.hlsl": "0575ea5d393ac74782409acba603a8c687f271489935622de0392daa072a6c74",
+    "shaders/disocclusion_fill.hlsl": "1cd2773b70c459031103811f3736080ee1eb52848bf779744f52611c7287519e",
+    "shaders/bilateral_blur.hlsl": "381fcf5b49f6e948b2ada299c123892c12eae27db2dc4d12af911e9f48ddccdc",
+    "shaders/bilateral_blend.hlsl": "10031f32d49946da871a5a1337cca3093f8583cff41dd38ed0b9de27d1d37ab0",
+    "shaders/comfort_guard_analysis.hlsl": "8089dd179cae077aae72a4db31e79a0339c8ef801dc0dc56da962bc9aedab4f6",
+    "shaders/asw_shader.hlsl": "ae77436c5869e5dcd5175bc0050f3e55f1f9abebd3aed49336867954fcee461c",
+    "shaders/depth_reprojection.hlsl": "eb0e672fdaebaea0e1afa542990770b5d7d5044a18156f983623478c9e0541f5"
+  }
 }

@@ -1,6 +1,6 @@
 param (
     [string]$Token,
-    [string]$Tag = "v0.1.10",
+    [string]$Tag = "v0.1.11",
     [string]$Repo = "sathishssj3/NexVR-Engine-Releases",
     [string]$ArtifactsDir = "launcher\dist-electron"
 )

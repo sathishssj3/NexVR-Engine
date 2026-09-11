@@ -172,7 +172,7 @@ export async function checkForEngineHotfix(): Promise<UpdateStatus> {
 
     const { manifest: remote, baseUrl } = remoteData;
     const local = getLocalManifest();
-    const appVer = app.getVersion() || '0.1.10';
+    const appVer = app.getVersion() || '0.1.11';
 
     // Prevent older remote hotfix from downgrading a newer packaged installation
     if (compareSemver(appVer, remote.engineVersion) > 0) {
@@ -186,7 +186,7 @@ export async function checkForEngineHotfix(): Promise<UpdateStatus> {
       };
     }
 
-    if (!local || remote.timestamp > local.timestamp) {
+    if (!local || compareSemver(remote.engineVersion, local.engineVersion) > 0 || remote.timestamp > local.timestamp) {
       console.info(`[UpdateManager] New engine hotfix available: v${remote.engineVersion} (${remote.changelog})`);
       const updatesDir = getUpdatesDir();
 
@@ -258,7 +258,7 @@ if (ipcMain) {
     assertTrustedIpcSender(event);
     const local = getLocalManifest();
     return {
-      version: local?.engineVersion || (app?.getVersion ? app.getVersion() : '0.1.10') || '0.1.10',
+      version: local?.engineVersion || (app?.getVersion ? app.getVersion() : '0.1.11') || '0.1.11',
       timestamp: local?.timestamp || 0,
       changelog: local?.changelog || '',
       features: local?.features || [],
