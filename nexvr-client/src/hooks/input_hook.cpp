@@ -30,6 +30,24 @@ LRESULT CALLBACK HookedWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
         }
     } __except (EXCEPTION_EXECUTE_HANDLER) {}
 
+    // Focus preservation: Keep the game active and listening to input even when running with VR/null driver
+    switch (msg) {
+        case WM_ACTIVATEAPP:
+            wParam = TRUE; // Force application active
+            break;
+        case WM_ACTIVATE:
+            if (LOWORD(wParam) == WA_INACTIVE) {
+                wParam = MAKEWPARAM(WA_ACTIVE, HIWORD(wParam)); // Maintain active state
+            }
+            break;
+        case WM_NCACTIVATE:
+            wParam = TRUE; // Keep title bar styled active
+            break;
+        case WM_KILLFOCUS:
+            // Suppress loss of focus so game does not cancel mouse capture or keyboard input
+            return 0;
+    }
+
     if (g_OriginalWndProc) {
         return g_OriginalWndProc(hwnd, msg, wParam, lParam);
     }
@@ -38,14 +56,14 @@ LRESULT CALLBACK HookedWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 
 HWND WINAPI HookedGetForegroundWindow() {
     HWND target = InputHook::GetInstance().GetTargetHwnd();
-    if (target && InputHook::GetInstance().IsCaptureActive()) return target;
+    if (target) return target;
     if (OriginalGetForegroundWindow) return OriginalGetForegroundWindow();
     return nullptr;
 }
 
 HWND WINAPI HookedGetActiveWindow() {
     HWND target = InputHook::GetInstance().GetTargetHwnd();
-    if (target && InputHook::GetInstance().IsCaptureActive()) return target;
+    if (target) return target;
     if (OriginalGetActiveWindow) return OriginalGetActiveWindow();
     return nullptr;
 }
@@ -104,34 +122,13 @@ UINT WINAPI HookedGetRawInputData(HRAWINPUT hRawInput, UINT uiCommand, LPVOID pD
 }
 
 BOOL WINAPI HookedGetCursorPos(LPPOINT lpPoint) {
-    if (InputHook::GetInstance().IsCaptureActive() && InputHook::GetInstance().GetTargetHwnd()) {
-        if (InputHook::GetInstance().m_gameCursorVisible) {
-            POINT pt;
-            pt.x = InputHook::GetInstance().GetVirtualCursorX();
-            pt.y = InputHook::GetInstance().GetVirtualCursorY();
-            ClientToScreen(InputHook::GetInstance().GetTargetHwnd(), &pt);
-            *lpPoint = pt;
-            return TRUE;
-        } else {
-            int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-            int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-            lpPoint->x = screenWidth / 2;
-            lpPoint->y = screenHeight / 2;
-            return TRUE;
-        }
-    }
     if (OriginalGetCursorPos) return OriginalGetCursorPos(lpPoint);
-    return FALSE;
+    return GetCursorPos(lpPoint);
 }
 
 HCURSOR WINAPI HookedSetCursor(HCURSOR hCursor) {
-    if (hCursor == nullptr) {
-        InputHook::GetInstance().m_gameCursorVisible = false;
-    } else {
-        InputHook::GetInstance().m_gameCursorVisible = true;
-    }
     if (OriginalSetCursor) return OriginalSetCursor(hCursor);
-    return nullptr;
+    return SetCursor(hCursor);
 }
 
 bool InputHook::Initialize() {
@@ -142,7 +139,7 @@ bool InputHook::Initialize() {
         return false;
     }
 
-    // Try hooking XInput 1.4, 1.3, and 9.1.0 as different games use different versions.
+    // 1. Try hooking XInput 1.4, 1.3, and 9.1.0 as different games use different versions.
     const char* xinputLibs[] = { "xinput1_4.dll", "xinput1_3.dll", "xinput9_1_0.dll" };
     bool hooked = false;
 
@@ -171,6 +168,46 @@ bool InputHook::Initialize() {
     if (!hooked) {
         LOG_WARN("InputHook: Failed to hook XInput APIs. Game might not use XInput.");
     }
+
+    // 2. Hook User32 APIs for focus spoofing and seamless mouse/keyboard input
+    HMODULE hUser32 = GetModuleHandleA("user32.dll");
+    if (!hUser32) hUser32 = LoadLibraryA("user32.dll");
+    if (hUser32) {
+        void* pGetForegroundWindow = (void*)GetProcAddress(hUser32, "GetForegroundWindow");
+        void* pGetActiveWindow = (void*)GetProcAddress(hUser32, "GetActiveWindow");
+        void* pGetCursorPos = (void*)GetProcAddress(hUser32, "GetCursorPos");
+        void* pSetCursor = (void*)GetProcAddress(hUser32, "SetCursor");
+        void* pGetRawInputData = (void*)GetProcAddress(hUser32, "GetRawInputData");
+
+        if (pGetForegroundWindow) {
+            MH_CreateHook(pGetForegroundWindow, reinterpret_cast<LPVOID>(&HookedGetForegroundWindow), reinterpret_cast<void**>(&OriginalGetForegroundWindow));
+            MH_EnableHook(pGetForegroundWindow);
+            LOG_INFO("InputHook: Hooked GetForegroundWindow.");
+        }
+        if (pGetActiveWindow) {
+            MH_CreateHook(pGetActiveWindow, reinterpret_cast<LPVOID>(&HookedGetActiveWindow), reinterpret_cast<void**>(&OriginalGetActiveWindow));
+            MH_EnableHook(pGetActiveWindow);
+            LOG_INFO("InputHook: Hooked GetActiveWindow.");
+        }
+        if (pGetCursorPos) {
+            MH_CreateHook(pGetCursorPos, reinterpret_cast<LPVOID>(&HookedGetCursorPos), reinterpret_cast<void**>(&OriginalGetCursorPos));
+            MH_EnableHook(pGetCursorPos);
+            LOG_INFO("InputHook: Hooked GetCursorPos.");
+        }
+        if (pSetCursor) {
+            MH_CreateHook(pSetCursor, reinterpret_cast<LPVOID>(&HookedSetCursor), reinterpret_cast<void**>(&OriginalSetCursor));
+            MH_EnableHook(pSetCursor);
+            LOG_INFO("InputHook: Hooked SetCursor.");
+        }
+        if (pGetRawInputData) {
+            MH_CreateHook(pGetRawInputData, reinterpret_cast<LPVOID>(&HookedGetRawInputData), reinterpret_cast<void**>(&OriginalGetRawInputData));
+            MH_EnableHook(pGetRawInputData);
+            LOG_INFO("InputHook: Hooked GetRawInputData.");
+        }
+    }
+
+    // 3. Start background capture thread for keyboard and mouse
+    StartBackgroundCapture();
 
     // Check if the game registered for Raw Input
     UINT numDevices = 0;
@@ -207,51 +244,37 @@ DWORD WINAPI InputHook::HookedXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pS
         
         if (dwUserIndex == 0 && pState) {
             if (res == ERROR_SUCCESS) {
-                // Merge physical state with emulated VR state
-                pState->Gamepad.wButtons |= self.m_emulatedState.Gamepad.wButtons;
-                
-                // Merge right stick (Head tracking + Physical stick)
-                int newRX = (int)pState->Gamepad.sThumbRX + (int)self.m_emulatedState.Gamepad.sThumbRX;
-                int newRY = (int)pState->Gamepad.sThumbRY + (int)self.m_emulatedState.Gamepad.sThumbRY;
-                
-                // Clamp right stick
-                pState->Gamepad.sThumbRX = (SHORT)(newRX > 32767 ? 32767 : (newRX < -32768 ? -32768 : newRX));
-                pState->Gamepad.sThumbRY = (SHORT)(newRY > 32767 ? 32767 : (newRY < -32768 ? -32768 : newRY));
-                // Merge left stick (VR thumbstick + Physical stick)
-                int newLX = (int)pState->Gamepad.sThumbLX + (int)self.m_emulatedState.Gamepad.sThumbLX;
-                int newLY = (int)pState->Gamepad.sThumbLY + (int)self.m_emulatedState.Gamepad.sThumbLY;
-                
-                pState->Gamepad.sThumbLX = (SHORT)(newLX > 32767 ? 32767 : (newLX < -32768 ? -32768 : newLX));
-                pState->Gamepad.sThumbLY = (SHORT)(newLY > 32767 ? 32767 : (newLY < -32768 ? -32768 : newLY));
-                
-                // Merge triggers
-                int newLT = (int)pState->Gamepad.bLeftTrigger + (int)self.m_emulatedState.Gamepad.bLeftTrigger;
-                int newRT = (int)pState->Gamepad.bRightTrigger + (int)self.m_emulatedState.Gamepad.bRightTrigger;
-                pState->Gamepad.bLeftTrigger = (BYTE)(newLT > 255 ? 255 : newLT);
-                pState->Gamepad.bRightTrigger = (BYTE)(newRT > 255 ? 255 : newRT);
-                
-                pState->dwPacketNumber += self.m_emulatedState.dwPacketNumber;
+                // Physical controller is connected. If VR controllers are actively used, merge them:
+                if (self.m_vrControllersActive) {
+                    pState->Gamepad.wButtons |= self.m_emulatedState.Gamepad.wButtons;
+                    
+                    int newRX = (int)pState->Gamepad.sThumbRX + (int)self.m_emulatedState.Gamepad.sThumbRX;
+                    int newRY = (int)pState->Gamepad.sThumbRY + (int)self.m_emulatedState.Gamepad.sThumbRY;
+                    pState->Gamepad.sThumbRX = (SHORT)(newRX > 32767 ? 32767 : (newRX < -32768 ? -32768 : newRX));
+                    pState->Gamepad.sThumbRY = (SHORT)(newRY > 32767 ? 32767 : (newRY < -32768 ? -32768 : newRY));
+                    int newLX = (int)pState->Gamepad.sThumbLX + (int)self.m_emulatedState.Gamepad.sThumbLX;
+                    int newLY = (int)pState->Gamepad.sThumbLY + (int)self.m_emulatedState.Gamepad.sThumbLY;
+                    pState->Gamepad.sThumbLX = (SHORT)(newLX > 32767 ? 32767 : (newLX < -32768 ? -32768 : newLX));
+                    pState->Gamepad.sThumbLY = (SHORT)(newLY > 32767 ? 32767 : (newLY < -32768 ? -32768 : newLY));
+                    
+                    int newLT = (int)pState->Gamepad.bLeftTrigger + (int)self.m_emulatedState.Gamepad.bLeftTrigger;
+                    int newRT = (int)pState->Gamepad.bRightTrigger + (int)self.m_emulatedState.Gamepad.bRightTrigger;
+                    pState->Gamepad.bLeftTrigger = (BYTE)(newLT > 255 ? 255 : newLT);
+                    pState->Gamepad.bRightTrigger = (BYTE)(newRT > 255 ? 255 : newRT);
+                    
+                    pState->dwPacketNumber += self.m_emulatedState.dwPacketNumber;
+                }
                 return ERROR_SUCCESS;
             } else {
-                // No physical controller connected, fallback to purely emulated VR controllers
-                // Only hijack if the user actually touches the VR controller (prevents locking out KBM for Null driver users)
-                static bool hasUsedVRController = false;
-                if (!hasUsedVRController && 
-                    (self.m_emulatedState.Gamepad.wButtons != 0 || 
-                     self.m_emulatedState.Gamepad.bLeftTrigger > 0 || 
-                     self.m_emulatedState.Gamepad.bRightTrigger > 0 ||
-                     self.m_emulatedState.Gamepad.sThumbLX != 0 ||
-                     self.m_emulatedState.Gamepad.sThumbLY != 0 ||
-                     self.m_emulatedState.Gamepad.sThumbRX != 0 ||
-                     self.m_emulatedState.Gamepad.sThumbRY != 0)) {
-                    hasUsedVRController = true;
-                }
-                
-                if (hasUsedVRController && (self.m_vrControllersActive || self.m_captureActive)) {
+                // No physical controller connected.
+                // ONLY emulate a virtual gamepad if real VR motion controllers are actively being used!
+                // For SteamVR Null Driver users or desktop mouse/keyboard users, returning ERROR_DEVICE_NOT_CONNECTED
+                // ensures the game engine natively activates full mouse cursor and keyboard controls!
+                if (self.m_vrControllersActive) {
                     *pState = self.m_emulatedState;
                     return ERROR_SUCCESS;
                 }
-                return res;
+                return res; // ERROR_DEVICE_NOT_CONNECTED
             }
         }
         return res;
@@ -310,27 +333,29 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam) {
     return TRUE;
 }
 
+void InputHook::SetTargetHwnd(HWND hwnd) {
+    if (!hwnd) return;
+    if (m_targetHwnd == hwnd && g_OriginalWndProc != nullptr) return;
+    m_targetHwnd = hwnd;
+    LOG_INFO("InputHook: Target game window HWND set to: %p", m_targetHwnd);
+    
+    WNDPROC currentWndProc = (WNDPROC)GetWindowLongPtr(m_targetHwnd, GWLP_WNDPROC);
+    if (currentWndProc && currentWndProc != (WNDPROC)&HookedWndProc && !g_OriginalWndProc) {
+        MH_CreateHook((LPVOID)currentWndProc, (LPVOID)&HookedWndProc, (reinterpret_cast<LPVOID*>(&g_OriginalWndProc)));
+        MH_EnableHook((LPVOID)currentWndProc);
+        LOG_INFO("InputHook: Successfully hooked WndProc via MinHook.");
+    }
+}
+
 void InputHook::FindTargetWindow() {
-    EnumWindows(EnumWindowsProc, (LPARAM)&m_targetHwnd);
+    for (int retry = 0; retry < 10 && !m_targetHwnd && m_captureRunning; ++retry) {
+        EnumWindows(EnumWindowsProc, (LPARAM)&m_targetHwnd);
+        if (m_targetHwnd) break;
+        Sleep(50);
+    }
     if (m_targetHwnd) {
         LOG_INFO("InputHook: Found target game window HWND: %p", m_targetHwnd);
-        
-        // Use MinHook instead of SetWindowLongPtr because we are on a background thread.
-        // SetWindowLongPtr fails across threads with ERROR_ACCESS_DENIED.
-        WNDPROC currentWndProc = (WNDPROC)GetWindowLongPtr(m_targetHwnd, GWLP_WNDPROC);
-        if (currentWndProc) {
-            MH_CreateHook((LPVOID)currentWndProc, (LPVOID)&HookedWndProc, (reinterpret_cast<LPVOID*>(&g_OriginalWndProc)));
-            MH_EnableHook((LPVOID)currentWndProc);
-            LOG_INFO("InputHook: Successfully hooked WndProc via MinHook.");
-        } else {
-            LOG_ERROR("InputHook: Failed to get target WndProc.");
-        }
-        
-        // Do NOT automatically enable capture. This prevents the cursor from freezing
-        // if the injector fails or if the user is just looking at the menu.
-        // The user can press INSERT to toggle it, or we can enable it programmatically later.
-        m_captureActive = false;
-        ToggleRawInputSink(false);
+        SetTargetHwnd(m_targetHwnd);
     }
 }
 
@@ -391,8 +416,22 @@ void InputHook::CaptureThreadLoop() {
     LOG_INFO("InputHook: Background Capture Thread Started.");
     FindTargetWindow();
 
-    m_keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, LowLevelKeyboardProc, GetModuleHandle(nullptr), 0);
-    m_mouseHook = SetWindowsHookEx(WH_MOUSE_LL, LowLevelMouseProc, GetModuleHandle(nullptr), 0);
+    HMODULE hDll = nullptr;
+    GetModuleHandleExA(
+        GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+        (LPCSTR)&InputHook::LowLevelKeyboardProc,
+        &hDll
+    );
+    if (!hDll) hDll = GetModuleHandle(nullptr);
+
+    m_keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, LowLevelKeyboardProc, hDll, 0);
+    if (!m_keyboardHook) {
+        LOG_WARN("InputHook: SetWindowsHookEx(WH_KEYBOARD_LL) failed (code %lu)", GetLastError());
+    }
+    m_mouseHook = SetWindowsHookEx(WH_MOUSE_LL, LowLevelMouseProc, hDll, 0);
+    if (!m_mouseHook) {
+        LOG_WARN("InputHook: SetWindowsHookEx(WH_MOUSE_LL) failed (code %lu)", GetLastError());
+    }
 
     // Force creation of the message queue for this thread
     MSG msg;
@@ -420,131 +459,72 @@ void InputHook::CaptureThreadLoop() {
 
 LRESULT CALLBACK InputHook::LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
     InputHook& self = GetInstance();
-    if (nCode == HC_ACTION) {
+    if (nCode == HC_ACTION && self.m_targetHwnd) {
         KBDLLHOOKSTRUCT* kbd = (KBDLLHOOKSTRUCT*)lParam;
-        if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) {
-            // Use INSERT instead of F12 since F12 is Steam screenshot
-            if (kbd->vkCode == VK_INSERT) {
-                self.m_captureActive = !self.m_captureActive;
-                LOG_INFO("InputHook: Background Capture Toggled: %s", self.m_captureActive ? "ON" : "OFF");
-                self.ToggleRawInputSink(self.m_captureActive);
-                return CallNextHookEx(nullptr, nCode, wParam, lParam);
-            }
-        }
-        
-        if (self.m_captureActive && self.m_targetHwnd) {
-            // Don't swallow important system keys
-            if (kbd->vkCode == VK_TAB && (GetAsyncKeyState(VK_MENU) & 0x8000)) {
-                return CallNextHookEx(nullptr, nCode, wParam, lParam);
-            }
-            if (kbd->vkCode == VK_LWIN || kbd->vkCode == VK_RWIN || kbd->vkCode == VK_ESCAPE) {
-                return CallNextHookEx(nullptr, nCode, wParam, lParam);
-            }
 
-            LPARAM postLParam = 1; // Repeat count
-            postLParam |= (kbd->scanCode << 16);
-            if (kbd->flags & LLKHF_EXTENDED) postLParam |= (1 << 24);
-            if (wParam == WM_KEYUP || wParam == WM_SYSKEYUP) {
-                postLParam |= (1 << 30); // Previous key state
-                postLParam |= (1 << 31); // Transition state
-            }
-            PostMessageA(self.m_targetHwnd, (UINT)wParam, kbd->vkCode, postLParam);
-            return 1; // Swallow input
+        HWND fgHwnd = OriginalGetForegroundWindow ? OriginalGetForegroundWindow() : GetForegroundWindow();
+        if (fgHwnd == self.m_targetHwnd) {
+            // Target window has real OS focus; let Windows deliver naturally
+            return CallNextHookEx(nullptr, nCode, wParam, lParam);
         }
+
+        // Forward to target game window if focus is currently on SteamVR mirror or another window
+        if (kbd->vkCode == VK_TAB && (GetAsyncKeyState(VK_MENU) & 0x8000)) {
+            return CallNextHookEx(nullptr, nCode, wParam, lParam);
+        }
+        if (kbd->vkCode == VK_LWIN || kbd->vkCode == VK_RWIN) {
+            return CallNextHookEx(nullptr, nCode, wParam, lParam);
+        }
+
+        LPARAM postLParam = 1; // Repeat count
+        postLParam |= (kbd->scanCode << 16);
+        if (kbd->flags & LLKHF_EXTENDED) postLParam |= (1 << 24);
+        if (wParam == WM_KEYUP || wParam == WM_SYSKEYUP) {
+            postLParam |= (1 << 30); // Previous key state
+            postLParam |= (1 << 31); // Transition state
+        }
+        PostMessageA(self.m_targetHwnd, (UINT)wParam, kbd->vkCode, postLParam);
     }
     return CallNextHookEx(nullptr, nCode, wParam, lParam);
 }
 
 LRESULT CALLBACK InputHook::LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam) {
     InputHook& self = GetInstance();
-    if (nCode == HC_ACTION && self.m_targetHwnd && self.m_captureActive) {
+    if (nCode == HC_ACTION && self.m_targetHwnd) {
         MSLLHOOKSTRUCT* ms = (MSLLHOOKSTRUCT*)lParam;
-        
-        // Ignore events generated by SetCursorPos
+
         if (ms->flags & LLMHF_INJECTED) {
-            return 1; // Still swallow it so it doesn't affect other apps
+            return CallNextHookEx(nullptr, nCode, wParam, lParam);
         }
 
+        HWND fgHwnd = OriginalGetForegroundWindow ? OriginalGetForegroundWindow() : GetForegroundWindow();
+        if (fgHwnd == self.m_targetHwnd) {
+            // Target window has real OS focus; let Windows deliver naturally
+            return CallNextHookEx(nullptr, nCode, wParam, lParam);
+        }
+
+        // Forward mouse clicks and movement to game window when SteamVR mirror or another window is active
         POINT pt = ms->pt;
         ScreenToClient(self.m_targetHwnd, &pt);
-        LPARAM postLParam = MAKELPARAM(pt.x, pt.y);
-            // --- GAMEPLAY MODE (INFINITE MOUSELOOK + FAKE VR CURSOR) ---
-            if (wParam == WM_MOUSEMOVE) {
-                static POINT lastScreenPt = ms->pt;
-                int dx = ms->pt.x - lastScreenPt.x;
-                int dy = ms->pt.y - lastScreenPt.y;
-                
-                self.m_mouseDeltaX.fetch_add(dx, std::memory_order_relaxed);
-                self.m_mouseDeltaY.fetch_add(dy, std::memory_order_relaxed);
-                
-                // FIX #10: m_virtualCursorX/Y are std::atomic<int>. Use fetch_add
-                // for the increment, then clamp with a CAS loop for thread-safety.
-                RECT rc = {};
-                GetClientRect(self.m_targetHwnd, &rc);
-                int right  = rc.right;
-                int bottom = rc.bottom;
+        LPARAM clientLParam = MAKELPARAM(pt.x, pt.y);
 
-                // Clamp virtual cursor X - use CAS loop for thread-safety
-                {
-                    int expectedX = self.m_virtualCursorX.load(std::memory_order_relaxed);
-                    int desiredX;
-                    do {
-                        desiredX = expectedX + dx;
-                        if (desiredX < 0) desiredX = 0;
-                        else if (desiredX > right) desiredX = right;
-                    } while (!self.m_virtualCursorX.compare_exchange_weak(expectedX, desiredX, 
-                        std::memory_order_relaxed, std::memory_order_relaxed));
-                }
-                // Clamp virtual cursor Y - use CAS loop for thread-safety
-                {
-                    int expectedY = self.m_virtualCursorY.load(std::memory_order_relaxed);
-                    int desiredY;
-                    do {
-                        desiredY = expectedY + dy;
-                        if (desiredY < 0) desiredY = 0;
-                        else if (desiredY > bottom) desiredY = bottom;
-                    } while (!self.m_virtualCursorY.compare_exchange_weak(expectedY, desiredY,
-                        std::memory_order_relaxed, std::memory_order_relaxed));
-                }
-                
-                int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-                int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-                int centerX = screenWidth / 2;
-                int centerY = screenHeight / 2;
-                
-                // Recenter the OS cursor to prevent hitting screen edges
-                SetCursorPos(centerX, centerY);
-                lastScreenPt.x = centerX;
-                lastScreenPt.y = centerY;
-                
-                // FIX #13: Use per-session magic handle instead of 0xDEADBEEF.
-                PostMessageA(self.m_targetHwnd, WM_INPUT, RIM_INPUT, (LPARAM)GetRawInputMagicHandle());
-            }
-            
-            // Inject UI messages so the fake VR cursor can click things in menus
-            LPARAM virtualLParam = MAKELPARAM(self.m_virtualCursorX, self.m_virtualCursorY);
-            if (wParam == WM_LBUTTONDOWN) {
-                self.m_mouseButtonFlags |= RI_MOUSE_LEFT_BUTTON_DOWN;
-                PostMessageA(self.m_targetHwnd, WM_LBUTTONDOWN, MK_LBUTTON, virtualLParam);
-            } else if (wParam == WM_LBUTTONUP) {
-                self.m_mouseButtonFlags |= RI_MOUSE_LEFT_BUTTON_UP;
-                PostMessageA(self.m_targetHwnd, WM_LBUTTONUP, 0, virtualLParam);
-            } else if (wParam == WM_RBUTTONDOWN) {
-                self.m_mouseButtonFlags |= RI_MOUSE_RIGHT_BUTTON_DOWN;
-                PostMessageA(self.m_targetHwnd, WM_RBUTTONDOWN, MK_RBUTTON, virtualLParam);
-            } else if (wParam == WM_RBUTTONUP) {
-                self.m_mouseButtonFlags |= RI_MOUSE_RIGHT_BUTTON_UP;
-                PostMessageA(self.m_targetHwnd, WM_RBUTTONUP, 0, virtualLParam);
-            } else if (wParam == WM_MOUSEWHEEL) {
-                self.m_mouseWheel += (short)HIWORD(ms->mouseData);
-                PostMessageA(self.m_targetHwnd, WM_MOUSEWHEEL, MAKEWPARAM(0, ms->mouseData >> 16), virtualLParam);
-            }
-            
-            // Inject RawInput for 3D Camera Rotation AND Clicks
-            PostMessageA(self.m_targetHwnd, WM_INPUT, RIM_INPUT, (LPARAM)GetRawInputMagicHandle());
-            
-            // Swallow all physical input so the user doesn't click outside the game
-            return 1; 
+        if (wParam == WM_LBUTTONDOWN) {
+            PostMessageA(self.m_targetHwnd, WM_LBUTTONDOWN, MK_LBUTTON, clientLParam);
+        } else if (wParam == WM_LBUTTONUP) {
+            PostMessageA(self.m_targetHwnd, WM_LBUTTONUP, 0, clientLParam);
+        } else if (wParam == WM_RBUTTONDOWN) {
+            PostMessageA(self.m_targetHwnd, WM_RBUTTONDOWN, MK_RBUTTON, clientLParam);
+        } else if (wParam == WM_RBUTTONUP) {
+            PostMessageA(self.m_targetHwnd, WM_RBUTTONUP, 0, clientLParam);
+        } else if (wParam == WM_MBUTTONDOWN) {
+            PostMessageA(self.m_targetHwnd, WM_MBUTTONDOWN, MK_MBUTTON, clientLParam);
+        } else if (wParam == WM_MBUTTONUP) {
+            PostMessageA(self.m_targetHwnd, WM_MBUTTONUP, 0, clientLParam);
+        } else if (wParam == WM_MOUSEWHEEL) {
+            PostMessageA(self.m_targetHwnd, WM_MOUSEWHEEL, MAKEWPARAM(0, HIWORD(ms->mouseData)), clientLParam);
+        } else if (wParam == WM_MOUSEMOVE) {
+            PostMessageA(self.m_targetHwnd, WM_MOUSEMOVE, 0, clientLParam);
+        }
     }
     return CallNextHookEx(nullptr, nCode, wParam, lParam);
 }

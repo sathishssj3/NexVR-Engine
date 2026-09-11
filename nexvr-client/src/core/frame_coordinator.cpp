@@ -21,6 +21,7 @@
 #include "core/diagnostic_context.h"
 #include "core/subsystem_context.h"
 #include "core/engine_detector.h"
+#include "hooks/input_hook.h"
 
 
 #include "rendering/stereo/stereo_camera_generator.h"
@@ -101,6 +102,9 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
           }
       }
       OverlayManager::GetInstance().Initialize(hwnd);
+      if (hwnd) {
+          InputHook::GetInstance().SetTargetHwnd(hwnd);
+      }
       s_overlayInitialized = true;
   }
 

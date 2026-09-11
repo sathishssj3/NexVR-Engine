@@ -34,6 +34,7 @@ public:
     // Start background input capture for Null Driver users
     void StartBackgroundCapture();
     void StopBackgroundCapture();
+    void SetTargetHwnd(HWND hwnd);
     HWND GetTargetHwnd() const { return m_targetHwnd; }
     bool IsCaptureActive() const { return m_captureActive; }
     

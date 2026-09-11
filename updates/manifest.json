@@ -1,17 +1,18 @@
 {
-  "engineVersion": "0.1.13",
-  "timestamp": 1789162588666,
-  "changelog": "Autonomous Hogwarts Legacy Fallback & Direct Calibration v0.1.13",
+  "engineVersion": "0.1.14",
+  "timestamp": 1789163099000,
+  "changelog": "SteamVR Null Driver Mouse & Keyboard Access v0.1.14",
   "features": [
-    "Autonomous Engine-Level Calibration Fallback: vrinject.dll automatically engages calibrated 1.25x contrast and 1.15x saturation on Hogwarts Legacy even with legacy vrinject.json configs",
-    "Perceptual Contrast & Saturation Calibration: Real-time Hermite curve tone-mapping matches desktop monitor lighting without crushed blacks",
-    "In-Headset Real-Time Calibration Controls: Live sliders for Contrast (0.7x-1.6x), Saturation (0.7x-1.6x), and Brightness directly in the VR overlay",
-    "Zero-Regression Architecture: Unprofiled games and Sekiro default to 1.0x identity with zero distortion"
+    "SteamVR Null Driver Mouse & Keyboard Access: Full native keyboard (WASD/keys) and mouse (camera look/clicks/wheel) support when using SteamVR driver_null without physical VR motion controllers",
+    "User32 Focus Spoofing Detours: Hooked GetForegroundWindow, GetActiveWindow, GetCursorPos, and SetCursor ensuring games (including Unreal Engine) maintain active input processing even if SteamVR mirror or null driver window is in front",
+    "Focus Preservation Window Message Filter: Hooked WndProc suppresses deactivation and focus-loss signals (WM_ACTIVATEAPP, WM_ACTIVATE, WM_NCACTIVATE, WM_KILLFOCUS) preventing game engines from disabling cursor capture or unbinding inputs",
+    "Smart Low-Level Background Forwarding: Low-level keyboard and mouse hooks seamlessly bridge background strokes to the game window when focusing external VR mirrors",
+    "Native KBM Fallback Guard: Prevents virtual gamepad emulation from locking games into controller mode when VR controllers are not active, keeping mouse cursor visible in menus"
   ],
   "fixes": [
-    "Ensured existing legacy vrinject.json files missing the contrast field automatically receive calibrated Hogwarts Legacy values",
-    "Eliminated flat/washed-out lighting in Hogwarts Legacy in VR, matching desktop game richness",
-    "Prevented all gamma-crush artifacts across existing and fresh new titles"
+    "Fixed SteamVR null driver users unable to use mouse and keyboard in Hogwarts Legacy and other injected games",
+    "Resolved Unreal Engine input drop when focus shifted to SteamVR Headset Window or external mirror",
+    "Enabled full cursor navigation in menus and infinite mouselook in 3D camera gameplay"
   ],
   "files": [
     "vrinject.dll",
@@ -35,10 +36,10 @@
     "shaders/asw_shader.hlsl",
     "shaders/depth_reprojection.hlsl"
   ],
-  "date": "2026-09-11T21:36:28.666Z",
+  "date": "2026-09-11T21:55:00.000Z",
   "hashes": {
-    "vrinject.dll": "60d5c3f2da7cb081c3fc661ad5bf8d042ab2f0c8e5df80e7be1505a1391a77f9",
-    "vr-inject-cli.exe": "9357251dd515660b311104e769dac7b78e5fda0d716a4620bc41d55373afe25f",
+    "vrinject.dll": "ee00987e4fc754342a3708a0fb2d12de20d0dcbf6bca80e02f48457b93a2efd8",
+    "vr-inject-cli.exe": "16dd87f6d64ab2f9ee1af7c421b786983f5627d048755a277a5c7cda73b6b518",
     "profiles/814380_sekiro.json": "6463c079fb200fdb895edf96cdc54249d3e1d93c9fce6fbad87da9cfd7f46ff3",
     "profiles/990080_hogwarts_legacy.json": "2cc042a63f450ea64cc3fc8b444d947e4f7b2a5030ec3deaa0af186b8dd470bb",
     "profiles/1091500_cyberpunk_2077.json": "42a448270d17b59f9a910903043ca93b212cdae9c75fbf3400c1ef4346590601",
