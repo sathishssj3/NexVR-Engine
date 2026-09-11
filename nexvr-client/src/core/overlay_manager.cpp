@@ -301,7 +301,7 @@ void OverlayManager::Render() {
                     cfg.convergence = 10.0f;
                     cfg.vrScaleFactor = 100.0f;
                     cfg.resolutionScale = 1.0f;
-                    cfg.srgbCorrection = true;
+                    cfg.srgbCorrection = false;
                     cfg.enableNeuralInpainter = true;
                     cfgManager->Save();
                 }

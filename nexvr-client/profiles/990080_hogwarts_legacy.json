@@ -7,9 +7,9 @@
   "reverseZ": true,
   "rowMajorMatrices": true,
   "matrixPrecision": "Float32",
-  "motionAimSensitivity": 1.0,
+  "motionAimSensitivity": 1,
   "useRecommendedResolution": true,
-  "srgbCorrection": true,
+  "srgbCorrection": false,
   "depthSubmission": true,
   "rawInputMode": true,
   "autoInjectOnLaunch": true

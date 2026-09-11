@@ -55,7 +55,7 @@
     },
     "srgbCorrection": {
       "type": "boolean",
-      "default": true,
+      "default": false,
       "description": "Apply sRGB gamma correction to prevent washed-out or double-gamma lighting."
     },
     "depthSubmission": {

@@ -7,7 +7,7 @@
   "reverseZ": false,
   "rowMajorMatrices": false,
   "matrixPrecision": "Float32",
-  "motionAimSensitivity": 1.0,
+  "motionAimSensitivity": 1,
   "useRecommendedResolution": true,
   "srgbCorrection": false,
   "depthSubmission": false,

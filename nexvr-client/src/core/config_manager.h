@@ -15,7 +15,7 @@ struct VRConfig {
     bool enableImGuiOverlay = true;
     float motionAimSensitivity = 1.0f;
     bool useRecommendedResolution = true;
-    bool srgbCorrection = true;
+    bool srgbCorrection = false;
     bool depthSubmission = false;
     bool rawInputMode = true;
     bool autoInjectOnLaunch = false;

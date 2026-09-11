@@ -111,7 +111,7 @@ bool ConfigManager::Load(const std::string& moduleDir, const std::string& explic
             j.value("motionAimSensitivity", 1.0f), 0.1f, 10.0f);
             
         m_config.useRecommendedResolution = j.value("useRecommendedResolution", true);
-        m_config.srgbCorrection = j.value("srgbCorrection", true);
+        m_config.srgbCorrection = j.value("srgbCorrection", false);
         m_config.depthSubmission = j.value("depthSubmission", false);
         m_config.rawInputMode = j.value("rawInputMode", true);
         m_config.autoInjectOnLaunch = j.value("autoInjectOnLaunch", false);

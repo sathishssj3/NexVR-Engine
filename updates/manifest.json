@@ -1,17 +1,17 @@
 {
   "engineVersion": "0.1.10",
   "timestamp": 1789151825551,
-  "changelog": "Hogwarts Legacy & Sekiro Per-Game sRGB Profile Isolation v0.1.10",
+  "changelog": "Hogwarts Legacy & Universal Native Game Contrast Fix v0.1.10",
   "features": [
-    "Per-Game sRGB Correction: Dynamic constant buffer control enables rich contrast on DX12/UE4 linear surfaces (Hogwarts Legacy) while preserving monitor-accurate daylight on DX11 sRGB surfaces (Sekiro)",
-    "Zero Cross-Game Regressions: Color grading is strictly profile-isolated without global hardcoded shader overrides",
-    "Live In-Game Toggle: VR overlay allows real-time sRGB toggle for fine-tuning",
-    "Dev-Mode Precedence: Launcher prioritizes local build outputs over stale OTA cache during development"
+    "Native Game Color Fidelity: Preserves monitor-accurate lighting and colors directly from game backbuffers without artificial gamma squaring",
+    "Zero Cross-Game Regressions: Universal default srgbCorrection=false prevents crushed blacks across DX11, DX12, and future titles",
+    "Live In-Game Toggle: In-headset VR overlay allows real-time sRGB toggle if desired",
+    "OTA & Bundle Parity: Packaged releases and OTA updates synchronize clean configuration invariants"
   ],
   "fixes": [
-    "Fixed Hogwarts Legacy (DX12) appearing washed out, milky, and low contrast in VR headset",
-    "Guaranteed Sekiro stays daylight bright without double-gamma crush",
-    "Synchronized DX12, DX11, and Vulkan constant buffer layouts to 256 bytes with SrgbCorrection flag"
+    "Fixed Hogwarts Legacy appearing with pitch-black crushed shadows, restoring natural desktop lighting and wall textures",
+    "Guaranteed Sekiro and all other titles maintain authentic desktop-quality lighting without gamma crush",
+    "Hardened launcher fallback profiles for Hogwarts Legacy and Sekiro"
   ],
   "files": [
     "vrinject.dll",
@@ -34,5 +34,6 @@
     "shaders/comfort_guard_analysis.hlsl",
     "shaders/asw_shader.hlsl",
     "shaders/depth_reprojection.hlsl"
-  ]
+  ],
+  "date": "2026-09-11T20:19:16.420Z"
 }

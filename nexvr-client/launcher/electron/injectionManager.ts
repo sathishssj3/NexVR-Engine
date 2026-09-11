@@ -386,6 +386,25 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
         };
       }
 
+      // Hardened fallback for Hogwarts Legacy if profile was not matched from disk
+      if (Object.keys(baseProfile).length === 0 && (exeBase.includes('hogwarts') || exeBase.includes('phoenix') || validId.includes('990080') || installPath.toLowerCase().includes('hogwarts'))) {
+        baseProfile = {
+          id: '990080',
+          name: 'Hogwarts Legacy',
+          engine: 'UnrealEngine4',
+          api: 'DX12',
+          reverseZ: true,
+          rowMajorMatrices: true,
+          matrixPrecision: 'Float32',
+          motionAimSensitivity: 1.0,
+          useRecommendedResolution: true,
+          srgbCorrection: false,
+          depthSubmission: true,
+          rawInputMode: true,
+          autoInjectOnLaunch: true,
+        };
+      }
+
       let activeConfig: Record<string, any> = { ...baseProfile };
       if (fs.existsSync(rootConfigPath)) {
         try {

@@ -159,11 +159,11 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     expect(stereoRendererH).toContain('uint32_t srgbCorrection;');
     expect(stereoRendererCpp).toContain('constants->srgbCorrection');
 
-    // Curated profiles must isolate Sekiro (false) and Hogwarts Legacy (true)
+    // Curated profiles must ensure authentic desktop colors without gamma crush (both Sekiro and Hogwarts Legacy false)
     const sekiroProfile = JSON.parse(readRepoFile('profiles', '814380_sekiro.json'));
     const hogwartsProfile = JSON.parse(readRepoFile('profiles', '990080_hogwarts_legacy.json'));
     expect(sekiroProfile.srgbCorrection).toBe(false);
-    expect(hogwartsProfile.srgbCorrection).toBe(true);
+    expect(hogwartsProfile.srgbCorrection).toBe(false);
   });
 
   test('OTA manifest and injectionManager prevent stale cache shadowing and cross-game contamination', () => {
