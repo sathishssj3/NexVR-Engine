@@ -34,9 +34,8 @@ The codebase has already gone through a stability pass. Preserve these fixes whe
 - BUG-09, UI infinite loop: `injectionManager.ts` should use bounded polling when waiting for target game processes.
 - BUG-14, DX12 Map/Unmap worker contention: never hook `ID3D12Resource::Map` / `Unmap` in universal depth mode to prevent worker thread lock contention and `DXGI_ERROR_INVALID_CALL` device removals.
 - BUG-15, OpenXR subImage stack corruption: `XrCompositionLayerProjectionView` subImage structs must explicitly zero-initialize `.imageArrayIndex = 0` and `.imageRect.offset = {0, 0}` to prevent `XR_ERROR_SWAPCHAIN_RECT_INVALID`.
-- BUG-16, D3D12 SRV format mismatch: fallback depth SRV in `DX12StereoResourceManager` must match `colorFmt` when depth is uninitialized during 2D menus.
-- BUG-17, Color space double-gamma: `stereo_reprojection.hlsl` applies gamma 2.2 compensation to preserve native game lighting and contrast when presented to OpenXR compositors.
-- DEAD-02/04, concurrency races: shared DX11 hook globals such as max depth pixels and frame callbacks should remain thread-safe.
+- BUG-17, Color space double-gamma: Game swapchain backbuffers are already tone-mapped and gamma-corrected (sRGB) by the engine. Never apply artificial `pow(c, 2.2f)` squaring in `stereo_reprojection.hlsl` or `tonemap.hlsl`, as this causes severe double-gamma crushing (fog, sky, and scenery drop to pitch black).
+- BUG-19, OTA dependency shadowing: In `injectionManager.ts`, local build outputs (`build/bin`) must always take precedence over `%APPDATA%\NexVR-Dev\updates\` during development (`!app.isPackaged`) and when the local binary is newer than the cached OTA download. Otherwise stale hotfixes silently overwrite fresh developer builds.
 - DEAD-05, DllMain deadlock: DLL detach cleanup should use bounded waits to reduce loader-lock risk.
 - QUAL-01, injector duplication: use the unified injector in `src/injector/main.cpp`; do not reintroduce redundant injector implementations under `tools/`.
 - QUAL-04, hardcoded launcher logic: avoid game-specific hardcoded icon exceptions in `libraryManager.ts`.
@@ -135,6 +134,18 @@ The following fixes ensure all games (DX11, DX12, Vulkan) correctly display in V
 - **Problem**: Debugging new titles previously regressed existing verified games (such as Hogwarts Legacy) due to: (1) Hardcoded executable name and heuristic collisions (`-Win64-Shipping` forcing UE5); (2) Desynchronization between `installPath` and `targetExeDir` (`Phoenix\Binaries\Win64`), causing launcher config edits to be missed by the injected DLL; (3) Missing config loading in DX12 / Vulkan; (4) Render thread null dereferences in async OpenXR startup.
 - **Fix**: Implemented isolated per-game profile architecture (`engine`, `reverseZ`, `rowMajorMatrices` in `vrinject.json`), centralized hierarchical config discovery in `RuntimeState` and `ConfigManager::Load()`, strict null guards and thread-safe assignment for async OpenXR runtime in `FrameCoordinator`, launcher multi-directory configuration synchronization, and automated Playwright + GTest cross-game regression suites.
 - **Rule**: Never introduce hardcoded game names or broad filename heuristics into core engine detection. Each game must be isolated by its own profile and directory structure. Centralized config loading must occur during early runtime before any graphics hooks execute.
+
+### BUG-17: Stereo Reprojection Double-Gamma Crush
+- **Files**: `nexvr-client/shaders/stereo_reprojection.hlsl`, `nexvr-client/shaders/tonemap.hlsl`
+- **Problem**: DX11 games (e.g. Sekiro: Shadows Die Twice) write to an sRGB gamma-corrected swapchain backbuffer. Applying an unconditional `pow(max(color, 0.0f), 2.2f)` curve inside compute shaders caused a catastrophic double-gamma crush: midtones were crushed by >56% and ambient scenery, foliage, and sky dropped directly to pitch black.
+- **Fix**: Removed the artificial `pow(..., 2.2f)` operations from `stereo_reprojection.hlsl` and `tonemap.hlsl`. Colors now pass through with 100% native game fidelity, matching monitor brightness, fog, and lighting.
+- **Rule**: Never apply artificial gamma transformation curves to game swapchain colors unless specifically required and user-configured.
+
+### BUG-19: Launcher OTA Dependency Shadowing Local Builds
+- **Files**: `nexvr-client/launcher/electron/injectionManager.ts`
+- **Problem**: In development mode (`npm run dev`), the launcher unconditionally prioritized cached OTA binaries from `%APPDATA%\NexVR-Dev\updates\` over newly compiled binaries in `build/bin/`. As a result, when testing new engine builds, the CLI or launcher overwrote the game folder with stale binaries from the update cache, rendering local compiler fixes completely ineffective.
+- **Fix**: Added `pickPreferredAsset()` helper ensuring that in development mode (`!app.isPackaged`), `canonicalBinSourceDir` (`build/bin/`) ALWAYS takes precedence over OTA caches. In packaged mode, the binary with the newer `mtimeMs` is selected. `copySources` also orders `canonicalBinSourceDir` first during dev mode.
+- **Rule**: In development mode, local build artifacts must always take precedence over downloaded OTA cache files.
 
 ## 7. Anti-Cheat & AV Posture Tier List
 

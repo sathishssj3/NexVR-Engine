@@ -27,6 +27,28 @@ const injectRateLimits: Record<string, number[]> = {};
 let injectionInProgress = false;
 let activeLogPath = '';
 
+export function pickPreferredAsset(canonicalPath: string, otaPath: string, minSize = 0): string {
+  const otaExists = fs.existsSync(otaPath) && (minSize === 0 || fs.statSync(otaPath).size >= minSize);
+  const canonExists = fs.existsSync(canonicalPath) && (minSize === 0 || fs.statSync(canonicalPath).size >= minSize);
+
+  if (!otaExists) return canonicalPath;
+  if (!canonExists) return otaPath;
+
+  // In development mode (npm run dev / unpacked), local build artifacts must ALWAYS take precedence over downloaded OTA cache!
+  if (!app.isPackaged) {
+    return canonicalPath;
+  }
+
+  // In packaged mode, prefer OTA only if it's newer than the bundled binary
+  try {
+    const otaMtime = fs.statSync(otaPath).mtimeMs;
+    const canonMtime = fs.statSync(canonicalPath).mtimeMs;
+    return otaMtime >= canonMtime ? otaPath : canonicalPath;
+  } catch {
+    return canonicalPath;
+  }
+}
+
 async function terminatePid(pid: number, force = false): Promise<void> {
   if (!Number.isSafeInteger(pid) || pid <= 0) return;
   const args = ['/PID', String(pid)];
@@ -144,12 +166,11 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     const binSourceDir = isDev ? (devBinDir || process.resourcesPath) : process.resourcesPath;
     const canonicalBinSourceDir = canonicalExistingPath(binSourceDir, 'directory');
     const otaCli = path.join(app.getPath('userData'), 'updates', 'vr-inject-cli.exe');
-    const cliSource = (fs.existsSync(otaCli) && fs.statSync(otaCli).size > 10000)
-      ? otaCli
-      : canonicalExistingPath(
-          resolveWithinRoot(canonicalBinSourceDir, 'vr-inject-cli.exe'),
-          'file'
-        );
+    const canonCli = canonicalExistingPath(
+      resolveWithinRoot(canonicalBinSourceDir, 'vr-inject-cli.exe'),
+      'file'
+    );
+    const cliSource = pickPreferredAsset(canonCli, otaCli, 10000);
     const candidateShaderDirs = [
       resolveWithinRoot(canonicalBinSourceDir, 'shaders'),
       path.resolve(__dirname, '../../../../build/bin/shaders'),
@@ -248,7 +269,9 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     try {
       const updatesDir = path.join(app.getPath('userData'), 'updates');
       const hotfixShaders = path.join(updatesDir, 'shaders');
-      const activeShadersSource = fs.existsSync(hotfixShaders) ? hotfixShaders : shadersSource;
+      const activeShadersSource = (!app.isPackaged && fs.existsSync(shadersSource))
+        ? shadersSource
+        : (fs.existsSync(hotfixShaders) && fs.readdirSync(hotfixShaders).length > 0 ? hotfixShaders : shadersSource);
 
       const targetDirs = new Set<string>([targetExeDir, installPath]);
       for (const sub of ['Phoenix/Binaries/Win64', 'Chameleon/Binaries/Win64', 'Binaries/Win64']) {
@@ -279,19 +302,18 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
 
       // Copy ONNX and DirectML DLLs to prevent target process loader lock/freeze due to missing imports
       // Also copy vrinject.dll and openxr_loader.dll so the implicit Vulkan layer can pick it up BEFORE the game starts
-      // Prioritize OTA hotfixed vrinject.dll from updatesDir if available!
+      // Prioritize local builds in dev mode, or newer OTA hotfixed binaries if available in packaged mode!
       const dllsToCopy = ['onnxruntime.dll', 'DirectML.dll', 'vrinject.dll', 'openxr_loader.dll'];
       for (const dll of dllsToCopy) {
         const hotfixPath = path.join(updatesDir, dll);
-        const srcPath = fs.existsSync(hotfixPath)
-          ? hotfixPath
-          : resolveWithinRoot(canonicalBinSourceDir, dll);
+        const canonPath = resolveWithinRoot(canonicalBinSourceDir, dll);
+        const srcPath = pickPreferredAsset(canonPath, hotfixPath);
 
         if (fs.existsSync(srcPath)) {
           for (const d of targetDirs) {
             try {
               fs.copyFileSync(srcPath, path.join(d, dll));
-              console.info(`Copied ${dll} to ${d} (source: ${srcPath === hotfixPath ? 'HOTFIX' : 'BUNDLED'})`);
+              console.info(`Copied ${dll} to ${d} (source: ${srcPath === hotfixPath ? 'HOTFIX' : 'LOCAL/BUNDLED'})`);
             } catch (e) {
               console.warn(`Could not copy ${dll} to ${d} (already present or locked): ${e}`);
             }
@@ -495,9 +517,7 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
 
     const canonicalDll = resolveWithinRoot(canonicalBinSourceDir, 'vrinject.dll');
     const otaDll = path.join(app.getPath('userData'), 'updates', 'vrinject.dll');
-    const sourceDll = (fs.existsSync(otaDll) && fs.statSync(otaDll).size > 100000)
-      ? otaDll
-      : canonicalDll;
+    const sourceDll = pickPreferredAsset(canonicalDll, otaDll, 100000);
     let dllTarget = resolveWithinRoot(targetExeDir, 'vrinject.dll');
     
     // Check if target directory DLL is up-to-date with the source binary.
@@ -519,7 +539,8 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
 
     const escapePs = (str: string) => str.replace(/'/g, "''");
     const updatesDir = path.join(app.getPath('userData'), 'updates');
-    const copySources = [updatesDir, canonicalBinSourceDir].filter(d => fs.existsSync(d)).join(';');
+    const copySources = (!app.isPackaged ? [canonicalBinSourceDir, updatesDir] : [updatesDir, canonicalBinSourceDir])
+      .filter(d => fs.existsSync(d)).join(';');
     const effectiveCopySrc = copySources || canonicalBinSourceDir;
     const innerScript =
       `$env:NEXVR_AUTH_TOKEN = '${escapePs(process.env.NEXVR_AUTH_TOKEN || '')}'; ` +
