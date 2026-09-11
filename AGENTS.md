@@ -40,6 +40,7 @@ Universal VR injector: a C++ injection DLL + CLI (root CMake project) and an Ele
 - Unsigned injection DLLs/CLI get flagged by AV/Defender. Signing via `SIGN_CERT_PATH`/`SIGN_CERT_PASS`; the CMake signing blocks are currently commented out.
 - Anti-cheat posture (Tier 1/2/3) is defined in `docs/project_memory.md` §7: never attempt to bypass active anti-cheat; strict-AC titles are unsupported.
 - Perf budget: 11.1 ms frame; sync AI path on render thread < 1.5 ms, async AI on worker pool.
+- **Version Bumping Rule**: Whenever fixes, features, or debug changes are made, ALWAYS increment the semantic version (e.g., in `nexvr-client/launcher/package.json`, `updates/manifest.json`, and script defaults) so every set of changes counts toward a new distinct version before pushing updates to testers/releases.
 
 ## CI
 
