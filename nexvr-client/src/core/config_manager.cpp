@@ -31,11 +31,12 @@ bool ConfigManager::Load(const std::string& moduleDir, const std::string& explic
 
     // 2. Check host process executable directory (e.g. Phoenix/Binaries/Win64/HogwartsLegacy.exe)
     std::string hostExeDir = explicitHostExeDir;
+    std::string hostExeLower = "";
     if (hostExeDir.empty()) {
         char hostExeBuf[MAX_PATH] = {0};
         if (::GetModuleFileNameA(NULL, hostExeBuf, MAX_PATH) > 0) {
             std::string hostExeStr = hostExeBuf;
-            std::string hostExeLower = hostExeStr;
+            hostExeLower = hostExeStr;
             std::transform(hostExeLower.begin(), hostExeLower.end(), hostExeLower.begin(), ::tolower);
             // Skip automated discovery from test runner binary directory in unit tests
             if (hostExeLower.find("test_") == std::string::npos) {
@@ -112,8 +113,19 @@ bool ConfigManager::Load(const std::string& moduleDir, const std::string& explic
             
         m_config.useRecommendedResolution = j.value("useRecommendedResolution", true);
         m_config.srgbCorrection = j.value("srgbCorrection", false);
-        m_config.contrast = std::clamp(j.value("contrast", 1.0f), 0.5f, 2.0f);
-        m_config.saturation = std::clamp(j.value("saturation", 1.0f), 0.5f, 2.0f);
+
+        // Curated title calibration fallback: If contrast/saturation was not specified in the local json,
+        // provide title-specific calibrated defaults for known titles like Hogwarts Legacy
+        float defaultContrast = 1.0f;
+        float defaultSaturation = 1.0f;
+        std::string gameId = j.value("id", "");
+        if (gameId == "990080" || hostExeLower.find("hogwarts") != std::string::npos || hostExeLower.find("phoenix") != std::string::npos) {
+            defaultContrast = 1.25f;
+            defaultSaturation = 1.15f;
+        }
+
+        m_config.contrast = std::clamp(j.value("contrast", defaultContrast), 0.5f, 2.0f);
+        m_config.saturation = std::clamp(j.value("saturation", defaultSaturation), 0.5f, 2.0f);
         m_config.brightness = std::clamp(j.value("brightness", 1.0f), 0.5f, 2.0f);
         m_config.depthSubmission = j.value("depthSubmission", false);
         m_config.rawInputMode = j.value("rawInputMode", true);

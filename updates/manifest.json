@@ -1,17 +1,17 @@
 {
-  "engineVersion": "0.1.12",
-  "timestamp": 1789161275935,
-  "changelog": "Perceptual Desktop Color Calibration & In-Headset Lighting Controls v0.1.12",
+  "engineVersion": "0.1.13",
+  "timestamp": 1789162588666,
+  "changelog": "Autonomous Hogwarts Legacy Fallback & Direct Calibration v0.1.13",
   "features": [
+    "Autonomous Engine-Level Calibration Fallback: vrinject.dll automatically engages calibrated 1.25x contrast and 1.15x saturation on Hogwarts Legacy even with legacy vrinject.json configs",
     "Perceptual Contrast & Saturation Calibration: Real-time Hermite curve tone-mapping matches desktop monitor lighting without crushed blacks",
     "In-Headset Real-Time Calibration Controls: Live sliders for Contrast (0.7x-1.6x), Saturation (0.7x-1.6x), and Brightness directly in the VR overlay",
-    "Zero-Regression Architecture: Unprofiled games and Sekiro default to 1.0x identity with zero distortion",
-    "Hardware Swapchain Parity: Constant buffer ABI alignment across D3D11, D3D12, and Vulkan backends"
+    "Zero-Regression Architecture: Unprofiled games and Sekiro default to 1.0x identity with zero distortion"
   ],
   "fixes": [
-    "Eliminated low-contrast/washed-out lighting in Hogwarts Legacy in VR, matching desktop game richness",
-    "Prevented all gamma-crush artifacts across existing and fresh new titles",
-    "Updated Hogwarts Legacy profile with calibrated contrast 1.20x and saturation 1.15x"
+    "Ensured existing legacy vrinject.json files missing the contrast field automatically receive calibrated Hogwarts Legacy values",
+    "Eliminated flat/washed-out lighting in Hogwarts Legacy in VR, matching desktop game richness",
+    "Prevented all gamma-crush artifacts across existing and fresh new titles"
   ],
   "files": [
     "vrinject.dll",
@@ -35,10 +35,10 @@
     "shaders/asw_shader.hlsl",
     "shaders/depth_reprojection.hlsl"
   ],
-  "date": "2026-09-11T21:14:35.935Z",
+  "date": "2026-09-11T21:36:28.666Z",
   "hashes": {
-    "vrinject.dll": "88a31a15779e38bfd5375dfc60aab1c6c09aa79894ed7da0faaa8c5c59b1ee2d",
-    "vr-inject-cli.exe": "358586a933e3b48415c10c958d2c0bff7eab4b2eccb29b488de350553f6b5d22",
+    "vrinject.dll": "60d5c3f2da7cb081c3fc661ad5bf8d042ab2f0c8e5df80e7be1505a1391a77f9",
+    "vr-inject-cli.exe": "9357251dd515660b311104e769dac7b78e5fda0d716a4620bc41d55373afe25f",
     "profiles/814380_sekiro.json": "6463c079fb200fdb895edf96cdc54249d3e1d93c9fce6fbad87da9cfd7f46ff3",
     "profiles/990080_hogwarts_legacy.json": "2cc042a63f450ea64cc3fc8b444d947e4f7b2a5030ec3deaa0af186b8dd470bb",
     "profiles/1091500_cyberpunk_2077.json": "42a448270d17b59f9a910903043ca93b212cdae9c75fbf3400c1ef4346590601",
