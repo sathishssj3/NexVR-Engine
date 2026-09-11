@@ -1,24 +1,24 @@
 {
-  "engineVersion": "0.1.9",
-  "timestamp": 1788975000000,
-  "changelog": "Sekiro: Shadows Die Twice & DX11 SteamVR Display Hotfix v0.1.9",
+  "engineVersion": "0.2.0",
+  "timestamp": 1789134449092,
+  "changelog": "Sekiro VR Native Color Fidelity & Gamma Fix v0.2.0",
   "features": [
-    "Resilient Process Candidate Detection: Launcher falls back gracefully when Windows UAC token restrictions block process path inspection on Steam games",
-    "Self-Healing DX11 Swapchain Lifecycle: Dx11LifecycleManager recovers automatically when games switch from intro/splash swapchains to the main game swapchain",
-    "Robust Direct3D 11 Device Querying: Added IDXGIDevice and ID3D11Device1 query interface fallbacks on swapchain discovery",
-    "Vulkan Coexistence: DXGIFactoryHook allows DXGI swapchain capture while SteamVR/Steam Overlay Vulkan layer is in background initialization"
+    "Native Color Fidelity: Eliminated double-gamma pow(2.2) crush in VR reprojection shaders",
+    "Restored Daylight & Atmosphere: Foliage, sky, temples, and background scenery render with 100% monitor-accurate brightness and lighting",
+    "Dev-Mode Precedence: Launcher prioritizes local build outputs over stale OTA cache during development",
+    "Custom Game Profile Mapping: Seamless profile binding for custom executables (e.g. sekiro.exe -> 814380_sekiro.json)"
   ],
   "fixes": [
-    "Fixed Sekiro and DX11 Steam titles displaying only on desktop monitor while SteamVR remains on starry idle background",
-    "Fixed candidate drop in injectionManager when non-elevated Get-Process query returns Access Denied",
-    "Fixed DXGIFactoryHook prematurely ignoring DXGI swapchains when Vulkan is INITIALIZING rather than RUNNING",
-    "Fixed Dx11LifecycleManager permanent degradation when initial swapchain fails device query"
+    "Fixed Sekiro and DX11 titles appearing pitch black in VR headset while daylight on monitor",
+    "Fixed shadow and midtone crushing where background trees and buildings were completely dark",
+    "Fixed launcher injectionManager overwriting fresh DLLs with stale OTA update cache",
+    "Fixed ENOENT error when searching for native build output in development mode"
   ],
   "files": [
     "vrinject.dll",
     "vr-inject-cli.exe",
-    "profiles/990080_hogwarts_legacy.json",
     "profiles/814380_sekiro.json",
+    "profiles/990080_hogwarts_legacy.json",
     "profiles/1091500_cyberpunk_2077.json",
     "profiles/1623730_palworld.json",
     "profiles/668580_atomic_heart.json",
