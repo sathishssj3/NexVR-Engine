@@ -186,6 +186,7 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     expect(hogwartsProfile.srgbCorrection).toBe(false);
     expect(hogwartsProfile.contrast).toBe(1.20);
     expect(hogwartsProfile.saturation).toBe(1.15);
+    expect(hogwartsProfile.brightness).toBe(1.14);
   });
 
   test('OTA manifest and injectionManager prevent stale cache shadowing and cross-game contamination', () => {

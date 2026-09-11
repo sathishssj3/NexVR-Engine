@@ -32,7 +32,7 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     autoInjectOnLaunch: true,
     contrast: 1.20,
     saturation: 1.15,
-    brightness: 1.0,
+    brightness: 1.14,
   },
   'd0614ddf466b44a2a229a43a75db9efd': {
     engine: 'UnrealEngine4',
@@ -48,7 +48,7 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     autoInjectOnLaunch: true,
     contrast: 1.20,
     saturation: 1.15,
-    brightness: 1.0,
+    brightness: 1.14,
   },
   // Cyberpunk 2077
   '1091500': {
