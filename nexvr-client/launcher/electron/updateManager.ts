@@ -194,7 +194,7 @@ ipcMain.handle('update:getStatus', async (event) => {
   assertTrustedIpcSender(event);
   const local = getLocalManifest();
   return {
-    version: local?.engineVersion || '0.1.0',
+    version: local?.engineVersion || app.getVersion() || '0.1.10',
     timestamp: local?.timestamp || 0,
     changelog: local?.changelog || '',
     features: local?.features || [],

@@ -163,13 +163,15 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     const devBinDir = candidateBinDirs.find(
       (d) => fs.existsSync(d) && (fs.existsSync(path.join(d, 'vrinject.dll')) || fs.existsSync(path.join(d, 'vr-inject-cli.exe')))
     );
-    const binSourceDir = isDev ? (devBinDir || process.resourcesPath) : process.resourcesPath;
+    const binSourceDir = (isDev || (!fs.existsSync(path.join(process.resourcesPath, 'vrinject.dll')) && devBinDir))
+      ? (devBinDir || process.resourcesPath)
+      : process.resourcesPath;
     const canonicalBinSourceDir = canonicalExistingPath(binSourceDir, 'directory');
     const otaCli = path.join(app.getPath('userData'), 'updates', 'vr-inject-cli.exe');
-    const canonCli = canonicalExistingPath(
-      resolveWithinRoot(canonicalBinSourceDir, 'vr-inject-cli.exe'),
-      'file'
-    );
+    const bundledCli = resolveWithinRoot(canonicalBinSourceDir, 'vr-inject-cli.exe');
+    const canonCli = fs.existsSync(bundledCli)
+      ? canonicalExistingPath(bundledCli, 'file')
+      : bundledCli;
     const cliSource = pickPreferredAsset(canonCli, otaCli, 10000);
     const candidateShaderDirs = [
       resolveWithinRoot(canonicalBinSourceDir, 'shaders'),
@@ -515,7 +517,10 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
       return { success: false, message: 'Game executable not found or closed immediately' };
     }
 
-    const canonicalDll = resolveWithinRoot(canonicalBinSourceDir, 'vrinject.dll');
+    const bundledDll = resolveWithinRoot(canonicalBinSourceDir, 'vrinject.dll');
+    const canonicalDll = fs.existsSync(bundledDll)
+      ? canonicalExistingPath(bundledDll, 'file')
+      : bundledDll;
     const otaDll = path.join(app.getPath('userData'), 'updates', 'vrinject.dll');
     const sourceDll = pickPreferredAsset(canonicalDll, otaDll, 100000);
     let dllTarget = resolveWithinRoot(targetExeDir, 'vrinject.dll');
@@ -535,6 +540,14 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
       }
     } catch {
       dllTarget = sourceDll;
+    }
+
+    if (!fs.existsSync(cliSource)) {
+      stopActiveLogWatch();
+      return {
+        success: false,
+        message: `Injector CLI binary not found at '${cliSource}'. Please reinstall or run updates.`,
+      };
     }
 
     const escapePs = (str: string) => str.replace(/'/g, "''");

@@ -113,6 +113,13 @@ jobs:
         working-directory: ./nexvr-client/launcher
         run: npm install
 
+      - name: Link Build Output for Launcher Packaging
+        shell: pwsh
+        run: |
+          if (-not (Test-Path nexvr-client/build)) {
+            cmd /c mklink /J "nexvr-client\build" "build"
+          }
+
       - name: Build and Package Electron App (NSIS Installer)
         working-directory: ./nexvr-client/launcher
         env:
