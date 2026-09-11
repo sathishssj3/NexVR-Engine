@@ -29,7 +29,7 @@ jobs:
       contents: write
       # Needed for the GitHub CodeQL action
       security-events: write
-      actions: read
+      actions: write
 
     strategy:
       fail-fast: false
@@ -169,6 +169,7 @@ jobs:
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v4
+      continue-on-error: true
       with:
         name: test-results-${{ matrix.configuration }}
         path: |
