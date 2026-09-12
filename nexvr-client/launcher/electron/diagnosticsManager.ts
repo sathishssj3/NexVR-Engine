@@ -5,7 +5,7 @@ import * as child_process from 'child_process';
 import * as util from 'util';
 import { VRStatus } from '../src/types';
 import { assertTrustedIpcSender, gamePathsMap, safeGamePath, validateGameId } from './utils';
-import { activeGameId } from './injectionManager';
+import { activeGameId, currentSessionLogPath, latestSessionLogPath, getLogsDir } from './injectionManager';
 
 const execFileAsync = util.promisify(child_process.execFile);
 
@@ -160,11 +160,61 @@ ipcMain.handle('utils:openConfig', async (event, id: string) => {
   }
 });
 
-ipcMain.handle('utils:openLog', async (event, id: string) => {
+ipcMain.handle('utils:openLog', async (event, id?: string) => {
   assertTrustedIpcSender(event);
-  const installPath = gamePathsMap[validateGameId(id)];
-  if (installPath) {
-    const logPath = safeGamePath(installPath, 'vrinject.log');
-    if (fs.existsSync(logPath)) shell.openPath(logPath);
+
+  // Candidate 1: Current live session log in userData/logs
+  if (currentSessionLogPath && fs.existsSync(currentSessionLogPath)) {
+    await shell.openPath(currentSessionLogPath);
+    return true;
   }
+
+  // Candidate 2: Latest session log in userData/logs
+  const latestLog = latestSessionLogPath || path.join(getLogsDir(), 'latest_session.log');
+  if (fs.existsSync(latestLog)) {
+    await shell.openPath(latestLog);
+    return true;
+  }
+
+  // Candidate 3: Game install folder log
+  const gameId = id || activeGameId;
+  if (gameId) {
+    try {
+      const installPath = gamePathsMap[validateGameId(gameId)];
+      if (installPath) {
+        const gameLog = safeGamePath(installPath, 'vrinject.log');
+        if (fs.existsSync(gameLog)) {
+          await shell.openPath(gameLog);
+          return true;
+        }
+      }
+    } catch {}
+  }
+
+  // Candidate 4: LocalAppData vrinject.log
+  const localAppData = process.env.LOCALAPPDATA || '';
+  if (localAppData) {
+    const appDataLog = path.join(localAppData, 'VRInject', 'vrinject.log');
+    if (fs.existsSync(appDataLog)) {
+      await shell.openPath(appDataLog);
+      return true;
+    }
+  }
+
+  // If no log file exists yet, write an initial notice to latest_session.log and open it
+  const defaultLog = path.join(getLogsDir(), 'latest_session.log');
+  fs.writeFileSync(
+    defaultLog,
+    '=== NexVR Engine [v0.1.16] — Diagnostic Log ===\nNo active session recorded yet. Launch any game in VR to begin live telemetry streaming.\n',
+    'utf-8'
+  );
+  await shell.openPath(defaultLog);
+  return true;
+});
+
+ipcMain.handle('utils:openLogFolder', async (event) => {
+  assertTrustedIpcSender(event);
+  const logsDir = getLogsDir();
+  await shell.openPath(logsDir);
+  return true;
 });

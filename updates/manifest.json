@@ -1,18 +1,18 @@
 {
-  "engineVersion": "0.1.15",
-  "timestamp": 1789163700000,
-  "changelog": "VR Lighting Fidelity Calibration & Hogwarts Legacy Monitor Match v0.1.15",
+  "engineVersion": "0.1.16",
+  "timestamp": 1789178400000,
+  "changelog": "Real-Time Diagnostic Pipeline & Live VR Session Logging v0.1.16",
   "features": [
-    "Desktop Lighting Fidelity: Calibrated VR lighting response identically matches desktop game monitor luminance, eliminating perceived dimness or darkness without washing out contrast",
-    "Autonomous Title Calibration: Engine dynamically supplies curated contrast (1.20), saturation (1.15), and brightness compensation (1.14) for Unreal Engine 4/DX12 titles like Hogwarts Legacy",
-    "SteamVR Null Driver Mouse & Keyboard Access: Full native keyboard (WASD/keys) and mouse (camera look/clicks/wheel) support when using SteamVR driver_null without physical VR motion controllers",
-    "User32 Focus Spoofing Detours: Hooked GetForegroundWindow, GetActiveWindow, GetCursorPos, and SetCursor ensuring games maintain active input processing",
-    "Zero Cross-Game Regressions: Standard titles (Sekiro, Elden Ring, etc.) execute through identity color grading (1.0x) without any alteration"
+    "Real-Time Session Logging: All engine, injection, and VR compositor logs stream live directly into the launcher's Session Log viewer as testers play games",
+    "Instant 1-Click Log & Folder Inspection: Added direct OPEN LOG and FOLDER buttons to the launcher UI for immediate troubleshooting and diagnostic retrieval",
+    "Diagnostic Telemetry Headers: Logs now explicitly detail host module path, swapchain format, IPD, calibration values, and engine profile at startup",
+    "Dual-Sink Engine Logging: vrinject.dll dual-writes to both %LOCALAPPDATA% and target game directory, preserving persistent logs in %APPDATA%/NexVR Engine/logs",
+    "Log Overflow & Rotation Protection: Automatic log truncation (>10MB) and debounce safeguards preventing log bloat"
   ],
   "fixes": [
-    "Fixed Hogwarts Legacy appearing dark/dim in VR headset relative to desktop window view",
-    "Calibrated brightness scaling to 1.14x compensating for S-curve midtone compression to bring VR scene luminance into exact 1:1 match with desktop monitor",
-    "Eliminated focus loss and input drop when switching between SteamVR null driver mirror and game"
+    "Fixed missing log lines in launcher UI caused by path disconnect between vrinject.dll and launcher watcher",
+    "Fixed ImGuiDX11 RTV creation failure and continuous error logging by adding D3D11_BIND_RENDER_TARGET and typing typeless texture formats",
+    "Fixed utils:openLog failing silently when game install folder lacked a log file"
   ],
   "files": [
     "vrinject.dll",
@@ -38,8 +38,8 @@
   ],
   "date": "2026-09-11T22:15:00.000Z",
   "hashes": {
-    "vrinject.dll": "18c0d43febf90a35c05fd2a4bfbc68490808b5675945d3c803e7a30277ef915a",
-    "vr-inject-cli.exe": "eb9a38c1daef1dbdb1adf50b824cced507068de38fc02a48ab39613adca597f6",
+    "vrinject.dll": "01f491779866304ea46a6fc0f36ccbd6912b0fecbce14701c837e048c502932b",
+    "vr-inject-cli.exe": "7edd5c09fbb5a68316d0d6247f77f3f4082eef8d160390828e8587cbcf080ceb",
     "profiles/814380_sekiro.json": "6463c079fb200fdb895edf96cdc54249d3e1d93c9fce6fbad87da9cfd7f46ff3",
     "profiles/990080_hogwarts_legacy.json": "717610b3cdf8cca77c2555d8c6ec087ef694ba1eda9a8a08c3a15438051f9efc",
     "profiles/1091500_cyberpunk_2077.json": "42a448270d17b59f9a910903043ca93b212cdae9c75fbf3400c1ef4346590601",

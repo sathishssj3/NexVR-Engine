@@ -75,16 +75,17 @@ export function VRStatusBar({ status, selectedGame, injectState, onInject, onUni
             CONFIG
           </button>
           <button 
-            onClick={() => { if(selectedGame) window.ag.utils.openLog(selectedGame.id); }} 
+            onClick={() => { window.ag.utils.openLog(selectedGame?.id); }} 
             className="btn-glow"
+            title="Open active/latest engine & VR log"
             style={{ 
               background: 'transparent', border: '1px solid rgba(255,255,255,0.06)', 
               color: 'var(--ag-text-muted)', cursor: 'pointer', fontFamily: 'var(--ag-font-mono)', 
               fontSize: 11, letterSpacing: '1px', padding: '8px 14px', borderRadius: 'var(--ag-radius-sm)',
               transition: 'all 0.3s',
-              opacity: selectedGame ? 1 : 0.3
+              opacity: 1
             }}
-            onMouseEnter={e => { if(selectedGame) { e.currentTarget.style.borderColor = 'rgba(0,240,255,0.3)'; e.currentTarget.style.color = 'var(--ag-accent)'; }}}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0,240,255,0.3)'; e.currentTarget.style.color = 'var(--ag-accent)'; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'var(--ag-text-muted)'; }}
           >
             LOGS

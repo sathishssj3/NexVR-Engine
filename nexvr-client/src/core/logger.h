@@ -10,6 +10,7 @@
 #include <mutex>
 #include <string>
 #include <regex>
+#include <vector>
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -26,25 +27,61 @@ public:
     FileLogger() = default;
     ~FileLogger() override { Shutdown(); }
 
+    static void RotateIfOversized(const std::string& path) {
+        WIN32_FILE_ATTRIBUTE_DATA attr{};
+        if (GetFileAttributesExA(path.c_str(), GetFileExInfoStandard, &attr)) {
+            LARGE_INTEGER size;
+            size.HighPart = attr.nFileSizeHigh;
+            size.LowPart = attr.nFileSizeLow;
+            if (size.QuadPart > 10 * 1024 * 1024) { // > 10 MB
+                std::string oldPath = path + ".old";
+                MoveFileExA(path.c_str(), oldPath.c_str(), MOVEFILE_REPLACE_EXISTING);
+            }
+        }
+    }
+
     void Init(const std::string& logPath) override {
         std::lock_guard<std::mutex> lock(m_mutex);
-        if (m_logFile) return;
+        if (!m_logFiles.empty()) return;
 
-        m_logFile = _fsopen(logPath.c_str(), "a", _SH_DENYNO);
-        if (m_logFile) {
-            std::fprintf(m_logFile, "=== VRInject Log Started: %s ===\n", Timestamp().c_str());
-            std::fflush(m_logFile);
+        RotateIfOversized(logPath);
+        FILE* f = _fsopen(logPath.c_str(), "a", _SH_DENYNO);
+        if (f) {
+            std::fprintf(f, "=== VRInject Log Started: %s ===\n", Timestamp().c_str());
+            std::fflush(f);
+            m_logFiles.push_back(f);
+            m_openedPaths.push_back(logPath);
         }
         OutputDebugStringA("[VRInject] Logger initialised\n");
     }
 
+    void AddSecondaryPath(const std::string& path) {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (path.empty()) return;
+        for (const auto& p : m_openedPaths) {
+            if (_stricmp(p.c_str(), path.c_str()) == 0) return;
+        }
+
+        RotateIfOversized(path);
+        FILE* f = _fsopen(path.c_str(), "a", _SH_DENYNO);
+        if (f) {
+            std::fprintf(f, "=== VRInject Secondary Log Attached: %s ===\n", Timestamp().c_str());
+            std::fflush(f);
+            m_logFiles.push_back(f);
+            m_openedPaths.push_back(path);
+        }
+    }
+
     void Shutdown() override {
         std::lock_guard<std::mutex> lock(m_mutex);
-        if (m_logFile) {
-            std::fprintf(m_logFile, "=== VRInject Log Ended: %s ===\n", Timestamp().c_str());
-            std::fclose(m_logFile);
-            m_logFile = nullptr;
+        for (FILE* f : m_logFiles) {
+            if (f) {
+                std::fprintf(f, "=== VRInject Log Ended: %s ===\n", Timestamp().c_str());
+                std::fclose(f);
+            }
         }
+        m_logFiles.clear();
+        m_openedPaths.clear();
         OutputDebugStringA("[VRInject] Logger shut down\n");
     }
 
@@ -104,9 +141,11 @@ public:
         OutputDebugStringA(lineBuf);
 
         std::lock_guard<std::mutex> lock(m_mutex);
-        if (m_logFile) {
-            std::fprintf(m_logFile, "%s", lineBuf);
-            std::fflush(m_logFile);
+        for (FILE* f : m_logFiles) {
+            if (f) {
+                std::fprintf(f, "%s", lineBuf);
+                std::fflush(f);
+            }
         }
     }
 
@@ -135,7 +174,8 @@ private:
         return buf;
     }
 
-    FILE* m_logFile = nullptr;
+    std::vector<FILE*> m_logFiles;
+    std::vector<std::string> m_openedPaths;
     std::mutex m_mutex;
 };
 

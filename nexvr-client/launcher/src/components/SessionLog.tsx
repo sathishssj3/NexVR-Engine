@@ -33,9 +33,10 @@ export function SessionLog({ logLines }: { logLines: string[] }) {
 
   const getColor = (line: string) => {
     if (line.includes('[OK]')) return 'var(--ag-accent-success)';
-    if (line.includes('[--]')) return 'var(--ag-text-code)';
-    if (line.includes('[!!]')) return 'var(--ag-accent-warn)';
-    if (line.includes('[ERR]') || line.includes('[Injector CLI Error]')) return 'var(--ag-accent-danger)';
+    if (line.includes('[DIAGNOSTICS]')) return 'var(--ag-accent-primary, #00f0ff)';
+    if (line.includes('[--]') || line.includes('INFO')) return 'var(--ag-text-code)';
+    if (line.includes('[!!]') || line.includes('WARN')) return 'var(--ag-accent-warn)';
+    if (line.includes('[ERR]') || line.includes('[Injector CLI Error]') || line.includes('ERROR')) return 'var(--ag-accent-danger)';
     return 'var(--ag-text-primary)';
   };
 
@@ -68,34 +69,76 @@ export function SessionLog({ logLines }: { logLines: string[] }) {
             <span className="game-count" style={{ marginLeft: 8 }}>{logLines.length}</span>
           )}
         </div>
-        <button
-          onClick={handleExport}
-          disabled={exporting || logLines.length === 0}
-          className="btn-glow"
-          style={{
-            background: 'transparent',
-            border: '1px solid var(--ag-border)',
-            color: exportResult === 'success'
-                     ? 'var(--ag-accent-success)'
-                     : exportResult === 'error'
-                       ? 'var(--ag-accent-danger)'
-                       : 'var(--ag-text-muted)',
-            fontFamily: 'var(--ag-font-mono)',
-            fontSize: '10px',
-            letterSpacing: '1px',
-            padding: '5px 12px',
-            borderRadius: 'var(--ag-radius-sm)',
-            cursor: logLines.length === 0 ? 'not-allowed' : 'pointer',
-            textTransform: 'uppercase' as const,
-            transition: 'all 0.3s var(--ag-transition)',
-            opacity: logLines.length === 0 ? 0.4 : 1,
-          }}
-        >
-          {exporting          ? '◌ EXPORTING...'
-           : exportResult === 'success' ? '✓ SAVED'
-           : exportResult === 'error'   ? '✗ FAILED'
-           :                              '↓ EXPORT'}
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => window.ag.utils.openLog()}
+            className="btn-glow"
+            title="Open active engine & VR log in default text editor"
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(0, 240, 255, 0.3)',
+              color: 'var(--ag-accent-primary, #00f0ff)',
+              fontFamily: 'var(--ag-font-mono)',
+              fontSize: '10px',
+              letterSpacing: '1px',
+              padding: '5px 12px',
+              borderRadius: 'var(--ag-radius-sm)',
+              cursor: 'pointer',
+              textTransform: 'uppercase' as const,
+              transition: 'all 0.3s var(--ag-transition)',
+            }}
+          >
+            ↗ OPEN LOG
+          </button>
+          <button
+            onClick={() => window.ag.utils.openLogFolder()}
+            className="btn-glow"
+            title="Open logs folder in Windows Explorer"
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--ag-border)',
+              color: 'var(--ag-text-muted)',
+              fontFamily: 'var(--ag-font-mono)',
+              fontSize: '10px',
+              letterSpacing: '1px',
+              padding: '5px 12px',
+              borderRadius: 'var(--ag-radius-sm)',
+              cursor: 'pointer',
+              textTransform: 'uppercase' as const,
+              transition: 'all 0.3s var(--ag-transition)',
+            }}
+          >
+            📁 FOLDER
+          </button>
+          <button
+            onClick={handleExport}
+            disabled={exporting || logLines.length === 0}
+            className="btn-glow"
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--ag-border)',
+              color: exportResult === 'success'
+                       ? 'var(--ag-accent-success)'
+                       : exportResult === 'error'
+                         ? 'var(--ag-accent-danger)'
+                         : 'var(--ag-text-muted)',
+              fontFamily: 'var(--ag-font-mono)',
+              fontSize: '10px',
+              letterSpacing: '1px',
+              padding: '5px 12px',
+              borderRadius: 'var(--ag-radius-sm)',
+              cursor: logLines.length === 0 ? 'not-allowed' : 'pointer',
+              textTransform: 'uppercase' as const,
+              transition: 'all 0.3s var(--ag-transition)',
+              opacity: logLines.length === 0 ? 0.4 : 1,
+            }}
+          >
+            {exporting          ? '◌ EXPORTING...'
+             : exportResult === 'success' ? '✓ SAVED'
+             : exportResult === 'error'   ? '✗ FAILED'
+             :                              '↓ EXPORT'}
+          </button>
+        </div>
       </div>
       
       <div 

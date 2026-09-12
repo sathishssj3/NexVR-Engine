@@ -27,7 +27,8 @@ declare global {
       },
       utils: {
         openConfig: (id: string) => Promise<void>,
-        openLog: (id: string) => Promise<void>
+        openLog: (id?: string) => Promise<boolean | void>,
+        openLogFolder: () => Promise<boolean | void>,
       },
       inject: {
         deploy: (id: string) => Promise<{success: boolean, message: string, pid?: number, cancelled?: boolean}>,

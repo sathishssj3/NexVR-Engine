@@ -20,7 +20,8 @@ contextBridge.exposeInMainWorld('ag', {
   },
   utils: {
     openConfig: (id: string) => ipcRenderer.invoke('utils:openConfig', id),
-    openLog: (id: string) => ipcRenderer.invoke('utils:openLog', id),
+    openLog: (id?: string) => ipcRenderer.invoke('utils:openLog', id),
+    openLogFolder: () => ipcRenderer.invoke('utils:openLogFolder'),
   },
   inject: {
     deploy: (id: string) =>

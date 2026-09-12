@@ -85,9 +85,99 @@ async function getProcessPath(pid: number): Promise<string> {
   }
 }
 
+let activeWatchedLogPaths: string[] = [];
+let watchedSizes: Record<string, number> = {};
+let watchedRemainders: Record<string, string> = {};
+export let currentSessionLogPath = '';
+export let latestSessionLogPath = '';
+
+export function getLogsDir(): string {
+  const logsDir = path.join(app.getPath('userData'), 'logs');
+  if (!fs.existsSync(logsDir)) {
+    fs.mkdirSync(logsDir, { recursive: true });
+  }
+  return logsDir;
+}
+
+export function getLatestSessionLogPath(): string {
+  return latestSessionLogPath || path.join(getLogsDir(), 'latest_session.log');
+}
+
+export function emitLogLine(event: Electron.IpcMainInvokeEvent, line: string): void {
+  const trimmed = line.trim();
+  if (!trimmed) return;
+
+  try {
+    if (!event.sender.isDestroyed()) {
+      event.sender.send('log:line', trimmed.slice(0, 2000));
+    }
+  } catch {}
+
+  try {
+    if (currentSessionLogPath) {
+      fs.appendFileSync(currentSessionLogPath, trimmed + '\n', 'utf-8');
+    }
+    if (latestSessionLogPath) {
+      fs.appendFileSync(latestSessionLogPath, trimmed + '\n', 'utf-8');
+    }
+  } catch {}
+}
+
 function stopActiveLogWatch(): void {
-  if (activeLogPath) fs.unwatchFile(activeLogPath);
+  for (const p of activeWatchedLogPaths) {
+    try {
+      fs.unwatchFile(p);
+    } catch {}
+  }
+  activeWatchedLogPaths = [];
+  watchedSizes = {};
+  watchedRemainders = {};
   activeLogPath = '';
+}
+
+function startWatchingLogFile(filePath: string, event: Electron.IpcMainInvokeEvent): void {
+  const normalized = path.resolve(filePath);
+  if (activeWatchedLogPaths.includes(normalized)) return;
+  activeWatchedLogPaths.push(normalized);
+
+  let initialSize = 0;
+  try {
+    if (fs.existsSync(normalized)) {
+      initialSize = fs.statSync(normalized).size;
+    }
+  } catch {}
+  watchedSizes[normalized] = initialSize;
+  watchedRemainders[normalized] = '';
+
+  fs.watchFile(normalized, { interval: 300 }, (curr) => {
+    let lastSize = watchedSizes[normalized] ?? 0;
+    if (curr.size < lastSize) {
+      lastSize = 0;
+      watchedSizes[normalized] = 0;
+      watchedRemainders[normalized] = '';
+    }
+    if (curr.size <= lastSize) return;
+
+    try {
+      const fd = fs.openSync(normalized, 'r');
+      try {
+        const length = Math.min(curr.size - lastSize, 2 * 1024 * 1024);
+        const buf = Buffer.alloc(length);
+        const bytesRead = fs.readSync(fd, buf, 0, length, lastSize);
+        watchedSizes[normalized] = lastSize + bytesRead;
+
+        const text = (watchedRemainders[normalized] || '') + buf.subarray(0, bytesRead).toString('utf-8');
+        const lines = text.split(/\r?\n/);
+        watchedRemainders[normalized] = lines.pop() || '';
+
+        for (const line of lines) {
+          emitLogLine(event, line);
+        }
+      } finally {
+        fs.closeSync(fd);
+      }
+    } catch {}
+  });
 }
 
 ipcMain.handle('inject:cancel', async (event) => {
@@ -131,36 +221,42 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
         message: `Injection Blocked: ${ac.antiCheatName} detected. To protect your account from multiplayer bans, VR injection is disabled on this title.`
       };
     }
+
     const logPath = safeGamePath(installPath, 'vrinject.log');
+    activeLogPath = logPath;
+
+    stopActiveLogWatch();
+
+    const logsDir = getLogsDir();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    currentSessionLogPath = path.join(logsDir, `session_${validId}_${timestamp}.log`);
+    latestSessionLogPath = path.join(logsDir, 'latest_session.log');
+
+    try {
+      const header = `=== NexVR Engine Session Log [v0.1.16] ===\nGame ID: ${validId}\nStarted: ${new Date().toISOString()}\n==========================================\n`;
+      fs.writeFileSync(currentSessionLogPath, header, 'utf-8');
+      fs.writeFileSync(latestSessionLogPath, header, 'utf-8');
+    } catch {}
+
     try {
       fs.writeFileSync(logPath, '');
-    } catch {
-      // Game directory might be write-protected for non-elevated token; elevated CLI will create/append to it.
-    }
-    activeLogPath = logPath;
-    let lastSize = 0;
+    } catch {}
 
-    fs.watchFile(logPath, { interval: 500 }, (curr) => {
-      if (curr.size < lastSize) lastSize = 0;
-      if (curr.size <= lastSize) return;
+    emitLogLine(event, `[--] Initializing session diagnostics for game ID: ${validId}`);
+    emitLogLine(event, `[--] Session log file: ${path.basename(currentSessionLogPath)}`);
 
+    startWatchingLogFile(logPath, event);
+
+    const localAppData = process.env.LOCALAPPDATA || '';
+    if (localAppData) {
+      const appDataLog = path.join(localAppData, 'VRInject', 'vrinject.log');
       try {
-        const fd = fs.openSync(logPath, 'r');
-        try {
-          const length = Math.min(curr.size - lastSize, 1024 * 1024);
-          const buf = Buffer.alloc(length);
-          const bytesRead = fs.readSync(fd, buf, 0, length, lastSize);
-          lastSize += bytesRead;
-          for (const line of buf.subarray(0, bytesRead).toString('utf-8').split('\n')) {
-            if (line.trim()) event.sender.send('log:line', line.trim().slice(0, 2000));
-          }
-        } finally {
-          fs.closeSync(fd);
-        }
-      } catch {
-        // The monitored process may rotate or temporarily lock the log.
-      }
-    });
+        const vrDir = path.dirname(appDataLog);
+        if (!fs.existsSync(vrDir)) fs.mkdirSync(vrDir, { recursive: true });
+        if (!fs.existsSync(appDataLog)) fs.writeFileSync(appDataLog, '', 'utf-8');
+      } catch {}
+      startWatchingLogFile(appDataLog, event);
+    }
 
     const candidateBinDirs = [
       path.resolve(__dirname, '../../../../build/bin'),
@@ -460,7 +556,7 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     activeGameId = validId;
     cancelInjectionFlag = false;
 
-    event.sender.send('log:line', `[Injector] Waiting up to 120s for: ${targetExeName}`);
+    emitLogLine(event, `[Injector] Waiting up to 120s for: ${targetExeName}`);
 
     let targetPid = 0;
     for (let attempts = 0; attempts < 240; attempts++) {
@@ -545,6 +641,10 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
           targetPid = selectedCandidate.pid;
           activeTargetPid = selectedCandidate.pid;
           targetExeDir = path.dirname(selectedCandidate.path);
+          if (targetExeDir && path.resolve(targetExeDir) !== path.resolve(installPath)) {
+            const targetDirLog = path.join(targetExeDir, 'vrinject.log');
+            startWatchingLogFile(targetDirLog, event);
+          }
           break;
         }
         if (targetPid > 0) break;

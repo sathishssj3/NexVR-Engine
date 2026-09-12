@@ -62,6 +62,9 @@ void RuntimeState::BackgroundInitialize() {
         if (lastSlash) *(lastSlash + 1) = '\0';
     }
 
+    char exePath[MAX_PATH]{};
+    ::GetModuleFileNameA(nullptr, exePath, MAX_PATH);
+
     char logPath[MAX_PATH];
     if (SUCCEEDED(SHGetFolderPathA(nullptr, CSIDL_LOCAL_APPDATA, nullptr, 0, logPath))) {
         strcat_s(logPath, "\\VRInject");
@@ -74,15 +77,43 @@ void RuntimeState::BackgroundInitialize() {
     
     auto logger = std::make_shared<FileLogger>();
     logger->Init(logPath);
+
+    // Also attach secondary log in dll directory
+    char dllLogPath[MAX_PATH];
+    strcpy_s(dllLogPath, dllDir);
+    strcat_s(dllLogPath, "vrinject.log");
+    logger->AddSecondaryPath(dllLogPath);
+
+    // Also attach secondary log in game executable directory if different
+    char exeDirLogPath[MAX_PATH];
+    strcpy_s(exeDirLogPath, exePath);
+    char* exeSlash = std::strrchr(exeDirLogPath, '\\');
+    if (exeSlash) {
+        *(exeSlash + 1) = '\0';
+        strcat_s(exeDirLogPath, "vrinject.log");
+        logger->AddSecondaryPath(exeDirLogPath);
+    }
+
     auto config = std::make_shared<ConfigManager>();
     config->Load(dllDir);
-    SubsystemContext::Get().Initialize(std::move(logger), std::move(config));
+    SubsystemContext::Get().Initialize(logger, config);
 
     seh::RegisterVehShield(static_cast<HMODULE>(m_hModule));
 
     LOG_INFO("========================================");
-    LOG_INFO("VRInject Framework v0.1 - Initializing");
+    LOG_INFO("NexVR Engine v0.1.16 - Initializing");
     LOG_INFO("========================================");
+    LOG_INFO("[DIAGNOSTICS] Host Process: %s", exePath);
+    LOG_INFO("[DIAGNOSTICS] Module DLL Dir: %s", dllDir);
+    LOG_INFO("[DIAGNOSTICS] Primary Log Path: %s", logPath);
+
+    const auto& cfg = config->GetConfig();
+    LOG_INFO("[DIAGNOSTICS] Config: IPD=%.3fm, Convergence=%.1fm, ResScale=%.2f", cfg.ipd, cfg.convergence, cfg.resolutionScale);
+    LOG_INFO("[DIAGNOSTICS] Color Calibration: Brightness=%.2f, Contrast=%.2f, Saturation=%.2f, sRGB=%s",
+             cfg.brightness, cfg.contrast, cfg.saturation, cfg.srgbCorrection ? "On" : "Off");
+    LOG_INFO("[DIAGNOSTICS] Engine Profile: %s | API Override: %s",
+             cfg.engineType.empty() ? "Auto" : cfg.engineType.c_str(),
+             cfg.api.empty() ? "Auto" : cfg.api.c_str());
     
     SubsystemContext::Get().GetDiagnosticContext()->PostEvent(DiagnosticLevel::Info, "Runtime", "Starting background initialization");
     

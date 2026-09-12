@@ -65,12 +65,30 @@ void ImGuiDX11Integration::RenderToTexture(ID3D11Device* device, ID3D11DeviceCon
         D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
         D3D11_TEXTURE2D_DESC texDesc = {};
         targetTexture->GetDesc(&texDesc);
-        rtvDesc.Format = texDesc.Format;
+        
+        DXGI_FORMAT rtvFormat = texDesc.Format;
+        if (rtvFormat == DXGI_FORMAT_R8G8B8A8_TYPELESS) {
+            rtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+        } else if (rtvFormat == DXGI_FORMAT_B8G8R8A8_TYPELESS) {
+            rtvFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
+        } else if (rtvFormat == DXGI_FORMAT_R10G10B10A2_TYPELESS) {
+            rtvFormat = DXGI_FORMAT_R10G10B10A2_UNORM;
+        } else if (rtvFormat == DXGI_FORMAT_R16G16B16A16_TYPELESS) {
+            rtvFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+        }
+
+        rtvDesc.Format = rtvFormat;
         rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
         rtvDesc.Texture2D.MipSlice = 0;
 
-        if (FAILED(device->CreateRenderTargetView(targetTexture, &rtvDesc, &m_cachedRtv))) {
-            LOG_ERROR("ImGuiDX11: Failed to create RTV for target texture");
+        HRESULT hr = device->CreateRenderTargetView(targetTexture, &rtvDesc, &m_cachedRtv);
+        if (FAILED(hr)) {
+            static bool s_loggedRtvError = false;
+            if (!s_loggedRtvError) {
+                LOG_ERROR("ImGuiDX11: Failed to create RTV for target texture (format %u -> %u, hr=0x%X)", 
+                          texDesc.Format, rtvFormat, hr);
+                s_loggedRtvError = true;
+            }
             return;
         }
     }

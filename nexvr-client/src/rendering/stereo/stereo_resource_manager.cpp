@@ -211,7 +211,7 @@ bool StereoResourceManager::Initialize(uint32_t width, uint32_t height, DXGI_FOR
     height_ = height;
     format_ = format;
 
-    LOG_INFO("StereoResourceManager: Successfully initialized %ux%u format %u", width, height, format);
+    LOG_INFO("[DIAGNOSTICS] StereoResourceManager: Initialized stereo eye buffers %ux%u (Format %u)", width, height, format);
     return true;
 }
 
@@ -224,7 +224,7 @@ bool StereoResourceManager::CreateRenderTargets(uint32_t width, uint32_t height,
     desc.SampleDesc.Count = 1;
     desc.SampleDesc.Quality = 0;
     desc.Usage = D3D11_USAGE_DEFAULT;
-    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_RENDER_TARGET;
     desc.CPUAccessFlags = 0;
     desc.MiscFlags = 0;
 
