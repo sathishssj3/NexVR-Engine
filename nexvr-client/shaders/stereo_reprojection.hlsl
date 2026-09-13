@@ -34,6 +34,7 @@ VK_BINDING(5) RWTexture2D<float4> OutRightEye : register(u1);
 
 // Perceptually calibrated contrast and saturation adjustment.
 // Prevents crushed blacks, lifts flat midtones, and preserves highlight detail.
+// Eliminates crushed blacks while restoring the true warmth and lighting of desktop monitors.
 float3 ApplyPerceptualGrading(float3 color, float contrast, float saturation, float brightness)
 {
     float c = (contrast > 0.01f) ? contrast : 1.0f;
@@ -46,17 +47,28 @@ float3 ApplyPerceptualGrading(float3 color, float contrast, float saturation, fl
         return color;
     }
 
-    // 1. Contrast: Soft S-curve pivoted around mid-gray (0.5f)
-    float3 graded = (color - 0.5f) * c + 0.5f;
+    float3 col = max(color, 0.0f);
 
-    // 2. Brightness scaling
-    graded = graded * b;
+    // 1. Exposure gain
+    col *= b;
 
-    // 3. Saturation: Rec.709 luminance-preserving chroma adjustment
-    float lum = dot(graded, float3(0.2126f, 0.7152f, 0.0722f));
-    graded = lerp(float3(lum, lum, lum), graded, s);
+    // 2. Perceptual Filmic Contrast Curve with protected shadow toe
+    // Unlike a raw linear pivot which plunges 0.1 shadows to 0.02 pitch black,
+    // this spline lifts the toe in dark areas so atmospheric lighting, walls,
+    // and ground detail remain rich and visible just like on the desktop monitor.
+    if (abs(c - 1.0f) > 0.001f)
+    {
+        float3 toe = pow(col, 1.0f / max(c, 0.1f));
+        float3 shoulder = 1.0f - pow(max(1.0f - col, 0.0f), c);
+        float3 weight = smoothstep(0.12f, 0.88f, col);
+        col = lerp(toe, shoulder, weight);
+    }
 
-    return saturate(graded);
+    // 3. Rec.709 Luminance-preserving chroma adjustment
+    float lum = dot(col, float3(0.2126f, 0.7152f, 0.0722f));
+    col = lerp(float3(lum, lum, lum), col, s);
+
+    return saturate(col);
 }
 
 // Standard depth unprojection
@@ -71,7 +83,7 @@ float3 WorldPositionFromDepth(float2 uv, float depth)
 }
 
 // 8-tap bilateral edge-aware push-pull hole inpainter for disoccluded stereo regions
-float4 InpaintDisocclusion(int2 p, float refDepth)
+float4 InpaintDisocclusion(int2 p, float refDepth, float4 fallbackColor, uint w, uint h)
 {
     float4 sumColor = float4(0, 0, 0, 0);
     float totalWeight = 0.0001f;
@@ -85,8 +97,8 @@ float4 InpaintDisocclusion(int2 p, float refDepth)
     [unroll]
     for (int i = 0; i < 8; ++i)
     {
-        int2 neighborPos = clamp(p + offsets[i] * 2, int2(0, 0), int2(Width - 1, Height - 1));
-        float2 neighborUV = float2((float)neighborPos.x / Width, (float)neighborPos.y / Height);
+        int2 neighborPos = clamp(p + offsets[i] * 2, int2(0, 0), int2(w - 1, h - 1));
+        float2 neighborUV = float2(((float)neighborPos.x + 0.5f) / (float)w, ((float)neighborPos.y + 0.5f) / (float)h);
         float neighborDepth = GameDepth.Load(int3(neighborPos, 0));
         float4 neighborColor = GameColor.SampleLevel(LinearSampler, neighborUV, 0);
         
@@ -96,6 +108,11 @@ float4 InpaintDisocclusion(int2 p, float refDepth)
         totalWeight += depthWeight;
     }
     
+    if (totalWeight < 0.01f)
+    {
+        return fallbackColor;
+    }
+
     float4 result = sumColor / totalWeight;
     result.a = 1.0f;
     return result;
@@ -110,14 +127,30 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
     int2 pixelPos = int2(dispatchThreadId.x, dispatchThreadId.y);
     float2 uv = float2(((float)pixelPos.x + 0.5f) / (float)Width, ((float)pixelPos.y + 0.5f) / (float)Height);
     
+    // Dynamic Desktop-to-VR Aspect Ratio Alignment:
+    // Prevents funhouse-mirror vertical stretching of 16:9 widescreen desktop games in square VR viewports
+    uint srcWidth = 1;
+    uint srcHeight = 1;
+    GameColor.GetDimensions(srcWidth, srcHeight);
+    float gameAspect = (float)max(srcWidth, 1u) / (float)max(srcHeight, 1u);
+    float vrAspect = (float)max(Width, 1u) / (float)max(Height, 1u);
+    float aspectFactor = gameAspect / vrAspect;
+
     // Sample raw 2D color
     float4 baseColor = GameColor.SampleLevel(LinearSampler, uv, 0);
     baseColor.a = 1.0f;
     
     if (ShouldAttemptStereo == 0)
     {
-        // 100% Full FOV in 2D mode - no letterboxing or black bars
+        // 2D Mode: Aspect-ratio corrected desktop framing
+        float2 centered = uv - 0.5f;
+        float2 aspectUV = float2(centered.x, centered.y * aspectFactor) + 0.5f;
+        
         float4 outColor = baseColor;
+        if (aspectUV.y >= 0.0f && aspectUV.y <= 1.0f)
+        {
+            outColor = GameColor.SampleLevel(LinearSampler, aspectUV, 0);
+        }
         outColor.rgb = ApplyPerceptualGrading(outColor.rgb, Contrast, Saturation, Brightness);
         outColor.a = 1.0f;
         
@@ -128,10 +161,14 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
     
     float depth = GameDepth.SampleLevel(LinearSampler, uv, 0).r;
     
-    // 2D HUD / Clear depth check: If depth is at exact clearing bounds or uninitialized, pass 2D color
-    if (depth <= 0.000001f || depth >= 0.999999f)
+    // 2D HUD / Clear depth check / Skybox horizon check
+    if (depth <= 0.0001f || depth >= 0.9995f)
     {
-        float4 hudColor = baseColor;
+        float2 centered = uv - 0.5f;
+        float2 aspectUV = float2(centered.x, centered.y * aspectFactor) + 0.5f;
+        float4 hudColor = (aspectUV.y >= 0.0f && aspectUV.y <= 1.0f)
+            ? GameColor.SampleLevel(LinearSampler, aspectUV, 0)
+            : baseColor;
         hudColor.rgb = ApplyPerceptualGrading(hudColor.rgb, Contrast, Saturation, Brightness);
         hudColor.a = 1.0f;
         OutLeftEye[pixelPos] = hudColor;
@@ -142,12 +179,13 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
     // Unproject pixel ray to 3D world space
     float3 worldPos = WorldPositionFromDepth(uv, depth);
     
-    // Left Eye Backward Gather
+    // Left Eye Backward Gather with Aspect-Ratio Alignment
     float4 leftClip = mul(float4(worldPos, 1.0f), LeftViewProj);
     float4 leftColor = baseColor;
     if (leftClip.w > 0.0001f)
     {
         float2 leftNdc = leftClip.xy / leftClip.w;
+        leftNdc.y *= aspectFactor;
         float2 leftUV = float2(leftNdc.x * 0.5f + 0.5f, 1.0f - (leftNdc.y * 0.5f + 0.5f));
         
         if (leftUV.x >= 0.0f && leftUV.x <= 1.0f && leftUV.y >= 0.0f && leftUV.y <= 1.0f)
@@ -157,16 +195,17 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
         }
         else
         {
-            leftColor = InpaintDisocclusion(pixelPos, depth);
+            leftColor = InpaintDisocclusion(pixelPos, depth, baseColor, Width, Height);
         }
     }
     
-    // Right Eye Backward Gather
+    // Right Eye Backward Gather with Aspect-Ratio Alignment
     float4 rightClip = mul(float4(worldPos, 1.0f), RightViewProj);
     float4 rightColor = baseColor;
     if (rightClip.w > 0.0001f)
     {
         float2 rightNdc = rightClip.xy / rightClip.w;
+        rightNdc.y *= aspectFactor;
         float2 rightUV = float2(rightNdc.x * 0.5f + 0.5f, 1.0f - (rightNdc.y * 0.5f + 0.5f));
         
         if (rightUV.x >= 0.0f && rightUV.x <= 1.0f && rightUV.y >= 0.0f && rightUV.y <= 1.0f)
@@ -176,11 +215,11 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
         }
         else
         {
-            rightColor = InpaintDisocclusion(pixelPos, depth);
+            rightColor = InpaintDisocclusion(pixelPos, depth, baseColor, Width, Height);
         }
     }
     
-    // Apply perceptual grading calibrated to desktop game lighting
+    // Apply perceptual filmic harmonization calibrated to desktop game monitor
     leftColor.rgb = ApplyPerceptualGrading(leftColor.rgb, Contrast, Saturation, Brightness);
     rightColor.rgb = ApplyPerceptualGrading(rightColor.rgb, Contrast, Saturation, Brightness);
     leftColor.a = 1.0f;
