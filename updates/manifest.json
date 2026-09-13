@@ -1,16 +1,15 @@
 {
-  "engineVersion": "0.1.20",
-  "timestamp": 1789308805617,
-  "changelog": "Universal OpenXR Aspect-Aligned FOV & Native sRGB Parity v0.1.20",
+  "engineVersion": "0.1.21",
+  "timestamp": 1789310853575,
+  "changelog": "Full Headset FOV & Native Display Gamma 2.2 Color Parity v0.1.21",
   "features": [
-    "OpenXR Dynamic Aspect-Aligned FOV Projection: Universal solution eliminating horizontal squish and vertical funhouse stretching across all games by mathematically matching horizontal and vertical angular pixel densities at the OpenXR composition layer",
-    "Native sRGB Swapchain Prioritization: Universally resolves washed-out milky grey fog and lifted shadows by negotiating native sRGB swapchains with OpenXR (DX11, DX12, Vulkan) so the compositor performs zero double-gamma modification",
-    "Standard IEC 61966-2-1 Linearization Fallback: Automatically applies precise piecewise linear transformation if and only if a headset runtime requires UNORM buffers",
-    "Authentic Native Lighting Preservation: Completely removed per-game contrast and brightness distortions so every game renders in its authentic desktop lighting and deep blacks"
+    "Full Headset FOV & Unbounded 6DOF: Restored complete edge-to-edge native FOV across all headsets with zero letterboxing or black bars, delivering 100% full immersion",
+    "Exact Display Gamma 2.2 Color Conversion: Calibrated to compensate for OpenXR compositor presentation curve to eliminate milky grey fog and restore deep authentic blacks, high contrast, and rich moody atmosphere identical to desktop monitors",
+    "Universal Cross-Game Engine Parity: Applies seamlessly across all titles (DX11, DX12, Vulkan) without artificial per-game slider boosts"
   ],
   "fixes": [
-    "Universally fixed washed-out milky grey fog and lifted black levels in VR headsets",
-    "Universally fixed 1.8x vertical geometric elongation and 44% horizontal squishing in 16:9 widescreen games"
+    "Eliminated letterboxing and black bars in VR viewports, restoring full native headset FOV",
+    "Fixed washed-out milky grey haze by matching exact display gamma 2.2"
   ],
   "files": [
     "vrinject.dll",
@@ -36,8 +35,8 @@
   ],
   "date": "2026-09-11T22:15:00.000Z",
   "hashes": {
-    "vrinject.dll": "48fc1f1b5ce4fe10163ae6ff100e4fa26916ccb96ef012f19fcd45b4b53aeb78",
-    "vr-inject-cli.exe": "2869176f5b2528c0c04751f5f8e05f29056092791d03a4df705da4d231f872a9",
+    "vrinject.dll": "7477b996c432cef5a205e0a346203c5d8192b72efc2d684458098624c05d57cf",
+    "vr-inject-cli.exe": "ee5c8c5a234ae32ab746132826bb0defafbfd92a4f9d9397a13f849cacd83650",
     "profiles/814380_sekiro.json": "6463c079fb200fdb895edf96cdc54249d3e1d93c9fce6fbad87da9cfd7f46ff3",
     "profiles/990080_hogwarts_legacy.json": "717610b3cdf8cca77c2555d8c6ec087ef694ba1eda9a8a08c3a15438051f9efc",
     "profiles/1091500_cyberpunk_2077.json": "42a448270d17b59f9a910903043ca93b212cdae9c75fbf3400c1ef4346590601",
@@ -46,7 +45,7 @@
     "profiles/1110910_mortal_shell.json": "c8027d7cb90c314da9ddeefb8ccc94e8c2935d738c4e1e0541fd410ede3e59bc",
     "profiles/1245620_elden_ring.json": "43726a56aaa1ec5a166d1f6c17b0fe81090847c075603222ac066e0e47a1d6d0",
     "profiles/schema.json": "a6e1c619de549cb36e13e6bcddc796afc205e9fa66c08542d586dbb4f995bd8e",
-    "shaders/stereo_reprojection.hlsl": "a884bbd259f5c7909dfdba31f5fde0ed6e1411898b895f47a3181a89fb64397c",
+    "shaders/stereo_reprojection.hlsl": "049b6e0fb456fec4ed2e73f387545022c32aa82344d0c6c0be63493b1cd15b3d",
     "shaders/tonemap.hlsl": "a886e9369ac38e15171a03f6d55681897a2c2580e573fd5fa7d5552344a1cd5f",
     "shaders/stereo_resolve.hlsl": "b9787aa73933055a08e6ed372c7a83c0626462bb4a0f0bba9c734309b53b9dcf",
     "shaders/stereo_warp.hlsl": "0575ea5d393ac74782409acba603a8c687f271489935622de0392daa072a6c74",

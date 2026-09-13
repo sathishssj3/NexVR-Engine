@@ -358,16 +358,16 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
                 }
                 // Pick format matching game's channel order for vkCmdCopyImage.
                 // Pick format matching game's channel order for vkCmdCopyImage.
-                // Prefer SRGB formats so OpenXR compositor knows data is already sRGB.
+                // Prefer the game's own format family (UNORM first, then SRGB).
                 int64_t gameFormat = m_currentSnapshot.format;
                 // Build preference list dynamically based on game format
                 std::vector<int64_t> preferred;
                 if (gameFormat == 44 || gameFormat == 50) {
-                    // Game uses B8G8R8A8 family (prefer sRGB 50, fallback UNORM 44)
-                    preferred = {50, 44, 43, 37};
+                    // Game uses B8G8R8A8 family
+                    preferred = {44, 50, 37, 43}; // B8G8R8A8_UNORM, B8G8R8A8_SRGB, R8G8B8A8_UNORM, R8G8B8A8_SRGB
                 } else {
-                    // Game uses R8G8B8A8 family (prefer sRGB 43, fallback UNORM 37)
-                    preferred = {43, 37, 50, 44};
+                    // Game uses R8G8B8A8 family (most common)
+                    preferred = {37, 43, 44, 50}; // R8G8B8A8_UNORM, R8G8B8A8_SRGB, B8G8R8A8_UNORM, B8G8R8A8_SRGB
                 }
                 for (int64_t pref : preferred) {
                     for (int64_t supported : fmts) {
@@ -381,8 +381,8 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
             }
         } else {
             // DX11/DX12: Enumerate OpenXR-supported DXGI formats.
-            // Prioritize sRGB swapchain formats (29, 91) so OpenXR compositor does NOT apply
-            // double-gamma conversion, preserving authentic desktop contrast and deep blacks.
+            // ALWAYS try the game's own format first for bit-perfect CopyResource.
+            // CopyResource requires identical formats or it will fail silently.
             uint32_t fmtCount = 0;
             if (XR_SUCCEEDED(xrEnumerateSwapchainFormats(m_oxrRuntime->GetSession(), 0, &fmtCount, nullptr)) && fmtCount > 0) {
                 std::vector<int64_t> fmts(fmtCount);
@@ -400,12 +400,19 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
                 int64_t gameFormat = static_cast<int64_t>(m_currentSnapshot.format);
                 
                 // Color space & format family management:
-                // For R8G8B8A8 family: prefer sRGB 29 over 28 to prevent milky fog.
-                // For B8G8R8A8 family: prefer sRGB 91 over 87.
+                // CopyResource requires textures to belong to the exact same DXGI format family.
+                // For R8G8B8A8 family (28, 29): prefer 28, fallback 29.
+                // For B8G8R8A8 family (87, 91): prefer 87, fallback 91.
+                // For R10G10B10A2 family (24): must use 24.
+                // For R16G16B16A16_FLOAT family (10): must use 10.
                 std::vector<int64_t> familyPreference;
-                if (gameFormat == 28 || gameFormat == 29) {
+                if (gameFormat == 28) {
+                    familyPreference = {28, 29};
+                } else if (gameFormat == 29) {
                     familyPreference = {29, 28};
-                } else if (gameFormat == 87 || gameFormat == 91) {
+                } else if (gameFormat == 87) {
+                    familyPreference = {87, 91};
+                } else if (gameFormat == 91) {
                     familyPreference = {91, 87};
                 } else if (gameFormat == 24) {
                     familyPreference = {24};

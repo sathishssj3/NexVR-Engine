@@ -71,14 +71,10 @@ float3 ApplyPerceptualGrading(float3 color, float contrast, float saturation, fl
     return saturate(col);
 }
 
-// Universal IEC 61966-2-1 sRGB-to-Linear conversion
-// Used ONLY when OpenXR swapchain is UNORM (linear contract) to cancel out
-// the OpenXR display compositor's extra gamma transfer curve.
-float3 ApplySrgbToLinear(float3 c)
+// Exact gamma 2.2 conversion: compensates for OpenXR compositor gamma to deliver native color fidelity
+float3 ApplyGammaCorrection(float3 color)
 {
-    float3 linearLow = c / 12.92f;
-    float3 linearHigh = pow(max((c + 0.055f) / 1.055f, 0.0f), 2.4f);
-    return lerp(linearLow, linearHigh, step(0.04045f, c));
+    return pow(clamp(color, 0.0f, 1.0f), 2.2f);
 }
 
 // Standard depth unprojection
@@ -143,13 +139,9 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
     
     if (ShouldAttemptStereo == 0)
     {
-        // 2D Mode: Pass-through with optional perceptual grading
+        // 2D Mode: Pass-through with perceptual grading and display gamma
         float4 outColor = baseColor;
-        outColor.rgb = ApplyPerceptualGrading(outColor.rgb, Contrast, Saturation, Brightness);
-        if (SrgbCorrection != 0)
-        {
-            outColor.rgb = ApplySrgbToLinear(outColor.rgb);
-        }
+        outColor.rgb = ApplyGammaCorrection(ApplyPerceptualGrading(outColor.rgb, Contrast, Saturation, Brightness));
         outColor.a = 1.0f;
         
         OutLeftEye[pixelPos] = outColor;
@@ -163,11 +155,7 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
     if (depth <= 0.0001f || depth >= 0.9995f)
     {
         float4 hudColor = baseColor;
-        hudColor.rgb = ApplyPerceptualGrading(hudColor.rgb, Contrast, Saturation, Brightness);
-        if (SrgbCorrection != 0)
-        {
-            hudColor.rgb = ApplySrgbToLinear(hudColor.rgb);
-        }
+        hudColor.rgb = ApplyGammaCorrection(ApplyPerceptualGrading(hudColor.rgb, Contrast, Saturation, Brightness));
         hudColor.a = 1.0f;
         OutLeftEye[pixelPos] = hudColor;
         OutRightEye[pixelPos] = hudColor;
@@ -215,14 +203,9 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
         }
     }
     
-    // Apply perceptual filmic harmonization calibrated to desktop game monitor
-    leftColor.rgb = ApplyPerceptualGrading(leftColor.rgb, Contrast, Saturation, Brightness);
-    rightColor.rgb = ApplyPerceptualGrading(rightColor.rgb, Contrast, Saturation, Brightness);
-    if (SrgbCorrection != 0)
-    {
-        leftColor.rgb = ApplySrgbToLinear(leftColor.rgb);
-        rightColor.rgb = ApplySrgbToLinear(rightColor.rgb);
-    }
+    // Apply perceptual filmic harmonization and exact display gamma
+    leftColor.rgb = ApplyGammaCorrection(ApplyPerceptualGrading(leftColor.rgb, Contrast, Saturation, Brightness));
+    rightColor.rgb = ApplyGammaCorrection(ApplyPerceptualGrading(rightColor.rgb, Contrast, Saturation, Brightness));
     leftColor.a = 1.0f;
     rightColor.a = 1.0f;
 
