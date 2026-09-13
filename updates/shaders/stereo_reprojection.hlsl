@@ -71,6 +71,16 @@ float3 ApplyPerceptualGrading(float3 color, float contrast, float saturation, fl
     return saturate(col);
 }
 
+// Universal IEC 61966-2-1 sRGB-to-Linear conversion
+// Used ONLY when OpenXR swapchain is UNORM (linear contract) to cancel out
+// the OpenXR display compositor's extra gamma transfer curve.
+float3 ApplySrgbToLinear(float3 c)
+{
+    float3 linearLow = c / 12.92f;
+    float3 linearHigh = pow(max((c + 0.055f) / 1.055f, 0.0f), 2.4f);
+    return lerp(linearLow, linearHigh, step(0.04045f, c));
+}
+
 // Standard depth unprojection
 float3 WorldPositionFromDepth(float2 uv, float depth)
 {
@@ -126,15 +136,6 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
         
     int2 pixelPos = int2(dispatchThreadId.x, dispatchThreadId.y);
     float2 uv = float2(((float)pixelPos.x + 0.5f) / (float)Width, ((float)pixelPos.y + 0.5f) / (float)Height);
-    
-    // Dynamic Desktop-to-VR Aspect Ratio Alignment:
-    // Prevents funhouse-mirror vertical stretching of 16:9 widescreen desktop games in square VR viewports
-    uint srcWidth = 1;
-    uint srcHeight = 1;
-    GameColor.GetDimensions(srcWidth, srcHeight);
-    float gameAspect = (float)max(srcWidth, 1u) / (float)max(srcHeight, 1u);
-    float vrAspect = (float)max(Width, 1u) / (float)max(Height, 1u);
-    float aspectFactor = gameAspect / vrAspect;
 
     // Sample raw 2D color
     float4 baseColor = GameColor.SampleLevel(LinearSampler, uv, 0);
@@ -142,16 +143,13 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
     
     if (ShouldAttemptStereo == 0)
     {
-        // 2D Mode: Aspect-ratio corrected desktop framing
-        float2 centered = uv - 0.5f;
-        float2 aspectUV = float2(centered.x, centered.y * aspectFactor) + 0.5f;
-        
+        // 2D Mode: Pass-through with optional perceptual grading
         float4 outColor = baseColor;
-        if (aspectUV.y >= 0.0f && aspectUV.y <= 1.0f)
-        {
-            outColor = GameColor.SampleLevel(LinearSampler, aspectUV, 0);
-        }
         outColor.rgb = ApplyPerceptualGrading(outColor.rgb, Contrast, Saturation, Brightness);
+        if (SrgbCorrection != 0)
+        {
+            outColor.rgb = ApplySrgbToLinear(outColor.rgb);
+        }
         outColor.a = 1.0f;
         
         OutLeftEye[pixelPos] = outColor;
@@ -164,12 +162,12 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
     // 2D HUD / Clear depth check / Skybox horizon check
     if (depth <= 0.0001f || depth >= 0.9995f)
     {
-        float2 centered = uv - 0.5f;
-        float2 aspectUV = float2(centered.x, centered.y * aspectFactor) + 0.5f;
-        float4 hudColor = (aspectUV.y >= 0.0f && aspectUV.y <= 1.0f)
-            ? GameColor.SampleLevel(LinearSampler, aspectUV, 0)
-            : baseColor;
+        float4 hudColor = baseColor;
         hudColor.rgb = ApplyPerceptualGrading(hudColor.rgb, Contrast, Saturation, Brightness);
+        if (SrgbCorrection != 0)
+        {
+            hudColor.rgb = ApplySrgbToLinear(hudColor.rgb);
+        }
         hudColor.a = 1.0f;
         OutLeftEye[pixelPos] = hudColor;
         OutRightEye[pixelPos] = hudColor;
@@ -179,13 +177,12 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
     // Unproject pixel ray to 3D world space
     float3 worldPos = WorldPositionFromDepth(uv, depth);
     
-    // Left Eye Backward Gather with Aspect-Ratio Alignment
+    // Left Eye Backward Gather
     float4 leftClip = mul(float4(worldPos, 1.0f), LeftViewProj);
     float4 leftColor = baseColor;
     if (leftClip.w > 0.0001f)
     {
         float2 leftNdc = leftClip.xy / leftClip.w;
-        leftNdc.y *= aspectFactor;
         float2 leftUV = float2(leftNdc.x * 0.5f + 0.5f, 1.0f - (leftNdc.y * 0.5f + 0.5f));
         
         if (leftUV.x >= 0.0f && leftUV.x <= 1.0f && leftUV.y >= 0.0f && leftUV.y <= 1.0f)
@@ -199,13 +196,12 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
         }
     }
     
-    // Right Eye Backward Gather with Aspect-Ratio Alignment
+    // Right Eye Backward Gather
     float4 rightClip = mul(float4(worldPos, 1.0f), RightViewProj);
     float4 rightColor = baseColor;
     if (rightClip.w > 0.0001f)
     {
         float2 rightNdc = rightClip.xy / rightClip.w;
-        rightNdc.y *= aspectFactor;
         float2 rightUV = float2(rightNdc.x * 0.5f + 0.5f, 1.0f - (rightNdc.y * 0.5f + 0.5f));
         
         if (rightUV.x >= 0.0f && rightUV.x <= 1.0f && rightUV.y >= 0.0f && rightUV.y <= 1.0f)
@@ -222,6 +218,11 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
     // Apply perceptual filmic harmonization calibrated to desktop game monitor
     leftColor.rgb = ApplyPerceptualGrading(leftColor.rgb, Contrast, Saturation, Brightness);
     rightColor.rgb = ApplyPerceptualGrading(rightColor.rgb, Contrast, Saturation, Brightness);
+    if (SrgbCorrection != 0)
+    {
+        leftColor.rgb = ApplySrgbToLinear(leftColor.rgb);
+        rightColor.rgb = ApplySrgbToLinear(rightColor.rgb);
+    }
     leftColor.a = 1.0f;
     rightColor.a = 1.0f;
 

@@ -34,10 +34,16 @@ public:
     XrSwapchain GetLeftSwapchain() const { return leftSwapchain_; }
     XrSwapchain GetRightSwapchain() const { return rightSwapchain_; }
 
+    int64_t GetFormat() const { return format_; }
+    bool IsSrgb() const { return format_ == 29 || format_ == 91 || format_ == 43 || format_ == 50; }
+
 private:
     bool CreateSwapchain(XrSession session, int64_t format, uint32_t width, uint32_t height, XrSwapchain& outSwapchain, GraphicsBackend backendAPI, bool isLeft);
 
     OpenXRHealthMonitor* healthMonitor_ = nullptr;
+    int64_t format_ = 0;
+    uint32_t width_ = 0;
+    uint32_t height_ = 0;
     
     XrSwapchain leftSwapchain_ = XR_NULL_HANDLE;
     XrSwapchain rightSwapchain_ = XR_NULL_HANDLE;

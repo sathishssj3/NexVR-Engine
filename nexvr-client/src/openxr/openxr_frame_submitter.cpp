@@ -2,9 +2,29 @@
 #include "core/logger.h"
 #include <iostream>
 #include <vector>
+#include <cmath>
+#include <algorithm>
 
 namespace vrinject {
 namespace openxr {
+
+static XrFovf CalculateAspectCorrectedFov(const XrFovf& rawFov, int32_t width, int32_t height) {
+    if (width <= 0 || height <= 0) return rawFov;
+    float hTan = tanf(rawFov.angleRight) - tanf(rawFov.angleLeft);
+    float vTan = tanf(rawFov.angleUp) - tanf(rawFov.angleDown);
+    if (vTan <= 0.001f || hTan <= 0.001f) return rawFov;
+
+    float imageAspect = static_cast<float>(width) / static_cast<float>(height);
+    // Align vertical tangent span to match the image's desktop aspect ratio
+    // so pixels per degree horizontally equals pixels per degree vertically.
+    float targetVTan = hTan / imageAspect;
+    float scale = targetVTan / vTan;
+
+    XrFovf corrected = rawFov;
+    corrected.angleUp = atanf(tanf(rawFov.angleUp) * scale);
+    corrected.angleDown = atanf(tanf(rawFov.angleDown) * scale);
+    return corrected;
+}
 
 OpenXRFrameSubmitter::OpenXRFrameSubmitter(OpenXRHealthMonitor* healthMonitor)
     : healthMonitor_(healthMonitor) {}
@@ -181,21 +201,24 @@ bool OpenXRFrameSubmitter::ReleaseAndEndDX11(
         return XrExtent2Di{static_cast<int32_t>(desc.Width), static_cast<int32_t>(desc.Height)};
     };
 
+    XrExtent2Di leftExt = extentOf(leftDest);
+    XrExtent2Di rightExt = extentOf(rightDest);
+
     // Left Eye
     projectionViews[0].pose = lastLeftPose_;
-    projectionViews[0].fov = lastLeftFov_;
+    projectionViews[0].fov = CalculateAspectCorrectedFov(lastLeftFov_, leftExt.width, leftExt.height);
     projectionViews[0].subImage.swapchain = swapchainManager->GetLeftSwapchain();
     projectionViews[0].subImage.imageArrayIndex = 0;
     projectionViews[0].subImage.imageRect.offset = {0, 0};
-    projectionViews[0].subImage.imageRect.extent = extentOf(leftDest);
+    projectionViews[0].subImage.imageRect.extent = leftExt;
 
     // Right Eye
     projectionViews[1].pose = lastRightPose_;
-    projectionViews[1].fov = lastRightFov_;
+    projectionViews[1].fov = CalculateAspectCorrectedFov(lastRightFov_, rightExt.width, rightExt.height);
     projectionViews[1].subImage.swapchain = swapchainManager->GetRightSwapchain();
     projectionViews[1].subImage.imageArrayIndex = 0;
     projectionViews[1].subImage.imageRect.offset = {0, 0};
-    projectionViews[1].subImage.imageRect.extent = extentOf(rightDest);
+    projectionViews[1].subImage.imageRect.extent = rightExt;
 
     XrCompositionLayerProjection layer{XR_TYPE_COMPOSITION_LAYER_PROJECTION};
     layer.layerFlags = 0; // Opaque layer
@@ -316,7 +339,7 @@ bool OpenXRFrameSubmitter::ReleaseAndEndDX12(
     };
 
     projectionViews[0].pose = lastLeftPose_;
-    projectionViews[0].fov = lastLeftFov_;
+    projectionViews[0].fov = CalculateAspectCorrectedFov(lastLeftFov_, static_cast<int32_t>(leftWidth), static_cast<int32_t>(leftHeight));
     projectionViews[0].subImage.swapchain = swapchainManager->GetLeftSwapchain();
     projectionViews[0].subImage.imageArrayIndex = 0;
     projectionViews[0].subImage.imageRect.offset = {0, 0};
@@ -324,7 +347,7 @@ bool OpenXRFrameSubmitter::ReleaseAndEndDX12(
     projectionViews[0].subImage.imageRect.extent.height = leftHeight;
     
     projectionViews[1].pose = lastRightPose_;
-    projectionViews[1].fov = lastRightFov_;
+    projectionViews[1].fov = CalculateAspectCorrectedFov(lastRightFov_, static_cast<int32_t>(rightWidth), static_cast<int32_t>(rightHeight));
     projectionViews[1].subImage.swapchain = swapchainManager->GetRightSwapchain();
     projectionViews[1].subImage.imageArrayIndex = 0;
     projectionViews[1].subImage.imageRect.offset = {0, 0};
@@ -450,7 +473,7 @@ bool OpenXRFrameSubmitter::ReleaseAndEndVulkan(
     };
 
     projectionViews[0].pose = lastLeftPose_;
-    projectionViews[0].fov = lastLeftFov_;
+    projectionViews[0].fov = CalculateAspectCorrectedFov(lastLeftFov_, static_cast<int32_t>(leftWidth), static_cast<int32_t>(leftHeight));
     projectionViews[0].subImage.swapchain = swapchainManager->GetLeftSwapchain();
     projectionViews[0].subImage.imageArrayIndex = 0;
     projectionViews[0].subImage.imageRect.offset = {0, 0};
@@ -458,7 +481,7 @@ bool OpenXRFrameSubmitter::ReleaseAndEndVulkan(
     projectionViews[0].subImage.imageRect.extent.height = leftHeight;
     
     projectionViews[1].pose = lastRightPose_;
-    projectionViews[1].fov = lastRightFov_;
+    projectionViews[1].fov = CalculateAspectCorrectedFov(lastRightFov_, static_cast<int32_t>(rightWidth), static_cast<int32_t>(rightHeight));
     projectionViews[1].subImage.swapchain = swapchainManager->GetRightSwapchain();
     projectionViews[1].subImage.imageArrayIndex = 0;
     projectionViews[1].subImage.imageRect.offset = {0, 0};

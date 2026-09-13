@@ -12,6 +12,9 @@ OpenXRSwapchainManager::~OpenXRSwapchainManager() {
 }
 
 bool OpenXRSwapchainManager::Initialize(XrSession session, int64_t format, uint32_t width, uint32_t height, GraphicsBackend backendAPI) {
+    format_ = format;
+    width_ = width;
+    height_ = height;
     if (!CreateSwapchain(session, format, width, height, leftSwapchain_, backendAPI, true)) {
         return false;
     }

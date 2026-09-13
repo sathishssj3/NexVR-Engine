@@ -1,16 +1,16 @@
 {
-  "engineVersion": "0.1.19",
-  "timestamp": 1789189200000,
-  "changelog": "Universal Desktop-to-VR Visual Parity & Aspect Alignment v0.1.19",
+  "engineVersion": "0.1.20",
+  "timestamp": 1789308805617,
+  "changelog": "Universal OpenXR Aspect-Aligned FOV & Native sRGB Parity v0.1.20",
   "features": [
-    "Dynamic Desktop-to-VR Aspect Ratio Alignment: Completely eliminates vertical funhouse-mirror stretching (1.8x elongation) by automatically computing source-to-headset aspect scale and aligning 3D projection rays so geometry matches 1:1 desktop physical proportions",
-    "Perceptual Filmic Color Harmonization: Protected shadow toe and soft highlight shoulder prevents blacks from crushing in dark scenes (Sekiro shrine, Mortal Shell crypts, Hogwarts interior) while maintaining vibrant midtones and desktop lighting richness",
-    "Universal Disocclusion & Skybox Preservation: Horizon boundary detection and edge-aware inpainter prevent pitch-black voids in peripheral and distant scenery",
-    "Universal Cross-Game Engine Parity: Fix automatically applies across all titles (DX11, DX12, Vulkan) without requiring manual per-game slider tweaking"
+    "OpenXR Dynamic Aspect-Aligned FOV Projection: Universal solution eliminating horizontal squish and vertical funhouse stretching across all games by mathematically matching horizontal and vertical angular pixel densities at the OpenXR composition layer",
+    "Native sRGB Swapchain Prioritization: Universally resolves washed-out milky grey fog and lifted shadows by negotiating native sRGB swapchains with OpenXR (DX11, DX12, Vulkan) so the compositor performs zero double-gamma modification",
+    "Standard IEC 61966-2-1 Linearization Fallback: Automatically applies precise piecewise linear transformation if and only if a headset runtime requires UNORM buffers",
+    "Authentic Native Lighting Preservation: Completely removed per-game contrast and brightness distortions so every game renders in its authentic desktop lighting and deep blacks"
   ],
   "fixes": [
-    "Eliminated vertical geometric elongation in 16:9 widescreen games injected into square VR headsets",
-    "Fixed shadow crushing caused by linear contrast pivots on gamma-encoded textures"
+    "Universally fixed washed-out milky grey fog and lifted black levels in VR headsets",
+    "Universally fixed 1.8x vertical geometric elongation and 44% horizontal squishing in 16:9 widescreen games"
   ],
   "files": [
     "vrinject.dll",
@@ -36,17 +36,17 @@
   ],
   "date": "2026-09-11T22:15:00.000Z",
   "hashes": {
-    "vrinject.dll": "564676b08e685bb07dae635290c296f13c148c91778bf5c6771451382c10a1e2",
-    "vr-inject-cli.exe": "c2d4d37ec80222067300b0931611cd21e7c0ac3af636677a63c1ad0f05d9c9b0",
+    "vrinject.dll": "48fc1f1b5ce4fe10163ae6ff100e4fa26916ccb96ef012f19fcd45b4b53aeb78",
+    "vr-inject-cli.exe": "2869176f5b2528c0c04751f5f8e05f29056092791d03a4df705da4d231f872a9",
     "profiles/814380_sekiro.json": "6463c079fb200fdb895edf96cdc54249d3e1d93c9fce6fbad87da9cfd7f46ff3",
     "profiles/990080_hogwarts_legacy.json": "717610b3cdf8cca77c2555d8c6ec087ef694ba1eda9a8a08c3a15438051f9efc",
     "profiles/1091500_cyberpunk_2077.json": "42a448270d17b59f9a910903043ca93b212cdae9c75fbf3400c1ef4346590601",
     "profiles/1623730_palworld.json": "70c398e7106163a537ea6a9d695edd6d7cf38176ef6e4dc4951148d942e85b7d",
     "profiles/668580_atomic_heart.json": "06b41603134c4045a3eafce9f011facd4e871f46662d74bbe9235121f825aa1b",
-    "profiles/1110910_mortal_shell.json": "b9cd4eee13d42dc2043c166129cfe5355ded6855f61ff9e4e886744f933aa178",
+    "profiles/1110910_mortal_shell.json": "c8027d7cb90c314da9ddeefb8ccc94e8c2935d738c4e1e0541fd410ede3e59bc",
     "profiles/1245620_elden_ring.json": "43726a56aaa1ec5a166d1f6c17b0fe81090847c075603222ac066e0e47a1d6d0",
     "profiles/schema.json": "a6e1c619de549cb36e13e6bcddc796afc205e9fa66c08542d586dbb4f995bd8e",
-    "shaders/stereo_reprojection.hlsl": "fdc3dfe977b083206e2a9f08b2a0474fbb31db95913323c16527712759fda266",
+    "shaders/stereo_reprojection.hlsl": "a884bbd259f5c7909dfdba31f5fde0ed6e1411898b895f47a3181a89fb64397c",
     "shaders/tonemap.hlsl": "a886e9369ac38e15171a03f6d55681897a2c2580e573fd5fa7d5552344a1cd5f",
     "shaders/stereo_resolve.hlsl": "b9787aa73933055a08e6ed372c7a83c0626462bb4a0f0bba9c734309b53b9dcf",
     "shaders/stereo_warp.hlsl": "0575ea5d393ac74782409acba603a8c687f271489935622de0392daa072a6c74",

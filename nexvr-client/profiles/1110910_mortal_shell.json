@@ -12,8 +12,5 @@
   "srgbCorrection": false,
   "depthSubmission": false,
   "rawInputMode": true,
-  "autoInjectOnLaunch": true,
-  "contrast": 1.18,
-  "saturation": 1.12,
-  "brightness": 1.15
+  "autoInjectOnLaunch": true
 }
