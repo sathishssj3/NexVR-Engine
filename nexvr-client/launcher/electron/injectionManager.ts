@@ -15,6 +15,7 @@ import {
 } from './utils';
 import { detectAntiCheat } from './libraryManager';
 import { getLocalManifest, compareSemver } from './updateManager';
+import { sendDiscordTelemetry } from './telemetryManager';
 
 const execFileAsync = util.promisify(child_process.execFile);
 const isDev = !app.isPackaged;
@@ -23,6 +24,8 @@ export let cancelInjectionFlag = false;
 export let activeTargetExeName = '';
 export let activeTargetPid = 0;
 export let activeGameId = '';
+export let activeSessionStartTime = 0;
+export let activeSessionConfig: any = null;
 
 const injectRateLimits: Record<string, number[]> = {};
 let injectionInProgress = false;
@@ -189,6 +192,14 @@ ipcMain.handle('inject:cancel', async (event) => {
     await terminatePid(pid);
     setTimeout(() => void terminatePid(pid, true), 2000);
   }
+
+  sendDiscordTelemetry({
+    gameId: activeGameId || 'cancelled_session',
+    gameName: activeTargetExeName,
+    status: 'error',
+    message: 'User cancelled injection or session was terminated.',
+    logFilePath: currentSessionLogPath || latestSessionLogPath,
+  }).catch(() => {});
 });
 
 ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult> => {
@@ -525,6 +536,8 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
         } catch {}
       }
 
+      activeSessionConfig = activeConfig;
+
       if (Object.keys(activeConfig).length > 0) {
         try {
           fs.writeFileSync(rootConfigPath, JSON.stringify(activeConfig, null, 2), 'utf-8');
@@ -655,6 +668,14 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
 
     if (!targetPid) {
       stopActiveLogWatch();
+      sendDiscordTelemetry({
+        gameId: validId,
+        gameName: targetExeName || validId,
+        status: 'error',
+        message: 'Game executable not found or closed immediately before injection.',
+        config: activeSessionConfig,
+        logFilePath: currentSessionLogPath || latestSessionLogPath,
+      }).catch(() => {});
       return { success: false, message: 'Game executable not found or closed immediately' };
     }
 
@@ -748,8 +769,25 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
         },
         (error) => {
           if (error) {
+            sendDiscordTelemetry({
+              gameId: validId,
+              gameName: targetExeName || validId,
+              status: 'error',
+              message: `Injection CLI failed: ${error.message}`,
+              config: activeSessionConfig,
+              logFilePath: currentSessionLogPath || latestSessionLogPath,
+            }).catch(() => {});
             finish({ success: false, message: `CLI failed: ${error.message}` });
           } else {
+            activeSessionStartTime = Date.now();
+            sendDiscordTelemetry({
+              gameId: validId,
+              gameName: targetExeName,
+              status: 'started',
+              message: `NexVR Engine successfully injected into ${targetExeName} (PID ${targetPid}).`,
+              config: activeSessionConfig,
+              logFilePath: currentSessionLogPath || latestSessionLogPath,
+            }).catch(() => {});
             finish({ success: true, message: 'Deployed successfully', pid: targetPid });
           }
         }
@@ -757,6 +795,14 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     });
   } catch (error: any) {
     stopActiveLogWatch();
+    sendDiscordTelemetry({
+      gameId: activeGameId || 'error_session',
+      gameName: activeTargetExeName,
+      status: 'error',
+      message: `Exception during injection: ${error?.message || String(error)}`,
+      config: activeSessionConfig,
+      logFilePath: currentSessionLogPath || latestSessionLogPath,
+    }).catch(() => {});
     return { success: false, message: error?.message || String(error) };
   } finally {
     injectionInProgress = false;
@@ -784,10 +830,25 @@ ipcMain.handle('inject:monitor', async (event, pid: number) => {
     await new Promise(resolve => setTimeout(resolve, 2000));
   }
 
+  const durationSec = activeSessionStartTime > 0 ? Math.floor((Date.now() - activeSessionStartTime) / 1000) : 0;
+  const finishedGameId = activeGameId;
+  const finishedExeName = activeTargetExeName;
+  const logFileToSend = currentSessionLogPath || latestSessionLogPath;
+
   stopActiveLogWatch();
   activeTargetPid = 0;
   activeTargetExeName = '';
   activeGameId = '';
+  activeSessionStartTime = 0;
+
+  sendDiscordTelemetry({
+    gameId: finishedGameId || 'completed_session',
+    gameName: finishedExeName,
+    status: 'completed',
+    message: `Game session ended normally. Total playtime: ${durationSec}s.`,
+    durationSec,
+    logFilePath: logFileToSend,
+  }).catch(() => {});
 });
 
 // 1-Click "Disable VR / Play Flat" Uninstaller

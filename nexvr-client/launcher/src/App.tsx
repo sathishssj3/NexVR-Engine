@@ -46,6 +46,9 @@ declare global {
         offLine: () => void,
         export: (lines: unknown) => Promise<{ success: boolean, path: string }>
       },
+      telemetry: {
+        sendReport: (options?: { gameId?: string; userNote?: string }) => Promise<{ success: boolean; message?: string }>
+      },
       window: {
         minimize: () => void,
         maximize: () => void,

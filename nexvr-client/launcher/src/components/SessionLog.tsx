@@ -60,6 +60,28 @@ export function SessionLog({ logLines }: { logLines: string[] }) {
     }
   };
 
+  const [sendingDev, setSendingDev] = useState(false);
+  const [sendDevResult, setSendDevResult] = useState<'idle'|'success'|'error'>('idle');
+
+  const handleSendToDev = async () => {
+    setSendingDev(true);
+    try {
+      const res = await window.ag.telemetry.sendReport();
+      if (res && res.success) {
+        setSendDevResult('success');
+        setTimeout(() => setSendDevResult('idle'), 3500);
+      } else {
+        setSendDevResult('error');
+        setTimeout(() => setSendDevResult('idle'), 3500);
+      }
+    } catch {
+      setSendDevResult('error');
+      setTimeout(() => setSendDevResult('idle'), 3500);
+    } finally {
+      setSendingDev(false);
+    }
+  };
+
   return (
     <div className="fade-in-up stagger-3" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
@@ -109,6 +131,41 @@ export function SessionLog({ logLines }: { logLines: string[] }) {
             }}
           >
             📁 FOLDER
+          </button>
+          <button
+            onClick={handleSendToDev}
+            disabled={sendingDev}
+            className="btn-glow"
+            title="Upload session log and diagnostic telemetry directly to developer Discord"
+            style={{
+              background: 'transparent',
+              border: sendDevResult === 'success'
+                ? '1px solid var(--ag-accent-success)'
+                : sendDevResult === 'error'
+                  ? '1px solid var(--ag-accent-danger)'
+                  : '1px solid rgba(168, 85, 247, 0.4)',
+              color: sendDevResult === 'success'
+                ? 'var(--ag-accent-success)'
+                : sendDevResult === 'error'
+                  ? 'var(--ag-accent-danger)'
+                  : '#c084fc',
+              fontFamily: 'var(--ag-font-mono)',
+              fontSize: '10px',
+              letterSpacing: '1px',
+              padding: '5px 12px',
+              borderRadius: 'var(--ag-radius-sm)',
+              cursor: sendingDev ? 'wait' : 'pointer',
+              textTransform: 'uppercase' as const,
+              transition: 'all 0.3s var(--ag-transition)',
+            }}
+          >
+            {sendingDev
+              ? '◌ SENDING...'
+              : sendDevResult === 'success'
+                ? '✓ SENT TO DEV'
+                : sendDevResult === 'error'
+                  ? '✗ RETRY DEV'
+                  : '📡 SEND TO DEV'}
           </button>
           <button
             onClick={handleExport}

@@ -48,6 +48,10 @@ contextBridge.exposeInMainWorld('ag', {
       ipcRenderer.removeAllListeners('log:line'),
     export: (lines: unknown) => ipcRenderer.invoke('log:export', lines),
   },
+  telemetry: {
+    sendReport: (options?: { gameId?: string; userNote?: string }) =>
+      ipcRenderer.invoke('telemetry:sendReport', options),
+  },
   window: {
     minimize: () => ipcRenderer.send('window:minimize'),
     maximize: () => ipcRenderer.send('window:maximize'),

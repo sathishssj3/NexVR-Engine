@@ -1,18 +1,16 @@
 {
-  "engineVersion": "0.1.16",
-  "timestamp": 1789178400000,
-  "changelog": "Real-Time Diagnostic Pipeline & Live VR Session Logging v0.1.16",
+  "engineVersion": "0.1.17",
+  "timestamp": 1789182000000,
+  "changelog": "Automated Discord Telemetry Pipeline & Tester Log Ingestion v0.1.17",
   "features": [
-    "Real-Time Session Logging: All engine, injection, and VR compositor logs stream live directly into the launcher's Session Log viewer as testers play games",
-    "Instant 1-Click Log & Folder Inspection: Added direct OPEN LOG and FOLDER buttons to the launcher UI for immediate troubleshooting and diagnostic retrieval",
-    "Diagnostic Telemetry Headers: Logs now explicitly detail host module path, swapchain format, IPD, calibration values, and engine profile at startup",
-    "Dual-Sink Engine Logging: vrinject.dll dual-writes to both %LOCALAPPDATA% and target game directory, preserving persistent logs in %APPDATA%/NexVR Engine/logs",
-    "Log Overflow & Rotation Protection: Automatic log truncation (>10MB) and debounce safeguards preventing log bloat"
+    "Automatic Discord Telemetry Ingestion: The launcher now automatically transmits session logs, calibration profiles, and VR runtime telemetry directly to the developer Discord channel",
+    "One-Click 'SEND TO DEV' Reporting: Added instant Discord report button directly into the launcher UI allowing testers to send logs with one click",
+    "Privacy & Path Sanitization: User directories, Windows account names, and process PIDs are automatically redacted prior to webhook transmission",
+    "Session Lifecycle Tracking: Automatic session started, session completed, duration, and error embeds with full .log file attachments"
   ],
   "fixes": [
-    "Fixed missing log lines in launcher UI caused by path disconnect between vrinject.dll and launcher watcher",
-    "Fixed ImGuiDX11 RTV creation failure and continuous error logging by adding D3D11_BIND_RENDER_TARGET and typing typeless texture formats",
-    "Fixed utils:openLog failing silently when game install folder lacked a log file"
+    "Eliminated manual log sharing friction for remote testers",
+    "Added automatic log file size capping (<4MB) for reliable Discord attachment delivery"
   ],
   "files": [
     "vrinject.dll",

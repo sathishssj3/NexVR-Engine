@@ -5,7 +5,8 @@ import * as child_process from 'child_process';
 import * as util from 'util';
 import { VRStatus } from '../src/types';
 import { assertTrustedIpcSender, gamePathsMap, safeGamePath, validateGameId } from './utils';
-import { activeGameId, currentSessionLogPath, latestSessionLogPath, getLogsDir } from './injectionManager';
+import { activeGameId, activeTargetExeName, currentSessionLogPath, latestSessionLogPath, getLogsDir } from './injectionManager';
+import { sendDiscordTelemetry } from './telemetryManager';
 
 const execFileAsync = util.promisify(child_process.execFile);
 
@@ -218,3 +219,18 @@ ipcMain.handle('utils:openLogFolder', async (event) => {
   await shell.openPath(logsDir);
   return true;
 });
+
+ipcMain.handle('telemetry:sendReport', async (event, options?: { gameId?: string; userNote?: string }) => {
+  assertTrustedIpcSender(event);
+  const targetId = options?.gameId || activeGameId || 'manual_session';
+  const logPath = currentSessionLogPath || latestSessionLogPath || path.join(getLogsDir(), 'latest_session.log');
+
+  return await sendDiscordTelemetry({
+    gameId: targetId,
+    gameName: activeTargetExeName || targetId,
+    status: 'manual_report',
+    message: options?.userNote ? `Tester note: ${options.userNote}` : 'Tester manually submitted diagnostic report from NexVR Launcher.',
+    logFilePath: fs.existsSync(logPath) ? logPath : undefined,
+  });
+});
+
