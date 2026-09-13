@@ -101,10 +101,13 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     matrixPrecision: 'Float32',
     motionAimSensitivity: 1.0,
     useRecommendedResolution: true,
-    srgbCorrection: true,
+    srgbCorrection: false,
     depthSubmission: false,
     rawInputMode: true,
     autoInjectOnLaunch: true,
+    contrast: 1.18,
+    saturation: 1.12,
+    brightness: 1.15,
   },
   // Palworld
   '1623730': {
@@ -194,11 +197,15 @@ ipcMain.handle('config:read', async (event, id: string): Promise<VRConfig> => {
     const installPath = gamePathsMap[validId];
     const registeredExe = gameExeMap[validId];
     let matchedProfile = activeProfiles[validId];
-    if (!matchedProfile && validId.startsWith('custom_')) {
+    if (!matchedProfile) {
       const exeName = registeredExe ? path.basename(registeredExe, '.exe').toLowerCase() : '';
       const dirName = installPath ? path.basename(installPath).toLowerCase() : '';
       if (exeName.includes('sekiro') || dirName.includes('sekiro')) {
         matchedProfile = activeProfiles['814380'];
+      } else if (exeName.includes('dungeonhaven') || dirName.includes('mortalshell') || exeName.includes('mortalshell')) {
+        matchedProfile = activeProfiles['1110910'];
+      } else if (exeName.includes('hogwarts') || dirName.includes('hogwarts') || exeName.includes('phoenix')) {
+        matchedProfile = activeProfiles['990080'];
       } else {
         for (const [pId, pCfg] of Object.entries(activeProfiles)) {
           if (exeName && (pId.includes(exeName) || (pCfg as any).name?.toLowerCase().includes(exeName))) {

@@ -124,6 +124,10 @@ bool ConfigManager::Load(const std::string& moduleDir, const std::string& explic
             defaultContrast = 1.20f;
             defaultSaturation = 1.15f;
             defaultBrightness = 1.14f;
+        } else if (gameId == "1110910" || hostExeLower.find("dungeonhaven") != std::string::npos || hostExeLower.find("mortalshell") != std::string::npos) {
+            defaultContrast = 1.18f;
+            defaultSaturation = 1.12f;
+            defaultBrightness = 1.15f;
         }
 
         m_config.contrast = std::clamp(j.value("contrast", defaultContrast), 0.5f, 2.0f);

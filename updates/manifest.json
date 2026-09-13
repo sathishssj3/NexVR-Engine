@@ -1,16 +1,16 @@
 {
-  "engineVersion": "0.1.17",
-  "timestamp": 1789182000000,
-  "changelog": "Automated Discord Telemetry Pipeline & Tester Log Ingestion v0.1.17",
+  "engineVersion": "0.1.18",
+  "timestamp": 1789185600000,
+  "changelog": "Mortal Shell UE4 Zero-Config VR Calibration & Epic Scan v0.1.18",
   "features": [
-    "Automatic Discord Telemetry Ingestion: The launcher now automatically transmits session logs, calibration profiles, and VR runtime telemetry directly to the developer Discord channel",
-    "One-Click 'SEND TO DEV' Reporting: Added instant Discord report button directly into the launcher UI allowing testers to send logs with one click",
-    "Privacy & Path Sanitization: User directories, Windows account names, and process PIDs are automatically redacted prior to webhook transmission",
-    "Session Lifecycle Tracking: Automatic session started, session completed, duration, and error embeds with full .log file attachments"
+    "Mortal Shell Zero-Config Profile: Curated Unreal Engine 4 DX11 profile with calibrated contrast (1.18), saturation (1.12), and brightness (1.15) for rich visual clarity matching desktop lighting",
+    "Epic Games Directory Fallback Auto-Discovery: Common Epic Games install directories are now scanned automatically so Mortal Shell appears immediately in the library without manual registration",
+    "Multi-Directory VR Injection Synchronization: Injection assets and configuration are cleanly mirrored into game binary subdirectories (Dungeonhaven/Binaries/Win64)",
+    "Discord Telemetry Ingestion: Live session logs and crash telemetry stream directly to developer Discord webhook"
   ],
   "fixes": [
-    "Eliminated manual log sharing friction for remote testers",
-    "Added automatic log file size capping (<4MB) for reliable Discord attachment delivery"
+    "Corrected dark/dim headset image in Unreal Engine 4 titles by tuning perceptual grading parameters",
+    "Expanded custom and manifest-less game executable matching to seamlessly map curated profiles"
   ],
   "files": [
     "vrinject.dll",

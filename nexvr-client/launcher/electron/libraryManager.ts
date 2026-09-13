@@ -538,6 +538,76 @@ ipcMain.handle('library:scan', async (event): Promise<{ active: GameEntry[], wai
       }
     } catch (e) {}
 
+    // Epic Games Directory Fallback Scan (for games installed without active manifest items)
+    try {
+      const commonEpicDirs = [
+        'C:\\Program Files\\Epic Games',
+        'C:\\Program Files (x86)\\Epic Games',
+      ];
+      for (const epicRoot of commonEpicDirs) {
+        if (!fs.existsSync(epicRoot)) continue;
+        const subDirs = fs.readdirSync(epicRoot, { withFileTypes: true });
+        for (const sub of subDirs) {
+          if (!sub.isDirectory()) continue;
+          if (sub.name.startsWith('UE_') || isIgnoredSoftware(sub.name)) continue;
+          const gamePath = path.join(epicRoot, sub.name);
+          const primaryExe = findPrimaryExecutable(gamePath);
+          if (!primaryExe || !fs.existsSync(primaryExe)) continue;
+
+          const gameId = `epic_dir_${sub.name.toLowerCase().replace(/[^a-z0-9_]/g, '')}`;
+          if (seenIds.has(gameId) || ignoredIds.includes(gameId)) continue;
+
+          const ac = detectAntiCheat(gamePath);
+          let api = detectAPI(gamePath);
+          if (api === 'Unknown') {
+            const detected = inspectExeAPI(primaryExe);
+            api = detected !== 'Unknown' ? detected : 'DX11';
+          }
+
+          let displayName = sub.name;
+          if (sub.name.toLowerCase() === 'mortalshell') displayName = 'Mortal Shell';
+
+          let hasInjector = fs.existsSync(path.join(gamePath, 'vrinject.dll')) ||
+                            fs.existsSync(path.join(path.dirname(primaryExe), 'vrinject.dll'));
+
+          let iconBase64: string | undefined = scanLauncherGameArt('epic', gameId, displayName);
+          if (!iconBase64) {
+            try {
+              const icon = await app.getFileIcon(primaryExe, { size: 'large' });
+              iconBase64 = icon.toDataURL();
+            } catch {}
+          }
+
+          const isMortalShell = sub.name.toLowerCase().includes('mortalshell') || primaryExe.toLowerCase().includes('dungeonhaven');
+          const compatStatus = isMortalShell ? 'verified' : (compatList[gameId] || defaultCompatList[gameId] || 'unknown');
+
+          seenIds.add(gameId);
+          gameExeMap[gameId] = primaryExe;
+          gamePathsMap[gameId] = gamePath;
+
+          const entry: GameEntry = {
+            id: gameId,
+            name: displayName,
+            installPath: gamePath,
+            executablePath: primaryExe,
+            sizeGB: 0,
+            api,
+            compat: compatStatus as any,
+            hasInjector,
+            hasAntiCheat: ac.hasAntiCheat,
+            antiCheatName: ac.antiCheatName,
+            iconBase64,
+          };
+
+          if (hiddenIds.includes(gameId)) {
+            waitingGames.push(entry);
+          } else {
+            games.push(entry);
+          }
+        }
+      }
+    } catch (e) {}
+
     // Custom Games Scan
     try {
       const customGamesFile = path.join(app.getPath('userData'), 'custom_games.json');
@@ -559,6 +629,10 @@ ipcMain.handle('library:scan', async (event): Promise<{ active: GameEntry[], wai
             }
             if (cg.name.toLowerCase().includes('penguinhotel') && cg.installPath.toUpperCase().includes('MECCHA CHAMELEON')) {
               cg.name = 'MECCHA CHAMELEON';
+            }
+            if (cg.name.toLowerCase().includes('mortalshell') || cg.installPath.toLowerCase().includes('mortalshell') || (cg.executablePath && cg.executablePath.toLowerCase().includes('dungeonhaven'))) {
+              cg.name = 'Mortal Shell';
+              cg.compat = 'verified';
             }
             const launcherArt = scanLauncherGameArt('epic', cg.id, cg.name) || scanLauncherGameArt('steam', cg.id, cg.name);
             if (launcherArt) {

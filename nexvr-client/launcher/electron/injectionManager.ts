@@ -394,7 +394,7 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
         : (fs.existsSync(hotfixShaders) && fs.readdirSync(hotfixShaders).length > 0 ? hotfixShaders : shadersSource);
 
       const targetDirs = new Set<string>([targetExeDir, installPath]);
-      for (const sub of ['Phoenix/Binaries/Win64', 'Chameleon/Binaries/Win64', 'Binaries/Win64']) {
+      for (const sub of ['Phoenix/Binaries/Win64', 'Chameleon/Binaries/Win64', 'Dungeonhaven/Binaries/Win64', 'Binaries/Win64']) {
         const subDir = path.join(installPath, sub);
         if (fs.existsSync(subDir)) targetDirs.add(subDir);
       }
@@ -460,9 +460,11 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
             for (const f of fs.readdirSync(pDir)) {
               const lowerF = f.toLowerCase();
               let isMatch = f.startsWith(`${validId}_`) || f === `${validId}.json`;
-              if (!isMatch && validId.startsWith('custom_')) {
+              if (!isMatch) {
                 if (exeBase && (lowerF.includes(exeBase) || lowerF === `${exeBase}.json`)) isMatch = true;
                 if (lowerF.includes('sekiro') && (exeBase.includes('sekiro') || validId.includes('sekiro') || installPath.toLowerCase().includes('sekiro'))) isMatch = true;
+                if (lowerF.includes('mortal_shell') && (exeBase.includes('dungeonhaven') || exeBase.includes('mortalshell') || validId.includes('mortalshell') || installPath.toLowerCase().includes('mortalshell'))) isMatch = true;
+                if (lowerF.includes('hogwarts') && (exeBase.includes('hogwarts') || exeBase.includes('phoenix') || validId.includes('hogwarts') || installPath.toLowerCase().includes('hogwarts'))) isMatch = true;
               }
               if (isMatch) {
                 const parsed = JSON.parse(fs.readFileSync(path.join(pDir, f), 'utf-8'));
@@ -490,6 +492,28 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
           depthSubmission: false,
           rawInputMode: true,
           autoInjectOnLaunch: true,
+        };
+      }
+
+      // Hardened fallback for Mortal Shell if profile was not matched from disk
+      if (Object.keys(baseProfile).length === 0 && (exeBase.includes('dungeonhaven') || exeBase.includes('mortalshell') || validId.includes('mortalshell') || validId.includes('1110910') || installPath.toLowerCase().includes('mortalshell'))) {
+        baseProfile = {
+          id: '1110910',
+          name: 'Mortal Shell',
+          engine: 'UnrealEngine4',
+          api: 'DX11',
+          reverseZ: true,
+          rowMajorMatrices: true,
+          matrixPrecision: 'Float32',
+          motionAimSensitivity: 1.0,
+          useRecommendedResolution: true,
+          srgbCorrection: false,
+          depthSubmission: false,
+          rawInputMode: true,
+          autoInjectOnLaunch: true,
+          contrast: 1.18,
+          saturation: 1.12,
+          brightness: 1.15,
         };
       }
 
