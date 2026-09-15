@@ -26,6 +26,9 @@ export interface UpdateStatus {
 }
 
 const MANIFEST_URLS = [
+  'https://cdn.jsdelivr.net/gh/sathishssj3/NexVR-Engine@main/updates/manifest.json',
+  'https://fastly.jsdelivr.net/gh/sathishssj3/NexVR-Engine@main/updates/manifest.json',
+  'https://gcore.jsdelivr.net/gh/sathishssj3/NexVR-Engine@main/updates/manifest.json',
   'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine/main/updates/manifest.json',
   'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine-Releases/main/updates/manifest.json',
 ];
@@ -97,12 +100,19 @@ export function purgeStaleOtaCacheIfAppNewer(): void {
 // Purge obsolete OTA cache on module startup
 purgeStaleOtaCacheIfAppNewer();
 
-async function fetchWithTimeout(url: string, timeoutMs = 15000): Promise<Response> {
+async function fetchWithTimeout(url: string, timeoutMs = 8000): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'NexVR-Launcher' },
+    const separator = url.includes('?') ? '&' : '?';
+    const cacheBustedUrl = `${url}${separator}_t=${Date.now()}`;
+    const res = await fetch(cacheBustedUrl, {
+      cache: 'no-store',
+      headers: {
+        'User-Agent': 'NexVR-Launcher',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+      },
       signal: controller.signal,
     });
     return res;
@@ -175,16 +185,17 @@ export async function checkForEngineHotfix(): Promise<UpdateStatus> {
   try {
     const remoteData = await fetchRemoteManifest();
     if (!remoteData) {
-      console.info('[UpdateManager] Unable to reach update servers, keeping active local build.');
+      console.warn('[UpdateManager] Unable to reach update servers, keeping active local build.');
       const local = getLocalManifest();
       return {
         checking: false,
         hasUpdate: false,
-        updated: !!local,
+        updated: false,
         version: local?.engineVersion || '0.1.0',
         changelog: local?.changelog,
         features: local?.features,
         fixes: local?.fixes,
+        error: 'Unable to connect to update servers. Please check your network connection.',
       };
     }
 
@@ -210,6 +221,9 @@ export async function checkForEngineHotfix(): Promise<UpdateStatus> {
 
       const candidateBases = [
         baseUrl,
+        'https://cdn.jsdelivr.net/gh/sathishssj3/NexVR-Engine@main/updates/',
+        'https://fastly.jsdelivr.net/gh/sathishssj3/NexVR-Engine@main/updates/',
+        'https://gcore.jsdelivr.net/gh/sathishssj3/NexVR-Engine@main/updates/',
         'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine/main/updates/',
         'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine-Releases/main/updates/',
       ];
