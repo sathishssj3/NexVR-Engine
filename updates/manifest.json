@@ -1,16 +1,16 @@
 {
-  "engineVersion": "0.1.22",
-  "timestamp": 1789312800000,
-  "changelog": "Cloud Diagnostic Telemetry & Instant Log Pulling v0.1.22",
+  "engineVersion": "0.1.23",
+  "timestamp": 1789454348101,
+  "changelog": "Cryptographic SHA-256 Integrity Verification & Path Traversal Hardening v0.1.23",
   "features": [
-    "One-Click Cloud Log Reporting: Added direct Send Logs to Cloud button with sanitized upload directly to developer Discord pipeline",
-    "Full Headset FOV & Unbounded 6DOF: Complete edge-to-edge native FOV across all headsets with zero letterboxing or black bars",
-    "Exact Display Gamma 2.2 Color Conversion: Compensated OpenXR compositor curve for deep authentic blacks and desktop monitor parity"
+    "Strict Cryptographic SHA-256 Verification: updateManager automatically validates hashes of all downloaded binaries before execution",
+    "Path Traversal Prevention: Strict root jail prevents any arbitrary path writes during OTA updates",
+    "Rate-Limited Telemetry & Endpoint Proxy: Sliding window rate limiting and custom proxy endpoint support to prevent abuse"
   ],
   "fixes": [
-    "Added one-click cloud diagnostic log upload to About panel and session manager",
-    "Eliminated letterboxing and black bars in VR viewports, restoring full native headset FOV",
-    "Fixed washed-out milky grey haze by matching exact display gamma 2.2"
+    "Fixed unverified OTA downloads by enforcing SHA-256 digest matching",
+    "Protected update filesystem destination using resolveWithinRoot",
+    "Prevented Discord webhook flooding with 5s cooldown limiter"
   ],
   "files": [
     "vrinject.dll",

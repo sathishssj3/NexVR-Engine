@@ -1,7 +1,8 @@
 import { app, ipcMain, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { assertTrustedIpcSender } from './utils';
+import * as crypto from 'crypto';
+import { assertTrustedIpcSender, resolveWithinRoot } from './utils';
 
 export interface UpdateManifest {
   engineVersion: string;
@@ -10,6 +11,7 @@ export interface UpdateManifest {
   features?: string[];
   fixes?: string[];
   files: string[];
+  hashes?: Record<string, string>;
 }
 
 export interface UpdateStatus {
@@ -130,7 +132,12 @@ async function fetchRemoteManifest(): Promise<{ manifest: UpdateManifest; baseUr
   return null;
 }
 
-async function downloadFileWithFallback(fileName: string, baseUrls: string[], destPath: string): Promise<void> {
+async function downloadFileWithFallback(
+  fileName: string,
+  baseUrls: string[],
+  destPath: string,
+  expectedHash?: string
+): Promise<void> {
   let lastErr: Error | null = null;
   const normalizedFile = fileName.replace(/\\/g, '/');
   for (const base of baseUrls) {
@@ -141,6 +148,17 @@ async function downloadFileWithFallback(fileName: string, baseUrls: string[], de
         throw new Error(`HTTP ${res.status} from ${fileUrl}`);
       }
       const buffer = Buffer.from(await res.arrayBuffer());
+
+      // Cryptographic integrity verification against SHA-256 manifest hash
+      if (expectedHash) {
+        const actualHash = crypto.createHash('sha256').update(buffer).digest('hex');
+        if (actualHash.toLowerCase() !== expectedHash.toLowerCase()) {
+          throw new Error(
+            `Integrity check failed for ${fileName}: expected SHA-256 ${expectedHash}, got ${actualHash}`
+          );
+        }
+      }
+
       const tempPath = `${destPath}.tmp`;
       fs.writeFileSync(tempPath, buffer);
       fs.renameSync(tempPath, destPath);
@@ -196,15 +214,16 @@ export async function checkForEngineHotfix(): Promise<UpdateStatus> {
         'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine-Releases/main/updates/',
       ];
 
-      // Download all files in manifest (e.g. vrinject.dll, vr-inject-cli.exe)
+      // Download all files in manifest with path traversal protection and integrity verification
       for (const file of remote.files) {
-        const dest = path.join(updatesDir, file);
+        const dest = resolveWithinRoot(updatesDir, file);
         const parentDir = path.dirname(dest);
         if (!fs.existsSync(parentDir)) {
           fs.mkdirSync(parentDir, { recursive: true });
         }
-        await downloadFileWithFallback(file, candidateBases, dest);
-        console.info(`[UpdateManager] Downloaded hotfix file: ${file}`);
+        const expectedHash = remote.hashes?.[file];
+        await downloadFileWithFallback(file, candidateBases, dest, expectedHash);
+        console.info(`[UpdateManager] Downloaded & verified hotfix file: ${file}`);
       }
 
       // Save installed manifest

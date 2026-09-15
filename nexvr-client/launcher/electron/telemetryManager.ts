@@ -2,8 +2,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 export const DEFAULT_DISCORD_WEBHOOK_URL =
+  process.env.NEXVR_TELEMETRY_ENDPOINT ||
   process.env.NEXVR_DISCORD_WEBHOOK ||
   'https://discord.com/api/webhooks/1548659339953176636/mQ43f5Q0-RklKr1-P1edOLw7WptaVw1g2sZpg_bWuVawQVPVcNUj5zYC3KLiDuZgFRGB';
+
+let lastManualReportTimestamp = 0;
+const MANUAL_REPORT_COOLDOWN_MS = 5000;
 
 export interface TelemetryPayload {
   gameId: string;
@@ -41,8 +45,17 @@ export async function sendDiscordTelemetry(
   payload: TelemetryPayload
 ): Promise<{ success: boolean; message?: string }> {
   const webhookUrl = DEFAULT_DISCORD_WEBHOOK_URL;
-  if (!webhookUrl || !webhookUrl.startsWith('https://discord.com/api/webhooks/')) {
-    return { success: false, message: 'Invalid or missing Discord Webhook URL' };
+  if (!webhookUrl || (!webhookUrl.startsWith('https://discord.com/api/webhooks/') && !webhookUrl.startsWith('https://'))) {
+    return { success: false, message: 'Invalid or missing Telemetry Endpoint URL' };
+  }
+
+  // Rate-limiting check on user-triggered manual reports
+  if (payload.status === 'manual_report') {
+    const now = Date.now();
+    if (now - lastManualReportTimestamp < MANUAL_REPORT_COOLDOWN_MS) {
+      return { success: false, message: 'Rate limited: please wait a few seconds before submitting another report.' };
+    }
+    lastManualReportTimestamp = now;
   }
 
   try {
@@ -73,7 +86,7 @@ export async function sendDiscordTelemetry(
       embedColor = 0xa855f7; // Purple
     }
 
-    const title = `${statusEmoji} NexVR Engine [v0.1.17] — ${payload.gameName || payload.gameId}`;
+    const title = `${statusEmoji} NexVR Engine [v0.1.23] — ${payload.gameName || payload.gameId}`;
 
     const fields: Array<{ name: string; value: string; inline?: boolean }> = [
       { name: 'Game ID', value: `\`${payload.gameId}\``, inline: true },
