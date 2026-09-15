@@ -1,9 +1,33 @@
+import { useState } from 'react';
 import mainLogo from '../assets/logo.png';
 
 export function AboutPanel({ version }: { version?: string }) {
+  const [sendingLogs, setSendingLogs] = useState(false);
+  const [sendResult, setSendResult] = useState<'idle' | 'success' | 'error'>('idle');
+
   const handleLink = (url: string) => {
     if (window.ag && window.ag.shell) {
       window.ag.shell.openExternal(url);
+    }
+  };
+
+  const handleUploadLogs = async () => {
+    if (sendingLogs) return;
+    setSendingLogs(true);
+    try {
+      const res = await window.ag?.telemetry?.sendReport({ userNote: 'Manual report from About Panel' });
+      if (res?.success) {
+        setSendResult('success');
+        setTimeout(() => setSendResult('idle'), 4000);
+      } else {
+        setSendResult('error');
+        setTimeout(() => setSendResult('idle'), 4000);
+      }
+    } catch {
+      setSendResult('error');
+      setTimeout(() => setSendResult('idle'), 4000);
+    } finally {
+      setSendingLogs(false);
     }
   };
 
@@ -101,6 +125,43 @@ export function AboutPanel({ version }: { version?: string }) {
             cursor: 'pointer', fontFamily: 'var(--ag-font-mono)', fontSize: 11, letterSpacing: '1px' 
           }}>
             ⚑ REPORT BUG
+          </button>
+          <button 
+            onClick={handleUploadLogs}
+            disabled={sendingLogs}
+            className="btn-glow" 
+            title="Upload diagnostic session logs directly to developer Discord"
+            style={{ 
+              background: sendResult === 'success' 
+                ? 'rgba(16, 185, 129, 0.15)' 
+                : sendResult === 'error' 
+                  ? 'rgba(239, 68, 68, 0.15)' 
+                  : 'rgba(168, 85, 247, 0.12)', 
+              border: sendResult === 'success' 
+                ? '1px solid var(--ag-accent-success)' 
+                : sendResult === 'error' 
+                  ? '1px solid var(--ag-accent-danger)' 
+                  : '1px solid rgba(168, 85, 247, 0.4)', 
+              padding: '10px 20px', 
+              borderRadius: 'var(--ag-radius-sm)', 
+              color: sendResult === 'success' 
+                ? 'var(--ag-accent-success)' 
+                : sendResult === 'error' 
+                  ? 'var(--ag-accent-danger)' 
+                  : '#c084fc', 
+              cursor: sendingLogs ? 'wait' : 'pointer', 
+              fontFamily: 'var(--ag-font-mono)', 
+              fontSize: 11, 
+              letterSpacing: '1px' 
+            }}
+          >
+            {sendingLogs 
+              ? '◌ UPLOADING...' 
+              : sendResult === 'success' 
+                ? '✓ LOGS SENT TO CLOUD' 
+                : sendResult === 'error' 
+                  ? '✗ RETRY UPLOAD' 
+                  : '📡 SEND LOGS TO CLOUD'}
           </button>
           <button onClick={() => handleLink('https://github.com/sathishssj3/NexVR-Engine/wiki')} className="btn-glow" style={{ 
             background: 'rgba(255,255,255,0.03)', border: '1px solid var(--ag-border)', 

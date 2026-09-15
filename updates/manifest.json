@@ -1,13 +1,14 @@
 {
-  "engineVersion": "0.1.21",
-  "timestamp": 1789310853575,
-  "changelog": "Full Headset FOV & Native Display Gamma 2.2 Color Parity v0.1.21",
+  "engineVersion": "0.1.22",
+  "timestamp": 1789312800000,
+  "changelog": "Cloud Diagnostic Telemetry & Instant Log Pulling v0.1.22",
   "features": [
-    "Full Headset FOV & Unbounded 6DOF: Restored complete edge-to-edge native FOV across all headsets with zero letterboxing or black bars, delivering 100% full immersion",
-    "Exact Display Gamma 2.2 Color Conversion: Calibrated to compensate for OpenXR compositor presentation curve to eliminate milky grey fog and restore deep authentic blacks, high contrast, and rich moody atmosphere identical to desktop monitors",
-    "Universal Cross-Game Engine Parity: Applies seamlessly across all titles (DX11, DX12, Vulkan) without artificial per-game slider boosts"
+    "One-Click Cloud Log Reporting: Added direct Send Logs to Cloud button with sanitized upload directly to developer Discord pipeline",
+    "Full Headset FOV & Unbounded 6DOF: Complete edge-to-edge native FOV across all headsets with zero letterboxing or black bars",
+    "Exact Display Gamma 2.2 Color Conversion: Compensated OpenXR compositor curve for deep authentic blacks and desktop monitor parity"
   ],
   "fixes": [
+    "Added one-click cloud diagnostic log upload to About panel and session manager",
     "Eliminated letterboxing and black bars in VR viewports, restoring full native headset FOV",
     "Fixed washed-out milky grey haze by matching exact display gamma 2.2"
   ],
