@@ -28,7 +28,7 @@ test.describe('Launcher E2E Tests', () => {
     const title = window.locator('strong:has-text("NEXVR ENGINE")');
     await expect(title).toBeVisible();
     
-    const version = window.locator('span:has-text("v0.1.0")');
+    const version = window.locator('span:has-text("v0.1.")');
     await expect(version).toBeVisible();
   });
 

@@ -202,6 +202,10 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     expect(updateMgr).toContain('purgeStaleOtaCacheIfAppNewer');
     expect(updateMgr).toContain('compareSemver');
 
+    // updateManager must NEVER contain hardcoded legacy 0.1.0 fallbacks
+    expect(updateMgr).not.toContain("'0.1.0'");
+    expect(updateMgr).not.toContain('"0.1.0"');
+
     // injectionManager must enforce srgbCorrection and depthSubmission invariants
     expect(injectionMgr).toContain('baseProfile.srgbCorrection !== undefined');
     expect(injectionMgr).toContain('baseProfile.depthSubmission !== undefined');
@@ -212,5 +216,26 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     // package-setup.yml must dynamically determine release tag
     expect(workflow).toContain('Determine Release Tag');
     expect(workflow).toContain('RELEASE_TAG');
+  });
+
+  test('library scanner strictly filters non-game launcher utilities and validates authentic game installs', () => {
+    const utilsTs = readRepoFile('launcher', 'electron', 'utils.ts');
+    const libraryManagerTs = readRepoFile('launcher', 'electron', 'libraryManager.ts');
+
+    // isIgnoredSoftware must filter out launcher utilities and services
+    expect(utilsTs).toContain("'launcher'");
+    expect(utilsTs).toContain("'epic games launcher'");
+    expect(utilsTs).toContain("'epic online services'");
+    expect(utilsTs).toContain("'directxredist'");
+    expect(utilsTs).toContain("'crashreportclient'");
+
+    // libraryManager must not scan Program Files (x86)\Epic Games
+    expect(libraryManagerTs).not.toContain("'C:\\\\Program Files (x86)\\\\Epic Games'");
+
+    // libraryManager must enforce .egstore check to confirm authentic Epic game install
+    expect(libraryManagerTs).toContain("fs.existsSync(path.join(gamePath, '.egstore'))");
+
+    // libraryManager must not contain brittle hardcoded Mortal Shell overrides (QUAL-04)
+    expect(libraryManagerTs).not.toContain("if (sub.name.toLowerCase() === 'mortalshell') displayName = 'Mortal Shell'");
   });
 });

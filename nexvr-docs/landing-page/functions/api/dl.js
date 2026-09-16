@@ -18,7 +18,8 @@ import { record } from '../_lib/analytics.js';
 const REPO = 'https://github.com/sathishssj3/NexVR-Engine-Releases';
 
 const TARGETS = {
-  installer: `${REPO}/releases/latest/download/NexVR-Engine-Setup.exe`,
+  installer: `${REPO}/releases/latest`,
+  portable: `${REPO}/releases/latest`,
   releases: `${REPO}/releases`,
   repo: REPO,
 };

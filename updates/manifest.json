@@ -1,16 +1,14 @@
 {
-  "engineVersion": "0.1.23",
-  "timestamp": 1789454348101,
-  "changelog": "Cryptographic SHA-256 Integrity Verification & Path Traversal Hardening v0.1.23",
+  "engineVersion": "0.1.25",
+  "timestamp": 1789537600000,
+  "changelog": "Streamlined Release Packaging & Distribution v0.1.25",
   "features": [
-    "Strict Cryptographic SHA-256 Verification: updateManager automatically validates hashes of all downloaded binaries before execution",
-    "Path Traversal Prevention: Strict root jail prevents any arbitrary path writes during OTA updates",
-    "Rate-Limited Telemetry & Endpoint Proxy: Sliding window rate limiting and custom proxy endpoint support to prevent abuse"
+    "Clean Release Distribution: Streamlined builds to two essential binaries: Setup Installer and Portable Executable",
+    "Unified Artifact Naming: Standardized hyphenated naming scheme across all CI/CD workflows and packaging scripts"
   ],
   "fixes": [
-    "Fixed unverified OTA downloads by enforcing SHA-256 digest matching",
-    "Protected update filesystem destination using resolveWithinRoot",
-    "Prevented Discord webhook flooding with 5s cooldown limiter"
+    "Eliminated 10 redundant and duplicate release assets (phantom 0.1.0 builds, duplicate unversioned exes, zip archives, and metadata blockmaps)",
+    "Synchronized release.yml and package-setup.yml to prevent duplicate release uploads"
   ],
   "files": [
     "vrinject.dll",
@@ -46,8 +44,8 @@
     "profiles/1110910_mortal_shell.json": "c8027d7cb90c314da9ddeefb8ccc94e8c2935d738c4e1e0541fd410ede3e59bc",
     "profiles/1245620_elden_ring.json": "43726a56aaa1ec5a166d1f6c17b0fe81090847c075603222ac066e0e47a1d6d0",
     "profiles/schema.json": "a6e1c619de549cb36e13e6bcddc796afc205e9fa66c08542d586dbb4f995bd8e",
-    "shaders/stereo_reprojection.hlsl": "049b6e0fb456fec4ed2e73f387545022c32aa82344d0c6c0be63493b1cd15b3d",
-    "shaders/tonemap.hlsl": "a886e9369ac38e15171a03f6d55681897a2c2580e573fd5fa7d5552344a1cd5f",
+    "shaders/stereo_reprojection.hlsl": "9b71306186fd8bfaecaa07e39b680bd1e3b552f28d6c913359efe862e3c025ac",
+    "shaders/tonemap.hlsl": "bedbdefe535c5c26106c5e00d1b6d8e59944bad47ab879b89e6862a6c560c54f",
     "shaders/stereo_resolve.hlsl": "b9787aa73933055a08e6ed372c7a83c0626462bb4a0f0bba9c734309b53b9dcf",
     "shaders/stereo_warp.hlsl": "0575ea5d393ac74782409acba603a8c687f271489935622de0392daa072a6c74",
     "shaders/disocclusion_fill.hlsl": "1cd2773b70c459031103811f3736080ee1eb52848bf779744f52611c7287519e",

@@ -107,7 +107,7 @@ export default function App() {
             checking: false,
             hasUpdate: false,
             updated: st.timestamp > 0,
-            version: st.version || '0.1.0',
+            version: st.version || '0.1.25',
             changelog: st.changelog,
             features: st.features,
             fixes: st.fixes,
@@ -288,7 +288,7 @@ export default function App() {
             opacity: 0.9,
             fontWeight: 600
           }}>
-            {updateStatus?.version ? (updateStatus.version.startsWith('v') ? updateStatus.version : `v${updateStatus.version}`) : 'v0.1.0'}
+            {updateStatus?.version ? (updateStatus.version.startsWith('v') ? updateStatus.version : `v${updateStatus.version}`) : 'v0.1.25'}
           </span>
           {updateStatus?.updated && (
             <span style={{

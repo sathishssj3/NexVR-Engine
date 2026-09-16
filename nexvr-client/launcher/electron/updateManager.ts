@@ -59,11 +59,39 @@ export function compareSemver(v1: string, v2: string): number {
   return 0;
 }
 
+export function getAppVersion(): string {
+  if (app?.getVersion) {
+    try {
+      const v = app.getVersion();
+      if (v) return v;
+    } catch {}
+  }
+  try {
+    const pkgPath = path.join(__dirname, '..', 'package.json');
+    if (fs.existsSync(pkgPath)) {
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+      if (pkg.version) return pkg.version;
+    }
+  } catch {}
+  try {
+    const rootPkgPath = path.join(process.cwd(), 'package.json');
+    if (fs.existsSync(rootPkgPath)) {
+      const pkg = JSON.parse(fs.readFileSync(rootPkgPath, 'utf-8'));
+      if (pkg.version) return pkg.version;
+    }
+  } catch {}
+  return '0.1.25';
+}
+
 export function getLocalManifest(): UpdateManifest | null {
   try {
     const file = path.join(getUpdatesDir(), 'installed_manifest.json');
     if (fs.existsSync(file)) {
       return JSON.parse(fs.readFileSync(file, 'utf-8'));
+    }
+    const legacy = path.join(getUpdatesDir(), 'manifest.json');
+    if (fs.existsSync(legacy)) {
+      return JSON.parse(fs.readFileSync(legacy, 'utf-8'));
     }
   } catch {}
   return null;
@@ -72,7 +100,7 @@ export function getLocalManifest(): UpdateManifest | null {
 export function purgeStaleOtaCacheIfAppNewer(): void {
   try {
     const local = getLocalManifest();
-    const appVer = app?.getVersion ? app.getVersion() : '';
+    const appVer = getAppVersion();
     if (!appVer) return;
 
     // If local cached OTA belongs to an older version than the installed app,
@@ -80,7 +108,7 @@ export function purgeStaleOtaCacheIfAppNewer(): void {
     if (local && compareSemver(appVer, local.engineVersion) > 0) {
       console.info(`[UpdateManager] Current app (v${appVer}) is newer than cached OTA (v${local.engineVersion}). Purging stale OTA cache.`);
       const updatesDir = getUpdatesDir();
-      const filesToPurge = ['vrinject.dll', 'vr-inject-cli.exe', 'vrinject.json', 'installed_manifest.json'];
+      const filesToPurge = ['vrinject.dll', 'vr-inject-cli.exe', 'vrinject.json', 'installed_manifest.json', 'manifest.json'];
       for (const f of filesToPurge) {
         const fp = path.join(updatesDir, f);
         if (fs.existsSync(fp)) {
@@ -163,9 +191,15 @@ async function downloadFileWithFallback(
       if (expectedHash) {
         const actualHash = crypto.createHash('sha256').update(buffer).digest('hex');
         if (actualHash.toLowerCase() !== expectedHash.toLowerCase()) {
-          throw new Error(
-            `Integrity check failed for ${fileName}: expected SHA-256 ${expectedHash}, got ${actualHash}`
-          );
+          // Normalize text line endings (\r\n -> \n and \n -> \r\n) to prevent false-positive CRLF/LF rejections on text assets
+          const asString = buffer.toString('utf-8');
+          const hashLf = crypto.createHash('sha256').update(Buffer.from(asString.replace(/\r\n/g, '\n'), 'utf-8')).digest('hex');
+          const hashCrlf = crypto.createHash('sha256').update(Buffer.from(asString.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n'), 'utf-8')).digest('hex');
+          if (hashLf.toLowerCase() !== expectedHash.toLowerCase() && hashCrlf.toLowerCase() !== expectedHash.toLowerCase()) {
+            throw new Error(
+              `Integrity check failed for ${fileName}: expected SHA-256 ${expectedHash}, got ${actualHash}`
+            );
+          }
         }
       }
 
@@ -187,11 +221,12 @@ export async function checkForEngineHotfix(): Promise<UpdateStatus> {
     if (!remoteData) {
       console.warn('[UpdateManager] Unable to reach update servers, keeping active local build.');
       const local = getLocalManifest();
+      const fallbackVer = local?.engineVersion || getAppVersion();
       return {
         checking: false,
         hasUpdate: false,
-        updated: false,
-        version: local?.engineVersion || '0.1.0',
+        updated: !!local,
+        version: fallbackVer,
         changelog: local?.changelog,
         features: local?.features,
         fixes: local?.fixes,
@@ -201,18 +236,40 @@ export async function checkForEngineHotfix(): Promise<UpdateStatus> {
 
     const { manifest: remote, baseUrl } = remoteData;
     const local = getLocalManifest();
-    const appVer = app.getVersion() || '0.1.11';
+    const appVer = getAppVersion();
+    const activeVersion = local?.engineVersion || appVer;
+    const versionComp = compareSemver(remote.engineVersion, activeVersion);
 
     // Prevent older remote hotfix from downgrading a newer packaged installation
-    if (compareSemver(appVer, remote.engineVersion) > 0) {
-      console.info(`[UpdateManager] Remote hotfix v${remote.engineVersion} is older than bundled app v${appVer}. Skipping hotfix.`);
+    if (versionComp < 0) {
+      console.info(`[UpdateManager] Active version v${activeVersion} is newer than remote v${remote.engineVersion}. Skipping hotfix.`);
       return {
         checking: false,
         hasUpdate: false,
-        updated: false,
-        version: appVer,
-        changelog: 'Bundled release is up-to-date',
+        updated: !!local,
+        version: activeVersion,
+        changelog: local?.changelog || 'Bundled release is up-to-date',
+        features: local?.features,
+        fixes: local?.fixes,
       };
+    }
+
+    // If version is identical: only proceed if local manifest exists and remote has a newer post-release hotfix timestamp
+    // On fresh install (!local), the bundled app already possesses all binaries for this release
+    if (versionComp === 0) {
+      const activeTimestamp = local?.timestamp || 0;
+      if (!local || remote.timestamp <= activeTimestamp) {
+        console.info(`[UpdateManager] Active version v${activeVersion} is already up-to-date.`);
+        return {
+          checking: false,
+          hasUpdate: false,
+          updated: !!local,
+          version: activeVersion,
+          changelog: local?.changelog || remote.changelog || 'Bundled release is up-to-date',
+          features: local?.features || remote.features,
+          fixes: local?.fixes || remote.fixes,
+        };
+      }
     }
 
     if (!local || compareSemver(remote.engineVersion, local.engineVersion) > 0 || remote.timestamp > local.timestamp) {
@@ -271,7 +328,7 @@ export async function checkForEngineHotfix(): Promise<UpdateStatus> {
       checking: false,
       hasUpdate: false,
       updated: !!local,
-      version: local?.engineVersion || '0.1.0',
+      version: local?.engineVersion || getAppVersion(),
       changelog: local?.changelog,
       features: local?.features,
       fixes: local?.fixes,
@@ -291,7 +348,7 @@ if (ipcMain) {
     assertTrustedIpcSender(event);
     const local = getLocalManifest();
     return {
-      version: local?.engineVersion || (app?.getVersion ? app.getVersion() : '0.1.11') || '0.1.11',
+      version: local?.engineVersion || getAppVersion(),
       timestamp: local?.timestamp || 0,
       changelog: local?.changelog || '',
       features: local?.features || [],

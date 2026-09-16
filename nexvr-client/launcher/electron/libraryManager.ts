@@ -85,6 +85,7 @@ export function findPrimaryExecutable(dirPath: string, depth = 0): string {
         const lower = e.name.toLowerCase();
         if (
           !lower.includes('crashreporter') &&
+          !lower.includes('crashreportclient') &&
           !lower.includes('crashhandler') &&
           !lower.includes('unrealcefsubprocess') &&
           !lower.includes('unitycrashhandler') &&
@@ -93,7 +94,12 @@ export function findPrimaryExecutable(dirPath: string, depth = 0): string {
           !lower.includes('redist') &&
           !lower.includes('setup') &&
           !lower.includes('launcher') &&
-          !lower.includes('epicwebhelper')
+          !lower.includes('epicwebhelper') &&
+          !lower.includes('epiconlineservices') &&
+          !lower.includes('eosoverlay') &&
+          !lower.includes('eosbootstrapper') &&
+          !lower.includes('installchainer') &&
+          !lower.includes('unrealversionselector')
         ) {
           try {
             const fullPath = path.join(dirPath, e.name);
@@ -115,7 +121,11 @@ export function findPrimaryExecutable(dirPath: string, depth = 0): string {
           lower !== 'directx' &&
           lower !== 'vc' &&
           lower !== 'installers' &&
-          lower !== 'engine'
+          lower !== 'engine' &&
+          lower !== 'portal' &&
+          lower !== 'epic online services' &&
+          lower !== '.egstore' &&
+          lower !== 'managedartifacts'
         ) {
           const subExe = findPrimaryExecutable(path.join(dirPath, e.name), depth + 1);
           if (subExe) {
@@ -542,7 +552,6 @@ ipcMain.handle('library:scan', async (event): Promise<{ active: GameEntry[], wai
     try {
       const commonEpicDirs = [
         'C:\\Program Files\\Epic Games',
-        'C:\\Program Files (x86)\\Epic Games',
       ];
       for (const epicRoot of commonEpicDirs) {
         if (!fs.existsSync(epicRoot)) continue;
@@ -551,6 +560,11 @@ ipcMain.handle('library:scan', async (event): Promise<{ active: GameEntry[], wai
           if (!sub.isDirectory()) continue;
           if (sub.name.startsWith('UE_') || isIgnoredSoftware(sub.name)) continue;
           const gamePath = path.join(epicRoot, sub.name);
+
+          // An authentic Epic Games installation contains a .egstore directory with install receipts.
+          // Folders lacking this are uninstalled, leftover mock directories, or launcher utilities.
+          if (!fs.existsSync(path.join(gamePath, '.egstore'))) continue;
+
           const primaryExe = findPrimaryExecutable(gamePath);
           if (!primaryExe || !fs.existsSync(primaryExe)) continue;
 
@@ -564,8 +578,7 @@ ipcMain.handle('library:scan', async (event): Promise<{ active: GameEntry[], wai
             api = detected !== 'Unknown' ? detected : 'DX11';
           }
 
-          let displayName = sub.name;
-          if (sub.name.toLowerCase() === 'mortalshell') displayName = 'Mortal Shell';
+          const displayName = sub.name;
 
           let hasInjector = fs.existsSync(path.join(gamePath, 'vrinject.dll')) ||
                             fs.existsSync(path.join(path.dirname(primaryExe), 'vrinject.dll'));
@@ -578,8 +591,7 @@ ipcMain.handle('library:scan', async (event): Promise<{ active: GameEntry[], wai
             } catch {}
           }
 
-          const isMortalShell = sub.name.toLowerCase().includes('mortalshell') || primaryExe.toLowerCase().includes('dungeonhaven');
-          const compatStatus = isMortalShell ? 'verified' : (compatList[gameId] || defaultCompatList[gameId] || 'unknown');
+          const compatStatus = compatList[gameId] || defaultCompatList[gameId] || 'unknown';
 
           seenIds.add(gameId);
           gameExeMap[gameId] = primaryExe;
@@ -629,10 +641,6 @@ ipcMain.handle('library:scan', async (event): Promise<{ active: GameEntry[], wai
             }
             if (cg.name.toLowerCase().includes('penguinhotel') && cg.installPath.toUpperCase().includes('MECCHA CHAMELEON')) {
               cg.name = 'MECCHA CHAMELEON';
-            }
-            if (cg.name.toLowerCase().includes('mortalshell') || cg.installPath.toLowerCase().includes('mortalshell') || (cg.executablePath && cg.executablePath.toLowerCase().includes('dungeonhaven'))) {
-              cg.name = 'Mortal Shell';
-              cg.compat = 'verified';
             }
             const launcherArt = scanLauncherGameArt('epic', cg.id, cg.name) || scanLauncherGameArt('steam', cg.id, cg.name);
             if (launcherArt) {
@@ -743,6 +751,18 @@ ipcMain.handle('library:removeGame', async (event, id: string): Promise<{ succes
       hiddenIds.push(id);
       saveHiddenIds(hiddenIds);
     }
+    const customGamesFile = path.join(app.getPath('userData'), 'custom_games.json');
+    if (fs.existsSync(customGamesFile)) {
+      try {
+        const parsed = JSON.parse(fs.readFileSync(customGamesFile, 'utf-8'));
+        if (Array.isArray(parsed)) {
+          const filtered = parsed.filter((g: any) => g && g.id !== id);
+          if (filtered.length !== parsed.length) {
+            fs.writeFileSync(customGamesFile, JSON.stringify(filtered, null, 2));
+          }
+        }
+      } catch {}
+    }
     return { success: true };
   } catch(e) {
     return { success: false };
@@ -774,6 +794,18 @@ ipcMain.handle('library:ignoreGame', async (event, id: string): Promise<{ succes
     if (!ignoredIds.includes(id)) {
       ignoredIds.push(id);
       saveIgnoredIds(ignoredIds);
+    }
+    const customGamesFile = path.join(app.getPath('userData'), 'custom_games.json');
+    if (fs.existsSync(customGamesFile)) {
+      try {
+        const parsed = JSON.parse(fs.readFileSync(customGamesFile, 'utf-8'));
+        if (Array.isArray(parsed)) {
+          const filtered = parsed.filter((g: any) => g && g.id !== id);
+          if (filtered.length !== parsed.length) {
+            fs.writeFileSync(customGamesFile, JSON.stringify(filtered, null, 2));
+          }
+        }
+      } catch {}
     }
     return { success: true };
   } catch(e) {

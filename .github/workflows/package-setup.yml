@@ -137,34 +137,25 @@ jobs:
           echo "RELEASE_TAG=$tag" >> $env:GITHUB_ENV
           Write-Host "Computed release tag: $tag (package version: $pkgVersion)"
 
-      - name: Standardize Setup.exe Filenames
+      - name: Verify Setup Artifacts
         shell: pwsh
         working-directory: ./nexvr-client/launcher/dist-electron
         run: |
-          $pkgVersion = (Get-Content ../package.json | ConvertFrom-Json).version
-          if ([string]::IsNullOrWhiteSpace($pkgVersion)) { $pkgVersion = "0.1.10" }
-          $setupFile = Get-ChildItem -Filter "*Setup*.exe" | Select-Object -First 1
-          if ($setupFile) {
-            Write-Host "Discovered NSIS installer: $($setupFile.Name) for version $pkgVersion"
-            Copy-Item $setupFile.FullName "NexVR-Engine-Setup.exe" -Force
-            Copy-Item $setupFile.FullName "NexVR.Engine.Setup.$pkgVersion.exe" -Force
-            Copy-Item $setupFile.FullName "NexVR.Engine.Setup.0.1.0.exe" -Force
-            Write-Host "Created canonical download targets: NexVR-Engine-Setup.exe and NexVR.Engine.Setup.$pkgVersion.exe"
-          } else {
+          $setup = Get-ChildItem -Filter "NexVR-Engine-Setup-*.exe" | Select-Object -First 1
+          $portable = Get-ChildItem -Filter "NexVR-Engine-Portable-*.exe" | Select-Object -First 1
+          if (-not $setup) {
             Write-Host "::error::No Setup.exe was found in dist-electron!"
             exit 1
           }
+          Write-Host "Ready to publish: $($setup.Name), $($portable.Name)"
 
       - name: Upload Setup.exe as GitHub Actions Artifact
         uses: actions/upload-artifact@v4
         with:
           name: NexVR-Engine-Setup
           path: |
-            nexvr-client/launcher/dist-electron/NexVR-Engine-Setup.exe
-            nexvr-client/launcher/dist-electron/NexVR.Engine.Setup.*.exe
-            nexvr-client/launcher/dist-electron/NexVR Engine Setup*.exe
-            nexvr-client/launcher/dist-electron/NexVR Engine Portable*.exe
-            nexvr-client/launcher/dist-electron/*.zip
+            nexvr-client/launcher/dist-electron/NexVR-Engine-Setup-*.exe
+            nexvr-client/launcher/dist-electron/NexVR-Engine-Portable-*.exe
           retention-days: 30
 
       - name: Publish to NexVR-Engine Releases (Local Repo)
@@ -173,10 +164,8 @@ jobs:
         with:
           tag_name: ${{ steps.release_info.outputs.tag }}
           files: |
-            nexvr-client/launcher/dist-electron/NexVR-Engine-Setup.exe
-            nexvr-client/launcher/dist-electron/NexVR.Engine.Setup.*.exe
-            nexvr-client/launcher/dist-electron/NexVR Engine Portable*.exe
-            nexvr-client/launcher/dist-electron/*.zip
+            nexvr-client/launcher/dist-electron/NexVR-Engine-Setup-*.exe
+            nexvr-client/launcher/dist-electron/NexVR-Engine-Portable-*.exe
 
       - name: Publish to NexVR-Engine-Releases Repo
         if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || (inputs.publish_to_releases_repo == true)

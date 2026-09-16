@@ -20,8 +20,7 @@ module.exports = {
     icon: 'assets/icon.ico',
     target: [
       { target: 'nsis', arch: ['x64'] },
-      { target: 'portable', arch: ['x64'] },
-      { target: 'zip', arch: ['x64'] }
+      { target: 'portable', arch: ['x64'] }
     ],
     cscLink: process.env.SIGN_CERT_PATH,
     cscKeyPassword: process.env.SIGN_CERT_PASS,
@@ -37,10 +36,11 @@ module.exports = {
     createDesktopShortcut: true,
     createStartMenuShortcut: true,
     shortcutName: 'NexVR Engine',
+    artifactName: 'NexVR-Engine-Setup-${version}.${ext}',
   },
 
   portable: {
-    artifactName: 'NexVR Engine Portable ${version}.${ext}',
+    artifactName: 'NexVR-Engine-Portable-${version}.${ext}',
   },
 
   extraResources: [

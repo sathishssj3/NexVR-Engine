@@ -48,7 +48,9 @@ export function SettingsView({
       if (window.ag && window.ag.update) {
         const res = await window.ag.update.check();
         onUpdateStatusChange(res);
-        if (res.updated) {
+        if (res.error) {
+          setFeedbackMsg(`Notice: ${res.error}`);
+        } else if (res.updated) {
           setFeedbackMsg(`✓ Hotfix v${res.version} installed! Restart launcher or inject to apply.`);
         } else if (res.hasUpdate) {
           setFeedbackMsg(`Update v${res.version} downloaded successfully.`);
@@ -140,7 +142,7 @@ export function SettingsView({
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ fontSize: 22, fontWeight: 700, color: '#fff', fontFamily: 'var(--ag-font-mono)' }}>
-                  NexVR Engine {updateStatus?.version ? `v${updateStatus.version}` : 'v0.1.0'}
+                  NexVR Engine {updateStatus?.version ? `v${updateStatus.version}` : 'v0.1.25'}
                 </span>
                 <span
                   style={{
@@ -260,7 +262,7 @@ export function SettingsView({
                 ◈ WHAT'S NEW & FIXED IN THIS BUILD
               </div>
               <span style={{ fontSize: 10, color: 'var(--ag-text-muted)', fontFamily: 'var(--ag-font-mono)' }}>
-                Release: {updateStatus?.version ? `v${updateStatus.version} Hotfix` : 'v0.1.6 Hotfix'}
+                Release: {updateStatus?.version ? `v${updateStatus.version} Hotfix` : 'v0.1.25 Hotfix'}
               </span>
             </div>
 
@@ -288,13 +290,13 @@ export function SettingsView({
                   ) : (
                     <>
                       <li>
-                        <strong style={{ color: '#fff' }}>Universal Machine Compatibility</strong>: Fixed Error 22 (Unauthorized caller) on tester machines with standard Windows UAC.
+                        <strong style={{ color: '#fff' }}>Epic Games & Library Cleanup</strong>: Filtered out non-game launcher utilities (Epic Online Services, Launcher, DirectXRedist) from game library.
                       </li>
                       <li>
-                        <strong style={{ color: '#fff' }}>Protected Game Directories</strong>: Fixed silent injection failure in Sekiro caused by missing elevated permissions to write to Steam directories.
+                        <strong style={{ color: '#fff' }}>Phantom Game Elimination</strong>: Removed phantom Mortal Shell detection from leftover mock test folders and enforced authentic .egstore installation receipts.
                       </li>
                       <li>
-                        <strong style={{ color: '#fff' }}>Dependency Synchronization</strong>: Automatically syncs DirectML.dll, onnxruntime.dll, and vrinject.json into protected target folders.
+                        <strong style={{ color: '#fff' }}>Brittle Overrides Removal</strong>: Eliminated hardcoded game-specific branches from library auto-detection per QUAL-04.
                       </li>
                     </>
                   )}
@@ -324,13 +326,13 @@ export function SettingsView({
                   ) : (
                     <>
                       <li>
-                        <strong style={{ color: '#fff' }}>Universal Multi-Machine Injection</strong>: Allowed UAC elevation services (svchost, consent) and NexVR launcher names across all Windows installations.
+                        <strong style={{ color: '#fff' }}>Strict Epic Installation Verification</strong>: Fallback scan requires authentic .egstore manifest before recognizing Epic titles.
                       </li>
                       <li>
-                        <strong style={{ color: '#fff' }}>Real Exit Code Propagation</strong>: Propagates actual UAC injection exit codes directly to the launcher UI.
+                        <strong style={{ color: '#fff' }}>Enhanced Non-Game Filtering</strong>: Auto-discovery strictly filters out launcher clients, background services, and redistributable helpers.
                       </li>
                       <li>
-                        <strong style={{ color: '#fff' }}>Auto-resolving Copy Paths</strong>: Resolves executable directories automatically if CLI flags are omitted.
+                        <strong style={{ color: '#fff' }}>Synchronized Custom Game Removal</strong>: Removing or ignoring custom games immediately synchronizes custom_games.json.
                       </li>
                     </>
                   )}

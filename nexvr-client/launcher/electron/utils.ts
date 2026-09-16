@@ -99,7 +99,7 @@ export function validateSteamPath(p: string): boolean {
 }
 
 export const isIgnoredSoftware = (name: string): boolean => {
-  const lower = name.toLowerCase();
+  const lower = name.toLowerCase().trim();
   return lower.includes('steamworks common redistributables') ||
          lower.includes('proton') ||
          lower.includes('linux runtime') ||
@@ -109,5 +109,13 @@ export const isIgnoredSoftware = (name: string): boolean => {
          lower.includes('unreal engine') ||
          lower.includes('fab ue plugin') ||
          lower.includes('quixel bridge') ||
-         lower.includes('twinmotion');
+         lower.includes('twinmotion') ||
+         lower === 'launcher' ||
+         lower.includes('epic games launcher') ||
+         lower.includes('epic online services') ||
+         lower.includes('directxredist') ||
+         lower.includes('redistributable') ||
+         lower.includes('crashreportclient') ||
+         lower.includes('eosbootstrapper');
 };
+
