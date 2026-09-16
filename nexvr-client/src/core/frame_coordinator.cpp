@@ -12,6 +12,7 @@
 #include "memory_scanner/camera_delta_tracker.h"
 #include "memory_scanner/page_scanner.h"
 #include "heuristics/camera_lock_manager.h"
+#include "heuristics/camera_classifier.h"
 #include "heuristics/camera_ranking_engine.h"
 #include "heuristics/camera_validator.h"
 #include "heuristics/candidate_collector.h"
@@ -146,13 +147,41 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
       CameraCandidate bestCandidate = {};
       bool hasBest = false;
       
-      Matrix4x4 dynamicCameraMatrix;
-      if (m_deltaTracker.GetLockedCamera(dynamicCameraMatrix)) {
+      Matrix4x4 dynamicViewMatrix;
+      Matrix4x4 dynamicProjMatrix;
+      if (m_deltaTracker.GetLockedCamera(dynamicViewMatrix, dynamicProjMatrix)) {
           // Dynamic scanner found a locked camera matrix!
-          bestCandidate.view = dynamicCameraMatrix;
+          bestCandidate.id = 0xC0CA3E01; // Non-zero unique ID so CameraLockManager accepts it
+          bestCandidate.view = dynamicViewMatrix;
+          bestCandidate.projection = dynamicProjMatrix;
           bestCandidate.valid = true;
           bestCandidate.temporalScore = 1.0f;
-          bestCandidate.confidence = 100.0f; // Force selection
+          bestCandidate.confidence = 100.0f;
+
+          // Detect projection properties (reverseZ, handedness)
+          bool rowMajor = true;
+          bool reverseZ = false;
+          if (CameraClassifier::ClassifyMatrix(dynamicProjMatrix, rowMajor, reverseZ)) {
+              bestCandidate.rowMajor = rowMajor;
+              bestCandidate.reversedZ = reverseZ;
+              bestCandidate.isLeftHanded = (dynamicProjMatrix.m[2][3] > 0.0f);
+          } else {
+              bestCandidate.rowMajor = true;
+              bestCandidate.reversedZ = false;
+              bestCandidate.isLeftHanded = true;
+          }
+
+          // Compute ViewProjection = View * Proj
+          Matrix4x4 vp = {};
+          for (int r = 0; r < 4; ++r) {
+              for (int c = 0; c < 4; ++c) {
+                  vp.m[r][c] = dynamicViewMatrix.m[r][0] * dynamicProjMatrix.m[0][c] +
+                               dynamicViewMatrix.m[r][1] * dynamicProjMatrix.m[1][c] +
+                               dynamicViewMatrix.m[r][2] * dynamicProjMatrix.m[2][c] +
+                               dynamicViewMatrix.m[r][3] * dynamicProjMatrix.m[3][c];
+              }
+          }
+          bestCandidate.viewProjection = vp;
           hasBest = true;
       } else {
           // Fall back to static hardcoded hooks/heuristics

@@ -41,6 +41,11 @@ public:
     int GetVirtualCursorX() const { return m_virtualCursorX.load(); }
     int GetVirtualCursorY() const { return m_virtualCursorY.load(); }
 
+    // Physical and gamepad input observation for camera correlation (Option A)
+    void RecordPhysicalMouseDelta(int dx, int dy);
+    void RecordThumbstickDelta(float rx, float ry);
+    void ConsumeAccumulatedInputDeltas(float& outMouseDelta, float& outStickDelta);
+
 private:
     InputHook() = default;
     ~InputHook() = default;
@@ -81,6 +86,12 @@ public:
     std::atomic<int> m_virtualCursorX{0};
     std::atomic<int> m_virtualCursorY{0};
     std::atomic<bool> m_gameCursorVisible{true};
+
+    // Option A: Active memory correlation input accumulators
+    std::atomic<int> m_observedPhysicalMouseDeltaX{0};
+    std::atomic<int> m_observedPhysicalMouseDeltaY{0};
+    std::atomic<int> m_observedThumbDeltaX{0};
+    std::atomic<int> m_observedThumbDeltaY{0};
 
 private:
     void CaptureThreadLoop();

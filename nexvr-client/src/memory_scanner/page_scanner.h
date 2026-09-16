@@ -13,19 +13,35 @@
 
 namespace vrinject {
 
+struct MemoryMatrixCandidate {
+    uint8_t* address = nullptr;
+    bool isDoublePrecision = false;
+    bool isViewMatrix = false;
+    bool isProjectionMatrix = false;
+};
+
 class PageScanner {
 public:
 
     bool Initialize();
 
-    // Starts the background thread to scan for dynamic projection matrices
-    void StartDynamicScan(float targetFov);
+    // Starts the background thread to scan for dynamic projection and view matrices
+    void StartDynamicScan(float targetFov = 90.0f);
 
     // Stops the background scanning thread
     void StopDynamicScan();
 
-    // Retrieves the latest resolved static base pointers that point (via chains) to candidates
+    // Retrieves discovered dynamic matrix candidates
+    std::vector<MemoryMatrixCandidate> GetDynamicCandidates();
+
+    // Retrieves the candidate pointers (backwards-compatible)
     std::vector<uint8_t*> GetCandidateStaticPointers();
+
+    // Matrix shape and invariant validators (public for unit tests and delta tracker)
+    static bool IsValidProjectionMatrixFloat(const float* mat, float targetFov = 90.0f);
+    static bool IsValidProjectionMatrixDouble(const double* mat, float targetFov = 90.0f);
+    static bool IsValidViewMatrixFloat(const float* mat);
+    static bool IsValidViewMatrixDouble(const double* mat);
 
     PageScanner() = default;
     ~PageScanner() { StopDynamicScan(); }
@@ -40,8 +56,6 @@ private:
     ModuleInfo GetModuleInfo(const std::string& moduleName);
     
     void ScanDynamicHeaps();
-    bool IsValidProjectionMatrixFloat(const float* mat, float targetFov);
-    bool IsValidProjectionMatrixDouble(const double* mat, float targetFov);
 
     uint8_t* m_mainModuleBase = nullptr;
     size_t m_mainModuleSize = 0;
@@ -51,6 +65,7 @@ private:
     std::atomic<bool> m_scanRunning{false};
 
     std::mutex m_candidatesMutex;
+    std::vector<MemoryMatrixCandidate> m_dynamicCandidates;
     std::vector<uint8_t*> m_candidatePointers;
 };
 

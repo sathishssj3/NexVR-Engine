@@ -142,7 +142,7 @@ export function SettingsView({
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ fontSize: 22, fontWeight: 700, color: '#fff', fontFamily: 'var(--ag-font-mono)' }}>
-                  NexVR Engine {updateStatus?.version ? `v${updateStatus.version}` : 'v0.1.25'}
+                  NexVR Engine {updateStatus?.version ? `v${updateStatus.version}` : 'v0.1.27'}
                 </span>
                 <span
                   style={{
@@ -262,7 +262,7 @@ export function SettingsView({
                 ◈ WHAT'S NEW & FIXED IN THIS BUILD
               </div>
               <span style={{ fontSize: 10, color: 'var(--ag-text-muted)', fontFamily: 'var(--ag-font-mono)' }}>
-                Release: {updateStatus?.version ? `v${updateStatus.version} Hotfix` : 'v0.1.25 Hotfix'}
+                Release: {updateStatus?.version ? `v${updateStatus.version} Hotfix` : 'v0.1.27'}
               </span>
             </div>
 

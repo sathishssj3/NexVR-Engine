@@ -1,7 +1,7 @@
 {
-  "engineVersion": "0.1.25",
-  "timestamp": 1789537600000,
-  "changelog": "Streamlined Release Packaging & Distribution v0.1.25",
+  "engineVersion": "0.1.27",
+  "timestamp": 1789549489343,
+  "changelog": "Fix release workflow code signing certificate validation and electron-builder publisher configuration v0.1.27",
   "features": [
     "Clean Release Distribution: Streamlined builds to two essential binaries: Setup Installer and Portable Executable",
     "Unified Artifact Naming: Standardized hyphenated naming scheme across all CI/CD workflows and packaging scripts"
@@ -32,10 +32,10 @@
     "shaders/asw_shader.hlsl",
     "shaders/depth_reprojection.hlsl"
   ],
-  "date": "2026-09-11T22:15:00.000Z",
+  "date": "2026-09-16T09:04:49.343Z",
   "hashes": {
-    "vrinject.dll": "7477b996c432cef5a205e0a346203c5d8192b72efc2d684458098624c05d57cf",
-    "vr-inject-cli.exe": "ee5c8c5a234ae32ab746132826bb0defafbfd92a4f9d9397a13f849cacd83650",
+    "vrinject.dll": "022e456e82d114ee7cf278a5564fae5ca8d15ee7a718fc0a47d43efc7f34a974",
+    "vr-inject-cli.exe": "87d8c066860ddaff558b29f37a7db33494c6065c5cf7f7c2954e40ebb9bf0610",
     "profiles/814380_sekiro.json": "6463c079fb200fdb895edf96cdc54249d3e1d93c9fce6fbad87da9cfd7f46ff3",
     "profiles/990080_hogwarts_legacy.json": "717610b3cdf8cca77c2555d8c6ec087ef694ba1eda9a8a08c3a15438051f9efc",
     "profiles/1091500_cyberpunk_2077.json": "42a448270d17b59f9a910903043ca93b212cdae9c75fbf3400c1ef4346590601",
@@ -44,8 +44,8 @@
     "profiles/1110910_mortal_shell.json": "c8027d7cb90c314da9ddeefb8ccc94e8c2935d738c4e1e0541fd410ede3e59bc",
     "profiles/1245620_elden_ring.json": "43726a56aaa1ec5a166d1f6c17b0fe81090847c075603222ac066e0e47a1d6d0",
     "profiles/schema.json": "a6e1c619de549cb36e13e6bcddc796afc205e9fa66c08542d586dbb4f995bd8e",
-    "shaders/stereo_reprojection.hlsl": "9b71306186fd8bfaecaa07e39b680bd1e3b552f28d6c913359efe862e3c025ac",
-    "shaders/tonemap.hlsl": "bedbdefe535c5c26106c5e00d1b6d8e59944bad47ab879b89e6862a6c560c54f",
+    "shaders/stereo_reprojection.hlsl": "049b6e0fb456fec4ed2e73f387545022c32aa82344d0c6c0be63493b1cd15b3d",
+    "shaders/tonemap.hlsl": "a886e9369ac38e15171a03f6d55681897a2c2580e573fd5fa7d5552344a1cd5f",
     "shaders/stereo_resolve.hlsl": "b9787aa73933055a08e6ed372c7a83c0626462bb4a0f0bba9c734309b53b9dcf",
     "shaders/stereo_warp.hlsl": "0575ea5d393ac74782409acba603a8c687f271489935622de0392daa072a6c74",
     "shaders/disocclusion_fill.hlsl": "1cd2773b70c459031103811f3736080ee1eb52848bf779744f52611c7287519e",

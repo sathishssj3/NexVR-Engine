@@ -84,7 +84,7 @@ export function AboutPanel({ version }: { version?: string }) {
           background: 'var(--ag-border)', borderRadius: 'var(--ag-radius-sm)', overflow: 'hidden' 
         }}>
           {[
-            { label: 'VERSION', value: version ? (version.startsWith('v') ? version : `v${version}`) : 'v0.1.25' },
+            { label: 'VERSION', value: version ? (version.startsWith('v') ? version : `v${version}`) : 'v0.1.27' },
             { label: 'BUILD', value: import.meta.env.VITE_BUILD_DATE || 'dev' },
             { label: 'ELECTRON', value: window.ag?.versions?.electron || '—' },
             { label: 'NODE', value: window.ag?.versions?.node || '—' },

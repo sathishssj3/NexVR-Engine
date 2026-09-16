@@ -46,6 +46,21 @@ LRESULT CALLBACK HookedWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
         case WM_KILLFOCUS:
             // Suppress loss of focus so game does not cancel mouse capture or keyboard input
             return 0;
+        case WM_MOUSEMOVE: {
+            static int s_prevX = -1, s_prevY = -1;
+            int curX = static_cast<short>(LOWORD(lParam));
+            int curY = static_cast<short>(HIWORD(lParam));
+            if (s_prevX != -1) {
+                int dx = curX - s_prevX;
+                int dy = curY - s_prevY;
+                if (std::abs(dx) > 0 && std::abs(dx) < 300 && std::abs(dy) < 300) {
+                    InputHook::GetInstance().RecordPhysicalMouseDelta(dx, dy);
+                }
+            }
+            s_prevX = curX;
+            s_prevY = curY;
+            break;
+        }
     }
 
     if (g_OriginalWndProc) {
@@ -117,7 +132,16 @@ UINT WINAPI HookedGetRawInputData(HRAWINPUT hRawInput, UINT uiCommand, LPVOID pD
         }
         return (UINT)-1;
     }
-    if (OriginalGetRawInputData) return OriginalGetRawInputData(hRawInput, uiCommand, pData, pcbSize, cbSizeHeader);
+    if (OriginalGetRawInputData) {
+        UINT res = OriginalGetRawInputData(hRawInput, uiCommand, pData, pcbSize, cbSizeHeader);
+        if (res != (UINT)-1 && pData && uiCommand == RID_INPUT && pcbSize && *pcbSize >= sizeof(RAWINPUT)) {
+            RAWINPUT* ri = reinterpret_cast<RAWINPUT*>(pData);
+            if (ri->header.dwType == RIM_TYPEMOUSE && (ri->data.mouse.usFlags & MOUSE_MOVE_ABSOLUTE) == 0) {
+                InputHook::GetInstance().RecordPhysicalMouseDelta(ri->data.mouse.lLastX, ri->data.mouse.lLastY);
+            }
+        }
+        return res;
+    }
     return (UINT)-1;
 }
 
@@ -244,6 +268,14 @@ DWORD WINAPI InputHook::HookedXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pS
         
         if (dwUserIndex == 0 && pState) {
             if (res == ERROR_SUCCESS) {
+                // Option A: Record physical gamepad look input
+                const SHORT DEADZONE = 3500;
+                SHORT rx = pState->Gamepad.sThumbRX;
+                SHORT ry = pState->Gamepad.sThumbRY;
+                if (std::abs(rx) > DEADZONE || std::abs(ry) > DEADZONE) {
+                    self.RecordThumbstickDelta(static_cast<float>(rx) / 32768.0f, static_cast<float>(ry) / 32768.0f);
+                }
+
                 // Physical controller is connected. If VR controllers are actively used, merge them:
                 if (self.m_vrControllersActive) {
                     pState->Gamepad.wButtons |= self.m_emulatedState.Gamepad.wButtons;
@@ -266,15 +298,17 @@ DWORD WINAPI InputHook::HookedXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pS
                 }
                 return ERROR_SUCCESS;
             } else {
-                // No physical controller connected.
-                // ONLY emulate a virtual gamepad if real VR motion controllers are actively being used!
-                // For SteamVR Null Driver users or desktop mouse/keyboard users, returning ERROR_DEVICE_NOT_CONNECTED
-                // ensures the game engine natively activates full mouse cursor and keyboard controls!
                 if (self.m_vrControllersActive) {
                     *pState = self.m_emulatedState;
+                    const SHORT DEADZONE = 3500;
+                    SHORT rx = pState->Gamepad.sThumbRX;
+                    SHORT ry = pState->Gamepad.sThumbRY;
+                    if (std::abs(rx) > DEADZONE || std::abs(ry) > DEADZONE) {
+                        self.RecordThumbstickDelta(static_cast<float>(rx) / 32768.0f, static_cast<float>(ry) / 32768.0f);
+                    }
                     return ERROR_SUCCESS;
                 }
-                return res; // ERROR_DEVICE_NOT_CONNECTED
+                return res;
             }
         }
         return res;
@@ -527,6 +561,26 @@ LRESULT CALLBACK InputHook::LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM l
         }
     }
     return CallNextHookEx(nullptr, nCode, wParam, lParam);
+}
+
+void InputHook::RecordPhysicalMouseDelta(int dx, int dy) {
+    m_observedPhysicalMouseDeltaX.fetch_add(dx, std::memory_order_relaxed);
+    m_observedPhysicalMouseDeltaY.fetch_add(dy, std::memory_order_relaxed);
+}
+
+void InputHook::RecordThumbstickDelta(float rx, float ry) {
+    m_observedThumbDeltaX.store(static_cast<int>(rx * 1000.0f), std::memory_order_relaxed);
+    m_observedThumbDeltaY.store(static_cast<int>(ry * 1000.0f), std::memory_order_relaxed);
+}
+
+void InputHook::ConsumeAccumulatedInputDeltas(float& outMouseDelta, float& outStickDelta) {
+    int mdx = m_observedPhysicalMouseDeltaX.exchange(0, std::memory_order_relaxed);
+    int mdy = m_observedPhysicalMouseDeltaY.exchange(0, std::memory_order_relaxed);
+    int stx = m_observedThumbDeltaX.exchange(0, std::memory_order_relaxed);
+    int sty = m_observedThumbDeltaY.exchange(0, std::memory_order_relaxed);
+
+    outMouseDelta = std::sqrt(static_cast<float>(mdx * mdx + mdy * mdy));
+    outStickDelta = std::sqrt(static_cast<float>(stx * stx + sty * sty)) / 1000.0f;
 }
 
 } // namespace vrinject

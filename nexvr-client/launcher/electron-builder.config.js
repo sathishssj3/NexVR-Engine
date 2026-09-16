@@ -18,12 +18,15 @@ module.exports = {
 
   win: {
     icon: 'assets/icon.ico',
+    signtoolOptions: {
+      publisherName: 'NexVR Engine'
+    },
     target: [
       { target: 'nsis', arch: ['x64'] },
       { target: 'portable', arch: ['x64'] }
     ],
-    cscLink: process.env.SIGN_CERT_PATH,
-    cscKeyPassword: process.env.SIGN_CERT_PASS,
+    cscLink: process.env.SIGN_CERT_PATH || undefined,
+    cscKeyPassword: process.env.SIGN_CERT_PASS || undefined,
   },
 
   nsis: {

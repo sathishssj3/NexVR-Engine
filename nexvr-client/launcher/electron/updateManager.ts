@@ -80,7 +80,7 @@ export function getAppVersion(): string {
       if (pkg.version) return pkg.version;
     }
   } catch {}
-  return '0.1.25';
+  return '0.1.27';
 }
 
 export function getLocalManifest(): UpdateManifest | null {
