@@ -26,6 +26,7 @@ export interface UpdateStatus {
 }
 
 const MANIFEST_URLS = [
+  'https://nexvr-engine.pages.dev/updates/manifest.json',
   'https://cdn.jsdelivr.net/gh/sathishssj3/NexVR-Engine@main/updates/manifest.json',
   'https://fastly.jsdelivr.net/gh/sathishssj3/NexVR-Engine@main/updates/manifest.json',
   'https://gcore.jsdelivr.net/gh/sathishssj3/NexVR-Engine@main/updates/manifest.json',
@@ -80,7 +81,7 @@ export function getAppVersion(): string {
       if (pkg.version) return pkg.version;
     }
   } catch {}
-  return '0.1.27';
+  return '0.1.28';
 }
 
 export function getLocalManifest(): UpdateManifest | null {

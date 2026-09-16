@@ -1,7 +1,7 @@
 {
-  "engineVersion": "0.1.27",
-  "timestamp": 1789549489343,
-  "changelog": "Fix release workflow code signing certificate validation and electron-builder publisher configuration v0.1.27",
+  "engineVersion": "0.1.28",
+  "timestamp": 1789550302581,
+  "changelog": "Cloudflare Edge OTA Distribution (100% Free, Zero Egress) v0.1.28",
   "features": [
     "Clean Release Distribution: Streamlined builds to two essential binaries: Setup Installer and Portable Executable",
     "Unified Artifact Naming: Standardized hyphenated naming scheme across all CI/CD workflows and packaging scripts"
@@ -32,10 +32,10 @@
     "shaders/asw_shader.hlsl",
     "shaders/depth_reprojection.hlsl"
   ],
-  "date": "2026-09-16T09:04:49.343Z",
+  "date": "2026-09-16T09:18:22.581Z",
   "hashes": {
-    "vrinject.dll": "022e456e82d114ee7cf278a5564fae5ca8d15ee7a718fc0a47d43efc7f34a974",
-    "vr-inject-cli.exe": "87d8c066860ddaff558b29f37a7db33494c6065c5cf7f7c2954e40ebb9bf0610",
+    "vrinject.dll": "80f8b8405a0c9daf4286fcb5947e095b682a9d428c5fce3a030b94a7ee62c8b9",
+    "vr-inject-cli.exe": "df98dd236383289cdd789e1a3c00a63711e54047c5a68a31e438b02375011216",
     "profiles/814380_sekiro.json": "6463c079fb200fdb895edf96cdc54249d3e1d93c9fce6fbad87da9cfd7f46ff3",
     "profiles/990080_hogwarts_legacy.json": "717610b3cdf8cca77c2555d8c6ec087ef694ba1eda9a8a08c3a15438051f9efc",
     "profiles/1091500_cyberpunk_2077.json": "42a448270d17b59f9a910903043ca93b212cdae9c75fbf3400c1ef4346590601",

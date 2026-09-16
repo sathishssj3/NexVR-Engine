@@ -40,6 +40,7 @@ dist-*/
 **/dist-*/
 **/frontend-dist/
 **/electron-dist/
+nexvr-docs/landing-page/public/updates/
 **/asar-out*/
 **/asar-test/
 **/temp_app/
