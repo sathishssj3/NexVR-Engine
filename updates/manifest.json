@@ -1,7 +1,7 @@
 {
   "engineVersion": "0.1.59",
   "buildDate": "2026-09-18",
-  "timestamp": 1789768624518,
+  "timestamp": 1789769316491,
   "changelog": "Real-Time Telemetry Streaming & Dynamic Version Synchronization v0.1.59",
   "features": [
     "Zero-Latency Log Streaming: Continuous live log forwarding from injected game processes to the launcher console during both injection and active VR gameplay",
@@ -39,8 +39,8 @@
   ],
   "date": "2026-09-18T19:46:38.921Z",
   "hashes": {
-    "vrinject.dll": "ea342e3c8687cfc785bc17c812939ed6b6f05413656a4cf2ccd117c5805bd4aa",
-    "vr-inject-cli.exe": "b800ac9ce312973a0f1b930774b2d79c052b468e02be427a563202b317c74b6e",
+    "vrinject.dll": "35ca092a3c6be341f3ec7c56ecb0ab3274788cd3b414991684dd18b8a33c0ecc",
+    "vr-inject-cli.exe": "9f29c9fe5b6d76eccb2f0174542407bd8c6c658dc65215e8cfd3f664e1c3b2b9",
     "profiles/814380_sekiro.json": "6463c079fb200fdb895edf96cdc54249d3e1d93c9fce6fbad87da9cfd7f46ff3",
     "profiles/990080_hogwarts_legacy.json": "717610b3cdf8cca77c2555d8c6ec087ef694ba1eda9a8a08c3a15438051f9efc",
     "profiles/1091500_cyberpunk_2077.json": "42a448270d17b59f9a910903043ca93b212cdae9c75fbf3400c1ef4346590601",

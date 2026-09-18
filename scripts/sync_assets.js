@@ -90,6 +90,18 @@ if (fs.existsSync(srcProfilesDir)) {
   }
 }
 
+// 3.5 Automatically sign native binaries before computing hashes so hashes match signed binaries
+const signScript = path.join(rootDir, 'scripts', 'sign_binaries.ps1');
+if (fs.existsSync(signScript)) {
+  try {
+    const { execSync } = require('child_process');
+    console.log('[*] Signing native binaries prior to manifest hash calculation...');
+    execSync(`powershell.exe -ExecutionPolicy Bypass -File "${signScript}"`, { stdio: 'inherit' });
+  } catch (err) {
+    console.warn('[!] Binary signing warning:', err.message);
+  }
+}
+
 // 4. Recompute SHA-256 hashes and update manifest.json
 if (fs.existsSync(manifestFile)) {
   try {
