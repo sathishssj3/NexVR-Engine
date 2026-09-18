@@ -21,8 +21,8 @@ if not exist "updates" mkdir updates
 copy /y "build\bin\vrinject.dll" "updates\vrinject.dll" >nul
 
 echo.
-echo [3/4] Updating OTA manifest timestamp...
-node -e "const fs = require('fs'); const file = 'updates/manifest.json'; let ver = '0.1.28'; try { ver = JSON.parse(fs.readFileSync('nexvr-client/launcher/package.json', 'utf-8')).version || ver; } catch(e){} let m = { engineVersion: ver, timestamp: Date.now(), changelog: 'Engine hotfix update', files: ['vrinject.dll'] }; if (fs.existsSync(file)) { try { m = JSON.parse(fs.readFileSync(file, 'utf-8')); m.timestamp = Date.now(); m.engineVersion = ver; } catch(e){} } fs.writeFileSync(file, JSON.stringify(m, null, 2)); console.log('Updated manifest timestamp:', m.timestamp, 'version:', m.engineVersion);"
+echo [3/4] Synchronizing assets and updating manifest...
+node scripts/sync_assets.js
 
 echo.
 echo [4/4] Pushing hotfix directly to GitHub...

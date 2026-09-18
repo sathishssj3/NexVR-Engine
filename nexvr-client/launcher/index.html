@@ -2,12 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' nexvr:; script-src 'self' nexvr:; style-src 'self' nexvr: 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' nexvr: https://fonts.gstatic.com; img-src 'self' nexvr: data:; connect-src 'self' nexvr: ws://localhost:* http://localhost:* https://fonts.googleapis.com https://fonts.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'none';" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' nexvr:; script-src 'self' nexvr:; style-src 'self' nexvr: 'unsafe-inline'; font-src 'self' nexvr:; img-src 'self' nexvr: data:; connect-src 'self' nexvr: ws://localhost:* http://localhost:*; object-src 'none'; base-uri 'none'; form-action 'none';" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Fonts loaded offline via @font-face in index.css (zero network latency) -->
     <title>NexVR Engine Launcher</title>
   </head>
   <body>

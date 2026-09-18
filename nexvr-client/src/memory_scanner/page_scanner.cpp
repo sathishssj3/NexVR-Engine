@@ -235,7 +235,9 @@ void PageScanner::ScanDynamicHeaps() {
         while (m_scanRunning && newDynamicCandidates.size() < MAX_CANDIDATES_PER_SWEEP) {
             if (VirtualQuery(currentAddress, &mbi, sizeof(mbi)) == 0) break;
 
-            if (mbi.State == MEM_COMMIT && (mbi.Protect == PAGE_READWRITE || mbi.Protect == PAGE_READONLY) && 
+            bool isGuarded = (mbi.Protect & (PAGE_GUARD | PAGE_NOACCESS)) != 0;
+            bool isReadable = (mbi.Protect & (PAGE_READWRITE | PAGE_READONLY | PAGE_WRITECOPY | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE)) != 0;
+            if (mbi.State == MEM_COMMIT && !isGuarded && isReadable && 
                 (mbi.Type == MEM_PRIVATE || mbi.Type == MEM_MAPPED)) {
                 uint8_t* scanStart = static_cast<uint8_t*>(mbi.BaseAddress);
                 uint8_t* scanEnd = scanStart + mbi.RegionSize - sizeof(double) * 16;

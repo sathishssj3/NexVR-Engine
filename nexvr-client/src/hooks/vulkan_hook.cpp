@@ -273,7 +273,7 @@ VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkQueueSubmit(
     return VK_SUCCESS;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkQueuePresentKHR(
+static VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkQueuePresentKHR_Internal(
     VkQueue queue,
     const VkPresentInfoKHR* pPresentInfo)
 {
@@ -320,6 +320,27 @@ VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkQueuePresentKHR(
     }
     // No fallback available, return success to avoid crashing
     return VK_SUCCESS;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkQueuePresentKHR(
+    VkQueue queue,
+    const VkPresentInfoKHR* pPresentInfo)
+{
+    __try {
+        return Hooked_vkQueuePresentKHR_Internal(queue, pPresentInfo);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        LOG_ERROR("VulkanHook: SEH hardware exception caught in Hooked_vkQueuePresentKHR! Safely forwarding to driver.");
+        if (True_vkQueuePresentKHR_Direct) {
+            return True_vkQueuePresentKHR_Direct(queue, pPresentInfo);
+        }
+        auto device = VulkanQueueManager::Get().GetDevice();
+        auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
+        if (dt && dt->QueuePresentKHR) {
+            return dt->QueuePresentKHR(queue, pPresentInfo);
+        }
+        return VK_SUCCESS;
+    }
 }
 
 VKAPI_ATTR void VKAPI_CALL Hooked_vkDestroySurfaceKHR(

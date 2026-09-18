@@ -152,7 +152,15 @@ ID3D12PipelineState* DX12PipelineStateCache::GetStereoPSO(ID3D12Device* device) 
 
     HRESULT hr = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&m_stereoPSO));
     if (FAILED(hr)) {
-        std::cerr << "DX12PipelineStateCache: Failed to create Stereo Compute PSO! HRESULT: " << hr << std::endl;
+        std::cerr << "DX12PipelineStateCache: Failed to create Stereo Compute PSO from precompiled bytecode! HRESULT: " << hr << std::endl;
+        std::vector<uint8_t> fallbackBytecode;
+        if (CompileShader(L"shaders/stereo_reprojection.hlsl", "CSMain", "cs_5_1", fallbackBytecode)) {
+            psoDesc.CS = { fallbackBytecode.data(), fallbackBytecode.size() };
+            if (SUCCEEDED(device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&m_stereoPSO)))) {
+                std::cerr << "DX12PipelineStateCache: Successfully recovered using dynamically compiled HLSL!" << std::endl;
+                return m_stereoPSO.Get();
+            }
+        }
         return nullptr;
     }
 
@@ -160,7 +168,31 @@ ID3D12PipelineState* DX12PipelineStateCache::GetStereoPSO(ID3D12Device* device) 
 }
 
 bool DX12PipelineStateCache::CompileShader(const std::wstring& filename, const std::string& entrypoint, const std::string& target, std::vector<uint8_t>& outBytecode) {
-    // Optional fallback if CSO doesn't exist
+    Microsoft::WRL::ComPtr<ID3DBlob> codeBlob;
+    Microsoft::WRL::ComPtr<ID3DBlob> errorBlob;
+    UINT flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
+
+    HRESULT hr = D3DCompileFromFile(
+        filename.c_str(),
+        nullptr,
+        D3D_COMPILE_STANDARD_FILE_INCLUDE,
+        entrypoint.c_str(),
+        target.c_str(),
+        flags,
+        0,
+        &codeBlob,
+        &errorBlob
+    );
+
+    if (SUCCEEDED(hr) && codeBlob) {
+        outBytecode.resize(codeBlob->GetBufferSize());
+        std::memcpy(outBytecode.data(), codeBlob->GetBufferPointer(), codeBlob->GetBufferSize());
+        return true;
+    }
+
+    if (errorBlob) {
+        std::cerr << "DX12PipelineStateCache: Dynamic compile error: " << (char*)errorBlob->GetBufferPointer() << std::endl;
+    }
     return false;
 }
 

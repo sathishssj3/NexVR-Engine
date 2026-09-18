@@ -25,8 +25,8 @@ copy /y "build\bin\vrinject.dll" "nexvr-docs\landing-page\public\updates\vrinjec
 copy /y "build\bin\vr-inject-cli.exe" "nexvr-docs\landing-page\public\updates\vr-inject-cli.exe" >nul
 
 echo.
-echo [3/4] Recomputing SHA-256 cryptographic hashes...
-node -e "const fs = require('fs'); const crypto = require('crypto'); const manifestFile = 'updates/manifest.json'; const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf-8')); let pkgVer = '0.1.28'; try { pkgVer = JSON.parse(fs.readFileSync('nexvr-client/launcher/package.json', 'utf-8')).version || pkgVer; } catch(e){} manifest.engineVersion = pkgVer; manifest.timestamp = Date.now(); manifest.date = new Date().toISOString(); const newHashes = {}; for (const f of manifest.files) { const filePath = 'updates/' + f; if (fs.existsSync(filePath)) { const buf = fs.readFileSync(filePath); newHashes[f] = crypto.createHash('sha256').update(buf).digest('hex'); } else { newHashes[f] = manifest.hashes[f]; } } manifest.hashes = newHashes; fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 2)); fs.writeFileSync('nexvr-docs/landing-page/public/updates/manifest.json', JSON.stringify(manifest, null, 2)); console.log('Updated manifest version:', manifest.engineVersion, 'timestamp:', manifest.timestamp);"
+echo [3/4] Recomputing SHA-256 cryptographic hashes and syncing assets...
+node scripts/sync_assets.js
 
 echo.
 echo [4/4] Deploying to Cloudflare Edge CDN (2-3 seconds)...

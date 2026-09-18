@@ -3,6 +3,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 contextBridge.exposeInMainWorld('ag', {
   library: {
     scan: () => ipcRenderer.invoke('library:scan'),
+    scanCached: () => ipcRenderer.invoke('library:scanCached'),
     addCustom: () => ipcRenderer.invoke('library:addCustom'),
     removeGame: (id: string) => ipcRenderer.invoke('library:removeGame', id),
     restoreGame: (id: string) => ipcRenderer.invoke('library:restoreGame', id),

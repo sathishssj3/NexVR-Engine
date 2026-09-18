@@ -206,15 +206,35 @@ HRESULT ProcessPresent(SwapChainType* pSwapChain, OriginalFunc originalFunc, Arg
 }
 
 
-HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
+static HRESULT hkPresentInternal(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
     return ProcessPresent(pSwapChain, OriginalPresent, SyncInterval, Flags);
 }
 
-HRESULT __stdcall hkPresent1(IDXGISwapChain1* pSwapChain, UINT SyncInterval, UINT PresentFlags, const DXGI_PRESENT_PARAMETERS* pPresentParameters) {
+HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
+    __try {
+        return hkPresentInternal(pSwapChain, SyncInterval, Flags);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        LOG_ERROR("DX11Hook: SEH hardware exception intercepted in hkPresent! Safely routing to original driver Present.");
+        return OriginalPresent ? OriginalPresent(pSwapChain, SyncInterval, Flags) : DXGI_ERROR_INVALID_CALL;
+    }
+}
+
+static HRESULT hkPresent1Internal(IDXGISwapChain1* pSwapChain, UINT SyncInterval, UINT PresentFlags, const DXGI_PRESENT_PARAMETERS* pPresentParameters) {
     return ProcessPresent(pSwapChain, OriginalPresent1, SyncInterval, PresentFlags, pPresentParameters);
 }
 
-HRESULT __stdcall hkResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags) {
+HRESULT __stdcall hkPresent1(IDXGISwapChain1* pSwapChain, UINT SyncInterval, UINT PresentFlags, const DXGI_PRESENT_PARAMETERS* pPresentParameters) {
+    __try {
+        return hkPresent1Internal(pSwapChain, SyncInterval, PresentFlags, pPresentParameters);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        LOG_ERROR("DX11Hook: SEH hardware exception intercepted in hkPresent1! Safely routing to original driver Present1.");
+        return OriginalPresent1 ? OriginalPresent1(pSwapChain, SyncInterval, PresentFlags, pPresentParameters) : DXGI_ERROR_INVALID_CALL;
+    }
+}
+
+static HRESULT hkResizeBuffersInternal(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags) {
     if (OriginalResizeBuffers) {
         // CRITICAL: Release ALL our references to the swapchain's backbuffer
         // before calling ResizeBuffers. DXGI requires zero outstanding references
@@ -233,6 +253,16 @@ HRESULT __stdcall hkResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount, 
         return hr;
     }
     return DXGI_ERROR_INVALID_CALL;
+}
+
+HRESULT __stdcall hkResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags) {
+    __try {
+        return hkResizeBuffersInternal(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        LOG_ERROR("DX11Hook: SEH hardware exception intercepted in hkResizeBuffers! Safely forwarding to OriginalResizeBuffers.");
+        return OriginalResizeBuffers ? OriginalResizeBuffers(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags) : DXGI_ERROR_INVALID_CALL;
+    }
 }
 
 static std::atomic<uint32_t> s_globalTextureGeneration{1};

@@ -17,7 +17,13 @@ ipcMain.handle('vr:status', async (event): Promise<VRStatus> => {
   let headset = 'Unknown HMD';
   
   try {
-    const tasklist = child_process.execSync('tasklist', { encoding: 'utf-8' }).toLowerCase();
+    // Async tasklist — prevents blocking the main thread (~200-500ms per call)
+    const { stdout: tasklistRaw } = await execFileAsync('tasklist.exe', [], {
+      encoding: 'utf-8',
+      timeout: 3000,
+      windowsHide: true,
+    });
+    const tasklist = tasklistRaw.toLowerCase();
     const isSteamVRRunning = tasklist.includes('vrserver.exe');
     const isOculusRunning = tasklist.includes('ovrserver_x64.exe');
     const isVirtualDesktopRunning = tasklist.includes('virtualdesktop.streamer.exe') || tasklist.includes('virtualdesktop.service.exe');
@@ -30,7 +36,10 @@ ipcMain.handle('vr:status', async (event): Promise<VRStatus> => {
     
     try {
       const xrEnv = process.env.XR_RUNTIME_JSON || '';
-      const regOut = child_process.execSync(`reg query "HKLM\\SOFTWARE\\Khronos\\OpenXR\\1" /v "ActiveRuntime"`, { encoding: 'utf-8', stdio: 'pipe' });
+      // Async registry query — prevents blocking the main thread (~100-200ms per call)
+      const { stdout: regOut } = await execFileAsync('reg.exe', [
+        'query', 'HKLM\\SOFTWARE\\Khronos\\OpenXR\\1', '/v', 'ActiveRuntime'
+      ], { encoding: 'utf-8', timeout: 3000, windowsHide: true });
       const match = regOut.match(/ActiveRuntime\s+REG_(?:EXPAND_)?SZ\s+(.+)/i);
       
       let rtPath = '';

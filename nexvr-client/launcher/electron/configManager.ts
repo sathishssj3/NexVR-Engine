@@ -7,7 +7,7 @@ import { assertTrustedIpcSender, gamePathsMap, gameExeMap, validateGameId, valid
 const defaultVRConfig: VRConfig = {
   motionAimSensitivity: 1.0,
   useRecommendedResolution: true,
-  srgbCorrection: true,
+  srgbCorrection: false,
   depthSubmission: false,
   rawInputMode: true,
   autoInjectOnLaunch: true,
@@ -73,7 +73,7 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     matrixPrecision: 'Float32',
     motionAimSensitivity: 0.9,
     useRecommendedResolution: true,
-    srgbCorrection: true,
+    srgbCorrection: false,
     depthSubmission: false,
     rawInputMode: true,
     autoInjectOnLaunch: true,
@@ -87,7 +87,7 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     matrixPrecision: 'Float32',
     motionAimSensitivity: 1.1,
     useRecommendedResolution: true,
-    srgbCorrection: true,
+    srgbCorrection: false,
     depthSubmission: true,
     rawInputMode: true,
     autoInjectOnLaunch: true,
@@ -118,7 +118,7 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     matrixPrecision: 'Float32',
     motionAimSensitivity: 1.0,
     useRecommendedResolution: true,
-    srgbCorrection: true,
+    srgbCorrection: false,
     depthSubmission: true,
     rawInputMode: true,
     autoInjectOnLaunch: true,
@@ -143,13 +143,19 @@ function loadProfilesFromDisk(): Record<string, Partial<VRConfig>> {
   const profiles: Record<string, Partial<VRConfig>> = { ...curatedProfiles };
   try {
     let userUpdatesProfiles = '';
+    let customProfilesDir = '';
     try {
       userUpdatesProfiles = path.join(app.getPath('userData'), 'updates', 'profiles');
+      customProfilesDir = path.join(app.getPath('userData'), 'custom_profiles');
+      if (!fs.existsSync(customProfilesDir)) {
+        fs.mkdirSync(customProfilesDir, { recursive: true });
+      }
     } catch {}
 
-    // Check root profiles directory (development, packaged resources, and OTA updates)
+    // Check root profiles directory (development, packaged resources, OTA updates, and custom user profiles)
     const candidateDirs = [
       ...(userUpdatesProfiles ? [userUpdatesProfiles] : []),
+      ...(customProfilesDir ? [customProfilesDir] : []),
       path.resolve(__dirname, '../../../profiles'),
       path.resolve(__dirname, '../../profiles'),
       path.join(process.resourcesPath, 'profiles'),
@@ -165,7 +171,7 @@ function loadProfilesFromDisk(): Record<string, Partial<VRConfig>> {
                 profiles[data.id] = {
                   motionAimSensitivity: typeof data.motionAimSensitivity === 'number' ? data.motionAimSensitivity : 1.0,
                   useRecommendedResolution: data.useRecommendedResolution !== false,
-                  srgbCorrection: data.srgbCorrection !== false,
+                  srgbCorrection: Boolean(data.srgbCorrection),
                   depthSubmission: Boolean(data.depthSubmission),
                   rawInputMode: data.rawInputMode !== false,
                   autoInjectOnLaunch: data.autoInjectOnLaunch !== false,
@@ -188,7 +194,24 @@ function loadProfilesFromDisk(): Record<string, Partial<VRConfig>> {
   return profiles;
 }
 
-const activeProfiles = loadProfilesFromDisk();
+let cachedProfiles: Record<string, Partial<VRConfig>> | null = null;
+let lastProfileLoad = 0;
+
+export function getActiveProfiles(): Record<string, Partial<VRConfig>> {
+  const now = Date.now();
+  if (!cachedProfiles || now - lastProfileLoad > 5000) {
+    cachedProfiles = loadProfilesFromDisk();
+    lastProfileLoad = now;
+  }
+  return cachedProfiles;
+}
+
+ipcMain.handle('config:reloadProfiles', async (event) => {
+  assertTrustedIpcSender(event);
+  cachedProfiles = loadProfilesFromDisk();
+  lastProfileLoad = Date.now();
+  return { success: true, count: Object.keys(cachedProfiles).length };
+});
 
 ipcMain.handle('config:read', async (event, id: string): Promise<VRConfig> => {
   try {
@@ -196,6 +219,7 @@ ipcMain.handle('config:read', async (event, id: string): Promise<VRConfig> => {
     const validId = validateGameId(id);
     const installPath = gamePathsMap[validId];
     const registeredExe = gameExeMap[validId];
+    const activeProfiles = getActiveProfiles();
     let matchedProfile = activeProfiles[validId];
     if (!matchedProfile) {
       const exeName = registeredExe ? path.basename(registeredExe, '.exe').toLowerCase() : '';
@@ -260,7 +284,7 @@ ipcMain.handle('config:write', async (event, id: string, cfg: unknown) => {
       if (fs.existsSync(subDir)) dirsToSync.add(subDir);
     }
 
-    const baseProfile = activeProfiles[validId] || {};
+    const baseProfile = getActiveProfiles()[validId] || {};
     const finalCfg: VRConfig = {
       ...validCfg,
       engine: validCfg.engine ?? baseProfile.engine,

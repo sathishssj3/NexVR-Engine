@@ -14,6 +14,7 @@ declare global {
     ag: {
       library: {
         scan: () => Promise<ScanResult>;
+        scanCached: () => Promise<ScanResult & { fromCache: boolean }>;
         addCustom: () => Promise<{ success: boolean }>;
         removeGame: (id: string) => Promise<{ success: boolean }>;
         restoreGame: (id: string) => Promise<{ success: boolean }>;
@@ -94,16 +95,42 @@ export default function App() {
   };
 
   useEffect(() => {
-    scanGames();
+    // === OPTIMIZED STARTUP SEQUENCE ===
+    // 1. Load cached library data instantly (sub-5ms) so UI renders immediately
+    // 2. Fetch VR status right away (don't wait for first 5s interval)
+    // 3. Trigger full background scan to refresh data
+
+    // Step 1: Instant cached library render
+    if (window.ag?.library?.scanCached) {
+      window.ag.library.scanCached().then((cached) => {
+        if (cached.active.length > 0 || cached.waiting.length > 0) {
+          setGames(cached.active);
+          setWaitingGames(cached.waiting);
+        }
+        // Step 3: Background full scan (updates cache + refreshes UI)
+        scanGames();
+      }).catch(() => {
+        scanGames();
+      });
+    } else {
+      scanGames();
+    }
+
+    // Step 2: Immediate VR status fetch
+    if (window.ag?.vr) {
+      window.ag.vr.status().then(st => setVrStatus(st)).catch(() => {});
+    }
+
+    // VR status polling (every 5s)
     const interval = setInterval(async () => {
-      if (window.ag && window.ag.vr) {
+      if (window.ag?.vr) {
         const st = await window.ag.vr.status();
         setVrStatus(st);
       }
     }, 5000);
 
     // Query OTA hotfix status
-    if (window.ag && window.ag.update) {
+    if (window.ag?.update) {
       window.ag.update.getStatus().then((st) => {
         if (st) {
           setUpdateStatus({
@@ -289,7 +316,7 @@ export default function App() {
             fontFamily: 'var(--ag-font-mono)', letterSpacing: '0.05em', 
             fontWeight: 800
           }}>
-            {updateStatus?.version ? updateStatus.version.replace(/^v/, '') : '0.1.55'}
+            {updateStatus?.version ? updateStatus.version.replace(/^v/, '') : '0.1.58'}
           </span>
           {updateStatus?.updated && (
             <span style={{

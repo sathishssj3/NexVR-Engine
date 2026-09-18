@@ -157,8 +157,16 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     expect(shader).toContain('ApplyPerceptualGrading');
 
     // Reprojection shader must NOT perform artificial double-gamma pow 2.2 crush
+    expect(shader).not.toContain('ApplyGammaCorrection');
+    expect(shader).not.toContain('pow(clamp(color, 0.0f, 1.0f), 2.2f)');
     expect(shader).not.toContain('pow(max(outColor.rgb, 0.0f), 2.2f)');
     expect(shader).not.toContain('pow(max(leftColor.rgb, 0.0f), 2.2f)');
+
+    // Launcher configuration manager and settings defaults must enforce srgbCorrection false
+    const configMgr = readRepoFile('launcher', 'electron', 'configManager.ts');
+    const settingsView = readRepoFile('launcher', 'src', 'components', 'SettingsView.tsx');
+    expect(configMgr).toMatch(/defaultVRConfig:\s*VRConfig\s*=\s*\{[\s\S]*srgbCorrection:\s*false/);
+    expect(settingsView).toContain('srgbCorrection: false');
 
     // C++ structs must declare contrast, saturation, brightness and srgbCorrection
     expect(dx12ManagerH).toContain('float contrast;');
@@ -237,5 +245,37 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
 
     // libraryManager must not contain brittle hardcoded Mortal Shell overrides (QUAL-04)
     expect(libraryManagerTs).not.toContain("if (sub.name.toLowerCase() === 'mortalshell') displayName = 'Mortal Shell'");
+  });
+
+  test('v0.1.58 high-reliability architecture: SEH crash boundaries, AC tripwire, and sync tooling', () => {
+    const dx11Hook = readRepoFile('src', 'hooks', 'dx11_hook.cpp');
+    const dx12Hook = readRepoFile('src', 'hooks', 'dx12_hook.cpp');
+    const vkHook = readRepoFile('src', 'hooks', 'vulkan_hook.cpp');
+    const mainInjector = readRepoFile('src', 'injector', 'main.cpp');
+    const configMgr = readRepoFile('launcher', 'electron', 'configManager.ts');
+    const pkgJson = JSON.parse(readRepoFile('launcher', 'package.json'));
+
+    // 1. SEH Crash boundaries around Present and Resize hooks
+    expect(dx11Hook).toContain('__try {');
+    expect(dx11Hook).toContain('__except (EXCEPTION_EXECUTE_HANDLER)');
+    expect(dx12Hook).toContain('__try {');
+    expect(dx12Hook).toContain('__except (EXCEPTION_EXECUTE_HANDLER)');
+    expect(vkHook).toContain('__try {');
+    expect(vkHook).toContain('__except (EXCEPTION_EXECUTE_HANDLER)');
+
+    // 2. Anti-Cheat tripwire detects EAC, BattlEye, and Vanguard
+    expect(mainInjector).toContain('strict_ac_blocklist');
+    expect(mainInjector).toContain('"easyanticheat.exe"');
+    expect(mainInjector).toContain('"beservice.exe"');
+    expect(mainInjector).toContain('"vgc.exe"');
+
+    // 3. Dynamic custom profiles support
+    expect(configMgr).toContain("'custom_profiles'");
+    expect(configMgr).toContain('config:reloadProfiles');
+
+    // 4. Asset sync and binary signing tooling registered in package.json
+    expect(pkgJson.scripts['sync:assets']).toBeDefined();
+    expect(pkgJson.scripts['sign:binaries']).toBeDefined();
+    expect(pkgJson.version).toBe('0.1.58');
   });
 });

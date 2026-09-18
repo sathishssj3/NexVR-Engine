@@ -1,7 +1,7 @@
 {
   "name": "launcher",
   "private": true,
-  "version": "0.1.55",
+  "version": "0.1.58",
   "description": "Universal VR injection launcher",
   "author": "NexVR Engine",
   "homepage": "https://github.com/sathishssj3/NexVR-Engine",
@@ -12,6 +12,8 @@
     "test:static": "playwright test regression-static.spec.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p electron/tsconfig.json --noEmit",
     "test:ci": "npm run typecheck && npm run test:static",
+    "sync:assets": "node ../../scripts/sync_assets.js",
+    "sign:binaries": "powershell.exe -ExecutionPolicy Bypass -File ../../scripts/sign_binaries.ps1",
     "build": "vite build && tsc -p electron/tsconfig.json",
     "pack": "npm run build && electron-builder --win --publish never --config electron-builder.config.js"
   },

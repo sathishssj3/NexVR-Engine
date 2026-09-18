@@ -450,10 +450,16 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // S3.4: Anti-Cheat Protection
-    // Tier 1/2 (EAC, BattlEye) are allowed, as the injected DLL will fallback to stealthy IAT hooks.
-    // Tier 3 (Vanguard, etc.) are blocked entirely to prevent kernel bans.
-    const char* tier3_blocklist[] = { "vgc.exe", "vgtray" };
+    // S3.4: Anti-Cheat Protection Tripwire
+    // Active kernel/competitive anti-cheat processes (Vanguard, active EAC, BattlEye)
+    // are strictly blocked to prevent multiplayer account bans per project security policy.
+    const char* strict_ac_blocklist[] = { 
+        "vgc.exe", 
+        "vgtray.exe", 
+        "easyanticheat.exe", 
+        "easyanticheat_eos.exe", 
+        "beservice.exe" 
+    };
     HANDLE hSnapAC = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (hSnapAC != INVALID_HANDLE_VALUE) {
         PROCESSENTRY32 peAC{};
@@ -462,9 +468,9 @@ int main(int argc, char* argv[]) {
             do {
                 std::string pName = peAC.szExeFile;
                 for (char& c : pName) c = static_cast<char>(std::tolower(c));
-                for (const char* blocked : tier3_blocklist) {
+                for (const char* blocked : strict_ac_blocklist) {
                     if (pName.find(blocked) != std::string::npos) {
-                        PrintErr("[ERROR] Tier 3 Anti-cheat process detected (%s). Injection REFUSED to prevent account ban.", peAC.szExeFile);
+                        PrintErr("[SECURITY] Active Anti-Cheat process detected (%s). Injection REFUSED to protect account from bans.", peAC.szExeFile);
                         ::CloseHandle(hSnapAC);
                         return 15;
                     }

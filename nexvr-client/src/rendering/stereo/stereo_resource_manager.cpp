@@ -1,5 +1,8 @@
 #include "rendering/stereo/stereo_resource_manager.h"
 #include "core/logger.h"
+#include <d3dcompiler.h>
+
+#pragma comment(lib, "d3dcompiler.lib")
 
 // Include the compiled shader byte code
 // This assumes CMake generated bin/shaders/stereo_reprojection_cs_dx11.h
@@ -276,7 +279,16 @@ bool StereoResourceManager::CreateRenderTargets(uint32_t width, uint32_t height,
 
 bool StereoResourceManager::LoadShaders() {
     HRESULT hr = device_->CreateComputeShader(g_stereo_reprojection_DX11, sizeof(g_stereo_reprojection_DX11), nullptr, &reprojectionShader_);
-    if (FAILED(hr)) return false;
+    if (FAILED(hr)) {
+        LOG_WARN("StereoResourceManager: Precompiled compute shader failed (hr=0x%X). Attempting dynamic HLSL compile fallback.", hr);
+        Microsoft::WRL::ComPtr<ID3DBlob> blob;
+        Microsoft::WRL::ComPtr<ID3DBlob> err;
+        hr = D3DCompileFromFile(L"shaders/stereo_reprojection.hlsl", nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "CSMain", "cs_5_0", D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &blob, &err);
+        if (SUCCEEDED(hr) && blob) {
+            hr = device_->CreateComputeShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, &reprojectionShader_);
+        }
+        if (FAILED(hr)) return false;
+    }
     hr = device_->CreateComputeShader(g_asw_shader_DX11, sizeof(g_asw_shader_DX11), nullptr, &aswShader_);
     return SUCCEEDED(hr);
 }

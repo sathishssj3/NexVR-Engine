@@ -91,7 +91,7 @@ function createWindow() {
     minWidth: 900,
     minHeight: 650,
     center: true,
-    show: true,
+    show: false,
     backgroundColor: '#0a0d14',
     frame: false,
     icon: windowIcon,
@@ -109,8 +109,23 @@ function createWindow() {
     console.error('[CRITICAL] Render process gone:', JSON.stringify(details));
   });
 
-  mainWindow.center();
-  mainWindow.focus();
+  // Show window only after renderer has painted — eliminates blank window phase
+  mainWindow.once('ready-to-show', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show();
+      mainWindow.center();
+      mainWindow.focus();
+    }
+  });
+
+  // Fallback: force-show after 4s if ready-to-show never fires (e.g. render crash)
+  setTimeout(() => {
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
+      mainWindow.show();
+      mainWindow.center();
+      mainWindow.focus();
+    }
+  }, 4000);
 
   if (isDev && process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL).catch(err => {

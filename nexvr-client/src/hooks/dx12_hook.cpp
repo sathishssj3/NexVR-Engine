@@ -227,15 +227,35 @@ HRESULT ProcessPresentDX12(SwapChainType* pSwapChain, OriginalFunc originalFunc,
     return hr;
 }
 
-HRESULT __stdcall hkPresentDX12(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
+static HRESULT hkPresentDX12Internal(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
     return ProcessPresentDX12(pSwapChain, OriginalPresentDX12, SyncInterval, Flags);
 }
 
-HRESULT __stdcall hkPresent1DX12(IDXGISwapChain1* pSwapChain, UINT SyncInterval, UINT PresentFlags, const DXGI_PRESENT_PARAMETERS* pPresentParameters) {
+HRESULT __stdcall hkPresentDX12(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
+    __try {
+        return hkPresentDX12Internal(pSwapChain, SyncInterval, Flags);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        LOG_ERROR("DX12Hook: SEH hardware exception caught in hkPresentDX12! Safely delegating to OriginalPresentDX12.");
+        return OriginalPresentDX12 ? OriginalPresentDX12(pSwapChain, SyncInterval, Flags) : DXGI_ERROR_INVALID_CALL;
+    }
+}
+
+static HRESULT hkPresent1DX12Internal(IDXGISwapChain1* pSwapChain, UINT SyncInterval, UINT PresentFlags, const DXGI_PRESENT_PARAMETERS* pPresentParameters) {
     return ProcessPresentDX12(pSwapChain, OriginalPresent1DX12, SyncInterval, PresentFlags, pPresentParameters);
 }
 
-HRESULT __stdcall hkResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags) {
+HRESULT __stdcall hkPresent1DX12(IDXGISwapChain1* pSwapChain, UINT SyncInterval, UINT PresentFlags, const DXGI_PRESENT_PARAMETERS* pPresentParameters) {
+    __try {
+        return hkPresent1DX12Internal(pSwapChain, SyncInterval, PresentFlags, pPresentParameters);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        LOG_ERROR("DX12Hook: SEH hardware exception caught in hkPresent1DX12! Safely delegating to OriginalPresent1DX12.");
+        return OriginalPresent1DX12 ? OriginalPresent1DX12(pSwapChain, SyncInterval, PresentFlags, pPresentParameters) : DXGI_ERROR_INVALID_CALL;
+    }
+}
+
+static HRESULT hkResizeBuffersInternal(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags) {
     LOG_INFO("DX12Hook: hkResizeBuffers requested format %d (%ux%u)", NewFormat, Width, Height);
     Dx12LifecycleManager::Get().ReleaseSwapchainReferences();
     HRESULT hr = OriginalResizeBuffers ? OriginalResizeBuffers(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags) : DXGI_ERROR_INVALID_CALL;
@@ -245,7 +265,17 @@ HRESULT __stdcall hkResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount, 
     return hr;
 }
 
-HRESULT __stdcall hkResizeBuffers1(IDXGISwapChain3* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags, const UINT* pCreationNodeMask, IUnknown* const* ppPresentQueue) {
+HRESULT __stdcall hkResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags) {
+    __try {
+        return hkResizeBuffersInternal(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        LOG_ERROR("DX12Hook: SEH hardware exception caught in hkResizeBuffers! Forwarding to driver OriginalResizeBuffers.");
+        return OriginalResizeBuffers ? OriginalResizeBuffers(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags) : DXGI_ERROR_INVALID_CALL;
+    }
+}
+
+static HRESULT hkResizeBuffers1Internal(IDXGISwapChain3* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags, const UINT* pCreationNodeMask, IUnknown* const* ppPresentQueue) {
     LOG_INFO("DX12Hook: hkResizeBuffers1 requested format %d (%ux%u)", NewFormat, Width, Height);
     Dx12LifecycleManager::Get().ReleaseSwapchainReferences();
     HRESULT hr = OriginalResizeBuffers1 ? OriginalResizeBuffers1(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags, pCreationNodeMask, ppPresentQueue) : DXGI_ERROR_INVALID_CALL;
@@ -253,6 +283,16 @@ HRESULT __stdcall hkResizeBuffers1(IDXGISwapChain3* pSwapChain, UINT BufferCount
         Dx12LifecycleManager::Get().NotifyResizeComplete();
     }
     return hr;
+}
+
+HRESULT __stdcall hkResizeBuffers1(IDXGISwapChain3* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags, const UINT* pCreationNodeMask, IUnknown* const* ppPresentQueue) {
+    __try {
+        return hkResizeBuffers1Internal(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags, pCreationNodeMask, ppPresentQueue);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        LOG_ERROR("DX12Hook: SEH hardware exception caught in hkResizeBuffers1! Forwarding to driver OriginalResizeBuffers1.");
+        return OriginalResizeBuffers1 ? OriginalResizeBuffers1(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags, pCreationNodeMask, ppPresentQueue) : DXGI_ERROR_INVALID_CALL;
+    }
 }
 
 void __stdcall hkCreateDepthStencilView(ID3D12Device* pDevice, ID3D12Resource* pResource, const D3D12_DEPTH_STENCIL_VIEW_DESC* pDesc, D3D12_CPU_DESCRIPTOR_HANDLE DestDescriptor) {
@@ -282,7 +322,7 @@ void __stdcall hkCopyDescriptorsSimple(ID3D12Device* pDevice, UINT NumDescriptor
     }
 }
 
-void __stdcall hkExecuteCommandLists(ID3D12CommandQueue* pCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists) {
+static void hkExecuteCommandListsInternal(ID3D12CommandQueue* pCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists) {
     if (pCommandQueue && vrinject::seh::IsValidMemoryPointer(pCommandQueue)) {
         D3D12_COMMAND_QUEUE_DESC desc = pCommandQueue->GetDesc();
         if (desc.Type == D3D12_COMMAND_LIST_TYPE_DIRECT) {
@@ -291,6 +331,18 @@ void __stdcall hkExecuteCommandLists(ID3D12CommandQueue* pCommandQueue, UINT Num
     }
     if (OriginalExecuteCommandLists) {
         OriginalExecuteCommandLists(pCommandQueue, NumCommandLists, ppCommandLists);
+    }
+}
+
+void __stdcall hkExecuteCommandLists(ID3D12CommandQueue* pCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists) {
+    __try {
+        hkExecuteCommandListsInternal(pCommandQueue, NumCommandLists, ppCommandLists);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        LOG_ERROR("DX12Hook: SEH hardware exception caught in hkExecuteCommandLists! Safely executing OriginalExecuteCommandLists.");
+        if (OriginalExecuteCommandLists) {
+            OriginalExecuteCommandLists(pCommandQueue, NumCommandLists, ppCommandLists);
+        }
     }
 }
 
