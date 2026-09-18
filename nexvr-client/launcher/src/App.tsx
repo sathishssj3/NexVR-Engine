@@ -55,7 +55,7 @@ declare global {
         close: () => void
       },
       shell: {
-        openExternal: (url: string) => void
+        openExternal: (url: string) => Promise<void> | void
       },
       versions: {
         electron: string,
@@ -78,11 +78,12 @@ export default function App() {
   const [transitioning, setTransitioning] = useState(false);
   const [hasConsented, setHasConsented] = useState<boolean>(() => localStorage.getItem('ag_ac_consent') === 'true');
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
+  const [tabAnimNonce, setTabAnimNonce] = useState(0);
   const injectTokenRef = useRef<number>(0);
   const mainContentRef = useRef<HTMLDivElement>(null);
 
   // Fast & smooth accelerated scrolling
-  useFastSmoothScroll(mainContentRef, { speed: 1.7, smoothness: 0.25 });
+  useFastSmoothScroll(mainContentRef, { speed: 1.7, smoothness: 0.25 }, [currentTab, tabAnimNonce]);
 
   const scanGames = async () => {
     if (window.ag && window.ag.library) {
@@ -95,8 +96,10 @@ export default function App() {
   useEffect(() => {
     scanGames();
     const interval = setInterval(async () => {
-      const st = await window.ag.vr.status();
-      setVrStatus(st);
+      if (window.ag && window.ag.vr) {
+        const st = await window.ag.vr.status();
+        setVrStatus(st);
+      }
     }, 5000);
 
     // Query OTA hotfix status
@@ -107,7 +110,7 @@ export default function App() {
             checking: false,
             hasUpdate: false,
             updated: st.timestamp > 0,
-            version: st.version || '0.1.28',
+            version: st.version || '0.1.29',
             changelog: st.changelog,
             features: st.features,
             fixes: st.fixes,
@@ -171,7 +174,7 @@ export default function App() {
     }
     const res = await window.ag.inject.uninstall(selectedGame.id);
     if (res.success) {
-      window.alert("✓ " + res.message);
+      window.alert(res.message);
       scanGames();
     } else {
       window.alert("Error: " + res.message);
@@ -182,12 +185,12 @@ export default function App() {
     if (!selectedGame) return;
 
     if (selectedGame.hasAntiCheat) {
-      window.alert(`🛡️ INJECTION BLOCKED FOR SAFETY\n\n"${selectedGame.name}" is protected by ${selectedGame.antiCheatName || 'Anti-Cheat'}.\n\nInjecting custom DLLs into anti-cheat protected titles is strictly disabled to prevent multiplayer account bans.`);
+      window.alert(`INJECTION BLOCKED FOR SAFETY\n\n"${selectedGame.name}" is protected by ${selectedGame.antiCheatName || 'Anti-Cheat'}.\n\nInjecting custom DLLs into anti-cheat protected titles is strictly disabled to prevent multiplayer account bans.`);
       return;
     }
 
     if (!vrStatus.connected) {
-      if (!window.confirm(`⚠️ NO VR HEADSET DETECTED\n\nYour OpenXR / SteamVR runtime does not detect an active headset.\n\nMake sure your headset is powered on and SteamVR or Quest Link is active.\n\nDo you want to launch into VR anyway?`)) {
+      if (!window.confirm(`NO VR HEADSET DETECTED\n\nYour OpenXR / SteamVR runtime does not detect an active headset.\n\nMake sure your headset is powered on and SteamVR or Quest Link is active.\n\nDo you want to launch into VR anyway?`)) {
         return;
       }
     }
@@ -273,83 +276,132 @@ export default function App() {
       } as any}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <strong style={{ 
-            color: '#fff', letterSpacing: '3px', fontSize: 13,
+            color: 'var(--ag-text-primary)', letterSpacing: '0.06em', fontSize: 13,
             fontFamily: 'var(--ag-font-display)',
-            textShadow: '0 0 10px rgba(255,255,255,0.2)' 
+            fontWeight: 700
           }}>
             NEXVR ENGINE
           </strong>
           <span style={{ 
-            marginLeft: 10, marginRight: 16, 
+            marginLeft: 8, marginRight: 16, 
             color: updateStatus?.updated ? 'var(--ag-accent-success)' : 'var(--ag-accent)', 
-            fontSize: 10, 
-            fontFamily: 'var(--ag-font-mono)', letterSpacing: '1px', 
-            textShadow: updateStatus?.updated ? '0 0 8px rgba(0,230,118,0.4)' : '0 0 8px rgba(0,240,255,0.4)', 
-            opacity: 0.9,
-            fontWeight: 600
+            fontSize: 11.5, 
+            fontFamily: 'var(--ag-font-mono)', letterSpacing: '0.05em', 
+            fontWeight: 800
           }}>
-            {updateStatus?.version ? (updateStatus.version.startsWith('v') ? updateStatus.version : `v${updateStatus.version}`) : 'v0.1.28'}
+            {updateStatus?.version ? updateStatus.version.replace(/^v/, '') : '0.1.54'}
           </span>
           {updateStatus?.updated && (
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 5,
-              padding: '2px 8px', borderRadius: 10, fontSize: 9,
-              background: 'rgba(0, 230, 118, 0.12)', border: '1px solid rgba(0, 230, 118, 0.3)',
+              padding: '2px 8px', borderRadius: 3, fontSize: 9,
+              background: 'rgba(48, 209, 88, 0.12)', border: '1px solid rgba(48, 209, 88, 0.3)',
               color: 'var(--ag-accent-success)', fontFamily: 'var(--ag-font-mono)',
-              marginRight: 16, letterSpacing: '0.5px'
+              marginRight: 16, letterSpacing: '0.05em'
             }}>
-              <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--ag-accent-success)', boxShadow: '0 0 6px var(--ag-accent-success)' }} />
-              OTA HOTFIX ACTIVE
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--ag-accent-success)' }} />
+              HOTFIX ACTIVE
             </span>
           )}
-          <div style={{ display: 'flex', gap: 2, WebkitAppRegion: 'no-drag' } as any}>
-             {(['library', 'settings', 'about'] as const).map(tab => (
-               <button 
-                 key={tab}
-                 onClick={() => setCurrentTab(tab)} 
-                 style={{ 
-                   background: currentTab === tab ? 'rgba(0,240,255,0.08)' : 'transparent', 
-                   border: 'none', 
-                   borderBottom: currentTab === tab ? '2px solid var(--ag-accent)' : '2px solid transparent',
-                   color: currentTab === tab ? '#fff' : 'var(--ag-text-muted)', 
-                   fontFamily: 'var(--ag-font-mono)', fontSize: 11, letterSpacing: '1.5px', 
-                   cursor: 'pointer', 
-                   textShadow: currentTab === tab ? '0 0 8px rgba(255,255,255,0.4)' : 'none', 
-                   padding: '0 14px', outline: 'none', height: 46,
-                   transition: 'all 0.3s var(--ag-transition)'
-                 }}
-               >
-                 {tab.toUpperCase()}
-               </button>
-             ))}
+          <div style={{ display: 'flex', gap: 2, height: '100%', WebkitAppRegion: 'no-drag' } as any}>
+             {(['library', 'settings', 'about'] as const).map(tab => {
+               const isActive = currentTab === tab;
+               return (
+                 <button 
+                   key={tab}
+                   onClick={() => {
+                     setCurrentTab(tab);
+                     setTabAnimNonce(prev => prev + 1);
+                   }} 
+                   style={{ 
+                     position: 'relative',
+                     background: isActive ? 'linear-gradient(180deg, transparent 60%, rgba(204, 0, 0, 0.06) 100%)' : 'transparent', 
+                     border: 'none', 
+                     color: isActive ? 'var(--ag-text-primary)' : 'var(--ag-text-muted)', 
+                     fontFamily: 'var(--ag-font-display)', fontSize: 11, letterSpacing: '0.1em', 
+                     fontWeight: 600,
+                     cursor: 'pointer', 
+                     padding: '0 16px', outline: 'none', height: 46,
+                     transition: 'all 0.2s var(--ag-transition)',
+                     display: 'flex',
+                     alignItems: 'center',
+                     justifyContent: 'center'
+                   }}
+                 >
+                   {tab.toUpperCase()}
+                   {isActive && (
+                     <span 
+                       key={`${tab}-${tabAnimNonce}`}
+                       className="tab-active-indicator"
+                       style={{
+                         position: 'absolute',
+                         bottom: 0,
+                         left: 0,
+                         right: 0,
+                         height: 2,
+                         background: 'var(--ag-accent)',
+                       }}
+                     />
+                   )}
+                 </button>
+               );
+             })}
           </div>
         </div>
         
-        {/* Window Controls */}
+        {/* Custom Modern Clean Window Controls */}
         <div style={{ display: 'flex', height: '100%', WebkitAppRegion: 'no-drag' } as any}>
           <button 
-            onClick={() => window.ag.window.minimize()}
-            style={{ width: 44, height: '100%', background: 'transparent', border: 'none', color: 'var(--ag-text-muted)', cursor: 'pointer', transition: 'all 0.2s', fontSize: 14, outline: 'none' }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff'; }}
+            onClick={() => window.ag?.window?.minimize()}
+            title="Minimize"
+            style={{ 
+              width: 46, height: '100%', 
+              background: 'transparent', border: 'none', 
+              color: 'var(--ag-text-muted)', cursor: 'pointer', 
+              transition: 'all 0.15s ease', outline: 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#FFF'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ag-text-muted)'; }}
           >
-            &#x2014;
+            <svg width="10" height="1" viewBox="0 0 10 1" style={{ display: 'block' }}>
+              <rect width="10" height="1" fill="currentColor" />
+            </svg>
           </button>
           <button 
-            onClick={() => window.ag.window.maximize()}
-            style={{ width: 44, height: '100%', background: 'transparent', border: 'none', color: 'var(--ag-text-muted)', cursor: 'pointer', transition: 'all 0.2s', fontSize: 14, outline: 'none' }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff'; }}
+            onClick={() => window.ag?.window?.maximize()}
+            title="Maximize"
+            style={{ 
+              width: 46, height: '100%', 
+              background: 'transparent', border: 'none', 
+              color: 'var(--ag-text-muted)', cursor: 'pointer', 
+              transition: 'all 0.15s ease', outline: 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#FFF'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ag-text-muted)'; }}
           >
-            &#x25A1;
+            <svg width="10" height="10" viewBox="0 0 10 10" style={{ display: 'block' }}>
+              <rect x="0.75" y="0.75" width="8.5" height="8.5" fill="none" stroke="currentColor" strokeWidth="1.1" rx="0.5" />
+            </svg>
           </button>
           <button 
-            onClick={() => window.ag.window.close()}
-            style={{ width: 44, height: '100%', background: 'transparent', border: 'none', color: 'var(--ag-text-muted)', cursor: 'pointer', transition: 'all 0.2s', fontSize: 14, outline: 'none' }}
-            onMouseEnter={e => { e.currentTarget.style.background = '#e24b4a'; e.currentTarget.style.color = '#fff'; }}
+            onClick={() => window.ag?.window?.close()}
+            title="Close"
+            style={{ 
+              width: 46, height: '100%', 
+              background: 'transparent', border: 'none', 
+              color: 'var(--ag-text-muted)', cursor: 'pointer', 
+              transition: 'all 0.15s ease', outline: 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#CC0000'; e.currentTarget.style.color = '#FFF'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ag-text-muted)'; }}
           >
-            &#x2715;
+            <svg width="10" height="10" viewBox="0 0 10 10" style={{ display: 'block' }}>
+              <line x1="0.8" y1="0.8" x2="9.2" y2="9.2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+              <line x1="9.2" y1="0.8" x2="0.8" y2="9.2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+            </svg>
           </button>
         </div>
       </div>
@@ -357,7 +409,11 @@ export default function App() {
       {/* Main Content */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {currentTab === 'library' ? (
-          <>
+          <div 
+            key={`library-${tabAnimNonce}`}
+            className="settings-open-anim"
+            style={{ display: 'flex', flex: 1, width: '100%', height: '100%', overflow: 'hidden' }}
+          >
             <Sidebar 
               games={games} 
               waitingGames={waitingGames}
@@ -372,12 +428,13 @@ export default function App() {
               ref={mainContentRef}
               className="fast-smooth-scroll"
               style={{ 
-              flex: 1, padding: '28px 36px',
-              opacity: transitioning ? 0 : 1,
-              transform: transitioning ? 'translateY(6px)' : 'translateY(0)',
-              transition: 'opacity 0.2s ease, transform 0.2s ease',
-              willChange: 'scroll-position',
-            }}>
+                flex: 1, padding: '28px 36px',
+                opacity: transitioning ? 0 : 1,
+                transform: transitioning ? 'translateY(6px)' : 'translateY(0)',
+                transition: 'opacity 0.2s ease, transform 0.2s ease',
+                willChange: 'scroll-position',
+              }}
+            >
               {selectedGame && config ? (
                 <GameDetail 
                   key={selectedGame.id}
@@ -401,16 +458,20 @@ export default function App() {
                 />
               )}
             </div>
-          </>
+          </div>
         ) : currentTab === 'settings' ? (
           <SettingsView
+            key={`settings-${tabAnimNonce}`}
             vrStatus={vrStatus}
             updateStatus={updateStatus}
             onUpdateStatusChange={st => setUpdateStatus(st)}
             onRescan={scanGames}
           />
         ) : (
-          <AboutPanel version={updateStatus?.version} />
+          <AboutPanel 
+            key={`about-${tabAnimNonce}`}
+            version={updateStatus?.version} 
+          />
         )}
       </div>
 
@@ -421,7 +482,6 @@ export default function App() {
         onInject={handleInject} 
         onUninstallMod={handleUninstallMod}
       />
-      <div className="crt-overlay" />
     </div>
   );
 }

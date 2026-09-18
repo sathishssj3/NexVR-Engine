@@ -55,6 +55,9 @@ export function validateConfig(cfg: unknown): VRConfig {
   if (c.contrast !== undefined && !isNaN(Number(c.contrast))) res.contrast = Math.max(0.5, Math.min(2.0, Number(c.contrast)));
   if (c.saturation !== undefined && !isNaN(Number(c.saturation))) res.saturation = Math.max(0.5, Math.min(2.0, Number(c.saturation)));
   if (c.brightness !== undefined && !isNaN(Number(c.brightness))) res.brightness = Math.max(0.5, Math.min(2.0, Number(c.brightness)));
+  if (typeof c.performanceOverlay === 'boolean') res.performanceOverlay = c.performanceOverlay;
+  if (typeof c.hapticFeedback === 'boolean') res.hapticFeedback = c.hapticFeedback;
+  if (typeof c.aiInpainting === 'boolean') res.aiInpainting = c.aiInpainting;
   return res;
 }
 

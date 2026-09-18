@@ -146,8 +146,27 @@ ipcMain.handle('log:export', async (event, lines: unknown) => {
 ipcMain.handle('shell:openExternal', async (event, url: string) => {
   assertTrustedIpcSender(event);
   const parsed = new URL(url);
-  if (parsed.protocol !== 'https:' || parsed.hostname !== 'github.com') {
-    throw new Error('External URL is not allowed');
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    throw new Error('External URL is not allowed: protocol must be http or https');
+  }
+  const allowedHostnames = [
+    'github.com',
+    'raw.githubusercontent.com',
+    'discord.gg',
+    'discord.com',
+    'nexvr.org',
+    'store.steampowered.com',
+    'steamcommunity.com',
+    'youtube.com',
+    'youtu.be',
+    'x.com',
+    'twitter.com',
+  ];
+  const isAllowed = allowedHostnames.some(
+    domain => parsed.hostname === domain || parsed.hostname.endsWith(`.${domain}`)
+  );
+  if (!isAllowed) {
+    throw new Error(`External URL is not allowed: ${parsed.hostname}`);
   }
   await shell.openExternal(parsed.toString());
 });

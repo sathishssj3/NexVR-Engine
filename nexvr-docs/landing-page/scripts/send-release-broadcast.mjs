@@ -120,7 +120,7 @@ function buildEmailHtml(recipientEmail) {
     }
 
     .laser-accent {
-      background: linear-gradient(90deg, #FF2A1F, #FF554A, #FF2A1F, #8E0F09, #FF2A1F) !important;
+      background: linear-gradient(90deg, #DC143C, #F03A5F, #DC143C, #8B0021, #DC143C) !important;
       background-size: 200% 100% !important;
       animation: laserSweep 5s linear infinite;
     }
@@ -135,12 +135,12 @@ function buildEmailHtml(recipientEmail) {
     }
 
     .hero-title-red {
-      color: #FF2A1F;
+      color: #DC143C;
       display: inline-block;
       transition: color 0.25s ease, transform 0.25s ease;
     }
     .hero-title-red:hover {
-      color: #FF4238;
+      color: #E62E52;
       transform: translateY(-1px);
     }
 
@@ -173,12 +173,12 @@ function buildEmailHtml(recipientEmail) {
 
     @keyframes btnBorderPulse {
       0%, 100% {
-        border-color: #FF2A1F;
+        border-color: #DC143C;
         box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
       }
       50% {
         border-color: #FF665E;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55), 0 0 10px rgba(255, 42, 31, 0.22);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55), 0 0 10px rgba(220, 20, 60, 0.22);
       }
     }
 
@@ -189,8 +189,8 @@ function buildEmailHtml(recipientEmail) {
     }
     .btn-cta:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 14px rgba(255, 42, 31, 0.3) !important;
-      background-color: #FF3D33 !important;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 14px rgba(220, 20, 60, 0.3) !important;
+      background-color: #E62E52 !important;
       border-color: #FFA39E !important;
     }
     .btn-cta:active {
@@ -256,7 +256,7 @@ function buildEmailHtml(recipientEmail) {
     }
     .founder-card:hover {
       transform: translateY(-2px);
-      border-color: rgba(255, 42, 31, 0.55) !important;
+      border-color: rgba(220, 20, 60, 0.55) !important;
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45) !important;
     }
     .pulse-dot {
@@ -270,7 +270,7 @@ function buildEmailHtml(recipientEmail) {
     }
     .profile-row:hover {
       transform: translateX(5px);
-      background-color: rgba(255, 42, 31, 0.04) !important;
+      background-color: rgba(220, 20, 60, 0.04) !important;
     }
     .profile-row:hover .game-title {
       color: #FFFFFF !important;
@@ -284,10 +284,10 @@ function buildEmailHtml(recipientEmail) {
     }
     .profile-row:hover .tagpill {
       transform: scale(1.08);
-      background-color: rgba(255, 42, 31, 0.16) !important;
+      background-color: rgba(220, 20, 60, 0.16) !important;
       color: #FFFFFF !important;
-      border-color: #FF2A1F !important;
-      box-shadow: 0 0 8px rgba(255, 42, 31, 0.3) !important;
+      border-color: #DC143C !important;
+      box-shadow: 0 0 8px rgba(220, 20, 60, 0.3) !important;
     }
 
     .quickstart-box {
@@ -302,7 +302,7 @@ function buildEmailHtml(recipientEmail) {
       transition: background-color 0.2s ease, color 0.2s ease;
     }
     .quickstart-box:hover .code-chip {
-      background-color: rgba(255, 42, 31, 0.12) !important;
+      background-color: rgba(220, 20, 60, 0.12) !important;
       color: #FF7B72 !important;
     }
 
@@ -310,7 +310,7 @@ function buildEmailHtml(recipientEmail) {
       transition: color 0.2s ease;
     }
     .footer-link:hover {
-      color: #FF2A1F !important;
+      color: #DC143C !important;
     }
 
     /* Prevent Gmail and Apple Mail from force-coloring autodetected text/numbers to blue */
@@ -337,7 +337,7 @@ function buildEmailHtml(recipientEmail) {
     a[href^="mailto"].email-chip,
     u + #body a.email-chip,
     #MessageViewBody a.email-chip {
-      color: #FF2A1F !important;
+      color: #DC143C !important;
       text-decoration: none !important;
       font-weight: 600 !important;
     }
@@ -348,7 +348,7 @@ function buildEmailHtml(recipientEmail) {
     a.footer-download,
     u + #body a.footer-download,
     #MessageViewBody a.footer-download {
-      color: #FF2A1F !important;
+      color: #DC143C !important;
       text-decoration: none !important;
       font-weight: 700 !important;
     }
@@ -375,16 +375,16 @@ function buildEmailHtml(recipientEmail) {
           
           <!-- Top Crimson Accent Hairline with Subtle Shimmer -->
           <tr>
-            <td class="laser-accent" style="height: 2px; background-color: #FF2A1F;"></td>
+            <td class="laser-accent" style="height: 2px; background-color: #DC143C;"></td>
           </tr>
 
           <!-- Minimal Header: ONLY "STEREO ENGINE" (No logo icon) -->
           <tr>
             <td align="center" style="padding: 26px 24px 22px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); background-color: #08080B;">
               <div class="header-brand" style="font-family: 'Chakra Petch', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 0.24em; color: #FFFFFF; text-transform: uppercase;">
-                <span style="color: #FF2A1F; font-weight: 400; margin-right: 8px;">—</span>
+                <span style="color: #DC143C; font-weight: 400; margin-right: 8px;">—</span>
                 ${CONFIG.appName.toUpperCase()}
-                <span style="color: #FF2A1F; font-weight: 400; margin-left: 8px;">—</span>
+                <span style="color: #DC143C; font-weight: 400; margin-left: 8px;">—</span>
               </div>
             </td>
           </tr>
@@ -395,15 +395,15 @@ function buildEmailHtml(recipientEmail) {
               
               <!-- Eyebrow with Symmetrical Accent Lines -->
               <div style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.22em; color: #7A7A80; text-transform: uppercase; margin-bottom: 20px;">
-                <span style="color: #FF2A1F; margin-right: 6px;">—</span>
+                <span style="color: #DC143C; margin-right: 6px;">—</span>
                 OFFICIAL ENGINE LAUNCH · ${CONFIG.version}
-                <span style="color: #FF2A1F; margin-left: 6px;">—</span>
+                <span style="color: #DC143C; margin-left: 6px;">—</span>
               </div>
 
               <!-- Big Bold Display Title (Razor Sharp, No Blurry Shadows) -->
               <h1 style="font-family: 'Chakra Petch', sans-serif; font-size: 34px; line-height: 1.08; font-weight: 700; color: #FFFFFF; margin: 0 0 16px; letter-spacing: -0.01em; text-transform: uppercase;">
                 ONE CLICK.<br>
-                <span class="hero-title-red" style="color: #FF2A1F;">ANY GAME IN VR.</span>
+                <span class="hero-title-red" style="color: #DC143C;">ANY GAME IN VR.</span>
               </h1>
 
               <p style="font-size: 15px; line-height: 1.65; color: #7A7A80; margin: 0 auto 30px; max-width: 470px;">
@@ -413,7 +413,7 @@ function buildEmailHtml(recipientEmail) {
               <!-- Primary CTA Button (Clean, Refined, High-Tech Animations) -->
               <table role="presentation" border="0" cellspacing="0" cellpadding="0" align="center">
                 <tr>
-                  <td align="center" class="btn-cta" style="background-color: #FF2A1F; border: 1px solid #FF2A1F; border-radius: 2px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);">
+                  <td align="center" class="btn-cta" style="background-color: #DC143C; border: 1px solid #DC143C; border-radius: 2px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);">
                     <a href="${CONFIG.downloadUrl}" target="_blank" class="btn-link" style="font-family: 'Chakra Petch', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #FFFFFF !important; text-decoration: none; padding: 15px 36px; display: inline-block;">
                       <font color="#FFFFFF" style="color: #FFFFFF !important;"><span style="color: #FFFFFF !important;">DOWNLOAD ${CONFIG.appName.toUpperCase()} (${CONFIG.version}) <span class="btn-arrow">↓</span></span></font>
                     </a>
@@ -452,7 +452,7 @@ function buildEmailHtml(recipientEmail) {
 
                   <!-- Stat 3 -->
                   <td align="center" width="33.33%" class="stat-cell" style="padding: 14px 8px;">
-                    <div class="stat-num" style="font-family: 'Chakra Petch', sans-serif; font-size: 18px; font-weight: 700; color: #FFFFFF; line-height: 1;">11.1<span style="color: #FF2A1F;">ms</span></div>
+                    <div class="stat-num" style="font-family: 'Chakra Petch', sans-serif; font-size: 18px; font-weight: 700; color: #FFFFFF; line-height: 1;">11.1<span style="color: #DC143C;">ms</span></div>
                     <div class="stat-label" style="font-family: 'Chakra Petch', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #7A7A80; margin-top: 5px;">
                       FRAME BUDGET
                     </div>
@@ -466,12 +466,12 @@ function buildEmailHtml(recipientEmail) {
           <!-- Founder Access Pass Box (Matches Landing Page .founder-pass) -->
           <tr>
             <td style="padding: 0 24px 28px;">
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" class="founder-card" style="background-color: #101014; border: 1px solid rgba(255, 42, 31, 0.35); border-radius: 2px; padding: 18px 22px;">
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" class="founder-card" style="background-color: #101014; border: 1px solid rgba(220, 20, 60, 0.35); border-radius: 2px; padding: 18px 22px;">
                 <tr>
                   <td>
                     <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                       <tr>
-                        <td style="font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; color: #FF2A1F; text-transform: uppercase;">
+                        <td style="font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; color: #DC143C; text-transform: uppercase;">
                           <span class="pulse-dot">●</span> PRIORITY ALLOCATED · FOUNDER STATUS
                         </td>
                         <td align="right" style="font-family: ui-monospace, monospace; font-size: 11px; color: #7A7A80;">
@@ -503,9 +503,9 @@ function buildEmailHtml(recipientEmail) {
               
               <!-- Section Eyebrow -->
               <div style="font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.2em; color: #7A7A80; text-transform: uppercase; margin-bottom: 16px; text-align: center;">
-                <span style="color: #FF2A1F; margin-right: 6px;">—</span>
+                <span style="color: #DC143C; margin-right: 6px;">—</span>
                 TESTED & TUNED PROFILES
-                <span style="color: #FF2A1F; margin-left: 6px;">—</span>
+                <span style="color: #DC143C; margin-left: 6px;">—</span>
               </div>
 
               <!-- Profiles List -->
@@ -517,7 +517,7 @@ function buildEmailHtml(recipientEmail) {
                     <span class="game-title">Cyberpunk 2077</span> <span style="font-size: 11px; color: #7A7A80; font-weight: 400; margin-left: 6px;">REDengine 4</span>
                   </td>
                   <td align="right" style="padding: 12px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.06);">
-                    <span class="tagpill" style="font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.14em; border: 1px solid #FF2A1F; color: #FF2A1F; background-color: rgba(255, 42, 31, 0.08); padding: 3px 7px; border-radius: 2px;">DX12</span>
+                    <span class="tagpill" style="font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.14em; border: 1px solid #DC143C; color: #DC143C; background-color: rgba(220, 20, 60, 0.08); padding: 3px 7px; border-radius: 2px;">DX12</span>
                   </td>
                 </tr>
 
@@ -527,7 +527,7 @@ function buildEmailHtml(recipientEmail) {
                     <span class="game-title">Elden Ring</span> <span style="font-size: 11px; color: #7A7A80; font-weight: 400; margin-left: 6px;">FromSoftware</span>
                   </td>
                   <td align="right" style="padding: 12px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.06);">
-                    <span class="tagpill" style="font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.14em; border: 1px solid #FF2A1F; color: #FF2A1F; background-color: rgba(255, 42, 31, 0.08); padding: 3px 7px; border-radius: 2px;">DX12</span>
+                    <span class="tagpill" style="font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.14em; border: 1px solid #DC143C; color: #DC143C; background-color: rgba(220, 20, 60, 0.08); padding: 3px 7px; border-radius: 2px;">DX12</span>
                   </td>
                 </tr>
 
@@ -537,7 +537,7 @@ function buildEmailHtml(recipientEmail) {
                     <span class="game-title">Sekiro: Shadows Die Twice</span> <span style="font-size: 11px; color: #7A7A80; font-weight: 400; margin-left: 6px;">FromSoftware</span>
                   </td>
                   <td align="right" style="padding: 12px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.06);">
-                    <span class="tagpill" style="font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.14em; border: 1px solid #FF2A1F; color: #FF2A1F; background-color: rgba(255, 42, 31, 0.08); padding: 3px 7px; border-radius: 2px;">DX11</span>
+                    <span class="tagpill" style="font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.14em; border: 1px solid #DC143C; color: #DC143C; background-color: rgba(220, 20, 60, 0.08); padding: 3px 7px; border-radius: 2px;">DX11</span>
                   </td>
                 </tr>
 
@@ -547,7 +547,7 @@ function buildEmailHtml(recipientEmail) {
                     <span class="game-title">Hogwarts Legacy</span> <span style="font-size: 11px; color: #7A7A80; font-weight: 400; margin-left: 6px;">Unreal Engine 4</span>
                   </td>
                   <td align="right" style="padding: 12px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.06);">
-                    <span class="tagpill" style="font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.14em; border: 1px solid #FF2A1F; color: #FF2A1F; background-color: rgba(255, 42, 31, 0.08); padding: 3px 7px; border-radius: 2px;">DX12</span>
+                    <span class="tagpill" style="font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.14em; border: 1px solid #DC143C; color: #DC143C; background-color: rgba(220, 20, 60, 0.08); padding: 3px 7px; border-radius: 2px;">DX12</span>
                   </td>
                 </tr>
 
@@ -557,7 +557,7 @@ function buildEmailHtml(recipientEmail) {
                     <span class="game-title">Atomic Heart</span> <span style="font-size: 11px; color: #7A7A80; font-weight: 400; margin-left: 6px;">Unreal Engine 4</span>
                   </td>
                   <td align="right" style="padding: 12px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.06);">
-                    <span class="tagpill" style="font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.14em; border: 1px solid #FF2A1F; color: #FF2A1F; background-color: rgba(255, 42, 31, 0.08); padding: 3px 7px; border-radius: 2px;">DX12</span>
+                    <span class="tagpill" style="font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.14em; border: 1px solid #DC143C; color: #DC143C; background-color: rgba(220, 20, 60, 0.08); padding: 3px 7px; border-radius: 2px;">DX12</span>
                   </td>
                 </tr>
 
@@ -567,7 +567,7 @@ function buildEmailHtml(recipientEmail) {
                     <span class="game-title">Palworld</span> <span style="font-size: 11px; color: #7A7A80; font-weight: 400; margin-left: 6px;">Unreal Engine 5</span>
                   </td>
                   <td align="right" style="padding: 12px 18px;">
-                    <span class="tagpill" style="font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.14em; border: 1px solid #FF2A1F; color: #FF2A1F; background-color: rgba(255, 42, 31, 0.08); padding: 3px 7px; border-radius: 2px;">DX12</span>
+                    <span class="tagpill" style="font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.14em; border: 1px solid #DC143C; color: #DC143C; background-color: rgba(220, 20, 60, 0.08); padding: 3px 7px; border-radius: 2px;">DX12</span>
                   </td>
                 </tr>
 
@@ -601,14 +601,14 @@ function buildEmailHtml(recipientEmail) {
               
               <!-- Symmetrical Brand Header -->
               <div style="font-family: 'Chakra Petch', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #FFFFFF; margin-bottom: 16px;">
-                <span style="color: #FF2A1F; font-weight: 400; margin-right: 8px;">—</span>
+                <span style="color: #DC143C; font-weight: 400; margin-right: 8px;">—</span>
                 ${CONFIG.appName.toUpperCase()}
-                <span style="color: #FF2A1F; font-weight: 400; margin-left: 8px;">—</span>
+                <span style="color: #DC143C; font-weight: 400; margin-left: 8px;">—</span>
               </div>
 
               <!-- Recipient Notice with Styled Monospace Chip (Prevents Gmail Blue Link) -->
               <div style="font-size: 11px; line-height: 1.8; color: #7A7A80; margin-bottom: 18px;">
-                Sent to <a href="mailto:${recipientEmail}" class="email-chip" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; font-weight: 600; color: #FF2A1F !important; background-color: rgba(255, 42, 31, 0.1); border: 1px solid rgba(255, 42, 31, 0.4); padding: 3px 9px; border-radius: 3px; text-decoration: none !important; display: inline-block; letter-spacing: 0.02em;"><font color="#FF2A1F" style="color: #FF2A1F !important;">${recipientEmail}</font></a> because you joined early access.
+                Sent to <a href="mailto:${recipientEmail}" class="email-chip" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; font-weight: 600; color: #DC143C !important; background-color: rgba(220, 20, 60, 0.1); border: 1px solid rgba(220, 20, 60, 0.4); padding: 3px 9px; border-radius: 3px; text-decoration: none !important; display: inline-block; letter-spacing: 0.02em;"><font color="#DC143C" style="color: #DC143C !important;">${recipientEmail}</font></a> because you joined early access.
               </div>
 
               <!-- Nav Links in Clean Pill Style (No Underlines) -->
@@ -617,7 +617,7 @@ function buildEmailHtml(recipientEmail) {
                 <span style="color: rgba(255, 255, 255, 0.15);">·</span>
                 <a href="${CONFIG.websiteUrl}#faq" class="footer-link footer-nav-link" style="color: #8A8A92 !important; text-decoration: none; padding: 4px 10px;"><font color="#8A8A92" style="color: #8A8A92 !important;">TROUBLESHOOTING</font></a>
                 <span style="color: rgba(255, 255, 255, 0.15);">·</span>
-                <a href="${CONFIG.downloadUrl}" class="footer-link footer-download" style="color: #FF2A1F !important; text-decoration: none; padding: 4px 10px; font-weight: 700;"><font color="#FF2A1F" style="color: #FF2A1F !important;"><span style="color: #FF2A1F !important;">DOWNLOAD (${CONFIG.version.toUpperCase()})</span></font></a>
+                <a href="${CONFIG.downloadUrl}" class="footer-link footer-download" style="color: #DC143C !important; text-decoration: none; padding: 4px 10px; font-weight: 700;"><font color="#DC143C" style="color: #DC143C !important;"><span style="color: #DC143C !important;">DOWNLOAD (${CONFIG.version.toUpperCase()})</span></font></a>
               </div>
 
               <!-- Subtle Center Divider -->

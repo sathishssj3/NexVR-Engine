@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>404 — Memory Detour Fault | NexVR Engine</title>
+<meta name="description" content="Status 0xC000000E: Hook detour target unmapped. The requested page or render target does not exist in the active NexVR Engine runtime.">
+<meta name="theme-color" content="#050506">
+
+<!-- Brand Favicons -->
+<link rel="icon" type="image/png" sizes="32x32" href="logo.png?v=2">
+<link rel="shortcut icon" type="image/x-icon" href="favicon.ico?v=2">
+<link rel="apple-touch-icon" sizes="180x180" href="logo.png?v=2">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --void: #050506;
+  --panel: #0C0C0F;
+  --panel-2: #101014;
+  --edge: rgba(255, 255, 255, 0.08);
+  --edge-hot: rgba(220, 20, 60, 0.35);
+  --red: #DC143C;
+  --red-deep: #8B0021;
+  --white: #F2F2F3;
+  --muted: #7A7A80;
+  --dim: #5C5C64;
+  --font-display: 'Chakra Petch', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+  background: var(--void);
+  color: var(--white);
+  font-family: var(--font-body);
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+  touch-action: manipulation;
+}
+
+body {
+  background-color: var(--void);
+  background-image: 
+    radial-gradient(circle at 50% 18%, rgba(220, 20, 60, 0.12) 0%, transparent 65%),
+    radial-gradient(circle at 80% 85%, rgba(220, 20, 60, 0.04) 0%, transparent 50%),
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+  position: relative;
+}
+
+/* Subtle CRT Scanline Overlay */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0.6;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ---------- NAV ---------- */
+.nav {
+  height: 4.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 clamp(1rem, 5vw, 4rem);
+  border-bottom: 1px solid var(--edge);
+  background: rgba(8, 8, 11, 0.75);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  transition: transform 0.2s var(--ease);
+}
+.brand:hover {
+  transform: scale(1.02);
+}
+.brand-mark {
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--edge);
+  box-shadow: 0 0 12px rgba(220, 20, 60, 0.25);
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.nav-status {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+}
+.nav-status .pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 8px var(--red);
+  animation: radar-pulse 1.8s infinite;
+}
+
+@keyframes radar-pulse {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 14px var(--red); }
+  100% { transform: scale(0.9); opacity: 0.7; }
+}
+
+/* ---------- MAIN STAGE ---------- */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(2.5rem, 6vw, 4.5rem) clamp(1rem, 5vw, 3rem);
+  text-align: center;
+  max-width: 920px;
+  margin-inline: auto;
+  width: 100%;
+}
+
+/* Diagnostic Badge */
+.diag-badge {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--red);
+  background: rgba(220, 20, 60, 0.08);
+  border: 1px solid rgba(220, 20, 60, 0.32);
+  border-radius: 3px;
+  padding: 0.4rem 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 1.6rem;
+  letter-spacing: 0.04em;
+  box-shadow: 0 0 20px rgba(220, 20, 60, 0.15);
+}
+
+/* Stereoscopic Glitch 404 Headline */
+.glitch-wrap {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 0.75rem;
+}
+.glitch-404 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(4.5rem, 16vw, 9.5rem);
+  line-height: 0.88;
+  letter-spacing: -0.05em;
+  color: var(--white);
+  position: relative;
+  text-shadow: 0 0 25px rgba(255, 255, 255, 0.2);
+}
+.glitch-404::before {
+  content: "404";
+  position: absolute;
+  inset: 0;
+  color: var(--red);
+  opacity: 0.75;
+  transform: translate3d(-5px, 0, 0);
+  pointer-events: none;
+  filter: blur(0.5px);
+  animation: stereo-jitter 3s infinite ease-in-out alternate;
+}
+.glitch-404::after {
+  content: "404";
+  position: absolute;
+  inset: 0;
+  color: #00F0FF;
+  opacity: 0.45;
+  transform: translate3d(5px, 0, 0);
+  pointer-events: none;
+  filter: blur(0.5px);
+  animation: stereo-jitter-cyan 3s infinite ease-in-out alternate;
+}
+
+@keyframes stereo-jitter {
+  0% { transform: translate3d(-4px, 0, 0); opacity: 0.7; }
+  45% { transform: translate3d(-7px, 1px, 0); opacity: 0.85; }
+  50% { transform: translate3d(-2px, -1px, 0); opacity: 0.5; }
+  80% { transform: translate3d(-6px, 0, 0); opacity: 0.75; }
+  100% { transform: translate3d(-4px, 0, 0); opacity: 0.7; }
+}
+
+@keyframes stereo-jitter-cyan {
+  0% { transform: translate3d(4px, 0, 0); opacity: 0.4; }
+  45% { transform: translate3d(7px, -1px, 0); opacity: 0.55; }
+  50% { transform: translate3d(2px, 1px, 0); opacity: 0.3; }
+  80% { transform: translate3d(6px, 0, 0); opacity: 0.45; }
+  100% { transform: translate3d(4px, 0, 0); opacity: 0.4; }
+}
+
+.subhead {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.35rem, 3.5vw, 2.1rem);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.9rem;
+  color: var(--white);
+}
+
+.desc {
+  color: var(--muted);
+  font-size: clamp(0.95rem, 2vw, 1.08rem);
+  max-width: 52ch;
+  line-height: 1.65;
+  margin: 0 auto 2rem;
+}
+
+/* Diagnostic Console Terminal */
+.console-box {
+  width: 100%;
+  max-width: 640px;
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  margin: 0 auto 2.4rem;
+  text-align: left;
+  overflow: hidden;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: border-color 0.3s;
+}
+.console-box:hover {
+  border-color: rgba(220, 20, 60, 0.3);
+}
+.console-header {
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--edge);
+  padding: 0.55rem 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+.console-dots {
+  display: flex;
+  gap: 6px;
+}
+.console-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+}
+.console-dot.red { background: var(--red); box-shadow: 0 0 6px var(--red); }
+.console-body {
+  padding: 1rem 1.15rem;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  line-height: 1.7;
+  color: #B2B2BC;
+  overflow-x: auto;
+}
+.console-body .log-red { color: var(--red); font-weight: 600; }
+.console-body .log-cyan { color: #00F0FF; }
+.console-body .log-dim { color: var(--dim); }
+
+/* Actions Button Row */
+.actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 3.5rem;
+  width: 100%;
+}
+
+.btn {
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 0.95rem 1.85rem;
+  border: 1px solid var(--edge);
+  background: var(--panel);
+  color: var(--white);
+  border-radius: 3px;
+  cursor: pointer;
+  min-height: 48px;
+  transition: transform 0.2s var(--ease), border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  touch-action: manipulation;
+}
+.btn:hover {
+  border-color: var(--red);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(220, 20, 60, 0.2);
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn-primary {
+  background: var(--red);
+  border-color: var(--red);
+  color: #FFF;
+}
+.btn-primary:hover {
+  background: #E62E52;
+  box-shadow: 0 8px 28px rgba(220, 20, 60, 0.45);
+}
+
+/* Quick Navigation Cards Matrix */
+.quick-nav-section {
+  width: 100%;
+  margin-top: 1rem;
+}
+.quick-nav-title {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+.quick-nav-title::before, .quick-nav-title::after {
+  content: "";
+  width: 2rem;
+  height: 1px;
+  background: var(--edge);
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--edge);
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  overflow: hidden;
+  text-align: left;
+}
+.nav-card {
+  background: var(--panel);
+  padding: 1.25rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  transition: background 0.25s, transform 0.25s var(--ease);
+}
+.nav-card:hover {
+  background: var(--panel-2);
+}
+.nav-card .card-icon {
+  font-size: 1.1rem;
+  color: var(--red);
+}
+.nav-card .card-title {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nav-card .card-title::after {
+  content: "→";
+  color: var(--red);
+  font-size: 0.9rem;
+  transition: transform 0.2s var(--ease);
+}
+.nav-card:hover .card-title::after {
+  transform: translateX(4px);
+}
+.nav-card .card-desc {
+  font-size: 0.76rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* ---------- FOOTER ---------- */
+.foot {
+  padding: 1.6rem clamp(1rem, 5vw, 4rem);
+  border-top: 1px solid var(--edge);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+  color: var(--muted);
+  background: rgba(8, 8, 11, 0.8);
+}
+.foot-links {
+  display: flex;
+  gap: 1.25rem;
+}
+.foot-links a:hover {
+  color: var(--white);
+}
+
+/* Responsive adjustments */
+@media (max-width: 860px) {
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 560px) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+  .actions {
+    flex-direction: column;
+  }
+  .btn {
+    width: 100%;
+  }
+  .foot {
+    flex-direction: column;
+    gap: 0.75rem;
+    text-align: center;
+  }
+  .foot-links {
+    justify-content: center;
+  }
+  .nav-status {
+    display: none;
+  }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="brand" href="/" aria-label="NexVR Engine — Return to Home">
+    <img class="brand-mark" src="logo.png" alt="NexVR Logo" width="34" height="34">
+    <span>NEXVR ENGINE</span>
+  </a>
+  <div class="nav-right">
+    <div class="nav-status">
+      <span class="pulse-dot"></span>
+      <span>RUNTIME FAULT CATCH</span>
+    </div>
+    <a class="btn" href="/" style="min-height: 38px; padding: 0.55rem 1rem; font-size: 0.75rem;">Home</a>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="diag-badge">
+    <span class="pulse-dot"></span>
+    <span>STATUS: 0xC000000E · HOOK_DETOUR_NOT_FOUND</span>
+  </div>
+
+  <div class="glitch-wrap">
+    <h1 class="glitch-404">404</h1>
+  </div>
+
+  <h2 class="subhead">Memory Address Not Found</h2>
+  
+  <p class="desc">
+    The render target, detour hook, or page route you requested has been unmapped or does not exist in the active NexVR Engine runtime.
+  </p>
+
+  <!-- Diagnostic Memory Dump Box -->
+  <div class="console-box">
+    <div class="console-header">
+      <div class="console-dots">
+        <span class="console-dot red"></span>
+        <span class="console-dot"></span>
+        <span class="console-dot"></span>
+      </div>
+      <span>DIAGNOSTIC_MEMORY_READOUT // v0.1.28</span>
+    </div>
+    <div class="console-body">
+      <div><span class="log-dim">[0x00007FFD63E10000]</span> <span class="log-cyan">INFO</span> core/seh_shield.h:114 | VEH Shield: Active</div>
+      <div><span class="log-dim">[0x00007FFD63E10042]</span> <span class="log-red">WARN</span> Detour address 0x0000000000000000 unmapped in route table</div>
+      <div><span class="log-dim">[0x00007FFD63E10098]</span> <span class="log-dim">Vectored Exception Handler intercepted miss — recovering execution pointer</span></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <a class="btn btn-primary" href="/">
+      <span>← Return to Engine Home</span>
+    </a>
+    <a class="btn" href="/api/dl?to=installer">
+      <span>Download Latest Build (v0.1.28)</span>
+    </a>
+  </div>
+
+  <!-- Quick Navigation Matrix -->
+  <div class="quick-nav-section">
+    <div class="quick-nav-title">Engine Quick Jump</div>
+    <div class="cards-grid">
+      <a class="nav-card" href="/#pipeline">
+        <div class="card-icon">⚡</div>
+        <div class="card-title">Stereo Pipeline</div>
+        <div class="card-desc">6-stage real-time graphics hook & depth reconstruction.</div>
+      </a>
+      <a class="nav-card" href="/#games">
+        <div class="card-icon">🎮</div>
+        <div class="card-title">Game Profiles</div>
+        <div class="card-desc">Tested configs for Cyberpunk, Elden Ring, Palworld & more.</div>
+      </a>
+      <a class="nav-card" href="/#setup">
+        <div class="card-icon">🛠</div>
+        <div class="card-title">Setup & Guide</div>
+        <div class="card-desc">OpenXR runtime setup, GPU compatibility & launcher flow.</div>
+      </a>
+      <a class="nav-card" href="https://github.com/sathishssj3/NexVR-Engine/discussions" target="_blank" rel="noopener">
+        <div class="card-icon">💬</div>
+        <div class="card-title">Discussions</div>
+        <div class="card-desc">Community support, profile sharing & feedback.</div>
+      </a>
+    </div>
+  </div>
+</main>
+
+<footer class="foot">
+  <span>© <span id="year">2026</span> NexVR Lab. All rights reserved.</span>
+  <div class="foot-links">
+    <a href="https://github.com/sathishssj3/NexVR-Engine" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://github.com/sathishssj3/NexVR-Engine/issues" target="_blank" rel="noopener">Report Issue</a>
+    <a href="mailto:support@nexvr.dev">support@nexvr.dev</a>
+  </div>
+</footer>
+
+<script>
+document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+
+</body>
+</html>

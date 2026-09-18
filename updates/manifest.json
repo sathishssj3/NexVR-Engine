@@ -1,14 +1,14 @@
 {
-  "engineVersion": "0.1.28",
-  "timestamp": 1789550302581,
-  "changelog": "Cloudflare Edge OTA Distribution (100% Free, Zero Egress) v0.1.28",
+  "engineVersion": "0.1.54",
+  "buildDate": "2026-09-19",
+  "timestamp": 1789759526132,
+  "changelog": "Opening Animations for Library, Settings, and About Tabs v0.1.54",
   "features": [
-    "Clean Release Distribution: Streamlined builds to two essential binaries: Setup Installer and Portable Executable",
-    "Unified Artifact Naming: Standardized hyphenated naming scheme across all CI/CD workflows and packaging scripts"
+    "Full Tab Suite Entrance Animation: Applied smooth 28px slide-up opening animation to Library and About tabs matching Settings",
+    "Active Tab Sweep: Re-triggerable active indicator sweep and content entrance animation across all tabs"
   ],
   "fixes": [
-    "Eliminated 10 redundant and duplicate release assets (phantom 0.1.0 builds, duplicate unversioned exes, zip archives, and metadata blockmaps)",
-    "Synchronized release.yml and package-setup.yml to prevent duplicate release uploads"
+    "Fixed tab unmount scroll ref re-binding with useFastSmoothScroll dependency tracking"
   ],
   "files": [
     "vrinject.dll",
@@ -32,10 +32,10 @@
     "shaders/asw_shader.hlsl",
     "shaders/depth_reprojection.hlsl"
   ],
-  "date": "2026-09-16T09:18:22.581Z",
+  "date": "2026-09-18T19:25:26.132Z",
   "hashes": {
-    "vrinject.dll": "80f8b8405a0c9daf4286fcb5947e095b682a9d428c5fce3a030b94a7ee62c8b9",
-    "vr-inject-cli.exe": "df98dd236383289cdd789e1a3c00a63711e54047c5a68a31e438b02375011216",
+    "vrinject.dll": "e0c5fb8650d1496bd1a05db0d8c1ae140cb93b944f5bc634ac1b7d68e8028606",
+    "vr-inject-cli.exe": "962bce4b2d5f2f2b6aa9c632b5d486feb29d21b785c086a4ca6381833572f88b",
     "profiles/814380_sekiro.json": "6463c079fb200fdb895edf96cdc54249d3e1d93c9fce6fbad87da9cfd7f46ff3",
     "profiles/990080_hogwarts_legacy.json": "717610b3cdf8cca77c2555d8c6ec087ef694ba1eda9a8a08c3a15438051f9efc",
     "profiles/1091500_cyberpunk_2077.json": "42a448270d17b59f9a910903043ca93b212cdae9c75fbf3400c1ef4346590601",

@@ -151,3 +151,5 @@ graphify-out/
 !AGENTS.md
 !SECURITY.md
 !THIRD_PARTY_LICENSES.md
+.wrangler/
+slavingia-skills/

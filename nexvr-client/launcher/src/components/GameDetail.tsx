@@ -5,15 +5,15 @@ export function GameDetail({ game, config, onConfigChange, logLines, onRemoveGam
   const apiColors: Record<string, string> = {
     DX11: 'var(--ag-accent)',
     DX12: 'var(--ag-accent-success)',
-    Vulkan: '#ff6b6b',
+    Vulkan: '#FF6B6B',
     Unknown: 'var(--ag-text-muted)'
   };
 
   const compatLabels: Record<string, { color: string; label: string }> = {
-    verified: { color: 'var(--ag-accent-success)', label: '✓ VERIFIED' },
-    beta:     { color: 'var(--ag-accent-warn)', label: '◐ BETA' },
-    new:      { color: 'var(--ag-accent)', label: '★ NEW' },
-    unknown:  { color: 'var(--ag-text-muted)', label: '? UNKNOWN' }
+    verified: { color: 'var(--ag-accent-success)', label: 'VERIFIED' },
+    beta:     { color: 'var(--ag-accent-warn)', label: 'BETA' },
+    new:      { color: 'var(--ag-accent)', label: 'NEW' },
+    unknown:  { color: 'var(--ag-text-muted)', label: 'UNKNOWN' }
   };
 
   const apiColor = apiColors[game.api] || apiColors.Unknown;
@@ -23,71 +23,64 @@ export function GameDetail({ game, config, onConfigChange, logLines, onRemoveGam
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
       {/* Hero Header */}
       <div className="fade-in-up" style={{ 
-        flexShrink: 0, position: 'relative', marginBottom: 28, padding: '32px 40px', 
-        background: 'linear-gradient(135deg, rgba(20, 26, 38, 0.8) 0%, rgba(10, 13, 19, 0.6) 100%)', 
+        flexShrink: 0, position: 'relative', marginBottom: 26, padding: '28px 36px', 
+        background: 'linear-gradient(135deg, rgba(16, 16, 22, 0.9) 0%, rgba(10, 10, 14, 0.8) 100%)', 
         borderRadius: 'var(--ag-radius-lg)', 
-        border: '1px solid rgba(255,255,255,0.08)', 
+        border: '1px solid var(--ag-border)', 
         borderLeft: `4px solid ${apiColor}`,
-        boxShadow: `0 20px 50px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.1), -2px 0 30px ${apiColor}20`, 
+        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.08)', 
         overflow: 'hidden' 
       }}>
-        {/* Dynamic Abstract Background Elements */}
-        <div style={{ position: 'absolute', top: '-20%', right: '-10%', width: '70%', height: '140%', background: `radial-gradient(ellipse at center, ${apiColor}15, transparent 60%)`, pointerEvents: 'none', transform: 'rotate(15deg)' }} />
-        <div style={{ position: 'absolute', bottom: '-40%', left: '-20%', width: '60%', height: '120%', background: `radial-gradient(ellipse at center, ${apiColor}10, transparent 60%)`, pointerEvents: 'none', transform: 'rotate(-25deg)' }} />
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Ccircle cx=\'2\' cy=\'2\' r=\'1\' fill=\'rgba(255,255,255,0.08)\'/%3E%3C/svg%3E")', pointerEvents: 'none' }} />
-        
         {/* Title Header */}
         <div style={{ position: 'relative', marginBottom: 12 }}>
           <h1 style={{ 
-            margin: '0 0 8px 0', fontSize: 38, fontWeight: 800, 
-            letterSpacing: '-0.5px', textShadow: '0 4px 20px rgba(0,0,0,0.6), 0 0 40px rgba(255,255,255,0.1)',
-            lineHeight: 1.1, fontFamily: 'var(--ag-font-display)'
+            margin: '0 0 8px 0', fontSize: 34, fontWeight: 800, 
+            letterSpacing: '0.02em', 
+            lineHeight: 1.15, fontFamily: 'var(--ag-font-display)',
+            color: '#FFF'
           }}>
             {game.name}
           </h1>
           
           {/* Path */}
           <div style={{ 
-            fontFamily: 'var(--ag-font-mono)', fontSize: 12, 
+            fontFamily: 'var(--ag-font-mono)', fontSize: 11.5, 
             color: 'var(--ag-text-muted)', display: 'flex', alignItems: 'center',
-            opacity: 0.9, background: 'rgba(0,0,0,0.3)', padding: '5px 12px', borderRadius: 4, width: 'fit-content'
+            background: 'rgba(5, 5, 8, 0.65)', padding: '5px 12px', borderRadius: 4, width: 'fit-content',
+            border: '1px solid var(--ag-border)'
           }}>
-            <span style={{ color: `${apiColor}`, marginRight: 10, fontWeight: 'bold', textShadow: `0 0 8px ${apiColor}80` }}>PATH //</span> 
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 600 }}>{game.installPath}</span>
+            <span style={{ color: `${apiColor}`, marginRight: 10, fontWeight: 700 }}>PATH //</span> 
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 620 }}>{game.installPath}</span>
           </div>
         </div>
         
         {/* Tags and Actions */}
         <div style={{ position: 'relative', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-          <span className="api-badge" style={{ background: `linear-gradient(90deg, ${apiColor}20, rgba(0,0,0,0.5))` }}>
+          <span className="api-badge" style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--ag-border)' }}>
             <span style={{ opacity: 0.7, fontSize: 10 }}>API</span>
-            <strong style={{ color: apiColor, textShadow: `0 0 10px ${apiColor}90`, fontSize: 13 }}>{game.api}</strong>
+            <strong style={{ color: apiColor, fontSize: 12 }}>{game.api}</strong>
           </span>
           
-          <span className="api-badge" style={{ background: `linear-gradient(90deg, ${compat.color}20, rgba(0,0,0,0.5))` }}>
-            <strong style={{ color: compat.color, textShadow: `0 0 10px ${compat.color}80`, fontSize: 13 }}>{compat.label}</strong>
+          <span className="api-badge" style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--ag-border)' }}>
+            <strong style={{ color: compat.color, fontSize: 12 }}>{compat.label}</strong>
           </span>
 
           {game.sizeGB > 0 && (
-            <span className="api-badge" style={{ opacity: 0.8 }}>
+            <span className="api-badge" style={{ opacity: 0.85, background: 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--ag-border)' }}>
               <span style={{ opacity: 0.7, fontSize: 10 }}>SIZE</span>
-              <span style={{ fontSize: 13 }}>{game.sizeGB.toFixed(1)} GB</span>
+              <span style={{ fontSize: 12 }}>{game.sizeGB.toFixed(1)} GB</span>
             </span>
           )}
           
           <button 
             onClick={onRemoveGame} 
-            className="btn-glow" 
+            className="btn-outline-laser" 
             style={{ 
-              marginLeft: 'auto', padding: '10px 24px', borderRadius: 'var(--ag-radius-sm)', 
-              background: 'rgba(255,0,60,0.08)', border: '1px solid rgba(255,0,60,0.4)', 
-              color: 'var(--ag-accent-danger)', fontSize: 12, cursor: 'pointer', 
-              fontFamily: 'var(--ag-font-mono)', fontWeight: 'bold', letterSpacing: '1.5px', 
-              textShadow: '0 0 10px rgba(255,0,60,0.4)', transition: 'all 0.3s var(--ag-transition)',
-              boxShadow: '0 4px 15px rgba(255,0,60,0.1)'
+              marginLeft: 'auto', padding: '8px 20px', 
+              color: 'var(--ag-accent-danger)', 
+              borderColor: 'rgba(204, 0, 0, 0.4)', 
+              fontSize: 11, letterSpacing: '0.08em', fontWeight: 700 
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,0,60,0.15)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(255,0,60,0.2)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,0,60,0.08)'; e.currentTarget.style.boxShadow = '0 4px 15px rgba(255,0,60,0.1)'; e.currentTarget.style.transform = 'translateY(0)'; }}
           >
             REMOVE
           </button>
@@ -96,18 +89,16 @@ export function GameDetail({ game, config, onConfigChange, logLines, onRemoveGam
         {/* Anti-Cheat Safety Guard Banner */}
         {game.hasAntiCheat && (
           <div style={{
-            marginTop: 20, padding: '14px 18px', borderRadius: 'var(--ag-radius-sm)',
-            background: 'rgba(255, 59, 92, 0.12)', border: '1px solid rgba(255, 59, 92, 0.4)',
-            display: 'flex', alignItems: 'center', gap: 14,
-            boxShadow: '0 4px 20px rgba(255, 59, 92, 0.1)'
+            marginTop: 18, padding: '14px 18px', borderRadius: 'var(--ag-radius-sm)',
+            background: 'rgba(204, 0, 0, 0.1)', border: '1px solid rgba(204, 0, 0, 0.38)',
+            display: 'flex', alignItems: 'center', gap: 14
           }}>
-            <span style={{ fontSize: 24 }}>🛡️</span>
             <div>
-              <div style={{ color: '#ff3b5c', fontWeight: 'bold', fontSize: 13, fontFamily: 'var(--ag-font-display)', letterSpacing: '1px' }}>
+              <div style={{ color: 'var(--ag-accent)', fontWeight: 700, fontSize: 13, fontFamily: 'var(--ag-font-display)', letterSpacing: '0.04em' }}>
                 ANTI-CHEAT DETECTED ({game.antiCheatName || 'Multiplayer Guard'})
               </div>
-              <div style={{ color: 'var(--ag-text-muted)', fontSize: 11, marginTop: 3 }}>
-                Injection is automatically locked to protect your account from multiplayer bans.
+              <div style={{ color: 'var(--ag-text-muted)', fontSize: 11.5, marginTop: 3, fontFamily: 'var(--ag-font-ui)' }}>
+                Injection is locked to preserve online account safety and prevent multiplayer bans.
               </div>
             </div>
           </div>
@@ -116,31 +107,27 @@ export function GameDetail({ game, config, onConfigChange, logLines, onRemoveGam
         {/* Active VR Mod / Play Flat Banner */}
         {game.hasInjector && !game.hasAntiCheat && (
           <div style={{
-            marginTop: 20, padding: '12px 18px', borderRadius: 'var(--ag-radius-sm)',
-            background: 'rgba(0, 230, 118, 0.08)', border: '1px solid rgba(0, 230, 118, 0.3)',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            boxShadow: '0 4px 20px rgba(0, 230, 118, 0.08)'
+            marginTop: 18, padding: '14px 18px', borderRadius: 'var(--ag-radius-sm)',
+            background: 'rgba(48, 209, 88, 0.08)', border: '1px solid rgba(48, 209, 88, 0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--ag-accent-success)', boxShadow: '0 0 8px var(--ag-accent-success)' }} />
-              <div>
-                <div style={{ color: 'var(--ag-accent-success)', fontWeight: 'bold', fontSize: 12, fontFamily: 'var(--ag-font-mono)' }}>
-                  VR MOD ACTIVE IN GAME DIRECTORY
-                </div>
-                <div style={{ color: 'var(--ag-text-muted)', fontSize: 11, marginTop: 2 }}>
-                  NexVR injection binaries are deployed in this title.
-                </div>
+            <div>
+              <div style={{ color: 'var(--ag-accent-success)', fontWeight: 700, fontSize: 12.5, fontFamily: 'var(--ag-font-mono)' }}>
+                VR MOD ACTIVE IN GAME DIRECTORY
+              </div>
+              <div style={{ color: 'var(--ag-text-muted)', fontSize: 11, marginTop: 2 }}>
+                NexVR injection binaries are deployed in this title executable folder.
               </div>
             </div>
             {onUninstallMod && (
               <button
                 onClick={onUninstallMod}
-                className="btn-glow"
+                className="btn-outline-laser"
                 style={{
-                  padding: '6px 14px', borderRadius: 4,
-                  background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.2)',
-                  color: '#fff', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--ag-font-mono)',
-                  letterSpacing: '0.5px'
+                  padding: '7px 16px',
+                  fontSize: 11,
+                  color: '#FFF',
+                  borderColor: 'rgba(255, 255, 255, 0.25)'
                 }}
               >
                 RESTORE FLAT SCREEN

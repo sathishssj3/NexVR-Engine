@@ -41,6 +41,9 @@ export interface VRConfig {
   contrast?:               number;
   saturation?:             number;
   brightness?:             number;
+  performanceOverlay?:     boolean;
+  hapticFeedback?:         boolean;
+  aiInpainting?:           boolean;
 }
 
 export interface VRStatus {

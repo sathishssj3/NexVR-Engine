@@ -7,7 +7,8 @@ interface SmoothScrollOptions {
 
 export function useFastSmoothScroll(
   ref: RefObject<HTMLElement | null>,
-  options: SmoothScrollOptions = {}
+  options: SmoothScrollOptions = {},
+  deps: any[] = []
 ) {
   const { speed = 1.65, smoothness = 0.24 } = options;
 
@@ -78,5 +79,5 @@ export function useFastSmoothScroll(
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [ref, speed, smoothness]);
+  }, [ref, speed, smoothness, ...deps]);
 }

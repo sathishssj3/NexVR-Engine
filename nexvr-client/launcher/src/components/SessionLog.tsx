@@ -33,7 +33,7 @@ export function SessionLog({ logLines }: { logLines: string[] }) {
 
   const getColor = (line: string) => {
     if (line.includes('[OK]')) return 'var(--ag-accent-success)';
-    if (line.includes('[DIAGNOSTICS]')) return 'var(--ag-accent-primary, #00f0ff)';
+    if (line.includes('[DIAGNOSTICS]')) return 'var(--ag-text-code)';
     if (line.includes('[--]') || line.includes('INFO')) return 'var(--ag-text-code)';
     if (line.includes('[!!]') || line.includes('WARN')) return 'var(--ag-accent-warn)';
     if (line.includes('[ERR]') || line.includes('[Injector CLI Error]') || line.includes('ERROR')) return 'var(--ag-accent-danger)';
@@ -130,7 +130,7 @@ export function SessionLog({ logLines }: { logLines: string[] }) {
               transition: 'all 0.3s var(--ag-transition)',
             }}
           >
-            📁 FOLDER
+            FOLDER
           </button>
           <button
             onClick={handleSendToDev}
@@ -160,12 +160,12 @@ export function SessionLog({ logLines }: { logLines: string[] }) {
             }}
           >
             {sendingDev
-              ? '◌ SENDING...'
+              ? 'SENDING...'
               : sendDevResult === 'success'
-                ? '✓ SENT TO DEV'
+                ? 'SENT TO DEV'
                 : sendDevResult === 'error'
-                  ? '✗ RETRY DEV'
-                  : '📡 SEND TO DEV'}
+                  ? 'RETRY DEV'
+                  : 'SEND TO DEV'}
           </button>
           <button
             onClick={handleExport}
@@ -190,10 +190,10 @@ export function SessionLog({ logLines }: { logLines: string[] }) {
               opacity: logLines.length === 0 ? 0.4 : 1,
             }}
           >
-            {exporting          ? '◌ EXPORTING...'
-             : exportResult === 'success' ? '✓ SAVED'
-             : exportResult === 'error'   ? '✗ FAILED'
-             :                              '↓ EXPORT'}
+            {exporting          ? 'EXPORTING...'
+             : exportResult === 'success' ? 'SAVED'
+             : exportResult === 'error'   ? 'FAILED'
+             :                              'EXPORT'}
           </button>
         </div>
       </div>
@@ -209,16 +209,9 @@ export function SessionLog({ logLines }: { logLines: string[] }) {
         fontFamily: 'var(--ag-font-mono)', 
         fontSize: 12, lineHeight: 1.8, 
         overflowY: 'auto', 
-        boxShadow: 'inset 0 0 40px rgba(0,0,0,0.9), 0 5px 15px rgba(0,0,0,0.4), 0 0 20px rgba(0,240,255,0.05)', 
+        boxShadow: 'inset 0 0 40px rgba(0,0,0,0.9), 0 5px 15px rgba(0,0,0,0.4)', 
         position: 'relative', display: 'flex', flexDirection: 'column' 
       }}>
-        {/* Scanline overlay */}
-        <div style={{ 
-          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, 
-          background: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.12), rgba(0,0,0,0.12) 1px, transparent 1px, transparent 2px)', 
-          pointerEvents: 'none', zIndex: 1 
-        }} />
-      
         <div style={{ position: 'relative', zIndex: 2 }}>
           {logLines.length === 0 ? (
             <div className="empty-state" style={{ minHeight: 100, gap: 8 }}>
@@ -234,7 +227,6 @@ export function SessionLog({ logLines }: { logLines: string[] }) {
               return (
                 <div key={`${i}-${l.slice(0,20)}`} style={{ 
                   color: lineColor, 
-                  textShadow: `0 0 5px ${lineColor}40`,
                   display: 'flex',
                   alignItems: 'flex-start'
                 }}>
