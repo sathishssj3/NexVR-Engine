@@ -50,12 +50,12 @@ const effectiveApiKey = cliApiKey || process.env.RESEND_API_KEY;
 
 // Configuration
 const CONFIG = {
-  appName: 'Stereo Engine',
-  companyName: 'Dimension 9',
-  version: 'v0.1.3',
-  subject: 'Stereo Engine v0.1.3 — Early Access Build',
+  appName: 'NexVR Engine',
+  companyName: 'NexVR',
+  version: 'v0.1.54',
+  subject: 'NexVR Engine v0.1.54 — Early Access Update Live',
   fromEmail: process.env.FROM_EMAIL || 'onboarding@resend.dev',
-  fromName: 'Stereo Engine',
+  fromName: 'NexVR Engine',
   downloadUrl: 'https://nexvr-engine.pages.dev/api/dl',
   websiteUrl: 'https://nexvr-engine.pages.dev/',
 };
