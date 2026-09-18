@@ -17,11 +17,14 @@ ipcMain.handle('vr:status', async (event): Promise<VRStatus> => {
   let headset = 'Unknown HMD';
   
   try {
-    const tasklist = child_process.execSync('tasklist', { encoding: 'utf-8' });
-    let isSteamVRRunning = tasklist.toLowerCase().includes('vrserver.exe');
-    let isOculusRunning = tasklist.toLowerCase().includes('ovrserver_x64.exe');
+    const tasklist = child_process.execSync('tasklist', { encoding: 'utf-8' }).toLowerCase();
+    const isSteamVRRunning = tasklist.includes('vrserver.exe');
+    const isOculusRunning = tasklist.includes('ovrserver_x64.exe');
+    const isVirtualDesktopRunning = tasklist.includes('virtualdesktop.streamer.exe') || tasklist.includes('virtualdesktop.service.exe');
+    const isPicoRunning = tasklist.includes('pico_vr_server.exe') || tasklist.includes('pico connect.exe');
+    const isWmrRunning = tasklist.includes('mixedrealityportal.exe');
     
-    if (isSteamVRRunning || isOculusRunning) {
+    if (isSteamVRRunning || isOculusRunning || isVirtualDesktopRunning || isPicoRunning || isWmrRunning) {
       connected = true;
     }
     
@@ -63,10 +66,23 @@ ipcMain.handle('vr:status', async (event): Promise<VRStatus> => {
         } else if (isOculusRunning) {
             runtime = 'Oculus';
             headset = 'Meta Quest';
+        } else if (isVirtualDesktopRunning) {
+            runtime = 'Virtual Desktop';
+            headset = 'Virtual Desktop XR';
+        } else if (isPicoRunning) {
+            runtime = 'Pico';
+            headset = 'Pico Headset';
+        } else if (isWmrRunning) {
+            runtime = 'WMR';
+            headset = 'WMR Headset';
         }
     }
     
   } catch (e) {}
+  
+  if (!connected) {
+    headset = 'No Headset Connected';
+  }
   
   return { connected, runtime, headset, refreshRate: 90 };
 });

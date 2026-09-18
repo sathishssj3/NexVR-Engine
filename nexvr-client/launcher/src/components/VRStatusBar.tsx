@@ -43,19 +43,36 @@ export function VRStatusBar({ status, selectedGame, injectState, onInject, onUni
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <div className={`status-dot ${status.connected ? 'connected' : 'disconnected'}`} style={{ marginRight: 14 }} />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ 
+                fontSize: 14, fontWeight: 700, letterSpacing: '0.04em', 
+                fontFamily: 'var(--ag-font-display)',
+                color: status.connected ? '#FFF' : 'var(--ag-text-muted)'
+              }}>
+                {status.connected ? status.headset : 'NOT CONNECTED'}
+              </span>
+              {status.connected && (
+                <span style={{
+                  padding: '1px 6px',
+                  borderRadius: 3,
+                  fontSize: 9.5,
+                  fontWeight: 800,
+                  fontFamily: 'var(--ag-font-mono)',
+                  letterSpacing: '0.06em',
+                  background: 'rgba(48, 209, 88, 0.15)',
+                  border: '1px solid rgba(48, 209, 88, 0.35)',
+                  color: 'var(--ag-accent-success)'
+                }}>
+                  CONNECTED
+                </span>
+              )}
+            </div>
             <span style={{ 
-              fontSize: 14, fontWeight: 700, letterSpacing: '0.04em', 
-              fontFamily: 'var(--ag-font-display)',
-              color: '#FFF'
-            }}>
-              {status.headset}
-            </span>
-            <span style={{ 
-              fontSize: 11, color: status.connected ? 'var(--ag-accent-success)' : 'var(--ag-text-muted)', 
+              fontSize: 11, color: status.connected ? 'var(--ag-accent-success)' : 'var(--ag-text-dim)', 
               fontFamily: 'var(--ag-font-mono)', 
               marginTop: 2, letterSpacing: '0.5px' 
             }}>
-              {status.refreshRate} Hz // {status.runtime}
+              {status.connected ? `${status.refreshRate} Hz // ${status.runtime}` : 'NO VR HEADSET DETECTED'}
             </span>
           </div>
 

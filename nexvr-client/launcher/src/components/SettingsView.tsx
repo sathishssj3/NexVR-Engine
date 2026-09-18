@@ -20,7 +20,7 @@ export function SettingsView({
 
   const activeVersion = updateStatus?.version 
     ? (updateStatus.version.startsWith('v') ? updateStatus.version : `v${updateStatus.version}`) 
-    : 'v0.1.54';
+    : 'v0.1.55';
 
   // Global default config persisted in localStorage
   const [globalConfig, setGlobalConfig] = useState<VRConfig>(() => {
@@ -594,11 +594,11 @@ export function SettingsView({
               <div style={{ color: '#848884', fontSize: 10, fontFamily: 'var(--ag-font-mono)', letterSpacing: '0.08em', fontWeight: 600 }}>
                 DETECTED HEADSET
               </div>
-              <div style={{ color: '#FFF', fontSize: 15.5, fontFamily: 'var(--ag-font-display)', fontWeight: 800, letterSpacing: '0.03em', marginTop: 1 }}>
-                {vrStatus.headset || 'Unknown HMD'}
+              <div style={{ color: vrStatus.connected ? '#FFF' : 'var(--ag-text-muted)', fontSize: 15.5, fontFamily: 'var(--ag-font-display)', fontWeight: 800, letterSpacing: '0.03em', marginTop: 1 }}>
+                {vrStatus.connected ? vrStatus.headset : 'No VR Connected'}
               </div>
-              <div style={{ color: '#848884', fontSize: 12, fontFamily: 'var(--ag-font-ui)', lineHeight: '1.4', marginTop: 2 }}>
-                {vrStatus.refreshRate} Hz Target Refresh Rate
+              <div style={{ color: vrStatus.connected ? 'var(--ag-accent-success)' : '#848884', fontSize: 12, fontFamily: 'var(--ag-font-ui)', lineHeight: '1.4', marginTop: 2 }}>
+                {vrStatus.connected ? `${vrStatus.refreshRate} Hz Target Refresh Rate` : 'Connect an OpenXR or SteamVR headset'}
               </div>
             </div>
 

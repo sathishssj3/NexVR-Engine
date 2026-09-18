@@ -47,8 +47,23 @@ export function HeroCommandCenter({
               color: vrStatus.connected ? '#FFF' : 'var(--ag-text-muted)',
               fontWeight: 600,
             }}>
-              {vrStatus.connected ? vrStatus.headset : 'No HMD'}
+              {vrStatus.connected ? vrStatus.headset : 'VR Disconnected'}
             </span>
+            {vrStatus.connected && (
+              <span style={{
+                padding: '1px 5px',
+                borderRadius: 3,
+                fontSize: 9,
+                fontWeight: 800,
+                fontFamily: 'var(--ag-font-mono)',
+                letterSpacing: '0.05em',
+                background: 'rgba(48, 209, 88, 0.15)',
+                border: '1px solid rgba(48, 209, 88, 0.3)',
+                color: 'var(--ag-accent-success)'
+              }}>
+                CONNECTED
+              </span>
+            )}
           </div>
           {vrStatus.connected && (
             <span style={{

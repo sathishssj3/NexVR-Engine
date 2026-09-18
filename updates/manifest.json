@@ -1,14 +1,14 @@
 {
-  "engineVersion": "0.1.54",
+  "engineVersion": "0.1.55",
   "buildDate": "2026-09-19",
-  "timestamp": 1789759526132,
-  "changelog": "Opening Animations for Library, Settings, and About Tabs v0.1.54",
+  "timestamp": 1789760798921,
+  "changelog": "Smart VR Headset Connection State and Name Detector v0.1.55",
   "features": [
-    "Full Tab Suite Entrance Animation: Applied smooth 28px slide-up opening animation to Library and About tabs matching Settings",
-    "Active Tab Sweep: Re-triggerable active indicator sweep and content entrance animation across all tabs"
+    "Smart VR Connection State: Only show connected badge and VR headset name when a real VR headset/runtime is active",
+    "Offline State Clarity: Display NOT CONNECTED and NO VR HEADSET DETECTED when headset is offline"
   ],
   "fixes": [
-    "Fixed tab unmount scroll ref re-binding with useFastSmoothScroll dependency tracking"
+    "Prevented phantom OpenXR registry runtime detection from showing disconnected headsets as active"
   ],
   "files": [
     "vrinject.dll",
@@ -32,7 +32,7 @@
     "shaders/asw_shader.hlsl",
     "shaders/depth_reprojection.hlsl"
   ],
-  "date": "2026-09-18T19:25:26.132Z",
+  "date": "2026-09-18T19:46:38.921Z",
   "hashes": {
     "vrinject.dll": "e0c5fb8650d1496bd1a05db0d8c1ae140cb93b944f5bc634ac1b7d68e8028606",
     "vr-inject-cli.exe": "962bce4b2d5f2f2b6aa9c632b5d486feb29d21b785c086a4ca6381833572f88b",

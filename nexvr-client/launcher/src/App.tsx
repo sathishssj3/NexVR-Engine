@@ -70,7 +70,7 @@ export default function App() {
   const [games, setGames] = useState<GameEntry[]>([]);
   const [waitingGames, setWaitingGames] = useState<GameEntry[]>([]);
   const [selectedGame, setSelectedGame] = useState<GameEntry | null>(null);
-  const [vrStatus, setVrStatus] = useState<VRStatus>({ connected: false, runtime: 'Unknown', headset: 'Unknown HMD', refreshRate: 90 });
+  const [vrStatus, setVrStatus] = useState<VRStatus>({ connected: false, runtime: 'Unknown', headset: 'No Headset Connected', refreshRate: 90 });
   const [config, setConfig] = useState<VRConfig | null>(null);
   const [logLines, setLogLines] = useState<string[]>([]);
   const [injectState, setInjectState] = useState<'default' | 'injecting' | 'success' | 'running' | 'error' | 'cancelled'>('default');
@@ -289,7 +289,7 @@ export default function App() {
             fontFamily: 'var(--ag-font-mono)', letterSpacing: '0.05em', 
             fontWeight: 800
           }}>
-            {updateStatus?.version ? updateStatus.version.replace(/^v/, '') : '0.1.54'}
+            {updateStatus?.version ? updateStatus.version.replace(/^v/, '') : '0.1.55'}
           </span>
           {updateStatus?.updated && (
             <span style={{
