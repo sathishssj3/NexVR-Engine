@@ -1,14 +1,18 @@
 {
-  "engineVersion": "0.1.58",
+  "engineVersion": "0.1.59",
   "buildDate": "2026-09-18",
-  "timestamp": 1789767470542,
-  "changelog": "High-Reliability Architecture, SEH Crash Protection & Anti-Cheat Safety Interlock v0.1.58",
+  "timestamp": 1789768624518,
+  "changelog": "Real-Time Telemetry Streaming & Dynamic Version Synchronization v0.1.59",
   "features": [
+    "Zero-Latency Log Streaming: Continuous live log forwarding from injected game processes to the launcher console during both injection and active VR gameplay",
+    "Dynamic Version Synchronization: Centralized engine versioning across C++ runtime, diagnostic handlers, and launcher UI",
+    "Instant Terminal Rendering: Streamlined session console with hardware-accelerated immediate line updates and blinking cursor indicator",
     "1:1 Desktop Visual Fidelity: Restored true daylight clarity, bright snow, and rich textures in VR identical to the desktop monitor",
-    "Eliminated Gamma Squaring: Removed unconditional pow(c, 2.2f) in stereo reprojection shaders that crushed shadows and scenery into pitch-black",
     "Zero Configuration Drift: Synchronized srgbCorrection defaults across launcher config manager, UI views, and profile loaders"
   ],
   "fixes": [
+    "Resolved log stream disconnection on injection completion, ensuring all HookManager and VR render logs are visible in real time",
+    "Replaced hardcoded stale v0.1.16 engine version string with dynamic centralized version definition",
     "Eliminated double-gamma darkening and persistent crushed blacks across all PC games"
   ],
   "files": [
@@ -35,8 +39,8 @@
   ],
   "date": "2026-09-18T19:46:38.921Z",
   "hashes": {
-    "vrinject.dll": "981ef6958456656cabc770afd3e80a72cd90f5c41b3eca1184c43d195b0607d3",
-    "vr-inject-cli.exe": "f70080a3ede60766061c22952cd935878cc20948d21fd6472018e53ff5c4b75f",
+    "vrinject.dll": "ea342e3c8687cfc785bc17c812939ed6b6f05413656a4cf2ccd117c5805bd4aa",
+    "vr-inject-cli.exe": "b800ac9ce312973a0f1b930774b2d79c052b468e02be427a563202b317c74b6e",
     "profiles/814380_sekiro.json": "6463c079fb200fdb895edf96cdc54249d3e1d93c9fce6fbad87da9cfd7f46ff3",
     "profiles/990080_hogwarts_legacy.json": "717610b3cdf8cca77c2555d8c6ec087ef694ba1eda9a8a08c3a15438051f9efc",
     "profiles/1091500_cyberpunk_2077.json": "42a448270d17b59f9a910903043ca93b212cdae9c75fbf3400c1ef4346590601",

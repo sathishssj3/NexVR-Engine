@@ -37,7 +37,9 @@ $candidateFiles = @(
     "$TargetDir\vrinject.dll",
     "$TargetDir\vr-inject-cli.exe",
     "$PSScriptRoot\..\updates\vrinject.dll",
-    "$PSScriptRoot\..\updates\vr-inject-cli.exe"
+    "$PSScriptRoot\..\updates\vr-inject-cli.exe",
+    "$PSScriptRoot\..\nexvr-docs\landing-page\public\updates\vrinject.dll",
+    "$PSScriptRoot\..\nexvr-docs\landing-page\public\updates\vr-inject-cli.exe"
 )
 
 $signedCount = 0

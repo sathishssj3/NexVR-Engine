@@ -252,37 +252,46 @@ export default function App() {
       const formattedLine = `[${hex}] ${time} // ${line}`;
       setLogLines(prev => {
         const next = [...prev, formattedLine];
-        if (next.length > 100) next.shift();
+        if (next.length > 500) next.shift();
         return next;
       });
     });
 
     const res = await window.ag.inject.deploy(selectedGame.id);
     
-    if (injectTokenRef.current !== token) return;
+    if (injectTokenRef.current !== token) {
+      window.ag.log.offLine();
+      return;
+    }
     
-    window.ag.log.offLine();
     if (res.success && res.pid !== undefined) {
       setInjectState('success');
       setTimeout(async () => {
-        if (injectTokenRef.current !== token) return;
+        if (injectTokenRef.current !== token) {
+          window.ag.log.offLine();
+          return;
+        }
         setInjectState('running');
         
         if (res.pid !== undefined) {
           await window.ag.inject.monitor(res.pid);
         }
         
+        // Game process terminated - detach log listener
+        window.ag.log.offLine();
         if (injectTokenRef.current === token) {
           setInjectState('default');
         }
       }, 3000);
     } else if (res.cancelled) {
+      window.ag.log.offLine();
       setInjectState('cancelled');
       setLogLines(prev => [...prev, `[ERROR] Injection Cancelled: ${res.message}`]);
       setTimeout(() => {
         setInjectState('default');
       }, 1500);
     } else {
+      window.ag.log.offLine();
       setInjectState('error');
       setLogLines(prev => [...prev, `[ERROR] Injection Failed: ${res.message}`]);
       setTimeout(() => {
@@ -316,7 +325,7 @@ export default function App() {
             fontFamily: 'var(--ag-font-mono)', letterSpacing: '0.05em', 
             fontWeight: 800
           }}>
-            {updateStatus?.version ? updateStatus.version.replace(/^v/, '') : '0.1.58'}
+            {updateStatus?.version ? updateStatus.version.replace(/^v/, '') : '0.1.59'}
           </span>
           {updateStatus?.updated && (
             <span style={{

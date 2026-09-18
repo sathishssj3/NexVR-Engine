@@ -276,6 +276,36 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     // 4. Asset sync and binary signing tooling registered in package.json
     expect(pkgJson.scripts['sync:assets']).toBeDefined();
     expect(pkgJson.scripts['sign:binaries']).toBeDefined();
-    expect(pkgJson.version).toBe('0.1.58');
+    expect(pkgJson.version).toBe('0.1.59');
+  });
+
+  test('v0.1.59 real-time telemetry streaming and version synchronization', () => {
+    const runtimeStateCpp = readRepoFile('src', 'core', 'runtime_state.cpp');
+    const versionHeader = readRepoFile('src', 'core', 'version.h');
+    const injectionMgrTs = readRepoFile('launcher', 'electron', 'injectionManager.ts');
+    const diagnosticsMgrTs = readRepoFile('launcher', 'electron', 'diagnosticsManager.ts');
+    const appTsx = readRepoFile('launcher', 'src', 'App.tsx');
+    const sessionLogTsx = readRepoFile('launcher', 'src', 'components', 'SessionLog.tsx');
+
+    // 1. No stale v0.1.16 version strings remain anywhere in the engine or launcher
+    expect(runtimeStateCpp).not.toContain('v0.1.16');
+    expect(runtimeStateCpp).toContain('NEXVR_ENGINE_VERSION');
+    expect(versionHeader).toContain('#define NEXVR_ENGINE_VERSION "0.1.59"');
+    expect(injectionMgrTs).not.toContain('v0.1.16');
+    expect(diagnosticsMgrTs).not.toContain('v0.1.16');
+
+    // 2. Real-time log streaming stays active throughout running session
+    expect(appTsx).toContain('await window.ag.inject.monitor(res.pid);');
+    expect(appTsx).toContain('window.ag.log.offLine();');
+    // Ensure offline is NOT called immediately between deploy and monitor
+    const deployIndex = appTsx.indexOf('await window.ag.inject.deploy');
+    const monitorIndex = appTsx.indexOf('await window.ag.inject.monitor');
+    const offlineBetween = appTsx.slice(deployIndex, monitorIndex).includes('window.ag.log.offLine();\n    if (res.success');
+    expect(offlineBetween).toBe(false);
+
+    // 3. SessionLog renders lines directly without simulated typing lag
+    expect(sessionLogTsx).not.toContain('TypewriterLine');
+    expect(sessionLogTsx).toContain('wordBreak: \'break-all\'');
   });
 });
+

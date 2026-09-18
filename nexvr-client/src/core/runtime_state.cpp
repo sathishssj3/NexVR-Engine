@@ -5,6 +5,7 @@
 #include "core/config_manager.h"
 #include "core/seh_shield.h"
 #include "core/drm_manager.h"
+#include "core/version.h"
 #include <windows.h>
 #include <shlobj.h>
 #include <chrono>
@@ -101,7 +102,7 @@ void RuntimeState::BackgroundInitialize() {
     seh::RegisterVehShield(static_cast<HMODULE>(m_hModule));
 
     LOG_INFO("========================================");
-    LOG_INFO("NexVR Engine v0.1.16 - Initializing");
+    LOG_INFO("NexVR Engine v" NEXVR_ENGINE_VERSION " - Initializing");
     LOG_INFO("========================================");
     LOG_INFO("[DIAGNOSTICS] Host Process: %s", exePath);
     LOG_INFO("[DIAGNOSTICS] Module DLL Dir: %s", dllDir);

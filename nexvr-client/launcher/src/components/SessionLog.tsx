@@ -1,27 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 
-function TypewriterLine({ text, isLast }: { text: string, isLast: boolean }) {
-  const [displayedText, setDisplayedText] = useState('');
-  
-  useEffect(() => {
-    let i = 0;
-    const interval = setInterval(() => {
-      i += 3;
-      setDisplayedText(text.slice(0, i));
-      if (i >= text.length) clearInterval(interval);
-    }, 5);
-    return () => clearInterval(interval);
-  }, [text]);
-
-  return (
-    <>
-      {displayedText}
-      {isLast && displayedText.length >= text.length && <span className="blink-cursor">█</span>}
-      {isLast && displayedText.length < text.length && <span style={{opacity:0.5}}>█</span>}
-    </>
-  );
-}
-
 export function SessionLog({ logLines }: { logLines: string[] }) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -237,8 +215,9 @@ export function SessionLog({ logLines }: { logLines: string[] }) {
                   }}>
                     {String(i + 1).padStart(3, '0')}
                   </span>
-                  <span style={{ flex: 1 }}>
-                    <TypewriterLine text={l} isLast={isLast} />
+                  <span style={{ flex: 1, wordBreak: 'break-all' }}>
+                    {l}
+                    {isLast && <span className="blink-cursor" style={{ marginLeft: 6 }}>█</span>}
                   </span>
                 </div>
               );

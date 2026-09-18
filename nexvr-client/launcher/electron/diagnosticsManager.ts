@@ -248,9 +248,10 @@ ipcMain.handle('utils:openLog', async (event, id?: string) => {
 
   // If no log file exists yet, write an initial notice to latest_session.log and open it
   const defaultLog = path.join(getLogsDir(), 'latest_session.log');
+  const currentAppVersion = app.getVersion() || '0.1.59';
   fs.writeFileSync(
     defaultLog,
-    '=== NexVR Engine [v0.1.16] — Diagnostic Log ===\nNo active session recorded yet. Launch any game in VR to begin live telemetry streaming.\n',
+    `=== NexVR Engine [v${currentAppVersion}] — Diagnostic Log ===\nNo active session recorded yet. Launch any game in VR to begin live telemetry streaming.\n`,
     'utf-8'
   );
   await shell.openPath(defaultLog);

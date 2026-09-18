@@ -89,6 +89,7 @@ async function getProcessPath(pid: number): Promise<string> {
 }
 
 let activeWatchedLogPaths: string[] = [];
+let activeWatchers: fs.FSWatcher[] = [];
 let watchedSizes: Record<string, number> = {};
 let watchedRemainders: Record<string, string> = {};
 export let currentSessionLogPath = '';
@@ -126,12 +127,51 @@ export function emitLogLine(event: Electron.IpcMainInvokeEvent, line: string): v
   } catch {}
 }
 
+function readNewBytes(normalized: string, event: Electron.IpcMainInvokeEvent): void {
+  if (!fs.existsSync(normalized)) return;
+
+  try {
+    const fd = fs.openSync(normalized, 'r');
+    try {
+      const stat = fs.fstatSync(fd);
+      let lastSize = watchedSizes[normalized] ?? 0;
+      if (stat.size < lastSize) {
+        lastSize = 0;
+        watchedSizes[normalized] = 0;
+        watchedRemainders[normalized] = '';
+      }
+      if (stat.size <= lastSize) return;
+
+      const length = Math.min(stat.size - lastSize, 2 * 1024 * 1024);
+      const buf = Buffer.alloc(length);
+      const bytesRead = fs.readSync(fd, buf, 0, length, lastSize);
+      watchedSizes[normalized] = lastSize + bytesRead;
+
+      const text = (watchedRemainders[normalized] || '') + buf.subarray(0, bytesRead).toString('utf-8');
+      const lines = text.split(/\r?\n/);
+      watchedRemainders[normalized] = lines.pop() || '';
+
+      for (const line of lines) {
+        emitLogLine(event, line);
+      }
+    } finally {
+      fs.closeSync(fd);
+    }
+  } catch {}
+}
+
 function stopActiveLogWatch(): void {
   for (const p of activeWatchedLogPaths) {
     try {
       fs.unwatchFile(p);
     } catch {}
   }
+  for (const w of activeWatchers) {
+    try {
+      w.close();
+    } catch {}
+  }
+  activeWatchers = [];
   activeWatchedLogPaths = [];
   watchedSizes = {};
   watchedRemainders = {};
@@ -152,35 +192,27 @@ function startWatchingLogFile(filePath: string, event: Electron.IpcMainInvokeEve
   watchedSizes[normalized] = initialSize;
   watchedRemainders[normalized] = '';
 
-  fs.watchFile(normalized, { interval: 300 }, (curr) => {
-    let lastSize = watchedSizes[normalized] ?? 0;
-    if (curr.size < lastSize) {
-      lastSize = 0;
-      watchedSizes[normalized] = 0;
-      watchedRemainders[normalized] = '';
-    }
-    if (curr.size <= lastSize) return;
-
-    try {
-      const fd = fs.openSync(normalized, 'r');
-      try {
-        const length = Math.min(curr.size - lastSize, 2 * 1024 * 1024);
-        const buf = Buffer.alloc(length);
-        const bytesRead = fs.readSync(fd, buf, 0, length, lastSize);
-        watchedSizes[normalized] = lastSize + bytesRead;
-
-        const text = (watchedRemainders[normalized] || '') + buf.subarray(0, bytesRead).toString('utf-8');
-        const lines = text.split(/\r?\n/);
-        watchedRemainders[normalized] = lines.pop() || '';
-
-        for (const line of lines) {
-          emitLogLine(event, line);
-        }
-      } finally {
-        fs.closeSync(fd);
-      }
-    } catch {}
+  // 1. High-frequency 100ms fstat polling (bypasses NTFS directory cache latency)
+  fs.watchFile(normalized, { interval: 100 }, () => {
+    readNewBytes(normalized, event);
   });
+
+  // 2. Real-time kernel event listener for sub-5ms notifications
+  try {
+    const parentDir = path.dirname(normalized);
+    const targetBase = path.basename(normalized).toLowerCase();
+    if (fs.existsSync(parentDir)) {
+      const watcher = fs.watch(parentDir, { persistent: false }, (_, filename) => {
+        if (filename && filename.toLowerCase() === targetBase) {
+          readNewBytes(normalized, event);
+        }
+      });
+      activeWatchers.push(watcher);
+    }
+  } catch {}
+
+  // Flush any content already written
+  readNewBytes(normalized, event);
 }
 
 ipcMain.handle('inject:cancel', async (event) => {
@@ -244,7 +276,8 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     latestSessionLogPath = path.join(logsDir, 'latest_session.log');
 
     try {
-      const header = `=== NexVR Engine Session Log [v0.1.16] ===\nGame ID: ${validId}\nStarted: ${new Date().toISOString()}\n==========================================\n`;
+      const appVer = app.getVersion() || '0.1.59';
+      const header = `=== NexVR Engine Session Log [v${appVer}] ===\nGame ID: ${validId}\nStarted: ${new Date().toISOString()}\n==========================================\n`;
       fs.writeFileSync(currentSessionLogPath, header, 'utf-8');
       fs.writeFileSync(latestSessionLogPath, header, 'utf-8');
     } catch {}
