@@ -15,7 +15,8 @@
     "sync:assets": "node ../../scripts/sync_assets.js",
     "sign:binaries": "powershell.exe -ExecutionPolicy Bypass -File ../../scripts/sign_binaries.ps1",
     "build": "vite build && tsc -p electron/tsconfig.json",
-    "pack": "npm run build && electron-builder --win --publish never --config electron-builder.config.js"
+    "pack": "npm run build && electron-builder --win --publish never --config electron-builder.config.js",
+    "sync:installed": "node scripts/patch_installed_launcher.mjs"
   },
   "dependencies": {
     "react": "19.2.7",
