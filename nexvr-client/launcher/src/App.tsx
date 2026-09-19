@@ -82,6 +82,8 @@ export default function App() {
   const [tabAnimNonce, setTabAnimNonce] = useState(0);
   const injectTokenRef = useRef<number>(0);
   const mainContentRef = useRef<HTMLDivElement>(null);
+  const logQueueRef = useRef<string[]>([]);
+  const rafIdRef = useRef<number | null>(null);
 
   // Fast & smooth accelerated scrolling
   useFastSmoothScroll(mainContentRef, { speed: 1.7, smoothness: 0.25 }, [currentTab, tabAnimNonce]);
@@ -245,21 +247,40 @@ export default function App() {
     
     setInjectState('injecting');
     setLogLines([]);
+    logQueueRef.current = [];
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
     
     window.ag.log.onLine((line) => {
       const hex = '0x' + Math.floor(Math.random() * 65536).toString(16).toUpperCase().padStart(4, '0');
       const time = new Date().toLocaleTimeString('en-US', { hour12: false });
       const formattedLine = `[${hex}] ${time} // ${line}`;
-      setLogLines(prev => {
-        const next = [...prev, formattedLine];
-        if (next.length > 500) next.shift();
-        return next;
-      });
+      logQueueRef.current.push(formattedLine);
+
+      if (rafIdRef.current === null) {
+        rafIdRef.current = requestAnimationFrame(() => {
+          if (logQueueRef.current.length > 0) {
+            const batch = logQueueRef.current.splice(0, logQueueRef.current.length);
+            setLogLines(prev => {
+              const combined = [...prev, ...batch];
+              return combined.length > 300 ? combined.slice(combined.length - 300) : combined;
+            });
+          }
+          rafIdRef.current = null;
+        });
+      }
     });
 
     const res = await window.ag.inject.deploy(selectedGame.id);
     
     if (injectTokenRef.current !== token) {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      logQueueRef.current = [];
       window.ag.log.offLine();
       return;
     }
@@ -268,6 +289,11 @@ export default function App() {
       setInjectState('success');
       setTimeout(async () => {
         if (injectTokenRef.current !== token) {
+          if (rafIdRef.current !== null) {
+            cancelAnimationFrame(rafIdRef.current);
+            rafIdRef.current = null;
+          }
+          logQueueRef.current = [];
           window.ag.log.offLine();
           return;
         }
@@ -278,12 +304,22 @@ export default function App() {
         }
         
         // Game process terminated - detach log listener
+        if (rafIdRef.current !== null) {
+          cancelAnimationFrame(rafIdRef.current);
+          rafIdRef.current = null;
+        }
+        logQueueRef.current = [];
         window.ag.log.offLine();
         if (injectTokenRef.current === token) {
           setInjectState('default');
         }
       }, 3000);
     } else if (res.cancelled) {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      logQueueRef.current = [];
       window.ag.log.offLine();
       setInjectState('cancelled');
       setLogLines(prev => [...prev, `[ERROR] Injection Cancelled: ${res.message}`]);
@@ -291,6 +327,11 @@ export default function App() {
         setInjectState('default');
       }, 1500);
     } else {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      logQueueRef.current = [];
       window.ag.log.offLine();
       setInjectState('error');
       setLogLines(prev => [...prev, `[ERROR] Injection Failed: ${res.message}`]);
@@ -325,7 +366,7 @@ export default function App() {
             fontFamily: 'var(--ag-font-mono)', letterSpacing: '0.05em', 
             fontWeight: 800
           }}>
-            {updateStatus?.version ? updateStatus.version.replace(/^v/, '') : '0.1.59'}
+            {updateStatus?.version ? updateStatus.version.replace(/^v/, '') : '0.1.60'}
           </span>
           {updateStatus?.updated && (
             <span style={{

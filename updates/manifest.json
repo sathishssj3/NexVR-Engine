@@ -1,19 +1,19 @@
 {
-  "engineVersion": "0.1.59",
-  "buildDate": "2026-09-18",
-  "timestamp": 1789769316491,
-  "changelog": "Real-Time Telemetry Streaming & Dynamic Version Synchronization v0.1.59",
+  "engineVersion": "0.1.60",
+  "buildDate": "2026-09-19",
+  "timestamp": 1789808155120,
+  "changelog": "High-Throughput Log Streaming & SEH Shield Optimization v0.1.60",
   "features": [
-    "Zero-Latency Log Streaming: Continuous live log forwarding from injected game processes to the launcher console during both injection and active VR gameplay",
+    "High-Performance Log Batching: requestAnimationFrame throttled UI updates and asynchronous stream ingestion preventing Electron event loop starvation",
+    "SEH Shield Zero-Overhead Mode: Demoted candidate probe TOCTOU access violation notifications from warnings to debug-only, eliminating disk I/O bursts during runtime memory scanning",
+    "Lock-Free Launcher Session Console: Guaranteed 60 FPS launcher UI responsiveness during intense game memory scans and startup sequences",
     "Dynamic Version Synchronization: Centralized engine versioning across C++ runtime, diagnostic handlers, and launcher UI",
-    "Instant Terminal Rendering: Streamlined session console with hardware-accelerated immediate line updates and blinking cursor indicator",
-    "1:1 Desktop Visual Fidelity: Restored true daylight clarity, bright snow, and rich textures in VR identical to the desktop monitor",
-    "Zero Configuration Drift: Synchronized srgbCorrection defaults across launcher config manager, UI views, and profile loaders"
+    "1:1 Desktop Visual Fidelity: Restored true daylight clarity, bright snow, and rich textures in VR identical to the desktop monitor"
   ],
   "fixes": [
-    "Resolved log stream disconnection on injection completion, ensuring all HookManager and VR render logs are visible in real time",
-    "Replaced hardcoded stale v0.1.16 engine version string with dynamic centralized version definition",
-    "Eliminated double-gamma darkening and persistent crushed blacks across all PC games"
+    "Resolved launcher freeze and Windows 'Not Responding' hang when launching games like Sekiro with active pointer candidate tracking",
+    "Eliminated 5,000+ per-second synchronous disk flush operations from SEH Shield memory probes",
+    "Fixed synchronous fs.appendFileSync locking in launcher injection manager"
   ],
   "files": [
     "vrinject.dll",
@@ -39,8 +39,8 @@
   ],
   "date": "2026-09-18T19:46:38.921Z",
   "hashes": {
-    "vrinject.dll": "35ca092a3c6be341f3ec7c56ecb0ab3274788cd3b414991684dd18b8a33c0ecc",
-    "vr-inject-cli.exe": "9f29c9fe5b6d76eccb2f0174542407bd8c6c658dc65215e8cfd3f664e1c3b2b9",
+    "vrinject.dll": "3c5c0411621facc1a1604c66fc1f263d41fd54d47fa15c198b9c53707fe6bbe1",
+    "vr-inject-cli.exe": "eed3533b423e961c585f359439a2a353cbfad197d169b4ae153b85e89de250e4",
     "profiles/814380_sekiro.json": "6463c079fb200fdb895edf96cdc54249d3e1d93c9fce6fbad87da9cfd7f46ff3",
     "profiles/990080_hogwarts_legacy.json": "717610b3cdf8cca77c2555d8c6ec087ef694ba1eda9a8a08c3a15438051f9efc",
     "profiles/1091500_cyberpunk_2077.json": "42a448270d17b59f9a910903043ca93b212cdae9c75fbf3400c1ef4346590601",

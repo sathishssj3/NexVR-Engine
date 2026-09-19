@@ -276,21 +276,22 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     // 4. Asset sync and binary signing tooling registered in package.json
     expect(pkgJson.scripts['sync:assets']).toBeDefined();
     expect(pkgJson.scripts['sign:binaries']).toBeDefined();
-    expect(pkgJson.version).toBe('0.1.59');
+    expect(pkgJson.version).toBe('0.1.60');
   });
 
-  test('v0.1.59 real-time telemetry streaming and version synchronization', () => {
+  test('v0.1.60 real-time telemetry streaming, SEH shield optimization, and log batching', () => {
     const runtimeStateCpp = readRepoFile('src', 'core', 'runtime_state.cpp');
     const versionHeader = readRepoFile('src', 'core', 'version.h');
     const injectionMgrTs = readRepoFile('launcher', 'electron', 'injectionManager.ts');
     const diagnosticsMgrTs = readRepoFile('launcher', 'electron', 'diagnosticsManager.ts');
     const appTsx = readRepoFile('launcher', 'src', 'App.tsx');
     const sessionLogTsx = readRepoFile('launcher', 'src', 'components', 'SessionLog.tsx');
+    const sehShieldH = readRepoFile('src', 'core', 'seh_shield.h');
 
     // 1. No stale v0.1.16 version strings remain anywhere in the engine or launcher
     expect(runtimeStateCpp).not.toContain('v0.1.16');
     expect(runtimeStateCpp).toContain('NEXVR_ENGINE_VERSION');
-    expect(versionHeader).toContain('#define NEXVR_ENGINE_VERSION "0.1.59"');
+    expect(versionHeader).toContain('#define NEXVR_ENGINE_VERSION "0.1.60"');
     expect(injectionMgrTs).not.toContain('v0.1.16');
     expect(diagnosticsMgrTs).not.toContain('v0.1.16');
 
@@ -306,6 +307,14 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     // 3. SessionLog renders lines directly without simulated typing lag
     expect(sessionLogTsx).not.toContain('TypewriterLine');
     expect(sessionLogTsx).toContain('wordBreak: \'break-all\'');
+
+    // 4. SEH Shield uses LOG_DEBUG for probe access violations to prevent 5000+ IOPS disk locks
+    expect(sehShieldH).toContain('LOG_DEBUG("SEH Shield: Access Violation (TOCTOU)');
+    expect(sehShieldH).not.toContain('LOG_WARN("SEH Shield: Access Violation (TOCTOU)');
+
+    // 5. App.tsx batches IPC log updates via requestAnimationFrame to protect UI thread
+    expect(appTsx).toContain('requestAnimationFrame');
+    expect(appTsx).toContain('logQueueRef');
   });
 });
 

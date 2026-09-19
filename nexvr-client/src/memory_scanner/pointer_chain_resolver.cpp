@@ -29,13 +29,13 @@ uint8_t* PointerChainResolver::ResolveRIP(uint8_t* instructionAddress, uint32_t 
         (mbi.Protect & (PAGE_READONLY | PAGE_READWRITE | PAGE_EXECUTE_READ |
                         PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY)) == 0 ||
         (mbi.Protect & PAGE_GUARD) != 0) {
-        LOG_WARN("PointerChainResolver: address %p is not in a readable page, skipping.", readPtr);
+        LOG_DEBUG("PointerChainResolver: address %p is not in a readable page, skipping.", readPtr);
         return nullptr;
     }
 
     uintptr_t regionEnd = reinterpret_cast<uintptr_t>(mbi.BaseAddress) + mbi.RegionSize;
     if (reinterpret_cast<uintptr_t>(readPtr) + sizeof(int32_t) > regionEnd) {
-        LOG_WARN("PointerChainResolver: int32 at %p spans a page boundary, skipping.", readPtr);
+        LOG_DEBUG("PointerChainResolver: int32 at %p spans a page boundary, skipping.", readPtr);
         return nullptr;
     }
 

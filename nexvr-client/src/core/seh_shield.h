@@ -53,8 +53,8 @@ inline bool SafeReadMemory(const void* src, void* dst, size_t size) {
         return true;
     }
     __except (GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
-        // Gap 1 Rule: Discard candidate, log discard reason, never propagate partial data.
-        LOG_WARN("SEH Shield: Access Violation (TOCTOU) intercepted while reading %zu bytes from %p. Discarding candidate.", size, src);
+        // Discard candidate safely; debug log only so memory sweeps do not flood disk I/O in release
+        LOG_DEBUG("SEH Shield: Access Violation (TOCTOU) intercepted while reading %zu bytes from %p. Discarding candidate.", size, src);
         // Ensure dst is zeroed out so garbage data is never propagated
         std::memset(dst, 0, size);
         return false;

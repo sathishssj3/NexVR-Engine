@@ -117,18 +117,21 @@ export function emitLogLine(event: Electron.IpcMainInvokeEvent, line: string): v
     }
   } catch {}
 
+  const chunk = trimmed + '\n';
   try {
     if (currentSessionLogPath) {
-      fs.appendFileSync(currentSessionLogPath, trimmed + '\n', 'utf-8');
+      fs.appendFile(currentSessionLogPath, chunk, 'utf-8', () => {});
     }
     if (latestSessionLogPath) {
-      fs.appendFileSync(latestSessionLogPath, trimmed + '\n', 'utf-8');
+      fs.appendFile(latestSessionLogPath, chunk, 'utf-8', () => {});
     }
   } catch {}
 }
 
+let isReadingLogs = false;
 function readNewBytes(normalized: string, event: Electron.IpcMainInvokeEvent): void {
-  if (!fs.existsSync(normalized)) return;
+  if (!fs.existsSync(normalized) || isReadingLogs) return;
+  isReadingLogs = true;
 
   try {
     const fd = fs.openSync(normalized, 'r');
@@ -151,13 +154,36 @@ function readNewBytes(normalized: string, event: Electron.IpcMainInvokeEvent): v
       const lines = text.split(/\r?\n/);
       watchedRemainders[normalized] = lines.pop() || '';
 
+      const validLines: string[] = [];
       for (const line of lines) {
-        emitLogLine(event, line);
+        const trimmed = line.trim();
+        if (trimmed) validLines.push(trimmed);
+      }
+
+      if (validLines.length > 0) {
+        // Non-blocking asynchronous batch append to session logs
+        const chunk = validLines.join('\n') + '\n';
+        if (currentSessionLogPath) {
+          fs.appendFile(currentSessionLogPath, chunk, 'utf-8', () => {});
+        }
+        if (latestSessionLogPath) {
+          fs.appendFile(latestSessionLogPath, chunk, 'utf-8', () => {});
+        }
+
+        // Bounded IPC dispatch to prevent event loop starvation
+        if (!event.sender.isDestroyed()) {
+          const toSend = validLines.length > 60 ? validLines.slice(validLines.length - 60) : validLines;
+          for (const l of toSend) {
+            event.sender.send('log:line', l.slice(0, 2000));
+          }
+        }
       }
     } finally {
       fs.closeSync(fd);
     }
-  } catch {}
+  } catch {} finally {
+    isReadingLogs = false;
+  }
 }
 
 function stopActiveLogWatch(): void {
@@ -176,6 +202,7 @@ function stopActiveLogWatch(): void {
   watchedSizes = {};
   watchedRemainders = {};
   activeLogPath = '';
+  isReadingLogs = false;
 }
 
 function startWatchingLogFile(filePath: string, event: Electron.IpcMainInvokeEvent): void {
@@ -192,24 +219,10 @@ function startWatchingLogFile(filePath: string, event: Electron.IpcMainInvokeEve
   watchedSizes[normalized] = initialSize;
   watchedRemainders[normalized] = '';
 
-  // 1. High-frequency 100ms fstat polling (bypasses NTFS directory cache latency)
-  fs.watchFile(normalized, { interval: 100 }, () => {
+  // Clean, focused 150ms handle polling without directory storm noise
+  fs.watchFile(normalized, { interval: 150 }, () => {
     readNewBytes(normalized, event);
   });
-
-  // 2. Real-time kernel event listener for sub-5ms notifications
-  try {
-    const parentDir = path.dirname(normalized);
-    const targetBase = path.basename(normalized).toLowerCase();
-    if (fs.existsSync(parentDir)) {
-      const watcher = fs.watch(parentDir, { persistent: false }, (_, filename) => {
-        if (filename && filename.toLowerCase() === targetBase) {
-          readNewBytes(normalized, event);
-        }
-      });
-      activeWatchers.push(watcher);
-    }
-  } catch {}
 
   // Flush any content already written
   readNewBytes(normalized, event);
@@ -276,7 +289,7 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     latestSessionLogPath = path.join(logsDir, 'latest_session.log');
 
     try {
-      const appVer = app.getVersion() || '0.1.59';
+      const appVer = app.getVersion() || '0.1.60';
       const header = `=== NexVR Engine Session Log [v${appVer}] ===\nGame ID: ${validId}\nStarted: ${new Date().toISOString()}\n==========================================\n`;
       fs.writeFileSync(currentSessionLogPath, header, 'utf-8');
       fs.writeFileSync(latestSessionLogPath, header, 'utf-8');
