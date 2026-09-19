@@ -1,8 +1,8 @@
 {
-  "engineVersion": "0.1.62",
+  "engineVersion": "0.1.63",
   "buildDate": "2026-09-19",
-  "timestamp": 1789814385913,
-  "changelog": "Tester-Friendly Milestone Logging & High-Clarity Console v0.1.62",
+  "timestamp": 1789815183887,
+  "changelog": "High-Contrast Log Palette & Universal Green [OK] Highlighting v0.1.63",
   "features": [
     "Tester-Centric Status Console: Formatted high-level [OK] milestone badges for target game, headset, input, swapchain, and 6DOF camera lock",
     "Zero Internal Noise: Demoted low-level Win32 hooks, swapchain format enumeration loops, and candidate shift adjustments to debug-only",
@@ -40,8 +40,8 @@
   ],
   "date": "2026-09-18T19:46:38.921Z",
   "hashes": {
-    "vrinject.dll": "ee50cec420b612264c28d98cf68eb6740c46fb23ac0d784dd9e5b5d275cd5951",
-    "vr-inject-cli.exe": "010823f27218646e5b6b7883732965521a14c8b1220c75b74036f82ae87dacf7",
+    "vrinject.dll": "d335c6b07bdaf90493b62a2a75255566244b79a6951af28e7a7325ad05b686bd",
+    "vr-inject-cli.exe": "50ce7c3ccdcaf213cb05495e94a7e38bc0e57e34d78be0953b16251d759bf137",
     "profiles/814380_sekiro.json": "6463c079fb200fdb895edf96cdc54249d3e1d93c9fce6fbad87da9cfd7f46ff3",
     "profiles/990080_hogwarts_legacy.json": "717610b3cdf8cca77c2555d8c6ec087ef694ba1eda9a8a08c3a15438051f9efc",
     "profiles/1091500_cyberpunk_2077.json": "42a448270d17b59f9a910903043ca93b212cdae9c75fbf3400c1ef4346590601",

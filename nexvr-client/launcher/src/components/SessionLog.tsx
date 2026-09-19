@@ -10,11 +10,19 @@ export function SessionLog({ logLines }: { logLines: string[] }) {
   }, [logLines]);
 
   const getColor = (line: string) => {
-    if (line.includes('[OK]')) return 'var(--ag-accent-success)';
-    if (line.includes('[DIAGNOSTICS]')) return 'var(--ag-text-code)';
-    if (line.includes('[--]') || line.includes('INFO')) return 'var(--ag-text-code)';
-    if (line.includes('[!!]') || line.includes('WARN')) return 'var(--ag-accent-warn)';
-    if (line.includes('[ERR]') || line.includes('[Injector CLI Error]') || line.includes('ERROR')) return 'var(--ag-accent-danger)';
+    // 1. Errors -> RED
+    if (line.includes('[ERR]') || line.includes('[Injector CLI Error]') || line.includes('ERROR') || line.includes('FAILED')) {
+      return 'var(--ag-accent-danger)';
+    }
+    // 2. Warnings -> AMBER / ORANGE
+    if (line.includes('[!!]') || line.includes('WARN')) {
+      return 'var(--ag-accent-warn)';
+    }
+    // 3. All [ OK ] lines (with or without spaces) -> VIBRANT GREEN
+    if (/\[\s*OK\s*\]/i.test(line)) {
+      return 'var(--ag-accent-success)';
+    }
+    // 4. Normal reading (INFO, [--], DIAGNOSTICS, STATUS, headers, default) -> CRISP WHITE
     return 'var(--ag-text-primary)';
   };
 

@@ -12,7 +12,7 @@ export function AboutPanel({ version }: { version?: string }) {
     }
   };
 
-  const currentVer = version ? (version.startsWith('v') ? version : `v${version}`) : 'v0.1.62';
+  const currentVer = version ? (version.startsWith('v') ? version : `v${version}`) : 'v0.1.63';
 
   return (
     <div className="fast-smooth-scroll" style={{ flex: 1, padding: '36px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflowY: 'auto', background: '#000000' }}>

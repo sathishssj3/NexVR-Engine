@@ -20,7 +20,7 @@ export function SettingsView({
 
   const activeVersion = updateStatus?.version 
     ? (updateStatus.version.startsWith('v') ? updateStatus.version : `v${updateStatus.version}`) 
-    : 'v0.1.62';
+    : 'v0.1.63';
 
   // Global default config persisted in localStorage
   const [globalConfig, setGlobalConfig] = useState<VRConfig>(() => {
