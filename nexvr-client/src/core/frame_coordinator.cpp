@@ -244,7 +244,7 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
   // ==============================================
   // STEREO RENDERING PIPELINE
   // ==============================================
-  LOG_INFO("FrameCoordinator: Entering stereo pipeline (frame %llu).", m_globalFrameCounter);
+  LOG_DEBUG("FrameCoordinator: Entering stereo pipeline (frame %llu).", m_globalFrameCounter);
 
   // Lazy init managers
   if (!m_graphicsBackend) {

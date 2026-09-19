@@ -1,19 +1,19 @@
 {
-  "engineVersion": "0.1.60",
+  "engineVersion": "0.1.61",
   "buildDate": "2026-09-19",
-  "timestamp": 1789808155120,
-  "changelog": "High-Throughput Log Streaming & SEH Shield Optimization v0.1.60",
+  "timestamp": 1789812825305,
+  "changelog": "Zero-Spam High-Performance Engine Logging & Stereo Pipeline Trace Optimization v0.1.61",
   "features": [
+    "Clean Session Console: Demoted per-frame stereo pipeline trace to debug-only, eliminating 5,400+ lines per minute of repetitive log noise",
     "High-Performance Log Batching: requestAnimationFrame throttled UI updates and asynchronous stream ingestion preventing Electron event loop starvation",
     "SEH Shield Zero-Overhead Mode: Demoted candidate probe TOCTOU access violation notifications from warnings to debug-only, eliminating disk I/O bursts during runtime memory scanning",
     "Lock-Free Launcher Session Console: Guaranteed 60 FPS launcher UI responsiveness during intense game memory scans and startup sequences",
-    "Dynamic Version Synchronization: Centralized engine versioning across C++ runtime, diagnostic handlers, and launcher UI",
-    "1:1 Desktop Visual Fidelity: Restored true daylight clarity, bright snow, and rich textures in VR identical to the desktop monitor"
+    "Dynamic Version Synchronization: Centralized engine versioning across C++ runtime, diagnostic handlers, and launcher UI"
   ],
   "fixes": [
-    "Resolved launcher freeze and Windows 'Not Responding' hang when launching games like Sekiro with active pointer candidate tracking",
-    "Eliminated 5,000+ per-second synchronous disk flush operations from SEH Shield memory probes",
-    "Fixed synchronous fs.appendFileSync locking in launcher injection manager"
+    "Eliminated 90 lines/sec per-frame 'Entering stereo pipeline' log spam in FrameCoordinator",
+    "Resolved launcher freeze and Windows 'Not Responding' hang during Sekiro and DX11/DX12 injection sessions",
+    "Eliminated synchronous disk flush operations from SEH Shield memory probes"
   ],
   "files": [
     "vrinject.dll",
@@ -39,8 +39,8 @@
   ],
   "date": "2026-09-18T19:46:38.921Z",
   "hashes": {
-    "vrinject.dll": "3c5c0411621facc1a1604c66fc1f263d41fd54d47fa15c198b9c53707fe6bbe1",
-    "vr-inject-cli.exe": "eed3533b423e961c585f359439a2a353cbfad197d169b4ae153b85e89de250e4",
+    "vrinject.dll": "1db9edd15ab1a2871fc28eb629afc1da094244cfdb02200133c34ffecf5c9fd2",
+    "vr-inject-cli.exe": "534044930b82b4cd27499f3d2919bddb7f2f054123c0e3343f26cf3935bc284f",
     "profiles/814380_sekiro.json": "6463c079fb200fdb895edf96cdc54249d3e1d93c9fce6fbad87da9cfd7f46ff3",
     "profiles/990080_hogwarts_legacy.json": "717610b3cdf8cca77c2555d8c6ec087ef694ba1eda9a8a08c3a15438051f9efc",
     "profiles/1091500_cyberpunk_2077.json": "42a448270d17b59f9a910903043ca93b212cdae9c75fbf3400c1ef4346590601",
