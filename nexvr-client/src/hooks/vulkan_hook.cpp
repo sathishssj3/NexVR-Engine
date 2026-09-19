@@ -631,7 +631,7 @@ void InstallVulkanHooks() {
         return;
     }
 
-    LOG_INFO("InstallVulkanHooks: Found vulkan-1.dll. Attempting to hook...");
+    LOG_DEBUG("InstallVulkanHooks: Found vulkan-1.dll. Attempting to hook...");
 
     True_vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)GetProcAddress(vulkanModule, "vkGetInstanceProcAddr");
     True_vkCreateInstance = (PFN_vkCreateInstance)GetProcAddress(vulkanModule, "vkCreateInstance");
@@ -641,7 +641,7 @@ void InstallVulkanHooks() {
 
     if (True_vkGetInstanceProcAddr) {
         if (MH_CreateHook((LPVOID)True_vkGetInstanceProcAddr, (LPVOID)VulkanDispatchTable::Hooked_vkGetInstanceProcAddr, reinterpret_cast<LPVOID*>(&True_vkGetInstanceProcAddr)) == MH_OK) {
-            LOG_INFO("InstallVulkanHooks: Successfully created hook for vkGetInstanceProcAddr");
+            LOG_DEBUG("InstallVulkanHooks: Successfully created hook for vkGetInstanceProcAddr");
             VulkanDispatchTable::Get().InitOriginalGetInstanceProcAddr(True_vkGetInstanceProcAddr);
         } else {
             LOG_ERROR("InstallVulkanHooks: Failed to create hook for vkGetInstanceProcAddr");
@@ -650,7 +650,7 @@ void InstallVulkanHooks() {
     
     if (True_vkCreateInstance) {
         if (MH_CreateHook((LPVOID)True_vkCreateInstance, (LPVOID)Hooked_vkCreateInstance, reinterpret_cast<LPVOID*>(&True_vkCreateInstance)) == MH_OK) {
-            LOG_INFO("InstallVulkanHooks: Successfully created hook for vkCreateInstance");
+            LOG_DEBUG("InstallVulkanHooks: Successfully created hook for vkCreateInstance");
         } else {
             LOG_ERROR("InstallVulkanHooks: Failed to create hook for vkCreateInstance");
         }
@@ -658,7 +658,7 @@ void InstallVulkanHooks() {
     
     if (True_vkCreateDevice) {
         if (MH_CreateHook((LPVOID)True_vkCreateDevice, (LPVOID)Hooked_vkCreateDevice, reinterpret_cast<LPVOID*>(&True_vkCreateDevice)) == MH_OK) {
-            LOG_INFO("InstallVulkanHooks: Successfully created hook for vkCreateDevice");
+            LOG_DEBUG("InstallVulkanHooks: Successfully created hook for vkCreateDevice");
         } else {
             LOG_ERROR("InstallVulkanHooks: Failed to create hook for vkCreateDevice");
         }
@@ -666,7 +666,7 @@ void InstallVulkanHooks() {
 
     if (True_vkGetDeviceProcAddr) {
         if (MH_CreateHook((LPVOID)True_vkGetDeviceProcAddr, (LPVOID)VulkanDispatchTable::Hooked_vkGetDeviceProcAddr, reinterpret_cast<LPVOID*>(&True_vkGetDeviceProcAddr)) == MH_OK) {
-            LOG_INFO("InstallVulkanHooks: Successfully created hook for vkGetDeviceProcAddr");
+            LOG_DEBUG("InstallVulkanHooks: Successfully created hook for vkGetDeviceProcAddr");
             VulkanDispatchTable::Get().InitOriginalGetDeviceProcAddr(True_vkGetDeviceProcAddr);
         } else {
             LOG_ERROR("InstallVulkanHooks: Failed to create hook for vkGetDeviceProcAddr");
@@ -676,21 +676,21 @@ void InstallVulkanHooks() {
     auto realCreateSwapchain = (PFN_vkCreateSwapchainKHR)GetProcAddress(vulkanModule, "vkCreateSwapchainKHR");
     if (realCreateSwapchain) {
         if (MH_CreateHook((LPVOID)realCreateSwapchain, (LPVOID)Hooked_vkCreateSwapchainKHR, nullptr) == MH_OK) {
-            LOG_INFO("InstallVulkanHooks: Successfully created hook for exported vkCreateSwapchainKHR");
+            LOG_DEBUG("InstallVulkanHooks: Successfully created hook for exported vkCreateSwapchainKHR");
         }
     }
 
     auto realQueuePresent = (PFN_vkQueuePresentKHR)GetProcAddress(vulkanModule, "vkQueuePresentKHR");
     if (realQueuePresent) {
         if (MH_CreateHook((LPVOID)realQueuePresent, (LPVOID)Hooked_vkQueuePresentKHR, reinterpret_cast<LPVOID*>(&True_vkQueuePresentKHR_Direct)) == MH_OK) {
-            LOG_INFO("InstallVulkanHooks: Successfully created hook for exported vkQueuePresentKHR");
+            LOG_DEBUG("InstallVulkanHooks: Successfully created hook for exported vkQueuePresentKHR");
         }
     }
 
     auto realQueueSubmit = (PFN_vkQueueSubmit)GetProcAddress(vulkanModule, "vkQueueSubmit");
     if (realQueueSubmit) {
         if (MH_CreateHook((LPVOID)realQueueSubmit, (LPVOID)Hooked_vkQueueSubmit, reinterpret_cast<LPVOID*>(&True_vkQueueSubmit_Direct)) == MH_OK) {
-            LOG_INFO("InstallVulkanHooks: Successfully created hook for exported vkQueueSubmit");
+            LOG_DEBUG("InstallVulkanHooks: Successfully created hook for exported vkQueueSubmit");
         }
     }
 }

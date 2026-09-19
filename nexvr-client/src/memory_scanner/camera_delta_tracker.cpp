@@ -129,7 +129,13 @@ void CameraDeltaTracker::PollAndTrackCandidates() {
 
     if (bestPointer && bestScore >= 2.6f) { // base 2.0 + temporalScore >= 0.6
         if (m_lockedPointer != bestPointer) {
-            LOG_INFO("CameraDeltaTracker: Locked candidate view matrix at %p (score: %.2f)", bestPointer, bestScore);
+            static bool s_firstLockLogged = false;
+            if (!s_firstLockLogged) {
+                LOG_INFO("[OK] Camera Tracking: 6DOF View Matrix Locked (Confidence: %.0f%%)", (std::min)(100.0f, (bestScore - 2.0f) * 100.0f));
+                s_firstLockLogged = true;
+            } else {
+                LOG_DEBUG("CameraDeltaTracker: Adjusted candidate view matrix at %p (score: %.2f)", bestPointer, bestScore);
+            }
             m_lockedPointer = bestPointer;
             FindMatchingProjection(m_lockedPointer, m_candidates[bestPointer].isDoublePrecision);
         }
@@ -172,7 +178,7 @@ void CameraDeltaTracker::FindMatchingProjection(uint8_t* viewAddress, bool isDou
         if (SafeReadMatrix(probeAddr, isDouble, testMat)) {
             if (PageScanner::IsValidProjectionMatrixFloat(&testMat.m[0][0], 90.0f)) {
                 m_lockedProjPointer = probeAddr;
-                LOG_INFO("CameraDeltaTracker: Found paired projection matrix at offset %d (%p)", offset, probeAddr);
+                LOG_DEBUG("CameraDeltaTracker: Found paired projection matrix at offset %d (%p)", offset, probeAddr);
                 return;
             }
         }
@@ -182,7 +188,7 @@ void CameraDeltaTracker::FindMatchingProjection(uint8_t* viewAddress, bool isDou
     for (const auto& pair : m_candidates) {
         if (pair.second.isProjectionMatrix && pair.second.temporalScore > 0.5f) {
             m_lockedProjPointer = pair.first;
-            LOG_INFO("CameraDeltaTracker: Found matching projection matrix candidate at %p", pair.first);
+            LOG_DEBUG("CameraDeltaTracker: Found matching projection matrix candidate at %p", pair.first);
             return;
         }
     }

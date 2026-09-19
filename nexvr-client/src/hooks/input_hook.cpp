@@ -206,27 +206,27 @@ bool InputHook::Initialize() {
         if (pGetForegroundWindow) {
             MH_CreateHook(pGetForegroundWindow, reinterpret_cast<LPVOID>(&HookedGetForegroundWindow), reinterpret_cast<void**>(&OriginalGetForegroundWindow));
             MH_EnableHook(pGetForegroundWindow);
-            LOG_INFO("InputHook: Hooked GetForegroundWindow.");
+            LOG_DEBUG("InputHook: Hooked GetForegroundWindow.");
         }
         if (pGetActiveWindow) {
             MH_CreateHook(pGetActiveWindow, reinterpret_cast<LPVOID>(&HookedGetActiveWindow), reinterpret_cast<void**>(&OriginalGetActiveWindow));
             MH_EnableHook(pGetActiveWindow);
-            LOG_INFO("InputHook: Hooked GetActiveWindow.");
+            LOG_DEBUG("InputHook: Hooked GetActiveWindow.");
         }
         if (pGetCursorPos) {
             MH_CreateHook(pGetCursorPos, reinterpret_cast<LPVOID>(&HookedGetCursorPos), reinterpret_cast<void**>(&OriginalGetCursorPos));
             MH_EnableHook(pGetCursorPos);
-            LOG_INFO("InputHook: Hooked GetCursorPos.");
+            LOG_DEBUG("InputHook: Hooked GetCursorPos.");
         }
         if (pSetCursor) {
             MH_CreateHook(pSetCursor, reinterpret_cast<LPVOID>(&HookedSetCursor), reinterpret_cast<void**>(&OriginalSetCursor));
             MH_EnableHook(pSetCursor);
-            LOG_INFO("InputHook: Hooked SetCursor.");
+            LOG_DEBUG("InputHook: Hooked SetCursor.");
         }
         if (pGetRawInputData) {
             MH_CreateHook(pGetRawInputData, reinterpret_cast<LPVOID>(&HookedGetRawInputData), reinterpret_cast<void**>(&OriginalGetRawInputData));
             MH_EnableHook(pGetRawInputData);
-            LOG_INFO("InputHook: Hooked GetRawInputData.");
+            LOG_DEBUG("InputHook: Hooked GetRawInputData.");
         }
     }
 
@@ -245,7 +245,7 @@ bool InputHook::Initialize() {
         }
     }
 
-    LOG_INFO("InputHook: Input path: %s", m_usesRawInput ? "Raw Input" : "SendInput");
+    LOG_INFO("[OK] Input System: VR Controllers & Gamepad Hooked (%s)", m_usesRawInput ? "Raw Input" : "SendInput");
 
     m_initialized = true;
     return true;
@@ -371,13 +371,13 @@ void InputHook::SetTargetHwnd(HWND hwnd) {
     if (!hwnd) return;
     if (m_targetHwnd == hwnd && g_OriginalWndProc != nullptr) return;
     m_targetHwnd = hwnd;
-    LOG_INFO("InputHook: Target game window HWND set to: %p", m_targetHwnd);
+    LOG_DEBUG("InputHook: Target game window HWND set to: %p", m_targetHwnd);
     
     WNDPROC currentWndProc = (WNDPROC)GetWindowLongPtr(m_targetHwnd, GWLP_WNDPROC);
     if (currentWndProc && currentWndProc != (WNDPROC)&HookedWndProc && !g_OriginalWndProc) {
         MH_CreateHook((LPVOID)currentWndProc, (LPVOID)&HookedWndProc, (reinterpret_cast<LPVOID*>(&g_OriginalWndProc)));
         MH_EnableHook((LPVOID)currentWndProc);
-        LOG_INFO("InputHook: Successfully hooked WndProc via MinHook.");
+        LOG_DEBUG("InputHook: Successfully hooked WndProc via MinHook.");
     }
 }
 
@@ -388,7 +388,7 @@ void InputHook::FindTargetWindow() {
         Sleep(50);
     }
     if (m_targetHwnd) {
-        LOG_INFO("InputHook: Found target game window HWND: %p", m_targetHwnd);
+        LOG_DEBUG("InputHook: Found target game window HWND: %p", m_targetHwnd);
         SetTargetHwnd(m_targetHwnd);
     }
 }
@@ -409,7 +409,7 @@ void InputHook::ToggleRawInputSink(bool enable) {
     }
     
     if (RegisterRawInputDevices(&rid, 1, sizeof(rid))) {
-        LOG_INFO("InputHook: RawInput Background Sink %s", enable ? "ENABLED" : "DISABLED");
+        LOG_DEBUG("InputHook: RawInput Background Sink %s", enable ? "ENABLED" : "DISABLED");
     } else {
         LOG_ERROR("InputHook: Failed to toggle RawInput Sink.");
     }
@@ -447,7 +447,7 @@ void InputHook::StopBackgroundCapture() {
 }
 
 void InputHook::CaptureThreadLoop() {
-    LOG_INFO("InputHook: Background Capture Thread Started.");
+    LOG_DEBUG("InputHook: Background Capture Thread Started.");
     FindTargetWindow();
 
     HMODULE hDll = nullptr;

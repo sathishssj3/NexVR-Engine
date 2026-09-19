@@ -276,10 +276,10 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     // 4. Asset sync and binary signing tooling registered in package.json
     expect(pkgJson.scripts['sync:assets']).toBeDefined();
     expect(pkgJson.scripts['sign:binaries']).toBeDefined();
-    expect(pkgJson.version).toBe('0.1.61');
+    expect(pkgJson.version).toBe('0.1.62');
   });
 
-  test('v0.1.61 real-time telemetry streaming, SEH shield optimization, and clean log pipeline', () => {
+  test('v0.1.62 real-time telemetry streaming, SEH shield optimization, and tester-friendly milestone logging', () => {
     const runtimeStateCpp = readRepoFile('src', 'core', 'runtime_state.cpp');
     const versionHeader = readRepoFile('src', 'core', 'version.h');
     const injectionMgrTs = readRepoFile('launcher', 'electron', 'injectionManager.ts');
@@ -288,11 +288,13 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     const sessionLogTsx = readRepoFile('launcher', 'src', 'components', 'SessionLog.tsx');
     const sehShieldH = readRepoFile('src', 'core', 'seh_shield.h');
     const frameCoordCpp = readRepoFile('src', 'core', 'frame_coordinator.cpp');
+    const cameraTrackerCpp = readRepoFile('src', 'memory_scanner', 'camera_delta_tracker.cpp');
+    const inputHookCpp = readRepoFile('src', 'hooks', 'input_hook.cpp');
 
     // 1. No stale v0.1.16 version strings remain anywhere in the engine or launcher
     expect(runtimeStateCpp).not.toContain('v0.1.16');
     expect(runtimeStateCpp).toContain('NEXVR_ENGINE_VERSION');
-    expect(versionHeader).toContain('#define NEXVR_ENGINE_VERSION "0.1.61"');
+    expect(versionHeader).toContain('#define NEXVR_ENGINE_VERSION "0.1.62"');
     expect(injectionMgrTs).not.toContain('v0.1.16');
     expect(diagnosticsMgrTs).not.toContain('v0.1.16');
 
@@ -317,7 +319,11 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     expect(frameCoordCpp).toContain('LOG_DEBUG("FrameCoordinator: Entering stereo pipeline');
     expect(frameCoordCpp).not.toContain('LOG_INFO("FrameCoordinator: Entering stereo pipeline');
 
-    // 6. App.tsx batches IPC log updates via requestAnimationFrame to protect UI thread
+    // 6. Tester-friendly milestone badges in camera tracker and input hook
+    expect(cameraTrackerCpp).toContain('[OK] Camera Tracking: 6DOF View Matrix Locked');
+    expect(inputHookCpp).toContain('[OK] Input System: VR Controllers & Gamepad Hooked');
+
+    // 7. App.tsx batches IPC log updates via requestAnimationFrame to protect UI thread
     expect(appTsx).toContain('requestAnimationFrame');
     expect(appTsx).toContain('logQueueRef');
   });

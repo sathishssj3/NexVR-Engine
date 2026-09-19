@@ -124,14 +124,15 @@ void RuntimeState::BackgroundInitialize() {
         return;
     }
     
-    LOG_INFO("Waiting for remote injection thread to exit...");
+    LOG_DEBUG("Waiting for remote injection thread to exit...");
     Sleep(1000); // Prevent MH_EnableHook from deadlocking against the exiting injection thread
 
-    LOG_INFO("About to call HookManager::InitializeHooks()...");
+    LOG_DEBUG("About to call HookManager::InitializeHooks()...");
     bool success = HookManager::Get().InitializeHooks();
-    LOG_INFO("HookManager::InitializeHooks() returned: %s", success ? "true" : "false");
+    LOG_DEBUG("HookManager::InitializeHooks() returned: %s", success ? "true" : "false");
     
     if (success) {
+        LOG_INFO("[OK] HookManager: Detours & Memory Interceptors Active");
         SubsystemContext::Get().GetDiagnosticContext()->PostEvent(DiagnosticLevel::Info, "Runtime", "Initialization complete");
         TransitionTo(RuntimePhase::Running);
     } else {

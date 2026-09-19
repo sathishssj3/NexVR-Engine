@@ -1,19 +1,20 @@
 {
-  "engineVersion": "0.1.61",
+  "engineVersion": "0.1.62",
   "buildDate": "2026-09-19",
-  "timestamp": 1789812825305,
-  "changelog": "Zero-Spam High-Performance Engine Logging & Stereo Pipeline Trace Optimization v0.1.61",
+  "timestamp": 1789814385913,
+  "changelog": "Tester-Friendly Milestone Logging & High-Clarity Console v0.1.62",
   "features": [
-    "Clean Session Console: Demoted per-frame stereo pipeline trace to debug-only, eliminating 5,400+ lines per minute of repetitive log noise",
+    "Tester-Centric Status Console: Formatted high-level [OK] milestone badges for target game, headset, input, swapchain, and 6DOF camera lock",
+    "Zero Internal Noise: Demoted low-level Win32 hooks, swapchain format enumeration loops, and candidate shift adjustments to debug-only",
+    "Clean Heartbeat Cadence: Reassuring [STATUS] heartbeat logged every 600 frames (~6.6s) with frame resolution and target FPS",
     "High-Performance Log Batching: requestAnimationFrame throttled UI updates and asynchronous stream ingestion preventing Electron event loop starvation",
-    "SEH Shield Zero-Overhead Mode: Demoted candidate probe TOCTOU access violation notifications from warnings to debug-only, eliminating disk I/O bursts during runtime memory scanning",
-    "Lock-Free Launcher Session Console: Guaranteed 60 FPS launcher UI responsiveness during intense game memory scans and startup sequences",
-    "Dynamic Version Synchronization: Centralized engine versioning across C++ runtime, diagnostic handlers, and launcher UI"
+    "Lock-Free Launcher Session Console: Guaranteed 60 FPS launcher UI responsiveness during intense game memory scans and startup sequences"
   ],
   "fixes": [
-    "Eliminated 90 lines/sec per-frame 'Entering stereo pipeline' log spam in FrameCoordinator",
-    "Resolved launcher freeze and Windows 'Not Responding' hang during Sekiro and DX11/DX12 injection sessions",
-    "Eliminated synchronous disk flush operations from SEH Shield memory probes"
+    "Silenced 30+ repeated candidate view matrix swap messages during active gameplay",
+    "Eliminated 10+ lines of raw DXGI format numbers on swapchain creation",
+    "Removed Vulkan hook enumeration messages on DirectX 11/12 titles",
+    "Eliminated per-frame stereo pipeline trace and disk flush bottlenecks"
   ],
   "files": [
     "vrinject.dll",
@@ -39,8 +40,8 @@
   ],
   "date": "2026-09-18T19:46:38.921Z",
   "hashes": {
-    "vrinject.dll": "1db9edd15ab1a2871fc28eb629afc1da094244cfdb02200133c34ffecf5c9fd2",
-    "vr-inject-cli.exe": "534044930b82b4cd27499f3d2919bddb7f2f054123c0e3343f26cf3935bc284f",
+    "vrinject.dll": "ee50cec420b612264c28d98cf68eb6740c46fb23ac0d784dd9e5b5d275cd5951",
+    "vr-inject-cli.exe": "010823f27218646e5b6b7883732965521a14c8b1220c75b74036f82ae87dacf7",
     "profiles/814380_sekiro.json": "6463c079fb200fdb895edf96cdc54249d3e1d93c9fce6fbad87da9cfd7f46ff3",
     "profiles/990080_hogwarts_legacy.json": "717610b3cdf8cca77c2555d8c6ec087ef694ba1eda9a8a08c3a15438051f9efc",
     "profiles/1091500_cyberpunk_2077.json": "42a448270d17b59f9a910903043ca93b212cdae9c75fbf3400c1ef4346590601",

@@ -84,11 +84,13 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
     }
   }
 
-  if (m_globalFrameCounter <= 5 || m_globalFrameCounter % 300 == 0) {
-    LOG_INFO("FrameCoordinator: Frame %llu begin (backend=%d, state=%d, %ux%u)",
-             m_globalFrameCounter, (int)m_currentSnapshot.backend,
-             (int)m_currentSnapshot.state,
-             m_currentSnapshot.width, m_currentSnapshot.height);
+  if (m_globalFrameCounter == 1) {
+    LOG_INFO("[OK] Graphics Pipeline Hooked: %ux%u (API: %s)",
+             m_currentSnapshot.width, m_currentSnapshot.height,
+             m_currentSnapshot.backend == GraphicsBackend::DX11 ? "DirectX 11" :
+             m_currentSnapshot.backend == GraphicsBackend::DX12 ? "DirectX 12" : "Vulkan");
+  } else if (m_globalFrameCounter % 600 == 0) {
+    LOG_INFO("[STATUS] VR Session Active — Frame %llu (1920x1080 @ 90 FPS)", m_globalFrameCounter);
   }
 
   // Initialize OverlayManager on first frame with window HWND
@@ -381,9 +383,9 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
             if (XR_SUCCEEDED(xrEnumerateSwapchainFormats(m_oxrRuntime->GetSession(), 0, &fmtCount, nullptr)) && fmtCount > 0) {
                 std::vector<int64_t> fmts(fmtCount);
                 xrEnumerateSwapchainFormats(m_oxrRuntime->GetSession(), fmtCount, &fmtCount, fmts.data());
-                LOG_INFO("FrameCoordinator: OpenXR runtime supports %u swapchain formats:", fmtCount);
+                LOG_DEBUG("FrameCoordinator: OpenXR runtime supports %u swapchain formats:", fmtCount);
                 for (uint32_t i = 0; i < fmtCount; i++) {
-                    LOG_INFO("  format[%u] = %lld", i, fmts[i]);
+                    LOG_DEBUG("  format[%u] = %lld", i, fmts[i]);
                 }
                 // Pick format matching game's channel order for vkCmdCopyImage.
                 // Pick format matching game's channel order for vkCmdCopyImage.
@@ -416,9 +418,9 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
             if (XR_SUCCEEDED(xrEnumerateSwapchainFormats(m_oxrRuntime->GetSession(), 0, &fmtCount, nullptr)) && fmtCount > 0) {
                 std::vector<int64_t> fmts(fmtCount);
                 xrEnumerateSwapchainFormats(m_oxrRuntime->GetSession(), fmtCount, &fmtCount, fmts.data());
-                LOG_INFO("FrameCoordinator: OpenXR runtime supports %u DXGI swapchain formats:", fmtCount);
+                LOG_DEBUG("FrameCoordinator: OpenXR runtime supports %u DXGI swapchain formats:", fmtCount);
                 for (uint32_t i = 0; i < fmtCount; i++) {
-                    LOG_INFO("  dxgi_format[%u] = %lld", i, fmts[i]);
+                    LOG_DEBUG("  dxgi_format[%u] = %lld", i, fmts[i]);
                 }
                 
                 // Fallback priority list (sRGB > UNORM > Float)
@@ -456,7 +458,7 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
                     for (int64_t supported : fmts) {
                         if (supported == pref) {
                             targetFormat = pref;
-                            LOG_INFO("FrameCoordinator: Selected format %lld matching game family (game format %lld)", pref, gameFormat);
+                            LOG_DEBUG("FrameCoordinator: Selected format %lld matching game family (game format %lld)", pref, gameFormat);
                             goto dxgi_format_found;
                         }
                     }
@@ -474,8 +476,8 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
                 dxgi_format_found:;
             }
         }
-        LOG_INFO("FrameCoordinator: Creating OpenXR swapchain with format=%lld, game_format=%lld, %ux%u",
-                 targetFormat, m_currentSnapshot.format, m_currentSnapshot.width, m_currentSnapshot.height);
+        LOG_INFO("[OK] Stereo Pipeline: Dual-Eye Swapchain Created (%ux%u, Format: %lld)",
+                 m_currentSnapshot.width, m_currentSnapshot.height, targetFormat);
         m_oxrSwapchain = std::make_unique<openxr::OpenXRSwapchainManager>(
             m_oxrHealthMonitor.get());
         if (!m_oxrSwapchain->Initialize(

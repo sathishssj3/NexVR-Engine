@@ -649,7 +649,7 @@ bool Initialize() {
         MH_EnableHook(present0Address);
     } else {
         // DX11 hook already owns Present — it will forward DX12 swapchains to OnPresent()
-        LOG_INFO("DX12Hook: Present already hooked (DX11 hook owns it), DX12 will rely on DX11 forwarding.");
+        LOG_DEBUG("DX12Hook: Present already hooked (DX11 hook owns it), DX12 will rely on DX11 forwarding.");
     }
 
     if (IsValidHookTarget(present1ExAddress) &&
@@ -657,7 +657,7 @@ bool Initialize() {
         g_targetPresent1DX12 = present1ExAddress;
         MH_EnableHook(present1ExAddress);
     } else {
-        LOG_INFO("DX12Hook: Present1 already hooked (DX11 hook owns it).");
+        LOG_DEBUG("DX12Hook: Present1 already hooked (DX11 hook owns it).");
     }
 
     if (IsValidHookTarget(resizeBuffersAddress) &&
@@ -665,7 +665,7 @@ bool Initialize() {
         g_targetResizeBuffers = resizeBuffersAddress;
         MH_EnableHook(resizeBuffersAddress);
     } else {
-        LOG_INFO("DX12Hook: ResizeBuffers already hooked (DX11 hook owns it).");
+        LOG_DEBUG("DX12Hook: ResizeBuffers already hooked (DX11 hook owns it).");
     }
 
     if (IsValidHookTarget(resizeBuffers1Address) &&
@@ -676,7 +676,7 @@ bool Initialize() {
 
     // Map and Unmap are intentionally NOT hooked in DX12 to avoid race conditions
     // and driver invalid-call crashes on multi-threaded worker ring buffers.
-    LOG_INFO("DX12Hook: Dummy Initialize success, waiting for DynamicHook");
+    LOG_DEBUG("DX12Hook: Dummy Initialize success, waiting for DynamicHook");
     return true;
 }
 
