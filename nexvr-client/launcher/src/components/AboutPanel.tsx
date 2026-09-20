@@ -255,10 +255,10 @@ export function AboutPanel({ version }: { version?: string }) {
           </button>
         </div>
 
-        {/* Action Buttons: 3 Utility Buttons */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 10, width: '100%' }}>
+        {/* Action Buttons: 2 Utility Buttons */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10, width: '100%' }}>
           <button 
-            onClick={() => handleLink('https://github.com/sathishssj3/NexVR-Engine')} 
+            onClick={() => handleLink('https://discord.gg/FBeGjgK2fd')} 
             style={{ 
               padding: '9px 14px', 
               borderRadius: 'var(--ag-radius-sm)', 
@@ -282,37 +282,10 @@ export function AboutPanel({ version }: { version?: string }) {
               e.currentTarget.style.background = 'rgba(255, 255, 255, 0.035)';
             }}
           >
-            GITHUB
+            COMMUNITY & GUIDES
           </button>
           <button 
-            onClick={() => handleLink('https://github.com/sathishssj3/NexVR-Engine/tree/main/docs')} 
-            style={{ 
-              padding: '9px 14px', 
-              borderRadius: 'var(--ag-radius-sm)', 
-              color: 'var(--ag-text-primary)', 
-              cursor: 'pointer', 
-              fontFamily: 'var(--ag-font-display)', 
-              fontSize: 11, 
-              letterSpacing: '0.08em', 
-              fontWeight: 600, 
-              border: '1px solid #383A44', 
-              background: 'rgba(255, 255, 255, 0.035)', 
-              boxShadow: 'none', 
-              transition: 'all 0.2s ease' 
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = '#4A4D5C';
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = '#383A44';
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.035)';
-            }}
-          >
-            DOCUMENTATION
-          </button>
-          <button 
-            onClick={() => handleLink('https://github.com/sathishssj3/NexVR-Engine/issues/new')} 
+            onClick={() => handleLink('https://discord.gg/FBeGjgK2fd')} 
             style={{ 
               padding: '9px 14px', 
               borderRadius: 'var(--ag-radius-sm)', 
@@ -403,7 +376,7 @@ export function AboutPanel({ version }: { version?: string }) {
             border: '1px solid #CC0000', 
             background: '#CC0000', 
             boxShadow: 'none', 
-            marginBottom: 16, 
+            marginBottom: 0, 
             transition: 'all 0.2s ease' 
           }}
           onMouseEnter={e => {
@@ -420,17 +393,20 @@ export function AboutPanel({ version }: { version?: string }) {
           JOIN OUR DISCORD SERVER
         </button>
 
-        {/* Clean Monospace Copyright in Smoke #848884 */}
-        <div style={{ 
-          color: '#848884', 
-          fontSize: 10.5, 
-          fontFamily: 'var(--ag-font-mono)', 
-          letterSpacing: '0.06em', 
-          opacity: 0.8 
-        }}>
-          © 2026 sathishssj3 · NexVR Engine · Open Source VR Injector
-        </div>
+      </div>
 
+      {/* Clean Monospace Copyright placed OUTSIDE the card box (downside) */}
+      <div style={{ 
+        color: '#848884', 
+        fontSize: 10.5, 
+        fontFamily: 'var(--ag-font-mono)', 
+        letterSpacing: '0.06em', 
+        opacity: 0.75,
+        marginTop: 14,
+        marginBottom: 8,
+        textAlign: 'center'
+      }}>
+        © 2026 sathishssj3 · NexVR Engine · All Rights Reserved
       </div>
     </div>
   );
