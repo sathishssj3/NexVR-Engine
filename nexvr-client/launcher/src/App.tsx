@@ -6,6 +6,7 @@ import { VRStatusBar } from './components/VRStatusBar';
 import { AboutPanel } from './components/AboutPanel';
 import { SettingsView } from './components/SettingsView';
 import { HeroCommandCenter } from './components/HeroCommandCenter';
+import { ConfirmModal } from './components/ConfirmModal';
 import { useFastSmoothScroll } from './hooks/useFastSmoothScroll';
 import './index.css';
 
@@ -80,6 +81,21 @@ export default function App() {
   const [hasConsented, setHasConsented] = useState<boolean>(() => localStorage.getItem('ag_ac_consent') === 'true');
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [tabAnimNonce, setTabAnimNonce] = useState(0);
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    confirmText?: string;
+    cancelText?: string;
+    variant?: 'danger' | 'warning' | 'info';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    description: '',
+    onConfirm: () => {},
+  });
+  const closeModal = () => setModalState(prev => ({ ...prev, isOpen: false }));
   const injectTokenRef = useRef<number>(0);
   const mainContentRef = useRef<HTMLDivElement>(null);
   const logQueueRef = useRef<string[]>([]);
@@ -187,50 +203,113 @@ export default function App() {
     await window.ag.config.write(selectedGame.id, merged);
   };
   
-  const handleRemoveGame = async () => {
+  const handleRemoveGame = () => {
     if (!selectedGame) return;
-    const res = await window.ag.library.removeGame(selectedGame.id);
-    if (res.success) {
-      setSelectedGame(null);
-      scanGames();
-    }
+    setModalState({
+      isOpen: true,
+      title: 'REMOVE FROM LIBRARY',
+      description: `Remove "${selectedGame.name}" from your active library?\n\nThis will not delete your game installation or files. You can restore hidden titles at any time in Settings > Library Utilities.`,
+      confirmText: 'REMOVE TITLE',
+      cancelText: 'CANCEL',
+      variant: 'danger',
+      onConfirm: async () => {
+        closeModal();
+        const res = await window.ag.library.removeGame(selectedGame.id);
+        if (res.success) {
+          setSelectedGame(null);
+          scanGames();
+        }
+      }
+    });
   };
 
-  const handleUninstallMod = async () => {
+  const handleUninstallMod = () => {
     if (!selectedGame) return;
-    if (!window.confirm(`Restore "${selectedGame.name}" to Flat Screen?\n\nThis will remove vrinject.dll and shaders from the game directory so it starts normally without VR.`)) {
-      return;
-    }
-    const res = await window.ag.inject.uninstall(selectedGame.id);
-    if (res.success) {
-      window.alert(res.message);
-      scanGames();
-    } else {
-      window.alert("Error: " + res.message);
-    }
+    setModalState({
+      isOpen: true,
+      title: 'RESTORE FLAT SCREEN',
+      description: `Restore "${selectedGame.name}" to standard flat screen mode?\n\nThis will safely remove vrinject.dll and compiled shaders from the game folder so it launches normally without VR hooks.`,
+      confirmText: 'RESTORE FLAT',
+      cancelText: 'KEEP VR MOD',
+      variant: 'warning',
+      onConfirm: async () => {
+        closeModal();
+        const res = await window.ag.inject.uninstall(selectedGame.id);
+        if (res.success) {
+          scanGames();
+        } else {
+          setModalState({
+            isOpen: true,
+            title: 'RESTORATION NOTICE',
+            description: res.message,
+            confirmText: 'OK',
+            variant: 'danger',
+            onConfirm: closeModal
+          });
+        }
+      }
+    });
   };
 
-  const handleInject = async () => {
+  const handleInject = () => {
     if (!selectedGame) return;
 
     if (selectedGame.hasAntiCheat) {
-      window.alert(`INJECTION BLOCKED FOR SAFETY\n\n"${selectedGame.name}" is protected by ${selectedGame.antiCheatName || 'Anti-Cheat'}.\n\nInjecting custom DLLs into anti-cheat protected titles is strictly disabled to prevent multiplayer account bans.`);
+      setModalState({
+        isOpen: true,
+        title: 'INJECTION BLOCKED FOR SAFETY',
+        description: `"${selectedGame.name}" is protected by ${selectedGame.antiCheatName || 'Anti-Cheat'}.\n\nInjecting custom DLLs into anti-cheat protected titles is strictly disabled to prevent multiplayer account bans.`,
+        confirmText: 'I UNDERSTAND',
+        cancelText: 'CLOSE',
+        variant: 'danger',
+        onConfirm: closeModal
+      });
       return;
     }
 
     if (!vrStatus.connected) {
-      if (!window.confirm(`NO VR HEADSET DETECTED\n\nYour OpenXR / SteamVR runtime does not detect an active headset.\n\nMake sure your headset is powered on and SteamVR or Quest Link is active.\n\nDo you want to launch into VR anyway?`)) {
-        return;
-      }
+      setModalState({
+        isOpen: true,
+        title: 'HEADSET NOT DETECTED',
+        description: `Your OpenXR runtime does not detect an active VR headset.\n\nPlease verify that your headset is powered on and SteamVR, Quest Link, or Virtual Desktop is running.\n\nDo you want to initialize VR injection anyway?`,
+        confirmText: 'LAUNCH ANYWAY',
+        cancelText: 'CANCEL',
+        variant: 'warning',
+        onConfirm: () => {
+          closeModal();
+          checkConsentAndInject();
+        }
+      });
+      return;
     }
-    
+
+    checkConsentAndInject();
+  };
+
+  const checkConsentAndInject = () => {
     if (!hasConsented) {
-      if (!window.confirm("WARNING: ACCOUNT BAN RISK\n\nInjecting into multiplayer games protected by Anti-Cheat software (e.g., Easy Anti-Cheat, BattlEye, Vanguard) is strictly prohibited and can result in permanent account bans.\n\nNexVR Engine explicitly refuses to inject when these systems are detected, but the risk remains.\n\nBy proceeding, you acknowledge this risk and agree to only use NexVR Engine with single-player or unprotected titles.\n\nDo you accept these risks and wish to continue?")) {
-        return;
-      }
-      localStorage.setItem('ag_ac_consent', 'true');
-      setHasConsented(true);
+      setModalState({
+        isOpen: true,
+        title: 'ANTI-CHEAT SAFETY NOTICE',
+        description: `Injecting custom DLLs into multiplayer games protected by Anti-Cheat software (e.g., Easy Anti-Cheat, BattlEye, Vanguard) is strictly prohibited and can result in permanent account bans.\n\nNexVR Engine explicitly refuses to inject when these systems are detected, but the risk remains with online multiplayer titles.\n\nBy proceeding, you acknowledge this risk and agree to only use NexVR Engine with single-player or unprotected titles.`,
+        confirmText: 'ACCEPT & CONTINUE',
+        cancelText: 'CANCEL',
+        variant: 'warning',
+        onConfirm: () => {
+          closeModal();
+          localStorage.setItem('ag_ac_consent', 'true');
+          setHasConsented(true);
+          startInjectionSequence();
+        }
+      });
+      return;
     }
+
+    startInjectionSequence();
+  };
+
+  const startInjectionSequence = async () => {
+    if (!selectedGame) return;
     
     if (injectState === 'injecting' || injectState === 'running') {
        injectTokenRef.current = 0;
@@ -561,6 +640,11 @@ export default function App() {
         injectState={injectState}
         onInject={handleInject} 
         onUninstallMod={handleUninstallMod}
+      />
+
+      <ConfirmModal
+        {...modalState}
+        onCancel={closeModal}
       />
     </div>
   );

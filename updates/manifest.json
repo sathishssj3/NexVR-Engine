@@ -1,19 +1,22 @@
 {
-  "engineVersion": "0.1.75",
+  "engineVersion": "0.1.77",
   "buildDate": "2026-09-20",
-  "timestamp": 1789831500000,
-  "changelog": "Subtle Dark Red Gradient Banner v0.1.75",
+  "timestamp": 1789850000000,
+  "changelog": "Documentation URL Fix & Apple Design Fluid UI v0.1.77",
   "features": [
-    "Unified Obsidian Glassmorphism: Library tab redesigned to match Settings & About tabs with deep space black, .settings-card architecture, and bento grid telemetry",
-    "4-Cell Library Telemetry Bento: Live detected titles count, VR headset connection state, graphics pipeline hooks, and in-headset dashboard hotkeys",
-    "Modernized Library Sidebar: Obsidian search bar with search glyph, monospace title counter, settings-card list items, and laser outline actions",
-    "High-Fidelity Per-Game VR Settings: Refactored with vertical accent bars, .settings-card containers, and interactive ranges and toggles",
-    "Multi-Device In-Headset Menu: Effortless toggling via Gamepad (L3+R3 or Back+Start), VR motion controllers, and Keyboard (HOME / INSERT / F11)"
+    "Themed Modal Safety Architecture: Custom obsidian glass ConfirmModal dialogs protect against accidental game removal, global setting wipes, and mod restoration",
+    "Intelligent Primary Action Readiness: Refactored injection action with amber Headset Disconnected pre-flight warning and dynamic readiness state machine",
+    "Per-Title vs Global Settings Reconciliation: Aligned naming conventions, unified descriptions, and added 1-click Reset to Global Defaults",
+    "Apple Design Physical Motion: Zero-latency tactile :active press micro-depression on interactive controls and critically damped spring transitions",
+    "Accessible Visual Polish: Upgraded body text contrast to WCAG AA, redesigned high-contrast toggle off-states, and tightened optical heading tracking",
+    "Diagnostics & Specs Toolbar: Enhanced About view with one-click Log Folder access and System Diagnostic clipboard export"
   ],
   "fixes": [
-    "Resolved in-headset menu not opening in Sekiro and gamepad-controlled titles",
-    "Fixed DX11 ImGui double-NewFrame lifecycle assert and RTV thrashing across eyes",
-    "Prevented VR controller menu button from triggering game pause menu"
+    "Fixed About page Documentation button failing with Cloudflare Tunnel Error 1033 by redirecting to repository documentation",
+    "Fixed missing confirmation prompts on Remove from Library and Reset Defaults",
+    "Fixed deceptive primary injection button state when VR headset is disconnected",
+    "Disambiguated MOD ACTIVE badge to MOD INSTALLED to prevent runtime confusion",
+    "De-duplicated 4-cell live hardware telemetry grid between Settings and About panels"
   ],
   "files": [
     "vrinject.dll",

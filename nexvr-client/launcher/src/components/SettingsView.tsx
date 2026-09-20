@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { VRConfig, UpdateStatus, VRStatus } from '../types';
+import { ConfirmModal } from './ConfirmModal';
 
 interface SettingsViewProps {
   vrStatus: VRStatus;
@@ -17,10 +18,11 @@ export function SettingsView({
   const [checking, setChecking] = useState(false);
   const [isRescanning, setIsRescanning] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
 
   const activeVersion = updateStatus?.version 
     ? (updateStatus.version.startsWith('v') ? updateStatus.version : `v${updateStatus.version}`) 
-    : 'v0.1.75';
+    : 'v0.1.77';
 
   // Global default config persisted in localStorage
   const [globalConfig, setGlobalConfig] = useState<VRConfig>(() => {
@@ -49,6 +51,11 @@ export function SettingsView({
   };
 
   const handleResetDefaults = () => {
+    setResetModalOpen(true);
+  };
+
+  const confirmResetDefaults = () => {
+    setResetModalOpen(false);
     const defaults: VRConfig = {
       useRecommendedResolution: true,
       srgbCorrection: false,
@@ -748,6 +755,17 @@ export function SettingsView({
         </div>
 
       </div>
+
+      <ConfirmModal
+        isOpen={resetModalOpen}
+        title="RESTORE GLOBAL DEFAULTS"
+        description={"Are you sure you want to restore all global settings to recommended factory defaults?\n\nThis will reset global stereo resolution, tonemapping, and input multipliers. Any custom per-title configurations saved for individual games will not be modified."}
+        confirmText="RESTORE DEFAULTS"
+        cancelText="CANCEL"
+        variant="danger"
+        onConfirm={confirmResetDefaults}
+        onCancel={() => setResetModalOpen(false)}
+      />
     </div>
   );
 }

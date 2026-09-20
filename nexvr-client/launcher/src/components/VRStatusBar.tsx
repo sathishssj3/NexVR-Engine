@@ -2,25 +2,30 @@ export function VRStatusBar({ status, selectedGame, injectState, onInject, onUni
   const isAntiCheat = selectedGame?.hasAntiCheat;
 
   const getButtonContent = () => {
+    if (!selectedGame) return 'SELECT TARGET GAME';
     if (isAntiCheat) return 'ANTI-CHEAT BLOCKED';
     if (injectState === 'injecting') return 'ABORT SEQUENCE';
     if (injectState === 'success') return 'SYSTEM ACTIVE';
     if (injectState === 'running') return 'CLOSE GAME';
     if (injectState === 'error') return 'INJECTION FAILED';
     if (injectState === 'cancelled') return 'SEQUENCE ABORTED';
+    if (!status.connected) return 'HEADSET DISCONNECTED';
     return 'INITIALIZE INJECTION';
   };
 
   const isActive = injectState === 'injecting' || injectState === 'running';
+  const isDisconnected = selectedGame && !status.connected && injectState === 'default' && !isAntiCheat;
 
   return (
     <div className="glass-panel" style={{ 
-      borderTop: '1px solid var(--ag-border)', 
+      borderTop: '1px solid rgba(255, 255, 255, 0.08)', 
       display: 'flex', flexDirection: 'column',
       zIndex: 20, 
       borderBottom: 'none', borderLeft: 'none', borderRight: 'none', 
-      background: 'rgba(9, 9, 13, 0.98)',
-      boxShadow: '0 -10px 40px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.05)' 
+      background: 'rgba(8, 8, 12, 0.94)',
+      backdropFilter: 'blur(20px) saturate(150%)',
+      WebkitBackdropFilter: 'blur(20px) saturate(150%)',
+      boxShadow: '0 -10px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06)' 
     }}>
       {/* Progress bar during injection */}
       {injectState === 'injecting' && (
@@ -187,11 +192,19 @@ export function VRStatusBar({ status, selectedGame, injectState, onInject, onUni
             </button>
           )}
           
-          {/* Big Glowing Primary Button */}
+          {/* Primary Injection / Readiness Action Button */}
           <button 
             onClick={onInject}
             disabled={!selectedGame || isAntiCheat || injectState === 'success' || injectState === 'error' || injectState === 'cancelled'}
-            title={isAntiCheat ? 'Multiplayer Anti-Cheat detected. Injection disabled to prevent bans.' : undefined}
+            title={
+              isAntiCheat 
+                ? 'Multiplayer Anti-Cheat detected. Injection disabled to prevent bans.' 
+                : isDisconnected
+                  ? 'No OpenXR / SteamVR headset detected. Click to check connection and launch options.'
+                  : !selectedGame
+                    ? 'Select a game from the library to configure VR injection'
+                    : undefined
+            }
             className="btn-glow"
             style={{ 
               background: isActive 
@@ -202,15 +215,25 @@ export function VRStatusBar({ status, selectedGame, injectState, onInject, onUni
                     ? 'rgba(48, 209, 88, 0.25)' 
                     : !selectedGame 
                       ? '#120808'
-                      : 'linear-gradient(135deg, #FF1A1A 0%, #CC0000 55%, #990000 100%)', 
+                      : isDisconnected
+                        ? 'rgba(255, 159, 10, 0.12)'
+                        : 'linear-gradient(135deg, #FF1A1A 0%, #CC0000 55%, #990000 100%)', 
               border: isAntiCheat 
                 ? '1px solid #4A2020' 
                 : injectState === 'success' 
                   ? '1px solid var(--ag-accent-success)' 
                   : !selectedGame 
                     ? '1px solid #2C2D35' 
-                    : '1px solid #FF4D4D', 
-              color: isAntiCheat ? 'var(--ag-accent-danger)' : !selectedGame ? '#848884' : '#FFF',
+                    : isDisconnected
+                      ? '1px solid #FF9F0A'
+                      : '1px solid #FF4D4D', 
+              color: isAntiCheat 
+                ? 'var(--ag-accent-danger)' 
+                : !selectedGame 
+                  ? '#848884' 
+                  : isDisconnected
+                    ? '#FFB340'
+                    : '#FFF',
               padding: '14px 32px',
               borderRadius: 'var(--ag-radius-sm)',
               cursor: (!selectedGame || isAntiCheat || injectState === 'success' || injectState === 'error' || injectState === 'cancelled') ? 'not-allowed' : 'pointer',
@@ -220,13 +243,15 @@ export function VRStatusBar({ status, selectedGame, injectState, onInject, onUni
               fontSize: 14,
               letterSpacing: '0.12em',
               minWidth: 250,
-              boxShadow: (selectedGame && !isAntiCheat && injectState === 'default') 
+              boxShadow: (selectedGame && !isAntiCheat && injectState === 'default' && !isDisconnected) 
                 ? '0 0 24px rgba(204, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.35)' 
-                : 'none',
-              textShadow: (selectedGame && !isAntiCheat && injectState === 'default') 
+                : isDisconnected
+                  ? '0 0 16px rgba(255, 159, 10, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
+                  : 'none',
+              textShadow: (selectedGame && !isAntiCheat && injectState === 'default' && !isDisconnected) 
                 ? '0 1px 3px rgba(0, 0, 0, 0.7)' 
                 : 'none',
-              transition: 'all 0.25s var(--ag-transition)',
+              transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
               transform: isActive ? 'scale(0.98)' : 'scale(1)'
             }}
           >

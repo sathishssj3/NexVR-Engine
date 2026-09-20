@@ -43,7 +43,7 @@ export function GameDetail({ game, config, onConfigChange, logLines, onRemoveGam
             margin: 0, 
             fontSize: 66, 
             fontWeight: 600, 
-            letterSpacing: '0.04em', 
+            letterSpacing: '-0.01em', 
             lineHeight: 1.05, 
             fontFamily: 'var(--ag-font-display)',
             color: '#FFFFFF',
@@ -54,7 +54,7 @@ export function GameDetail({ game, config, onConfigChange, logLines, onRemoveGam
           </h1>
         </div>
         
-        {/* Tags Row: API + Solid Smoke Gray MOD ACTIVE + Action Buttons */}
+        {/* Tags Row: API + Solid Smoke Gray MOD INSTALLED + Action Buttons */}
         <div style={{ position: 'relative', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           {/* API Badge */}
           <span style={{ 
@@ -70,7 +70,7 @@ export function GameDetail({ game, config, onConfigChange, logLines, onRemoveGam
             <strong style={{ color: apiColor, fontSize: 12, fontFamily: 'var(--ag-font-mono)', fontWeight: 800 }}>{game.api}</strong>
           </span>
 
-          {/* Solid Smoke Gray MOD ACTIVE Badge */}
+          {/* Solid Smoke Gray MOD INSTALLED Badge */}
           {game.hasInjector && (
             <span style={{ 
               padding: '5px 14px', 
@@ -81,7 +81,7 @@ export function GameDetail({ game, config, onConfigChange, logLines, onRemoveGam
               alignItems: 'center' 
             }}>
               <strong style={{ color: '#D5D7E2', fontSize: 11.5, fontFamily: 'var(--ag-font-mono)', fontWeight: 800, letterSpacing: '0.05em' }}>
-                MOD ACTIVE
+                MOD INSTALLED
               </strong>
             </span>
           )}
@@ -124,12 +124,21 @@ export function GameDetail({ game, config, onConfigChange, logLines, onRemoveGam
               className="btn-outline-laser" 
               style={{ 
                 padding: '8px 18px', 
-                color: 'var(--ag-accent)', 
-                borderColor: '#3d3131ff', 
+                color: '#FF6B6B', 
+                borderColor: 'rgba(204, 0, 0, 0.35)', 
                 fontSize: 10.5, 
                 letterSpacing: '0.08em', 
                 fontWeight: 700,
-                background: '#121319'
+                background: 'rgba(204, 0, 0, 0.05)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = 'rgba(255, 77, 77, 0.6)';
+                e.currentTarget.style.background = 'rgba(204, 0, 0, 0.12)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'rgba(204, 0, 0, 0.35)';
+                e.currentTarget.style.background = 'rgba(204, 0, 0, 0.05)';
               }}
             >
               REMOVE FROM LIBRARY

@@ -1,4 +1,8 @@
+import { useState } from 'react';
+
 export function AboutPanel({ version }: { version?: string }) {
+  const [copied, setCopied] = useState(false);
+
   const handleLink = async (url: string) => {
     try {
       if (window.ag && window.ag.shell) {
@@ -12,7 +16,26 @@ export function AboutPanel({ version }: { version?: string }) {
     }
   };
 
-  const currentVer = version ? (version.startsWith('v') ? version : `v${version}`) : 'v0.1.75';
+  const handleCopyDiagnostics = async () => {
+    const diagText = [
+      `NexVR Engine ${currentVer}`,
+      `Platform: Windows x64 (MSVC 2022+)`,
+      `Hook Engine: MinHook Detours (DX11 / DX12 / Vulkan)`,
+      `Spatial Compositor: OpenXR 1.0.34`,
+      `AI Engine: DirectML 1.13.1 / ONNX Runtime 1.16.3`,
+      `User Agent: ${navigator.userAgent}`,
+      `Date: ${new Date().toISOString()}`
+    ].join('\n');
+    try {
+      await navigator.clipboard.writeText(diagText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+    } catch {
+      // fallback
+    }
+  };
+
+  const currentVer = version ? (version.startsWith('v') ? version : `v${version}`) : 'v0.1.77';
 
   return (
     <div className="fast-smooth-scroll" style={{ flex: 1, padding: '36px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflowY: 'auto', background: '#000000' }}>
@@ -33,7 +56,7 @@ export function AboutPanel({ version }: { version?: string }) {
           margin: '0 0 8px 0', 
           fontSize: 32, 
           fontWeight: 800, 
-          letterSpacing: '0.08em', 
+          letterSpacing: '-0.01em', 
           fontFamily: 'var(--ag-font-display)', 
           color: '#FFF',
           textAlign: 'center'
@@ -54,8 +77,8 @@ export function AboutPanel({ version }: { version?: string }) {
         </p>
 
         <p style={{ 
-          margin: '0 0 30px 0', 
-          color: '#848884', 
+          margin: '0 0 28px 0', 
+          color: 'var(--ag-text-muted)', 
           fontSize: 12.5, 
           lineHeight: '1.6', 
           maxWidth: 540,
@@ -70,28 +93,28 @@ export function AboutPanel({ version }: { version?: string }) {
           display: 'grid', 
           gridTemplateColumns: '1fr 1fr', 
           gap: 12, 
-          marginBottom: 26 
+          marginBottom: 16 
         }}>
           {[
             { 
-              label: 'RUNTIME ARCHITECTURE', 
+              label: 'NATIVE RUNTIME', 
               title: currentVer, 
-              desc: 'Native MSVC x64 Hook Runtime' 
+              desc: 'High-performance MSVC x64 binary hook engine' 
             },
             { 
-              label: 'OPENXR ENVIRONMENT', 
-              title: 'OpenXR 1.0', 
-              desc: 'SteamVR · Quest Link · Virtual Desktop' 
+              label: 'SPATIAL COMPOSITOR', 
+              title: 'OpenXR 1.0.34', 
+              desc: 'Hardware-agnostic 6DOF headset & controller sync' 
             },
             { 
-              label: 'GRAPHICS BACKENDS', 
+              label: 'GRAPHICS DETOURS', 
               title: 'DX11 · DX12 · Vulkan', 
-              desc: 'Low-latency VTable Swapchain Hooks' 
+              desc: 'Low-latency VTable Swapchain & Queue Detours' 
             },
             { 
-              label: 'NEURAL ACCELERATION', 
+              label: 'NEURAL PIPELINE', 
               title: 'DirectML / ONNX', 
-              desc: 'AI Inpainting & Stereo Reprojection' 
+              desc: 'Direct3D 12 Tensor Inpainting & Stereo Reprojection' 
             },
           ].map((item) => (
             <div 
@@ -110,7 +133,7 @@ export function AboutPanel({ version }: { version?: string }) {
               }}
             >
               <div style={{ 
-                color: '#848884', 
+                color: 'var(--ag-text-dim)', 
                 fontSize: 10, 
                 fontFamily: 'var(--ag-font-mono)', 
                 letterSpacing: '0.08em', 
@@ -120,26 +143,88 @@ export function AboutPanel({ version }: { version?: string }) {
               </div>
               <div style={{ 
                 color: '#FFF', 
-                fontSize: 15.5, 
+                fontSize: 15, 
                 fontFamily: 'var(--ag-font-display)', 
                 fontWeight: 800,
-                letterSpacing: '0.03em',
+                letterSpacing: '0.02em',
                 marginTop: 1
               }}>
                 {item.title}
               </div>
               <div style={{ 
-                color: '#848884', 
-                fontSize: 12, 
+                color: 'var(--ag-text-muted)', 
+                fontSize: 11.5, 
                 fontFamily: 'var(--ag-font-ui)',
                 lineHeight: '1.4',
-                fontWeight: 600,
+                fontWeight: 500,
                 marginTop: 2
               }}>
                 {item.desc}
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Diagnostics Utility Toolbar */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14, width: '100%' }}>
+          <button 
+            type="button"
+            onClick={() => { if (window.ag?.utils?.openLogFolder) window.ag.utils.openLogFolder(); }} 
+            style={{ 
+              padding: '9px 16px', 
+              borderRadius: 'var(--ag-radius-sm)', 
+              color: 'var(--ag-text-primary)', 
+              cursor: 'pointer', 
+              fontFamily: 'var(--ag-font-display)', 
+              fontSize: 11, 
+              letterSpacing: '0.06em', 
+              fontWeight: 700, 
+              border: '1px solid #383A44', 
+              background: 'rgba(255, 255, 255, 0.03)', 
+              transition: 'all 0.15s ease' 
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = '#4A4D5C';
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = '#383A44';
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+            }}
+          >
+            OPEN LOG FOLDER
+          </button>
+          <button 
+            type="button"
+            onClick={handleCopyDiagnostics} 
+            style={{ 
+              padding: '9px 16px', 
+              borderRadius: 'var(--ag-radius-sm)', 
+              color: copied ? 'var(--ag-accent-success)' : 'var(--ag-text-primary)', 
+              cursor: 'pointer', 
+              fontFamily: 'var(--ag-font-display)', 
+              fontSize: 11, 
+              letterSpacing: '0.06em', 
+              fontWeight: 700, 
+              border: copied ? '1px solid var(--ag-accent-success)' : '1px solid #383A44', 
+              background: copied ? 'rgba(48, 209, 88, 0.08)' : 'rgba(255, 255, 255, 0.03)', 
+              transition: 'all 0.15s ease' 
+            }}
+            onMouseEnter={e => {
+              if (!copied) {
+                e.currentTarget.style.borderColor = '#4A4D5C';
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+              }
+            }}
+            onMouseLeave={e => {
+              if (!copied) {
+                e.currentTarget.style.borderColor = '#383A44';
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+              }
+            }}
+          >
+            {copied ? '✓ COPIED TO CLIPBOARD' : 'COPY SYSTEM SPECS'}
+          </button>
         </div>
 
         {/* Action Buttons: 3 Utility Buttons */}
@@ -172,7 +257,7 @@ export function AboutPanel({ version }: { version?: string }) {
             GITHUB
           </button>
           <button 
-            onClick={() => handleLink('https://nexvr.org/docs')} 
+            onClick={() => handleLink('https://github.com/sathishssj3/NexVR-Engine/tree/main/docs')} 
             style={{ 
               padding: '11px 16px', 
               borderRadius: 'var(--ag-radius-sm)', 
