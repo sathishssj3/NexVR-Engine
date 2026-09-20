@@ -348,8 +348,12 @@ if (ipcMain) {
   ipcMain.handle('update:getStatus', async (event) => {
     assertTrustedIpcSender(event);
     const local = getLocalManifest();
+    const appVer = getAppVersion();
+    const effectiveVersion = (local && compareSemver(local.engineVersion, appVer) > 0) 
+      ? local.engineVersion 
+      : appVer;
     return {
-      version: local?.engineVersion || getAppVersion(),
+      version: effectiveVersion,
       timestamp: local?.timestamp || 0,
       changelog: local?.changelog || '',
       features: local?.features || [],
