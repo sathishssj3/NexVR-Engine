@@ -321,7 +321,7 @@ export function AboutPanel({ version }: { version?: string }) {
           borderLeft: '3px solid #CC0000',
           borderRadius: 6,
           padding: '10px 12px',
-          marginBottom: 10,
+          marginBottom: 0,
           textAlign: 'left',
           display: 'flex',
           flexDirection: 'column',
@@ -360,40 +360,42 @@ export function AboutPanel({ version }: { version?: string }) {
           </div>
         </div>
 
-        {/* Full-width Discord CTA Button in Solid Pure Red with Bold White Text (No Glow) */}
-        <button 
-          onClick={() => handleLink('https://discord.gg/FBeGjgK2fd')} 
-          style={{ 
-            width: '100%', 
-            padding: '11px 18px', 
-            borderRadius: 'var(--ag-radius-sm)', 
-            color: '#FFFFFF', 
-            cursor: 'pointer', 
-            fontFamily: 'var(--ag-font-display)', 
-            fontSize: 12, 
-            letterSpacing: '0.08em', 
-            fontWeight: 800, 
-            border: '1px solid #CC0000', 
-            background: '#CC0000', 
-            boxShadow: 'none', 
-            marginBottom: 0, 
-            transition: 'all 0.2s ease' 
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.background = '#E60000';
-            e.currentTarget.style.borderColor = '#FF1A1A';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.background = '#CC0000';
-            e.currentTarget.style.borderColor = '#CC0000';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
-        >
-          JOIN OUR DISCORD SERVER
-        </button>
-
       </div>
+
+      {/* Full-width Discord CTA Button placed OUTSIDE the card box (downside) */}
+      <button 
+        onClick={() => handleLink('https://discord.gg/FBeGjgK2fd')} 
+        style={{ 
+          width: '100%', 
+          maxWidth: 660,
+          padding: '11px 18px', 
+          borderRadius: 'var(--ag-radius-sm)', 
+          color: '#FFFFFF', 
+          cursor: 'pointer', 
+          fontFamily: 'var(--ag-font-display)', 
+          fontSize: 12, 
+          letterSpacing: '0.08em', 
+          fontWeight: 800, 
+          border: '1px solid #CC0000', 
+          background: '#CC0000', 
+          boxShadow: 'none', 
+          marginTop: 12,
+          marginBottom: 10, 
+          transition: 'all 0.2s ease' 
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.background = '#E60000';
+          e.currentTarget.style.borderColor = '#FF1A1A';
+          e.currentTarget.style.boxShadow = 'none';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.background = '#CC0000';
+          e.currentTarget.style.borderColor = '#CC0000';
+          e.currentTarget.style.boxShadow = 'none';
+        }}
+      >
+        JOIN OUR DISCORD SERVER
+      </button>
 
       {/* Clean Monospace Copyright placed OUTSIDE the card box (downside) */}
       <div style={{ 
@@ -402,7 +404,7 @@ export function AboutPanel({ version }: { version?: string }) {
         fontFamily: 'var(--ag-font-mono)', 
         letterSpacing: '0.06em', 
         opacity: 0.75,
-        marginTop: 14,
+        marginTop: 2,
         marginBottom: 8,
         textAlign: 'center'
       }}>
