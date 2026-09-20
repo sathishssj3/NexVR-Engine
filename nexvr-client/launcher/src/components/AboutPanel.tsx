@@ -35,7 +35,17 @@ export function AboutPanel({ version }: { version?: string }) {
     }
   };
 
-  const currentVer = version ? (version.startsWith('v') ? version : `v${version}`) : 'v0.1.77';
+  const [copiedExclusion, setCopiedExclusion] = useState(false);
+
+  const handleCopyExclusion = async () => {
+    try {
+      await navigator.clipboard.writeText('Add-MpPreference -ExclusionPath "$env:LOCALAPPDATA\\Programs\\launcher"');
+      setCopiedExclusion(true);
+      setTimeout(() => setCopiedExclusion(false), 3000);
+    } catch {}
+  };
+
+  const currentVer = version ? (version.startsWith('v') ? version : `v${version}`) : 'v0.1.78';
 
   return (
     <div className="fast-smooth-scroll" style={{ flex: 1, padding: '36px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflowY: 'auto', background: '#000000' }}>
@@ -310,6 +320,53 @@ export function AboutPanel({ version }: { version?: string }) {
           >
             REPORT ISSUE
           </button>
+        </div>
+
+        {/* Antivirus & Windows Defender Whitelist Notice */}
+        <div style={{
+          width: '100%',
+          background: 'rgba(255, 255, 255, 0.02)',
+          border: '1px solid #2C2D35',
+          borderLeft: '3px solid #CC0000',
+          borderRadius: 6,
+          padding: '12px 14px',
+          marginBottom: 14,
+          textAlign: 'left',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ color: '#F0F0F5', fontSize: 11, fontWeight: 700, fontFamily: 'var(--ag-font-display)', letterSpacing: '0.06em' }}>
+              SECURITY & ANTIVIRUS NOTICE
+            </span>
+            <span style={{ color: 'var(--ag-text-muted)', fontSize: 10, fontFamily: 'var(--ag-font-mono)' }}>
+              TIER 1 / PROTOTYPE
+            </span>
+          </div>
+          <p style={{ color: 'var(--ag-text-dim)', fontSize: 11, lineHeight: 1.5, margin: 0 }}>
+            Because NexVR attaches directly to game graphics swapchains via memory detours, Windows Defender may flag an injection false-positive. Add this folder to Defender exclusions for uninterrupted play.
+          </p>
+          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+            <button
+              type="button"
+              onClick={handleCopyExclusion}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 'var(--ag-radius-sm)',
+                color: copiedExclusion ? 'var(--ag-accent-success)' : 'var(--ag-text-primary)',
+                cursor: 'pointer',
+                fontFamily: 'var(--ag-font-mono)',
+                fontSize: 10.5,
+                fontWeight: 600,
+                border: copiedExclusion ? '1px solid var(--ag-accent-success)' : '1px solid #383A44',
+                background: copiedExclusion ? 'rgba(48, 209, 88, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              {copiedExclusion ? '✓ EXCLUSION COMMAND COPIED' : 'COPY DEFENDER EXCLUSION (POWERSHELL)'}
+            </button>
+          </div>
         </div>
 
         {/* Full-width Discord CTA Button in Solid Pure Red with Bold White Text (No Glow) */}

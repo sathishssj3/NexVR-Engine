@@ -458,7 +458,9 @@ int main(int argc, char* argv[]) {
         "vgtray.exe", 
         "easyanticheat.exe", 
         "easyanticheat_eos.exe", 
-        "beservice.exe" 
+        "beservice.exe",
+        "ricochet.exe",
+        "faceitservice.exe"
     };
     HANDLE hSnapAC = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (hSnapAC != INVALID_HANDLE_VALUE) {

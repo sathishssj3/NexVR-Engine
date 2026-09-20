@@ -159,11 +159,14 @@ export function detectAntiCheat(dirPath: string, depth = 0): { hasAntiCheat: boo
       if (lower.includes('vgk.sys') || lower === 'vgc.exe') {
         return { hasAntiCheat: true, antiCheatName: 'Riot Vanguard' };
       }
-      if (lower.includes('randgrid.sys')) {
+      if (lower.includes('randgrid.sys') || lower.includes('ricochet')) {
         return { hasAntiCheat: true, antiCheatName: 'Ricochet Anti-Cheat' };
       }
       if (lower.includes('denuvo')) {
         return { hasAntiCheat: true, antiCheatName: 'Denuvo Anti-Cheat' };
+      }
+      if (lower.includes('faceit')) {
+        return { hasAntiCheat: true, antiCheatName: 'FACEIT Anti-Cheat' };
       }
     }
     for (const f of files) {

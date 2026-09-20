@@ -1,22 +1,21 @@
 {
-  "engineVersion": "0.1.77",
+  "engineVersion": "0.1.78",
   "buildDate": "2026-09-20",
-  "timestamp": 1789850000000,
-  "changelog": "Documentation URL Fix & Apple Design Fluid UI v0.1.77",
+  "timestamp": 1789917360105,
+  "changelog": "Hero Game Profiles & Prototype Launch Readiness v0.1.78",
   "features": [
+    "10 Hero Game Profiles: Pre-configured out-of-the-box profiles for No Man's Sky (Vulkan), Skyrim Special Edition (DX11), Fallout 4 (DX11), Valheim (Unity Vulkan), and Monster Hunter: World (DX11)",
+    "Antivirus & Defender Notice: In-app security guidance explaining DLL swapchain memory detours with 1-click PowerShell folder exclusion command",
+    "Anti-Cheat Tripwire Hardening: Added signature and process checks for Ricochet and FaceIt anti-cheat to guarantee zero multiplayer account bans",
     "Themed Modal Safety Architecture: Custom obsidian glass ConfirmModal dialogs protect against accidental game removal, global setting wipes, and mod restoration",
     "Intelligent Primary Action Readiness: Refactored injection action with amber Headset Disconnected pre-flight warning and dynamic readiness state machine",
-    "Per-Title vs Global Settings Reconciliation: Aligned naming conventions, unified descriptions, and added 1-click Reset to Global Defaults",
-    "Apple Design Physical Motion: Zero-latency tactile :active press micro-depression on interactive controls and critically damped spring transitions",
-    "Accessible Visual Polish: Upgraded body text contrast to WCAG AA, redesigned high-contrast toggle off-states, and tightened optical heading tracking",
-    "Diagnostics & Specs Toolbar: Enhanced About view with one-click Log Folder access and System Diagnostic clipboard export"
+    "Apple Design Physical Motion: Zero-latency tactile :active press micro-depression on interactive controls and critically damped spring transitions"
   ],
   "fixes": [
+    "Integrated verified Vulkan swapchain profile for No Man's Sky (AppID 275850) per project memory stability standards",
+    "Fixed missing Creation Engine and Unity column-major profile defaults for Skyrim SE and Valheim",
     "Fixed About page Documentation button failing with Cloudflare Tunnel Error 1033 by redirecting to repository documentation",
-    "Fixed missing confirmation prompts on Remove from Library and Reset Defaults",
-    "Fixed deceptive primary injection button state when VR headset is disconnected",
-    "Disambiguated MOD ACTIVE badge to MOD INSTALLED to prevent runtime confusion",
-    "De-duplicated 4-cell live hardware telemetry grid between Settings and About panels"
+    "Disambiguated MOD ACTIVE badge to MOD INSTALLED to prevent runtime confusion"
   ],
   "files": [
     "vrinject.dll",
@@ -28,6 +27,11 @@
     "profiles/668580_atomic_heart.json",
     "profiles/1110910_mortal_shell.json",
     "profiles/1245620_elden_ring.json",
+    "profiles/275850_no_mans_sky.json",
+    "profiles/489830_skyrim_se.json",
+    "profiles/377160_fallout_4.json",
+    "profiles/892970_valheim.json",
+    "profiles/582010_monster_hunter_world.json",
     "profiles/schema.json",
     "shaders/stereo_reprojection.hlsl",
     "shaders/tonemap.hlsl",
@@ -51,6 +55,11 @@
     "profiles/668580_atomic_heart.json": "06b41603134c4045a3eafce9f011facd4e871f46662d74bbe9235121f825aa1b",
     "profiles/1110910_mortal_shell.json": "c8027d7cb90c314da9ddeefb8ccc94e8c2935d738c4e1e0541fd410ede3e59bc",
     "profiles/1245620_elden_ring.json": "43726a56aaa1ec5a166d1f6c17b0fe81090847c075603222ac066e0e47a1d6d0",
+    "profiles/275850_no_mans_sky.json": "af642c69dc28e1ce8151cd77c9a4ed514bfeb094962408913edd3fdefd999e3f",
+    "profiles/489830_skyrim_se.json": "f7e266d976e079ba010326a04556b5956de9311e94965492d69d77fb71de0a3b",
+    "profiles/377160_fallout_4.json": "e2cd916335a4f10edc1e55478ed5e81407e189780b500379d78a2ccb5f68f6db",
+    "profiles/892970_valheim.json": "a54c757cd5c1e317b5309402417ccccba382fbb7bfa52898b0a96ebd316a0fd4",
+    "profiles/582010_monster_hunter_world.json": "575d458bbac60bb310102ce802be90365a79f8bf831e9159409b42a0713f95be",
     "profiles/schema.json": "a6e1c619de549cb36e13e6bcddc796afc205e9fa66c08542d586dbb4f995bd8e",
     "shaders/stereo_reprojection.hlsl": "a0e0d3d91dca1eaef0598a6844847f1444d383832550f5a65cd9d475985bc161",
     "shaders/tonemap.hlsl": "a886e9369ac38e15171a03f6d55681897a2c2580e573fd5fa7d5552344a1cd5f",
