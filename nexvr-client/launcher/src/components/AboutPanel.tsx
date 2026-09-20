@@ -72,7 +72,7 @@ export function AboutPanel({ version }: { version?: string }) {
           width: '100%', 
           maxWidth: 660, 
           margin: '0 auto',
-          padding: '28px 32px',
+          padding: '24px 28px 24px 28px',
           display: 'flex', 
           flexDirection: 'column', 
           alignItems: 'center',
@@ -82,7 +82,7 @@ export function AboutPanel({ version }: { version?: string }) {
         {/* Centered Large Title */}
         <h1 style={{ 
           margin: '0 0 4px 0', 
-          fontSize: 28, 
+          fontSize: 26, 
           fontWeight: 800, 
           letterSpacing: '-0.01em', 
           fontFamily: 'var(--ag-font-display)', 
@@ -96,7 +96,7 @@ export function AboutPanel({ version }: { version?: string }) {
         <p style={{ 
           margin: '0 0 6px 0', 
           color: 'var(--ag-accent)', 
-          fontSize: 12.5, 
+          fontSize: 12, 
           fontFamily: 'var(--ag-font-mono)', 
           letterSpacing: '0.04em',
           fontWeight: 700
@@ -105,10 +105,10 @@ export function AboutPanel({ version }: { version?: string }) {
         </p>
 
         <p style={{ 
-          margin: '0 0 20px 0', 
+          margin: '0 0 16px 0', 
           color: 'var(--ag-text-muted)', 
-          fontSize: 12, 
-          lineHeight: '1.5', 
+          fontSize: 11.5, 
+          lineHeight: '1.45', 
           maxWidth: 520,
           fontFamily: 'var(--ag-font-ui)'
         }}>
@@ -120,8 +120,8 @@ export function AboutPanel({ version }: { version?: string }) {
           width: '100%', 
           display: 'grid', 
           gridTemplateColumns: '1fr 1fr', 
-          gap: 10, 
-          marginBottom: 12 
+          gap: 9, 
+          marginBottom: 10 
         }}>
           {[
             { 
@@ -152,7 +152,7 @@ export function AboutPanel({ version }: { version?: string }) {
                 border: '1px solid #2C2D35', 
                 borderTop: '2px solid #CC0000',
                 borderRadius: 6, 
-                padding: '12px 14px', 
+                padding: '11px 13px', 
                 textAlign: 'left',
                 display: 'flex', 
                 flexDirection: 'column', 
@@ -194,7 +194,7 @@ export function AboutPanel({ version }: { version?: string }) {
         </div>
 
         {/* Diagnostics Utility Toolbar */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10, width: '100%' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8, width: '100%' }}>
           <button 
             type="button"
             onClick={() => { if (window.ag?.utils?.openLogFolder) window.ag.utils.openLogFolder(); }} 
@@ -260,7 +260,7 @@ export function AboutPanel({ version }: { version?: string }) {
           <button 
             onClick={() => handleLink('https://discord.gg/FBeGjgK2fd')} 
             style={{ 
-              padding: '9px 14px', 
+              padding: '8px 14px', 
               borderRadius: 'var(--ag-radius-sm)', 
               color: 'var(--ag-text-primary)', 
               cursor: 'pointer', 
@@ -287,7 +287,7 @@ export function AboutPanel({ version }: { version?: string }) {
           <button 
             onClick={() => handleLink('https://discord.gg/FBeGjgK2fd')} 
             style={{ 
-              padding: '9px 14px', 
+              padding: '8px 14px', 
               borderRadius: 'var(--ag-radius-sm)', 
               color: 'var(--ag-text-primary)', 
               cursor: 'pointer', 
@@ -321,7 +321,7 @@ export function AboutPanel({ version }: { version?: string }) {
           borderLeft: '3px solid #CC0000',
           borderRadius: 6,
           padding: '10px 12px',
-          marginBottom: 0,
+          marginBottom: 10,
           textAlign: 'left',
           display: 'flex',
           flexDirection: 'column',
@@ -360,52 +360,50 @@ export function AboutPanel({ version }: { version?: string }) {
           </div>
         </div>
 
+        {/* Full-width Discord CTA Button placed INSIDE the card box */}
+        <button 
+          onClick={() => handleLink('https://discord.gg/FBeGjgK2fd')} 
+          style={{ 
+            width: '100%', 
+            padding: '10px 18px', 
+            borderRadius: 'var(--ag-radius-sm)', 
+            color: '#FFFFFF', 
+            cursor: 'pointer', 
+            fontFamily: 'var(--ag-font-display)', 
+            fontSize: 11.5, 
+            letterSpacing: '0.08em', 
+            fontWeight: 800, 
+            border: '1px solid #CC0000', 
+            background: '#CC0000', 
+            boxShadow: 'none', 
+            marginBottom: 0, 
+            transition: 'all 0.2s ease' 
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = '#E60000';
+            e.currentTarget.style.borderColor = '#FF1A1A';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = '#CC0000';
+            e.currentTarget.style.borderColor = '#CC0000';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+        >
+          JOIN OUR DISCORD SERVER
+        </button>
+
       </div>
 
-      {/* Full-width Discord CTA Button placed OUTSIDE the card box (downside) */}
-      <button 
-        onClick={() => handleLink('https://discord.gg/FBeGjgK2fd')} 
-        style={{ 
-          width: '100%', 
-          maxWidth: 660,
-          padding: '11px 18px', 
-          borderRadius: 'var(--ag-radius-sm)', 
-          color: '#FFFFFF', 
-          cursor: 'pointer', 
-          fontFamily: 'var(--ag-font-display)', 
-          fontSize: 12, 
-          letterSpacing: '0.08em', 
-          fontWeight: 800, 
-          border: '1px solid #CC0000', 
-          background: '#CC0000', 
-          boxShadow: 'none', 
-          marginTop: 12,
-          marginBottom: 10, 
-          transition: 'all 0.2s ease' 
-        }}
-        onMouseEnter={e => {
-          e.currentTarget.style.background = '#E60000';
-          e.currentTarget.style.borderColor = '#FF1A1A';
-          e.currentTarget.style.boxShadow = 'none';
-        }}
-        onMouseLeave={e => {
-          e.currentTarget.style.background = '#CC0000';
-          e.currentTarget.style.borderColor = '#CC0000';
-          e.currentTarget.style.boxShadow = 'none';
-        }}
-      >
-        JOIN OUR DISCORD SERVER
-      </button>
-
-      {/* Clean Monospace Copyright placed OUTSIDE the card box (downside) */}
+      {/* Clean Monospace Copyright placed OUTSIDE the card box (downside) with generous space */}
       <div style={{ 
         color: '#848884', 
         fontSize: 10.5, 
         fontFamily: 'var(--ag-font-mono)', 
         letterSpacing: '0.06em', 
         opacity: 0.75,
-        marginTop: 2,
-        marginBottom: 8,
+        marginTop: 20,
+        marginBottom: 32,
         textAlign: 'center'
       }}>
         © 2026 sathishssj3 · NexVR Engine · All Rights Reserved
