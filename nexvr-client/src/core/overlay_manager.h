@@ -1,6 +1,7 @@
 #pragma once
 
 #include <windows.h>
+#include <xinput.h>
 #include <mutex>
 
 namespace vrinject {
@@ -18,6 +19,9 @@ public:
     bool IsOverlayVisible() const { return m_isVisible; }
     void ToggleOverlay() { m_isVisible = !m_isVisible; }
     void SetOverlayVisible(bool visible) { m_isVisible = visible; }
+
+    // Feeds physical or virtual gamepad inputs directly into Dear ImGui navigation
+    void FeedGamepadInput(const XINPUT_GAMEPAD& pad);
 
     // Win32 Message Handler for ImGui
     // Returns true if ImGui captured the input, false if it should pass to the game

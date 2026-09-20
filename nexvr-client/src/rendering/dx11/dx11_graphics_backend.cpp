@@ -228,15 +228,10 @@ void DX11GraphicsBackend::SubmitStereoFrame(
                                      GpuSegment::OpenXrSubmission);
 
             // Render In-Headset ImGui Overlay onto VR eye buffers if active
-            if (OverlayManager::GetInstance().IsOverlayVisible()) {
+            if (OverlayManager::GetInstance().IsOverlayVisible() && leftSubmit) {
                 auto* d3d11Context = static_cast<ID3D11DeviceContext*>(currentSnapshot.nativeContext);
                 ImGuiDX11Integration::GetInstance().Initialize(m_device, d3d11Context);
-                if (leftSubmit) {
-                    ImGuiDX11Integration::GetInstance().RenderToTexture(m_device, d3d11Context, leftSubmit);
-                }
-                if (rightSubmit && rightSubmit != leftSubmit) {
-                    ImGuiDX11Integration::GetInstance().RenderToTexture(m_device, d3d11Context, rightSubmit);
-                }
+                ImGuiDX11Integration::GetInstance().Render(m_device, d3d11Context, leftSubmit, rightSubmit);
             }
 
             oxrSubmitter->ReleaseAndEndDX11(

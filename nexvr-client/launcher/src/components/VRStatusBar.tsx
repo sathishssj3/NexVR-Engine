@@ -11,15 +11,6 @@ export function VRStatusBar({ status, selectedGame, injectState, onInject, onUni
     return 'INITIALIZE INJECTION';
   };
 
-  const getButtonColor = () => {
-    if (isAntiCheat) return 'var(--ag-accent-danger)';
-    if (injectState === 'success') return 'var(--ag-accent-success)';
-    if (injectState === 'running') return 'var(--ag-accent-danger)';
-    if (injectState === 'error') return 'var(--ag-accent-danger)';
-    if (injectState === 'cancelled') return 'var(--ag-accent-warn)';
-    return 'var(--ag-accent)';
-  };
-
   const isActive = injectState === 'injecting' || injectState === 'running';
 
   return (
@@ -41,38 +32,37 @@ export function VRStatusBar({ status, selectedGame, injectState, onInject, onUni
       <div style={{ height: 68, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px' }}>
         {/* Left: VR Status */}
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <div className={`status-dot ${status.connected ? 'connected' : 'disconnected'}`} style={{ marginRight: 14 }} />
+          {/* Vertical status bar pill (no glow) */}
+          <div 
+            className={`status-bar-pill ${status.connected ? 'connected' : 'disconnected'}`} 
+            style={{ 
+              width: 4, 
+              height: 28, 
+              borderRadius: 2, 
+              background: status.connected ? 'var(--ag-accent)' : '#5A5D6B', 
+              marginRight: 14, 
+              flexShrink: 0,
+              boxShadow: 'none'
+            }} 
+          />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ 
-                fontSize: 14, fontWeight: 700, letterSpacing: '0.04em', 
-                fontFamily: 'var(--ag-font-display)',
-                color: status.connected ? '#FFF' : 'var(--ag-text-muted)'
-              }}>
-                {status.connected ? status.headset : 'NOT CONNECTED'}
-              </span>
-              {status.connected && (
-                <span style={{
-                  padding: '1px 6px',
-                  borderRadius: 3,
-                  fontSize: 9.5,
-                  fontWeight: 800,
-                  fontFamily: 'var(--ag-font-mono)',
-                  letterSpacing: '0.06em',
-                  background: 'rgba(48, 209, 88, 0.15)',
-                  border: '1px solid rgba(48, 209, 88, 0.35)',
-                  color: 'var(--ag-accent-success)'
-                }}>
-                  CONNECTED
-                </span>
-              )}
-            </div>
             <span style={{ 
-              fontSize: 11, color: status.connected ? 'var(--ag-accent-success)' : 'var(--ag-text-dim)', 
-              fontFamily: 'var(--ag-font-mono)', 
-              marginTop: 2, letterSpacing: '0.5px' 
+              fontSize: 13.5, 
+              fontWeight: 800, 
+              letterSpacing: '0.04em', 
+              fontFamily: 'var(--ag-font-display)',
+              color: status.connected ? 'var(--ag-accent)' : '#848884'
             }}>
-              {status.connected ? `${status.refreshRate} Hz // ${status.runtime}` : 'NO VR HEADSET DETECTED'}
+              {status.connected ? 'CONNECTED' : 'NOT CONNECTED'}
+            </span>
+            <span style={{ 
+              fontSize: 11, 
+              color: status.connected ? '#FFFFFF' : '#5A5D6B', 
+              fontFamily: 'var(--ag-font-mono)', 
+              marginTop: 2, 
+              letterSpacing: '0.5px' 
+            }}>
+              {status.connected ? (status.headset || 'VR HEADSET DETECTED') : 'NO VR HEADSET DETECTED'}
             </span>
           </div>
 
@@ -143,7 +133,7 @@ export function VRStatusBar({ status, selectedGame, injectState, onInject, onUni
               transition: 'all 0.25s var(--ag-transition)',
               opacity: selectedGame ? 1 : 0.35
             }}
-            onMouseEnter={e => { if (selectedGame) { e.currentTarget.style.borderColor = 'rgba(204, 0, 0, 0.4)'; e.currentTarget.style.color = '#FFF'; }}}
+            onMouseEnter={e => { if (selectedGame) { e.currentTarget.style.borderColor = '#4A4D5C'; e.currentTarget.style.color = '#FFF'; }}}
             onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--ag-border)'; e.currentTarget.style.color = 'var(--ag-text-muted)'; }}
           >
             CONFIG
@@ -166,7 +156,7 @@ export function VRStatusBar({ status, selectedGame, injectState, onInject, onUni
               borderRadius: 'var(--ag-radius-sm)',
               transition: 'all 0.25s var(--ag-transition)'
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(204, 0, 0, 0.4)'; e.currentTarget.style.color = '#FFF'; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#4A4D5C'; e.currentTarget.style.color = '#FFF'; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--ag-border)'; e.currentTarget.style.color = 'var(--ag-text-muted)'; }}
           >
             LOGS
@@ -178,9 +168,9 @@ export function VRStatusBar({ status, selectedGame, injectState, onInject, onUni
               className="btn-glow"
               title="Remove VR Mod files and restore game to original flat screen mode"
               style={{ 
-                background: 'rgba(255, 159, 10, 0.08)', 
-                border: '1px solid rgba(255, 159, 10, 0.35)', 
-                color: 'var(--ag-accent-warn)', 
+                background: 'rgba(255, 255, 255, 0.03)', 
+                border: '1px solid #383A44', 
+                color: '#C0C0C8', 
                 cursor: 'pointer', 
                 fontFamily: 'var(--ag-font-display)', 
                 fontSize: 11, 
@@ -190,8 +180,8 @@ export function VRStatusBar({ status, selectedGame, injectState, onInject, onUni
                 borderRadius: 'var(--ag-radius-sm)',
                 transition: 'all 0.25s'
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255, 159, 10, 0.6)'; e.currentTarget.style.color = '#FFF'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255, 159, 10, 0.35)'; e.currentTarget.style.color = 'var(--ag-accent-warn)'; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#5A5D6C'; e.currentTarget.style.color = '#FFF'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#383A44'; e.currentTarget.style.color = '#C0C0C8'; }}
             >
               RESTORE FLAT
             </button>
@@ -205,25 +195,38 @@ export function VRStatusBar({ status, selectedGame, injectState, onInject, onUni
             className="btn-glow"
             style={{ 
               background: isActive 
-                ? 'rgba(204, 0, 0, 0.85)' 
+                ? '#B30000' 
                 : isAntiCheat 
                   ? 'rgba(204, 0, 0, 0.12)' 
                   : injectState === 'success' 
-                    ? 'rgba(48, 209, 88, 0.2)' 
-                    : 'linear-gradient(135deg, rgba(204, 0, 0, 0.32), rgba(204, 0, 0, 0.12))', 
-              border: `1px solid ${getButtonColor()}`, 
-              color: isAntiCheat ? 'var(--ag-accent-danger)' : '#FFF',
+                    ? 'rgba(48, 209, 88, 0.25)' 
+                    : !selectedGame 
+                      ? '#120808'
+                      : 'linear-gradient(135deg, #FF1A1A 0%, #CC0000 55%, #990000 100%)', 
+              border: isAntiCheat 
+                ? '1px solid #4A2020' 
+                : injectState === 'success' 
+                  ? '1px solid var(--ag-accent-success)' 
+                  : !selectedGame 
+                    ? '1px solid #2C2D35' 
+                    : '1px solid #FF4D4D', 
+              color: isAntiCheat ? 'var(--ag-accent-danger)' : !selectedGame ? '#848884' : '#FFF',
               padding: '14px 32px',
               borderRadius: 'var(--ag-radius-sm)',
               cursor: (!selectedGame || isAntiCheat || injectState === 'success' || injectState === 'error' || injectState === 'cancelled') ? 'not-allowed' : 'pointer',
-              opacity: (!selectedGame && injectState === 'default') ? 0.35 : 1,
+              opacity: (!selectedGame && injectState === 'default') ? 0.45 : 1,
               fontFamily: 'var(--ag-font-display)',
-              fontWeight: 800,
+              fontWeight: 900,
               fontSize: 14,
               letterSpacing: '0.12em',
               minWidth: 250,
-              boxShadow: 'none',
-              transition: 'all 0.3s var(--ag-transition)',
+              boxShadow: (selectedGame && !isAntiCheat && injectState === 'default') 
+                ? '0 0 24px rgba(204, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.35)' 
+                : 'none',
+              textShadow: (selectedGame && !isAntiCheat && injectState === 'default') 
+                ? '0 1px 3px rgba(0, 0, 0, 0.7)' 
+                : 'none',
+              transition: 'all 0.25s var(--ag-transition)',
               transform: isActive ? 'scale(0.98)' : 'scale(1)'
             }}
           >

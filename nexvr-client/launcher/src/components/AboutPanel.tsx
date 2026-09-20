@@ -12,7 +12,7 @@ export function AboutPanel({ version }: { version?: string }) {
     }
   };
 
-  const currentVer = version ? (version.startsWith('v') ? version : `v${version}`) : 'v0.1.63';
+  const currentVer = version ? (version.startsWith('v') ? version : `v${version}`) : 'v0.1.75';
 
   return (
     <div className="fast-smooth-scroll" style={{ flex: 1, padding: '36px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflowY: 'auto', background: '#000000' }}>
@@ -98,7 +98,7 @@ export function AboutPanel({ version }: { version?: string }) {
               key={item.label} 
               style={{ 
                 background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0%, rgba(255, 255, 255, 0.006) 100%), #060608', 
-                border: '1px solid rgba(255, 255, 255, 0.07)', 
+                border: '1px solid #2C2D35', 
                 borderTop: '2px solid #CC0000',
                 borderRadius: 6, 
                 padding: '16px 18px', 
@@ -155,17 +155,17 @@ export function AboutPanel({ version }: { version?: string }) {
               fontSize: 11.5, 
               letterSpacing: '0.08em', 
               fontWeight: 600, 
-              border: '1px solid rgba(255, 255, 255, 0.12)', 
+              border: '1px solid #383A44', 
               background: 'rgba(255, 255, 255, 0.035)', 
               boxShadow: 'none', 
               transition: 'all 0.2s ease' 
             }}
             onMouseEnter={e => {
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+              e.currentTarget.style.borderColor = '#4A4D5C';
               e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)';
             }}
             onMouseLeave={e => {
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+              e.currentTarget.style.borderColor = '#383A44';
               e.currentTarget.style.background = 'rgba(255, 255, 255, 0.035)';
             }}
           >
@@ -182,17 +182,17 @@ export function AboutPanel({ version }: { version?: string }) {
               fontSize: 11.5, 
               letterSpacing: '0.08em', 
               fontWeight: 600, 
-              border: '1px solid rgba(255, 255, 255, 0.12)', 
+              border: '1px solid #383A44', 
               background: 'rgba(255, 255, 255, 0.035)', 
               boxShadow: 'none', 
               transition: 'all 0.2s ease' 
             }}
             onMouseEnter={e => {
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+              e.currentTarget.style.borderColor = '#4A4D5C';
               e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)';
             }}
             onMouseLeave={e => {
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+              e.currentTarget.style.borderColor = '#383A44';
               e.currentTarget.style.background = 'rgba(255, 255, 255, 0.035)';
             }}
           >
@@ -209,17 +209,17 @@ export function AboutPanel({ version }: { version?: string }) {
               fontSize: 11.5, 
               letterSpacing: '0.08em', 
               fontWeight: 600, 
-              border: '1px solid rgba(255, 255, 255, 0.12)', 
+              border: '1px solid #383A44', 
               background: 'rgba(255, 255, 255, 0.035)', 
               boxShadow: 'none', 
               transition: 'all 0.2s ease' 
             }}
             onMouseEnter={e => {
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+              e.currentTarget.style.borderColor = '#4A4D5C';
               e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)';
             }}
             onMouseLeave={e => {
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+              e.currentTarget.style.borderColor = '#383A44';
               e.currentTarget.style.background = 'rgba(255, 255, 255, 0.035)';
             }}
           >

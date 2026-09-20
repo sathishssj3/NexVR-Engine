@@ -27,68 +27,116 @@ export function Sidebar({ games, waitingGames = [], selectedId, onSelect, onResc
   const filtered = games.filter((g: GameEntry) => g.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="glass-panel" style={{ 
-      width: 280, 
-      borderRight: '1px solid var(--ag-border)', 
+    <div style={{ 
+      width: 290, 
+      borderRight: '1px solid #26262B', 
       display: 'flex', 
       flexDirection: 'column', 
       zIndex: 5, 
       borderTop: 'none', 
       borderBottom: 'none', 
       borderLeft: 'none',
-      background: 'var(--ag-bg-surface)' 
+      background: '#040406',
+      height: '100%',
+      overflow: 'hidden'
     }}>
+      {/* Top Header: GAME LIBRARY + ADD GAME */}
+      <div style={{ 
+        padding: '16px 14px 10px 14px', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+      }}>
+        <div style={{
+          fontSize: 12.5,
+          fontWeight: 800,
+          letterSpacing: '0.08em',
+          fontFamily: 'var(--ag-font-display)',
+          color: '#FFFFFF',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 7
+        }}>
+          <span style={{ width: 3, height: 12, background: 'var(--ag-accent)', borderRadius: 2 }} />
+          GAME LIBRARY
+        </div>
+        <button 
+          onClick={handleAddCustom} 
+          className="btn-primary-laser"
+          style={{ 
+            padding: '5px 12px', 
+            fontSize: 10,
+            letterSpacing: '0.06em'
+          }}
+        >
+          + ADD GAME
+        </button>
+      </div>
+
       {/* Search Library */}
-      <div style={{ padding: '14px 14px 10px 14px' }}>
-        <div style={{ position: 'relative' }}>
+      <div style={{ padding: '4px 14px 14px 14px' }}>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <svg 
+            width="14" 
+            height="14" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="rgba(255, 255, 255, 0.4)" 
+            strokeWidth="2.2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+            style={{ position: 'absolute', left: 12, pointerEvents: 'none' }}
+          >
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
           <input 
-            placeholder="SEARCH LIBRARY..." 
+            placeholder="SEARCH TITLES..." 
             value={search}
             onChange={e => setSearch(e.target.value)}
             style={{ 
-              width: '100%', boxSizing: 'border-box', padding: '10px 14px', 
-              background: 'rgba(5, 5, 8, 0.8)', 
-              border: '1px solid var(--ag-border)', 
-              color: '#FFFFFF', outline: 'none', borderRadius: 'var(--ag-radius-sm)', 
-              fontFamily: 'var(--ag-font-display)', fontSize: 12, letterSpacing: '0.07em', 
-              fontWeight: 800,
-              transition: 'all 0.25s var(--ag-transition)', 
-              boxShadow: 'inset 0 2px 6px rgba(0, 0, 0, 0.8)' 
+              width: '100%', 
+              boxSizing: 'border-box', 
+              padding: '9px 14px 9px 34px', 
+              background: '#07070A', 
+              border: '1px solid #2C2D35', 
+              color: '#FFFFFF', 
+              outline: 'none', 
+              borderRadius: 'var(--ag-radius-sm)', 
+              fontFamily: 'var(--ag-font-display)', 
+              fontSize: 11.5, 
+              letterSpacing: '0.06em', 
+              fontWeight: 700,
+              transition: 'all 0.2s ease', 
+              boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.6)' 
             }}
             onFocus={e => { 
-              e.target.style.borderColor = 'rgba(255, 255, 255, 0.35)'; 
-              e.target.style.boxShadow = 'inset 0 2px 6px rgba(0, 0, 0, 0.8)';
-              e.target.style.background = 'rgba(12, 12, 18, 0.95)'; 
+              e.target.style.borderColor = '#4A4D5C'; 
+              e.target.style.boxShadow = 'inset 0 1px 4px rgba(0, 0, 0, 0.8), 0 0 0 1px #2C2D35';
             }}
             onBlur={e => { 
-              e.target.style.borderColor = 'var(--ag-border)'; 
-              e.target.style.boxShadow = 'inset 0 2px 6px rgba(0, 0, 0, 0.8)'; 
-              e.target.style.background = 'rgba(5, 5, 8, 0.8)'; 
+              e.target.style.borderColor = '#2C2D35'; 
+              e.target.style.boxShadow = 'inset 0 1px 3px rgba(0, 0, 0, 0.6)'; 
             }}
           />
-        </div>
-        
-        {/* Game count & clear */}
-        <div style={{ 
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-          marginTop: 8, padding: '0 2px' 
-        }}>
-          <span style={{ 
-            fontSize: 10, fontFamily: 'var(--ag-font-mono)', color: 'var(--ag-text-muted)', 
-            letterSpacing: '1px', opacity: 0.7 
-          }}>
-            {search ? `${filtered.length} FOUND` : `${games.length} DETECTED`}
-          </span>
           {search && (
             <button 
               onClick={() => setSearch('')}
               style={{ 
-                background: 'transparent', border: 'none', color: 'var(--ag-accent)', 
-                fontSize: 10, fontFamily: 'var(--ag-font-mono)', cursor: 'pointer', 
-                letterSpacing: '1px', padding: 0, fontWeight: 700 
+                position: 'absolute',
+                right: 10,
+                background: 'transparent', 
+                border: 'none', 
+                color: '#848884', 
+                fontSize: 12, 
+                fontFamily: 'var(--ag-font-mono)', 
+                cursor: 'pointer', 
+                padding: 2, 
+                fontWeight: 700 
               }}
+              title="Clear search"
             >
-              CLEAR
+              ✕
             </button>
           )}
         </div>
@@ -98,43 +146,86 @@ export function Sidebar({ games, waitingGames = [], selectedId, onSelect, onResc
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {isWaitListOpen ? (
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div style={{ padding: '10px 15px 0 15px', flexShrink: 0 }}>
-              <h3 style={{ color: 'var(--ag-text-primary)', fontFamily: 'var(--ag-font-display)', fontSize: 12, marginBottom: 15, borderBottom: '1px solid var(--ag-border)', paddingBottom: 10, letterSpacing: '1.5px', fontWeight: 700 }}>
+            <div style={{ padding: '12px 14px 8px 14px', flexShrink: 0 }}>
+              <div style={{ 
+                color: '#FFF', 
+                fontFamily: 'var(--ag-font-display)', 
+                fontSize: 11.5, 
+                marginBottom: 10, 
+                borderBottom: '1px solid #26262B', 
+                paddingBottom: 8, 
+                letterSpacing: '0.08em', 
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8
+              }}>
+                <span style={{ width: 3, height: 11, background: 'var(--ag-accent)', borderRadius: 2 }} />
                 WAITING LIST
-              </h3>
+              </div>
             </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '0 15px 15px 15px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '0 12px 12px 12px' }}>
               {waitingGames.length === 0 ? (
-                <div style={{ padding: '40px 10px', textAlign: 'center', color: 'var(--ag-text-muted)', fontSize: 12, fontFamily: 'var(--ag-font-ui)' }}>
+                <div style={{ padding: '40px 10px', textAlign: 'center', color: '#848884', fontSize: 12, fontFamily: 'var(--ag-font-ui)' }}>
                   No games waiting
                 </div>
               ) : (
                 waitingGames.map((g: GameEntry, i: number) => (
-                  <div key={g.id} className={`glass-card fade-in-up stagger-${Math.min(i + 1, 5)}`} style={{ padding: '10px', marginBottom: 8, background: 'var(--ag-bg-card)' }}>
-                    <div style={{ fontSize: 13, color: '#FFF', marginBottom: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'var(--ag-font-display)', fontWeight: 600 }}>{g.name}</div>
+                  <div 
+                    key={g.id} 
+                    className={`settings-card fade-in-up stagger-${Math.min(i + 1, 5)}`} 
+                    style={{ padding: '12px 14px', marginBottom: 8, border: '1px solid #2C2D35' }}
+                  >
+                    <div style={{ 
+                      fontSize: 13, 
+                      color: '#FFF', 
+                      marginBottom: 8, 
+                      whiteSpace: 'nowrap', 
+                      overflow: 'hidden', 
+                      textOverflow: 'ellipsis', 
+                      fontFamily: 'var(--ag-font-display)', 
+                      fontWeight: 700 
+                    }}>
+                      {g.name}
+                    </div>
                     <div style={{ display: 'flex', gap: 6 }}>
-                      <button className="btn-glow" onClick={() => onRestore(g.id)} style={{ flex: 1, padding: '6px', background: 'rgba(204, 0, 0, 0.12)', border: '1px solid var(--ag-accent)', color: 'var(--ag-accent)', cursor: 'pointer', borderRadius: 3, fontFamily: 'var(--ag-font-display)', fontSize: 10, fontWeight: 700 }}>RESTORE</button>
-                      <button className="btn-glow" onClick={() => onIgnore(g.id)} style={{ flex: 1, padding: '6px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--ag-border)', color: 'var(--ag-text-muted)', cursor: 'pointer', borderRadius: 3, fontFamily: 'var(--ag-font-display)', fontSize: 10 }}>REMOVE</button>
+                      <button 
+                        onClick={() => onRestore(g.id)} 
+                        className="btn-primary-laser"
+                        style={{ flex: 1, padding: '6px', fontSize: 10 }}
+                      >
+                        RESTORE
+                      </button>
+                      <button 
+                        onClick={() => onIgnore(g.id)} 
+                        className="btn-outline-laser"
+                        style={{ flex: 1, padding: '6px', fontSize: 10, borderColor: '#2C2D35' }}
+                      >
+                        IGNORE
+                      </button>
                     </div>
                   </div>
                 ))
               )}
             </div>
-            <div style={{ padding: '0 15px 15px 15px', flexShrink: 0 }}>
-              <button onClick={onRestoreIgnored} className="btn-outline-laser" style={{ width: '100%', padding: '8px', fontSize: 10.5 }}>
-                RESTORE IGNORED GAMES
+            <div style={{ padding: '0 12px 12px 12px', flexShrink: 0 }}>
+              <button 
+                onClick={onRestoreIgnored} 
+                className="btn-outline-laser" 
+                style={{ width: '100%', padding: '9px', fontSize: 10.5, borderColor: '#2C2D35' }}
+              >
+                RESTORE ALL IGNORED
               </button>
             </div>
           </div>
         ) : (
-          <div ref={sidebarScrollRef} className="fast-smooth-scroll" style={{ flex: 1, padding: '0 6px', display: 'flex', flexDirection: 'column' }}>
+          <div ref={sidebarScrollRef} className="fast-smooth-scroll" style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column' }}>
             {filtered.length === 0 ? (
-              /* Pure Text Empty State Structure - Centered */
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '24px 16px' }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#FFF', marginBottom: 6, fontFamily: 'var(--ag-font-display)', letterSpacing: '0.02em' }}>
                   {search ? 'No matches found' : 'No games detected'}
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--ag-text-muted)', fontFamily: 'var(--ag-font-ui)' }}>
+                <div style={{ fontSize: 11, color: '#848884', fontFamily: 'var(--ag-font-ui)' }}>
                   {search ? 'Try a different search term' : 'Click RESCAN LIBRARY below'}
                 </div>
               </div>
@@ -144,103 +235,72 @@ export function Sidebar({ games, waitingGames = [], selectedId, onSelect, onResc
                 return (
                   <div 
                     key={g.id} 
-                    className={`slide-in-left stagger-${Math.min(i + 1, 5)}`}
+                    className={`game-item-banner slide-in-left stagger-${Math.min(i + 1, 5)} ${isSelected ? 'game-banner-selected' : ''}`}
                     onClick={() => onSelect(g)}
-                    style={{ 
-                      padding: '10px 14px', 
-                      cursor: 'pointer', 
-                      display: 'flex', 
-                      alignItems: 'center',
-                      borderLeft: isSelected ? '3px solid var(--ag-accent)' : '3px solid transparent',
-                      background: isSelected ? 'linear-gradient(90deg, rgba(204, 0, 0, 0.16) 0%, rgba(204, 0, 0, 0.02) 100%)' : 'transparent',
-                      marginBottom: 4,
-                      borderRadius: 'var(--ag-radius-sm)',
-                      transition: 'all 0.25s var(--ag-transition)',
-                      boxShadow: isSelected ? 'inset 0 1px 1px rgba(255, 255, 255, 0.05)' : 'none',
-                      position: 'relative'
-                    }}
-                    onMouseEnter={e => { 
-                      if (!isSelected) { 
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'; 
-                        e.currentTarget.style.transform = 'translateX(3px)'; 
-                      } 
-                    }}
-                    onMouseLeave={e => { 
-                      if (!isSelected) { 
-                        e.currentTarget.style.background = 'transparent'; 
-                        e.currentTarget.style.transform = 'translateX(0)'; 
-                      } 
-                    }}
                   >
-                    {/* Game Avatar Box */}
-                    <div style={{ 
-                      width: 44, height: 44, borderRadius: 8, 
-                      background: isSelected ? 'linear-gradient(135deg, rgba(204, 0, 0, 0.25), rgba(15, 15, 20, 0.95))' : 'linear-gradient(135deg, rgba(25, 25, 32, 0.8), rgba(10, 10, 14, 0.95))', 
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                      marginRight: 12, 
-                      flexShrink: 0, 
-                      boxShadow: '0 4px 10px rgba(0, 0, 0, 0.5)', 
-                      overflow: 'hidden', 
-                      border: isSelected ? '1px solid rgba(204, 0, 0, 0.6)' : '1px solid rgba(255, 255, 255, 0.08)', 
-                      transition: 'all 0.25s var(--ag-transition)' 
-                    }}>
+                    {/* Game Avatar Box (No red border, clean solid smoke gray, high quality) */}
+                    <div 
+                      className="game-avatar-box"
+                      style={{ 
+                        width: 44, 
+                        height: 44, 
+                        borderRadius: 8, 
+                        background: '#0B0B0E', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        marginRight: 12, 
+                        flexShrink: 0, 
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.6)', 
+                        overflow: 'hidden', 
+                        border: '1px solid #2C2D35',
+                        padding: 3,
+                        boxSizing: 'border-box',
+                        transition: 'all 0.18s ease',
+                        position: 'relative',
+                        zIndex: 2
+                      }}
+                    >
                       {g.iconBase64 ? (
                         <img 
                           src={g.iconBase64} 
                           style={{ 
-                            width: '100%', height: '100%', 
-                            objectFit: 'cover', 
-                            imageRendering: '-webkit-optimize-contrast'
+                            width: '100%', 
+                            height: '100%', 
+                            objectFit: 'contain', 
+                            imageRendering: 'auto',
+                            borderRadius: 5
                           }} 
                           alt={g.name} 
                         />
                       ) : (
                         <span style={{ 
                           fontFamily: 'var(--ag-font-display)', 
-                          fontWeight: 800, fontSize: 15, 
-                          color: isSelected ? 'var(--ag-accent)' : 'var(--ag-text-muted)',
-                          letterSpacing: '1px'
+                          fontWeight: 800, 
+                          fontSize: 15, 
+                          color: '#C0C0C8',
+                          letterSpacing: '0.04em'
                         }}>
                           {g.name.substring(0, 2).toUpperCase()}
                         </span>
                       )}
                     </div>
                     
-                    {/* Game Info */}
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                    {/* Game Info - Big Title Only (All dx11, verified, active removed!) */}
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', zIndex: 2 }}>
                       <span style={{ 
-                        fontSize: 13, fontWeight: 600, 
-                        color: isSelected ? '#FFF' : 'var(--ag-text-primary)', 
-                        whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', 
-                        letterSpacing: '0.02em',
-                        fontFamily: 'var(--ag-font-display)'
+                        fontSize: 15.5, 
+                        fontWeight: 600, 
+                        color: '#FFFFFF', 
+                        whiteSpace: 'nowrap', 
+                        textOverflow: 'ellipsis', 
+                        overflow: 'hidden', 
+                        letterSpacing: '0.03em',
+                        fontFamily: 'var(--ag-font-display)',
+                        textTransform: 'uppercase'
                       }}>
                         {g.name}
                       </span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
-                        <span style={{ 
-                          fontSize: 9, 
-                          padding: '1px 5px',
-                          borderRadius: 3,
-                          fontWeight: 700,
-                          background: g.api === 'DX12' ? 'rgba(48, 209, 88, 0.15)' : 'rgba(204, 0, 0, 0.12)',
-                          color: g.api === 'DX12' ? 'var(--ag-accent-success)' : 'var(--ag-accent)', 
-                          border: g.api === 'DX12' ? '1px solid rgba(48, 209, 88, 0.35)' : '1px solid rgba(204, 0, 0, 0.3)',
-                          fontFamily: 'var(--ag-font-mono)', letterSpacing: '0.5px' 
-                        }}>
-                          {g.api}
-                        </span>
-                        {g.compat === 'verified' && (
-                          <span style={{ fontSize: 9, fontFamily: 'var(--ag-font-mono)', color: 'var(--ag-accent-success)', fontWeight: 600 }}>
-                            VERIFIED
-                          </span>
-                        )}
-                        {g.hasInjector && (
-                          <span style={{ fontSize: 8.5, padding: '1px 4px', borderRadius: 2, background: 'rgba(48, 209, 88, 0.15)', color: 'var(--ag-accent-success)', fontFamily: 'var(--ag-font-mono)', fontWeight: 700 }}>
-                            ACTIVE
-                          </span>
-                        )}
-                      </div>
                     </div>
                   </div>
                 );
@@ -250,22 +310,53 @@ export function Sidebar({ games, waitingGames = [], selectedId, onSelect, onResc
         )}
       </div>
 
-      {/* Bottom Actions (Pure Text + Landing Page Styling) */}
-      <div style={{ padding: 12, borderTop: '1px solid var(--ag-border)', background: 'rgba(8, 8, 12, 0.7)' }}>
-        <button onClick={() => setIsWaitListOpen(!isWaitListOpen)} className="btn-glow" style={{ 
-          width: '100%', padding: '9px', 
-          background: isWaitListOpen ? 'rgba(204, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.02)', 
-          border: isWaitListOpen ? '1px solid rgba(204, 0, 0, 0.4)' : '1px solid var(--ag-border)', 
-          color: isWaitListOpen ? 'var(--ag-accent)' : 'var(--ag-text-primary)', 
-          cursor: 'pointer', marginBottom: 8, borderRadius: 'var(--ag-radius-sm)', 
-          fontFamily: 'var(--ag-font-display)', fontSize: 11, letterSpacing: '0.06em', 
-          fontWeight: 600,
-          display: 'flex', alignItems: 'center', justifyContent: 'center'
-        }}>
+      {/* Bottom Actions */}
+      <div style={{ 
+        padding: 14, 
+        borderTop: '1px solid #26262B', 
+        background: '#060608',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8
+      }}>
+        <button 
+          onClick={() => setIsWaitListOpen(!isWaitListOpen)} 
+          style={{ 
+            width: '100%', 
+            padding: '10px 14px', 
+            fontSize: 11,
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            background: isWaitListOpen ? '#1E2028' : '#14151B',
+            border: isWaitListOpen ? '1px solid #4A4D5C' : '1px solid #2C2D35',
+            color: '#FFFFFF',
+            fontWeight: 800,
+            fontFamily: 'var(--ag-font-display)',
+            letterSpacing: '0.08em',
+            borderRadius: 'var(--ag-radius-sm)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            boxShadow: 'none'
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = '#1C1E26';
+            e.currentTarget.style.borderColor = '#4A4D5C';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = isWaitListOpen ? '#1E2028' : '#14151B';
+            e.currentTarget.style.borderColor = isWaitListOpen ? '#4A4D5C' : '#2C2D35';
+          }}
+        >
           {isWaitListOpen ? 'BACK TO LIBRARY' : (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-              <span>WAIT LIST</span>
-              <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--ag-accent)' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: '#FFFFFF', fontWeight: 800 }}>
+              <span style={{ color: '#FFFFFF', fontWeight: 800 }}>WAIT LIST</span>
+              <span style={{ 
+                fontSize: 13.5, 
+                fontWeight: 800, 
+                color: '#FF1E27', 
+                fontFamily: 'var(--ag-font-mono)'
+              }}>
                 {waitingGames?.length || 0}
               </span>
             </span>
@@ -273,46 +364,35 @@ export function Sidebar({ games, waitingGames = [], selectedId, onSelect, onResc
         </button>
 
         {!isWaitListOpen && (
-          <>
-            <button onClick={handleRescan} className="btn-glow" style={{ 
-              width: '100%', padding: '9px', background: 'rgba(255, 255, 255, 0.03)', 
-              border: '1px solid var(--ag-border)', color: 'var(--ag-text-primary)', 
-              cursor: 'pointer', marginBottom: 8, borderRadius: 'var(--ag-radius-sm)', 
-              fontFamily: 'var(--ag-font-display)', fontSize: 11, letterSpacing: '0.06em', 
-              fontWeight: 600,
-              opacity: isScanning ? 0.6 : 1
-            }}>
-              {isScanning ? 'SCANNING...' : 'RESCAN LIBRARY'}
-            </button>
-
-            <button 
-              onClick={handleAddCustom} 
-              style={{ 
-                width: '100%', padding: '9px', 
-                background: 'rgba(132, 136, 132, 0.08)', 
-                border: '1px solid #CC0000', 
-                color: 'var(--ag-accent)', 
-                cursor: 'pointer', 
-                borderRadius: 'var(--ag-radius-sm)', 
-                fontFamily: 'var(--ag-font-display)', 
-                fontSize: 11, 
-                letterSpacing: '0.08em', 
-                fontWeight: 800,
-                boxShadow: 'none',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={e => { 
-                e.currentTarget.style.background = 'rgba(132, 136, 132, 0.16)'; 
-                e.currentTarget.style.borderColor = '#FF1A1A'; 
-              }}
-              onMouseLeave={e => { 
-                e.currentTarget.style.background = 'rgba(132, 136, 132, 0.08)'; 
-                e.currentTarget.style.borderColor = '#CC0000'; 
-              }}
-            >
-              ADD CUSTOM
-            </button>
-          </>
+          <button 
+            onClick={handleRescan} 
+            style={{ 
+              width: '100%', 
+              padding: '10px 14px', 
+              fontSize: 11,
+              background: '#14151B',
+              border: '1px solid #2C2D35',
+              color: '#FFFFFF',
+              fontWeight: 800,
+              fontFamily: 'var(--ag-font-display)',
+              letterSpacing: '0.08em',
+              borderRadius: 'var(--ag-radius-sm)',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              opacity: isScanning ? 0.6 : 1,
+              boxShadow: 'none'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = '#1C1E26';
+              e.currentTarget.style.borderColor = '#4A4D5C';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = '#14151B';
+              e.currentTarget.style.borderColor = '#2C2D35';
+            }}
+          >
+            {isScanning ? 'SCANNING...' : 'RESCAN LIBRARY'}
+          </button>
         )}
       </div>
     </div>

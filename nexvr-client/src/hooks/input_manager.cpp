@@ -164,19 +164,25 @@ void InputManager::Update(XrSession session) {
     state.dwPacketNumber = 1;
     
     bool menuPressed = GetBool(session, m_actionMenu);
-    static bool s_lastMenuState = false;
-    if (menuPressed && !s_lastMenuState) {
+    bool thumbClickL = GetBool(session, m_actionThumbstickClickLeft);
+    bool thumbClickR = GetBool(session, m_actionThumbstickClickRight);
+    bool dualStickClick = thumbClickL && thumbClickR;
+    bool toggleRequested = menuPressed || dualStickClick;
+
+    static bool s_lastToggleRequested = false;
+    if (toggleRequested && !s_lastToggleRequested) {
         OverlayManager::GetInstance().ToggleOverlay();
+        LOG_INFO("OverlayManager: In-headset menu toggled via VR motion controller (%s)",
+                 OverlayManager::GetInstance().IsOverlayVisible() ? "OPEN" : "CLOSED");
     }
-    s_lastMenuState = menuPressed;
+    s_lastToggleRequested = toggleRequested;
 
     if (GetBool(session, m_actionA)) state.Gamepad.wButtons |= XINPUT_GAMEPAD_A;
     if (GetBool(session, m_actionB)) state.Gamepad.wButtons |= XINPUT_GAMEPAD_B;
     if (GetBool(session, m_actionX)) state.Gamepad.wButtons |= XINPUT_GAMEPAD_X;
     if (GetBool(session, m_actionY)) state.Gamepad.wButtons |= XINPUT_GAMEPAD_Y;
-    if (menuPressed) state.Gamepad.wButtons |= XINPUT_GAMEPAD_START;
-    if (GetBool(session, m_actionThumbstickClickLeft)) state.Gamepad.wButtons |= XINPUT_GAMEPAD_LEFT_THUMB;
-    if (GetBool(session, m_actionThumbstickClickRight)) state.Gamepad.wButtons |= XINPUT_GAMEPAD_RIGHT_THUMB;
+    if (thumbClickL && !dualStickClick) state.Gamepad.wButtons |= XINPUT_GAMEPAD_LEFT_THUMB;
+    if (thumbClickR && !dualStickClick) state.Gamepad.wButtons |= XINPUT_GAMEPAD_RIGHT_THUMB;
     if (GetFloat(session, m_actionGripLeft) > 0.5f) state.Gamepad.wButtons |= XINPUT_GAMEPAD_LEFT_SHOULDER;
     if (GetFloat(session, m_actionGripRight) > 0.5f) state.Gamepad.wButtons |= XINPUT_GAMEPAD_RIGHT_SHOULDER;
     

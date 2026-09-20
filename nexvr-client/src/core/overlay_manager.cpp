@@ -101,6 +101,7 @@ void OverlayManager::Initialize(HWND hwnd) {
     // Enable Keyboard Controls and Gamepad Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    io.BackendFlags |= ImGuiBackendFlags_HasGamepad;
     
     // Apply NexVR futuristic Cyber Glassmorphism theme
     ImGuiStyle& style = ImGui::GetStyle();
@@ -132,6 +133,51 @@ bool OverlayManager::HandleWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
     if (io.WantCaptureKeyboard && isKeyMsg) return true;
 
     return false;
+}
+
+void OverlayManager::FeedGamepadInput(const XINPUT_GAMEPAD& pad) {
+    if (!m_initialized) return;
+
+    ImGuiIO& io = ImGui::GetIO();
+
+    // Map XInput digital buttons to ImGui gamepad keys
+    io.AddKeyEvent(ImGuiKey_GamepadFaceDown, (pad.wButtons & XINPUT_GAMEPAD_A) != 0);       // A: Activate / Click
+    io.AddKeyEvent(ImGuiKey_GamepadFaceRight, (pad.wButtons & XINPUT_GAMEPAD_B) != 0);      // B: Cancel / Close
+    io.AddKeyEvent(ImGuiKey_GamepadFaceLeft, (pad.wButtons & XINPUT_GAMEPAD_X) != 0);       // X
+    io.AddKeyEvent(ImGuiKey_GamepadFaceUp, (pad.wButtons & XINPUT_GAMEPAD_Y) != 0);         // Y
+
+    io.AddKeyEvent(ImGuiKey_GamepadDpadUp, (pad.wButtons & XINPUT_GAMEPAD_DPAD_UP) != 0);
+    io.AddKeyEvent(ImGuiKey_GamepadDpadDown, (pad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN) != 0);
+    io.AddKeyEvent(ImGuiKey_GamepadDpadLeft, (pad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) != 0);
+    io.AddKeyEvent(ImGuiKey_GamepadDpadRight, (pad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) != 0);
+
+    io.AddKeyEvent(ImGuiKey_GamepadL1, (pad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER) != 0);
+    io.AddKeyEvent(ImGuiKey_GamepadR1, (pad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER) != 0);
+
+    // Left analog stick navigation with deadzone
+    const float deadzone = 0.25f;
+    auto applyDeadzone = [deadzone](SHORT raw) -> float {
+        float v = static_cast<float>(raw) / 32768.0f;
+        if (v > deadzone) return (v - deadzone) / (1.0f - deadzone);
+        if (v < -deadzone) return (v + deadzone) / (1.0f - deadzone);
+        return 0.0f;
+    };
+
+    float lx = applyDeadzone(pad.sThumbLX);
+    float ly = applyDeadzone(pad.sThumbLY);
+
+    io.AddKeyAnalogEvent(ImGuiKey_GamepadLStickLeft, lx < 0.0f, -lx);
+    io.AddKeyAnalogEvent(ImGuiKey_GamepadLStickRight, lx > 0.0f, lx);
+    io.AddKeyAnalogEvent(ImGuiKey_GamepadLStickUp, ly > 0.0f, ly);
+    io.AddKeyAnalogEvent(ImGuiKey_GamepadLStickDown, ly < 0.0f, -ly);
+
+    // If B button is pressed when no active input field/widget has focus, close the overlay
+    static bool s_lastB = false;
+    bool bPressed = (pad.wButtons & XINPUT_GAMEPAD_B) != 0;
+    if (bPressed && !s_lastB && !ImGui::IsAnyItemActive()) {
+        m_isVisible = false;
+    }
+    s_lastB = bPressed;
 }
 
 void OverlayManager::Render() {
@@ -181,12 +227,98 @@ void OverlayManager::Render() {
         ImGui::SameLine();
         ImGui::TextColored(ImVec4(0.35f, 0.90f, 0.45f, 1.0f), "  ● Full 3D Stereo VR");
         ImGui::SameLine();
-        ImGui::TextDisabled("  |  Press HOME to close");
+        ImGui::TextDisabled("  |  Close: B / L3+R3 / HOME");
 
         ImGui::Spacing();
 
         if (ImGui::BeginTabBar("NexVRMainTabs")) {
-            // TAB 1: 3D Depth & Comfort
+            // TAB 1: Launcher VR Settings (Bidirectionally synced with vrinject.json)
+            if (ImGui::BeginTabItem("  VR Settings  ")) {
+                ImGui::Spacing();
+                ImGui::TextColored(ImVec4(0.00f, 0.85f, 1.00f, 1.0f), "Display & Graphics");
+                ImGui::Separator();
+
+                // 1. Match Headset Resolution
+                bool useRecRes = cfg.useRecommendedResolution;
+                if (ImGui::Checkbox("Match Headset Resolution (Recommended)", &useRecRes)) {
+                    cfg.useRecommendedResolution = useRecRes;
+                    cfgManager->Save();
+                }
+                ImGui::TextDisabled("Automatically render at your VR headset's native panel resolution for maximum clarity.");
+
+                ImGui::Spacing();
+
+                // 2. Color & Gamma Correction
+                bool srgb = cfg.srgbCorrection;
+                if (ImGui::Checkbox("Color & Gamma Correction (sRGB)", &srgb)) {
+                    cfg.srgbCorrection = srgb;
+                    cfgManager->Save();
+                }
+                ImGui::TextDisabled("Apply sRGB gamma correction for accurate colors in SDR games.");
+
+                ImGui::Spacing();
+
+                // 3. Depth Smoothing & ASW
+                bool depthSub = cfg.depthSubmission;
+                if (ImGui::Checkbox("Depth Smoothing (OpenXR Depth Submission)", &depthSub)) {
+                    cfg.depthSubmission = depthSub;
+                    cfgManager->Save();
+                }
+                ImGui::TextDisabled("Enable OpenXR depth submission for headset reprojection and ASW motion smoothing.");
+
+                ImGui::Spacing();
+                ImGui::Spacing();
+                ImGui::TextColored(ImVec4(0.00f, 0.85f, 1.00f, 1.0f), "Controls & Motion");
+                ImGui::Separator();
+
+                // 4. Head Tracking Sensitivity
+                float sens = cfg.motionAimSensitivity;
+                ImGui::Text("Head Tracking Sensitivity: %.1fx", sens);
+                if (ImGui::SliderFloat("##motionAimSens", &sens, 0.1f, 5.0f, "%.1fx")) {
+                    cfg.motionAimSensitivity = sens;
+                    cfgManager->Save();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("1.0x##sensDefault")) {
+                    cfg.motionAimSensitivity = 1.0f;
+                    cfgManager->Save();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("1.5x##sensMed")) {
+                    cfg.motionAimSensitivity = 1.5f;
+                    cfgManager->Save();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("2.0x##sensFast")) {
+                    cfg.motionAimSensitivity = 2.0f;
+                    cfgManager->Save();
+                }
+                ImGui::TextDisabled("Multiplier for VR head tracking to in-game camera movement.");
+
+                ImGui::Spacing();
+
+                // 5. Direct Input Mode
+                bool rawInp = cfg.rawInputMode;
+                if (ImGui::Checkbox("Direct Input Mode (Raw Input)", &rawInp)) {
+                    cfg.rawInputMode = rawInp;
+                    cfgManager->Save();
+                }
+                ImGui::TextDisabled("Bypass Windows mouse acceleration for 1:1 camera responsiveness.");
+
+                ImGui::Spacing();
+
+                // 6. Auto-Start in VR
+                bool autoInj = cfg.autoInjectOnLaunch;
+                if (ImGui::Checkbox("Auto-Start in VR", &autoInj)) {
+                    cfg.autoInjectOnLaunch = autoInj;
+                    cfgManager->Save();
+                }
+                ImGui::TextDisabled("Automatically launch VR injection when starting the game from your launcher.");
+
+                ImGui::EndTabItem();
+            }
+
+            // TAB 2: 3D Depth & Comfort
             if (ImGui::BeginTabItem("  3D Depth & Comfort  ")) {
                 ImGui::Spacing();
                 ImGui::TextColored(ImVec4(0.00f, 0.85f, 1.00f, 1.0f), "Stereoscopic Depth Controls");
@@ -343,14 +475,16 @@ void OverlayManager::Render() {
                 ImGui::EndTabItem();
             }
 
-            // TAB 3: Controls & Help
+            // TAB 4: Controls & Help
             if (ImGui::BeginTabItem("  Controls & Shortcuts  ")) {
                 ImGui::Spacing();
-                ImGui::TextColored(ImVec4(0.00f, 0.85f, 1.00f, 1.0f), "Quick Controls");
+                ImGui::TextColored(ImVec4(0.00f, 0.85f, 1.00f, 1.0f), "Quick Controls & Shortcuts");
                 ImGui::Separator();
 
-                ImGui::BulletText("Keyboard: Press HOME to open / close this dashboard.");
-                ImGui::BulletText("VR Controllers: Left Controller Menu button (or hold Y / B).");
+                ImGui::BulletText("Gamepad: Click L3 + R3 (both thumbsticks) OR press Back + Start to toggle.");
+                ImGui::BulletText("VR Controllers: Click Both Thumbsticks (L3 + R3) OR press Left Menu Button.");
+                ImGui::BulletText("Keyboard: Press HOME, INSERT, or F11 to toggle.");
+                ImGui::BulletText("Menu Navigation: D-Pad / Left Stick to navigate, A to select/toggle, B to cancel/close.");
                 ImGui::BulletText("Mouse: Point and click on sliders or buttons directly.");
 
                 ImGui::Spacing();
@@ -366,6 +500,10 @@ void OverlayManager::Render() {
                     cfg.saturation = 1.0f;
                     cfg.brightness = 1.0f;
                     cfg.srgbCorrection = false;
+                    cfg.useRecommendedResolution = true;
+                    cfg.depthSubmission = false;
+                    cfg.motionAimSensitivity = 1.0f;
+                    cfg.rawInputMode = true;
                     cfg.enableNeuralInpainter = true;
                     cfgManager->Save();
                 }
@@ -386,7 +524,7 @@ void OverlayManager::Render() {
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.08f, 0.58f, 0.95f, 1.00f));
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.00f, 0.75f, 1.00f, 1.00f));
 
-        if (ImGui::Button("  ▶  Resume Game (Press HOME to close)  ", ImVec2(-1, 48))) {
+        if (ImGui::Button("  ▶  Resume Game (Press B / L3+R3 / HOME to close)  ", ImVec2(-1, 48))) {
             m_isVisible = false;
         }
 

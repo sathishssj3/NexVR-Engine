@@ -1,20 +1,19 @@
 {
-  "engineVersion": "0.1.63",
-  "buildDate": "2026-09-19",
-  "timestamp": 1789815183887,
-  "changelog": "High-Contrast Log Palette & Universal Green [OK] Highlighting v0.1.63",
+  "engineVersion": "0.1.75",
+  "buildDate": "2026-09-20",
+  "timestamp": 1789831500000,
+  "changelog": "Subtle Dark Red Gradient Banner v0.1.75",
   "features": [
-    "Tester-Centric Status Console: Formatted high-level [OK] milestone badges for target game, headset, input, swapchain, and 6DOF camera lock",
-    "Zero Internal Noise: Demoted low-level Win32 hooks, swapchain format enumeration loops, and candidate shift adjustments to debug-only",
-    "Clean Heartbeat Cadence: Reassuring [STATUS] heartbeat logged every 600 frames (~6.6s) with frame resolution and target FPS",
-    "High-Performance Log Batching: requestAnimationFrame throttled UI updates and asynchronous stream ingestion preventing Electron event loop starvation",
-    "Lock-Free Launcher Session Console: Guaranteed 60 FPS launcher UI responsiveness during intense game memory scans and startup sequences"
+    "Unified Obsidian Glassmorphism: Library tab redesigned to match Settings & About tabs with deep space black, .settings-card architecture, and bento grid telemetry",
+    "4-Cell Library Telemetry Bento: Live detected titles count, VR headset connection state, graphics pipeline hooks, and in-headset dashboard hotkeys",
+    "Modernized Library Sidebar: Obsidian search bar with search glyph, monospace title counter, settings-card list items, and laser outline actions",
+    "High-Fidelity Per-Game VR Settings: Refactored with vertical accent bars, .settings-card containers, and interactive ranges and toggles",
+    "Multi-Device In-Headset Menu: Effortless toggling via Gamepad (L3+R3 or Back+Start), VR motion controllers, and Keyboard (HOME / INSERT / F11)"
   ],
   "fixes": [
-    "Silenced 30+ repeated candidate view matrix swap messages during active gameplay",
-    "Eliminated 10+ lines of raw DXGI format numbers on swapchain creation",
-    "Removed Vulkan hook enumeration messages on DirectX 11/12 titles",
-    "Eliminated per-frame stereo pipeline trace and disk flush bottlenecks"
+    "Resolved in-headset menu not opening in Sekiro and gamepad-controlled titles",
+    "Fixed DX11 ImGui double-NewFrame lifecycle assert and RTV thrashing across eyes",
+    "Prevented VR controller menu button from triggering game pause menu"
   ],
   "files": [
     "vrinject.dll",
@@ -40,8 +39,8 @@
   ],
   "date": "2026-09-18T19:46:38.921Z",
   "hashes": {
-    "vrinject.dll": "d335c6b07bdaf90493b62a2a75255566244b79a6951af28e7a7325ad05b686bd",
-    "vr-inject-cli.exe": "50ce7c3ccdcaf213cb05495e94a7e38bc0e57e34d78be0953b16251d759bf137",
+    "vrinject.dll": "6bc9516ab48251f09ce6de7b1588a6857e7c33ca56161ad84e0cee7a26f3faff",
+    "vr-inject-cli.exe": "628739e87c3de57e7d3316d4af95624cc3f579a30730980b8caca6c503794801",
     "profiles/814380_sekiro.json": "6463c079fb200fdb895edf96cdc54249d3e1d93c9fce6fbad87da9cfd7f46ff3",
     "profiles/990080_hogwarts_legacy.json": "717610b3cdf8cca77c2555d8c6ec087ef694ba1eda9a8a08c3a15438051f9efc",
     "profiles/1091500_cyberpunk_2077.json": "42a448270d17b59f9a910903043ca93b212cdae9c75fbf3400c1ef4346590601",

@@ -111,15 +111,17 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
       s_overlayInitialized = true;
   }
 
-  // Keyboard shortcut toggle for In-Headset Dashboard (HOME key only)
-  static bool s_lastHomeState = false;
-  bool homePressed = (GetAsyncKeyState(VK_HOME) & 0x8000) != 0;
-  if (homePressed && !s_lastHomeState) {
+  // Keyboard shortcut toggle for In-Headset Dashboard (HOME, INSERT, F11)
+  static bool s_lastKeyboardToggle = false;
+  bool keyboardPressed = ((GetAsyncKeyState(VK_HOME) & 0x8000) != 0) ||
+                         ((GetAsyncKeyState(VK_INSERT) & 0x8000) != 0) ||
+                         ((GetAsyncKeyState(VK_F11) & 0x8000) != 0);
+  if (keyboardPressed && !s_lastKeyboardToggle) {
       OverlayManager::GetInstance().ToggleOverlay();
       LOG_INFO("OverlayManager: In-headset menu toggled via keyboard shortcut (Visible: %s)",
                OverlayManager::GetInstance().IsOverlayVisible() ? "YES" : "NO");
   }
-  s_lastHomeState = homePressed;
+  s_lastKeyboardToggle = keyboardPressed;
 
   // Camera and depth discovery - wrapped in try-catch because these subsystems
   // may crash on DX12 backends (they were designed for DX11). A crash here must

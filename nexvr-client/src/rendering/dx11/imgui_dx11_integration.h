@@ -13,6 +13,7 @@ public:
 
     bool Initialize(ID3D11Device* device, ID3D11DeviceContext* context);
     void Render(ID3D11Device* device, ID3D11DeviceContext* context, ID3D11RenderTargetView* rtv);
+    void Render(ID3D11Device* device, ID3D11DeviceContext* context, ID3D11Texture2D* leftDest, ID3D11Texture2D* rightDest);
     void RenderToTexture(ID3D11Device* device, ID3D11DeviceContext* context, ID3D11Texture2D* targetTexture);
     void Shutdown();
     void InvalidateDeviceObjects();
@@ -25,8 +26,10 @@ private:
     ~ImGuiDX11Integration() = default;
 
     bool m_initialized = false;
-    Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_cachedRtv;
-    Microsoft::WRL::ComPtr<ID3D11Texture2D> m_cachedTexture;
+    Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_cachedRtvLeft;
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> m_cachedTextureLeft;
+    Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_cachedRtvRight;
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> m_cachedTextureRight;
 };
 
 } // namespace vrinject

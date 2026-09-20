@@ -366,7 +366,7 @@ export default function App() {
             fontFamily: 'var(--ag-font-mono)', letterSpacing: '0.05em', 
             fontWeight: 800
           }}>
-            {updateStatus?.version ? updateStatus.version.replace(/^v/, '') : '0.1.63'}
+            {updateStatus?.version ? updateStatus.version.replace(/^v/, '') : '0.1.75'}
           </span>
           {updateStatus?.updated && (
             <span style={{
@@ -505,7 +505,10 @@ export default function App() {
               ref={mainContentRef}
               className="fast-smooth-scroll"
               style={{ 
-                flex: 1, padding: '28px 36px',
+                flex: 1, 
+                padding: '28px 36px',
+                overflowY: 'auto',
+                background: '#000000',
                 opacity: transitioning ? 0 : 1,
                 transform: transitioning ? 'translateY(6px)' : 'translateY(0)',
                 transition: 'opacity 0.2s ease, transform 0.2s ease',

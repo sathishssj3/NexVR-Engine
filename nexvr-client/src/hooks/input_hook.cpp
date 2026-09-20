@@ -296,6 +296,32 @@ DWORD WINAPI InputHook::HookedXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pS
                     
                     pState->dwPacketNumber += self.m_emulatedState.dwPacketNumber;
                 }
+
+                // In-Headset VR Dashboard toggling via Gamepad (L3 + R3 OR Back + Start)
+                bool isL3R3 = ((pState->Gamepad.wButtons & (XINPUT_GAMEPAD_LEFT_THUMB | XINPUT_GAMEPAD_RIGHT_THUMB)) == (XINPUT_GAMEPAD_LEFT_THUMB | XINPUT_GAMEPAD_RIGHT_THUMB));
+                bool isBackStart = ((pState->Gamepad.wButtons & (XINPUT_GAMEPAD_BACK | XINPUT_GAMEPAD_START)) == (XINPUT_GAMEPAD_BACK | XINPUT_GAMEPAD_START));
+                bool toggleCombo = isL3R3 || isBackStart;
+
+                static bool s_lastToggleCombo = false;
+                if (toggleCombo && !s_lastToggleCombo) {
+                    OverlayManager::GetInstance().ToggleOverlay();
+                    LOG_INFO("OverlayManager: In-headset menu toggled via gamepad (%s)",
+                             OverlayManager::GetInstance().IsOverlayVisible() ? "OPEN" : "CLOSED");
+                }
+                s_lastToggleCombo = toggleCombo;
+
+                // When VR Dashboard is active: feed controller navigation to ImGui & mask game gameplay buttons
+                if (OverlayManager::GetInstance().IsOverlayVisible()) {
+                    OverlayManager::GetInstance().FeedGamepadInput(pState->Gamepad);
+
+                    pState->Gamepad.wButtons = 0;
+                    pState->Gamepad.bLeftTrigger = 0;
+                    pState->Gamepad.bRightTrigger = 0;
+                    pState->Gamepad.sThumbLX = 0;
+                    pState->Gamepad.sThumbLY = 0;
+                    pState->Gamepad.sThumbRX = 0;
+                    pState->Gamepad.sThumbRY = 0;
+                }
                 return ERROR_SUCCESS;
             } else {
                 if (self.m_vrControllersActive) {
@@ -305,6 +331,29 @@ DWORD WINAPI InputHook::HookedXInputGetState(DWORD dwUserIndex, XINPUT_STATE* pS
                     SHORT ry = pState->Gamepad.sThumbRY;
                     if (std::abs(rx) > DEADZONE || std::abs(ry) > DEADZONE) {
                         self.RecordThumbstickDelta(static_cast<float>(rx) / 32768.0f, static_cast<float>(ry) / 32768.0f);
+                    }
+
+                    // In-Headset VR Dashboard toggling for VR controllers emulating gamepad
+                    bool isL3R3 = ((pState->Gamepad.wButtons & (XINPUT_GAMEPAD_LEFT_THUMB | XINPUT_GAMEPAD_RIGHT_THUMB)) == (XINPUT_GAMEPAD_LEFT_THUMB | XINPUT_GAMEPAD_RIGHT_THUMB));
+                    bool isBackStart = ((pState->Gamepad.wButtons & (XINPUT_GAMEPAD_BACK | XINPUT_GAMEPAD_START)) == (XINPUT_GAMEPAD_BACK | XINPUT_GAMEPAD_START));
+                    bool toggleCombo = isL3R3 || isBackStart;
+
+                    static bool s_lastVrToggleCombo = false;
+                    if (toggleCombo && !s_lastVrToggleCombo) {
+                        OverlayManager::GetInstance().ToggleOverlay();
+                    }
+                    s_lastVrToggleCombo = toggleCombo;
+
+                    if (OverlayManager::GetInstance().IsOverlayVisible()) {
+                        OverlayManager::GetInstance().FeedGamepadInput(pState->Gamepad);
+
+                        pState->Gamepad.wButtons = 0;
+                        pState->Gamepad.bLeftTrigger = 0;
+                        pState->Gamepad.bRightTrigger = 0;
+                        pState->Gamepad.sThumbLX = 0;
+                        pState->Gamepad.sThumbLY = 0;
+                        pState->Gamepad.sThumbRX = 0;
+                        pState->Gamepad.sThumbRY = 0;
                     }
                     return ERROR_SUCCESS;
                 }

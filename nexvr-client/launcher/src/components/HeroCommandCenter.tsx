@@ -10,221 +10,136 @@ interface HeroCommandCenterProps {
 
 export function HeroCommandCenter({
   games,
-  vrStatus,
+  vrStatus: _vrStatus,
   onSelectGame,
-  onRescan,
+  onRescan: _onRescan,
   onAddCustom,
 }: HeroCommandCenterProps) {
   return (
-    <div className="fade-in-up" style={{ display: 'flex', flexDirection: 'column', gap: 0, paddingBottom: 20, height: '100%' }}>
-
-      {/* Compact system status row */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '14px 0',
-        marginBottom: 20,
-        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <span style={{
-            fontSize: 11,
-            fontFamily: 'var(--ag-font-mono)',
-            color: 'var(--ag-text-muted)',
-            letterSpacing: '1.5px',
+    <div 
+      className="settings-tab-enter" 
+      style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        minHeight: '100%',
+        width: '100%',
+        boxSizing: 'border-box'
+      }}
+    >
+      {games.length === 0 ? (
+        <div 
+          className="settings-card"
+          style={{
+            flex: 1,
+            minHeight: 380,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            border: '1px solid #2C2D35',
+            background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.015) 0%, rgba(255, 255, 255, 0.004) 100%), #07070A',
+            borderRadius: 8,
+            padding: '48px 24px'
+          }}
+        >
+          <div style={{
+            width: 48,
+            height: 48,
+            borderRadius: 10,
+            background: '#0B0B0E',
+            border: '1px solid #2C2D35',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 16,
+            color: 'var(--ag-accent)',
+            fontSize: 20
           }}>
-            STATUS
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{
-              width: 6, height: 6, borderRadius: '50%',
-              background: vrStatus.connected ? 'var(--ag-accent-success)' : 'var(--ag-text-dim)',
-            }} />
-            <span style={{
-              fontSize: 12,
-              fontFamily: 'var(--ag-font-display)',
-              color: vrStatus.connected ? '#FFF' : 'var(--ag-text-muted)',
-              fontWeight: 600,
-            }}>
-              {vrStatus.connected ? vrStatus.headset : 'VR Disconnected'}
-            </span>
-            {vrStatus.connected && (
-              <span style={{
-                padding: '1px 5px',
-                borderRadius: 3,
-                fontSize: 9,
-                fontWeight: 800,
-                fontFamily: 'var(--ag-font-mono)',
-                letterSpacing: '0.05em',
-                background: 'rgba(48, 209, 88, 0.15)',
-                border: '1px solid rgba(48, 209, 88, 0.3)',
-                color: 'var(--ag-accent-success)'
-              }}>
-                CONNECTED
-              </span>
-            )}
+            ◈
           </div>
-          {vrStatus.connected && (
-            <span style={{
-              fontSize: 10,
-              fontFamily: 'var(--ag-font-mono)',
-              color: '#848884',
-              fontWeight: 600,
-            }}>
-              {vrStatus.refreshRate} Hz  //  {vrStatus.runtime}
-            </span>
-          )}
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{
-            fontSize: 10.5,
-            fontFamily: 'var(--ag-font-mono)',
-            color: '#848884',
+          <div style={{
+            fontSize: 16,
+            fontWeight: 800,
+            color: '#FFF',
+            fontFamily: 'var(--ag-font-display)',
             letterSpacing: '0.06em',
-            fontWeight: 700,
+            marginBottom: 6,
           }}>
-            {games.length} {games.length === 1 ? 'TITLE' : 'TITLES'}
-          </span>
-          <span style={{ width: 1, height: 14, background: 'rgba(255, 255, 255, 0.15)' }} />
-          <span style={{
-            fontSize: 10.5,
-            fontFamily: 'var(--ag-font-mono)',
+            NO GAMES DETECTED
+          </div>
+          <div style={{
+            fontSize: 12.5,
             color: '#848884',
-            letterSpacing: '0.06em',
-            fontWeight: 700,
+            fontFamily: 'var(--ag-font-ui)',
+            marginBottom: 24,
+            maxWidth: 380,
+            lineHeight: 1.5,
           }}>
-            DX11 / DX12 / VK
-          </span>
-        </div>
-      </div>
-
-      {/* Games section header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <span style={{
-          fontSize: 11,
-          fontWeight: 700,
-          letterSpacing: '1.5px',
-          fontFamily: 'var(--ag-font-display)',
-          color: 'var(--ag-text-muted)',
-        }}>
-          LIBRARY
-        </span>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button
-            onClick={onRescan}
-            className="btn-outline-laser"
-            style={{ padding: '5px 12px', fontSize: 10 }}
-          >
-            RESCAN
-          </button>
+            Use the + ADD GAME button in the sidebar or rescan to automatically discover installed executables.
+          </div>
           <button
             onClick={onAddCustom}
             className="btn-primary-laser"
-            style={{ padding: '5px 12px', fontSize: 10 }}
-          >
-            ADD GAME
-          </button>
-        </div>
-      </div>
-
-      {/* Empty state or game grid */}
-      {games.length === 0 ? (
-        <div style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: 280,
-        }}>
-          <div style={{
-            fontSize: 14,
-            fontWeight: 700,
-            color: 'var(--ag-text-muted)',
-            fontFamily: 'var(--ag-font-display)',
-            letterSpacing: '0.06em',
-            marginBottom: 8,
-          }}>
-            No games detected
-          </div>
-          <div style={{
-            fontSize: 12,
-            color: 'var(--ag-text-dim)',
-            fontFamily: 'var(--ag-font-ui)',
-            marginBottom: 24,
-            textAlign: 'center',
-            lineHeight: 1.6,
-          }}>
-            Add a game executable or rescan your library
-          </div>
-          <button
-            onClick={onAddCustom}
             style={{
-              padding: '9px 22px',
-              borderRadius: 'var(--ag-radius-sm)',
-              background: 'transparent',
-              border: '1px solid var(--ag-accent)',
-              color: 'var(--ag-accent)',
+              padding: '9px 24px',
               fontSize: 11,
-              cursor: 'pointer',
-              fontFamily: 'var(--ag-font-display)',
-              fontWeight: 700,
-              letterSpacing: '0.08em',
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'rgba(204, 0, 0, 0.08)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'transparent';
             }}
           >
-            BROWSE .EXE
+            + ADD GAME
           </button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+        <div 
+          style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+            gap: 14, 
+            width: '100%' 
+          }}
+        >
           {games.map(game => (
             <div
               key={game.id}
               onClick={() => onSelectGame(game)}
-              className="glass-card"
+              className="settings-card"
               style={{
-                padding: '14px 16px',
-                borderRadius: 'var(--ag-radius-md)',
-                border: '1px solid var(--ag-border)',
-                background: 'var(--ag-bg-card)',
+                padding: '18px 20px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 14,
-                transition: 'all 0.25s var(--ag-transition)',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
+                gap: 16,
+                border: '1px solid #2C2D35',
+                background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.005) 100%), #07070A',
+                borderRadius: 8,
+                transition: 'all 0.18s ease',
               }}
               onMouseEnter={e => {
-                e.currentTarget.style.borderColor = 'rgba(204, 0, 0, 0.35)';
-                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.borderColor = '#4A4D5C';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.6)';
               }}
               onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'var(--ag-border)';
+                e.currentTarget.style.borderColor = '#2C2D35';
                 e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
               }}
             >
-              {/* Game Icon */}
+              {/* Game Icon (High quality, no broken pixels, solid smoke gray border) */}
               <div
                 style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 8,
-                  background: 'rgba(204, 0, 0, 0.06)',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                  width: 50,
+                  height: 50,
+                  borderRadius: 10,
+                  background: '#0B0B0E',
+                  border: '1px solid #2C2D35',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
                   overflow: 'hidden',
+                  padding: 3,
+                  boxSizing: 'border-box'
                 }}
               >
                 {game.iconBase64 ? (
@@ -234,44 +149,100 @@ export function HeroCommandCenter({
                     style={{
                       width: '100%',
                       height: '100%',
-                      objectFit: 'cover',
-                      imageRendering: '-webkit-optimize-contrast',
+                      objectFit: 'contain',
+                      imageRendering: 'auto',
+                      borderRadius: 6
                     }}
                   />
                 ) : (
-                  <span style={{ fontFamily: 'var(--ag-font-display)', fontWeight: 700, fontSize: 15, color: 'var(--ag-text-muted)' }}>
+                  <span style={{ fontFamily: 'var(--ag-font-display)', fontWeight: 800, fontSize: 16, color: '#C0C0C8', letterSpacing: '0.04em' }}>
                     {game.name.substring(0, 2).toUpperCase()}
                   </span>
                 )}
               </div>
 
+              {/* Game Information */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: '#FFF',
+                  fontSize: 15,
+                  fontWeight: 800,
+                  color: '#FFFFFF',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   fontFamily: 'var(--ag-font-display)',
                   letterSpacing: '0.02em',
+                  marginBottom: 6,
                 }}>
                   {game.name}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                   <span style={{
-                    fontSize: 9,
+                    fontSize: 9.5,
+                    padding: '2px 6px',
+                    borderRadius: 3,
+                    fontWeight: 700,
+                    background: game.api === 'DX12' ? 'rgba(48, 209, 88, 0.12)' : 'rgba(204, 0, 0, 0.12)',
+                    color: game.api === 'DX12' ? 'var(--ag-accent-success)' : 'var(--ag-accent)',
+                    border: '1px solid #2C2D35',
                     fontFamily: 'var(--ag-font-mono)',
-                    color: 'var(--ag-text-dim)',
+                    letterSpacing: '0.05em',
                   }}>
                     {game.api}
                   </span>
+
                   {game.compat === 'verified' && (
-                    <span style={{ fontSize: 9, fontFamily: 'var(--ag-font-mono)', color: 'var(--ag-accent-success)' }}>
-                      VERIFIED
+                    <span style={{
+                      fontSize: 9.5,
+                      padding: '2px 6px',
+                      borderRadius: 3,
+                      fontFamily: 'var(--ag-font-mono)',
+                      color: 'var(--ag-accent-success)',
+                      fontWeight: 700,
+                      background: 'rgba(48, 209, 88, 0.12)',
+                      border: '1px solid #2C2D35',
+                      letterSpacing: '0.05em',
+                    }}>
+                      VERIFIED 6DOF
+                    </span>
+                  )}
+
+                  {game.hasInjector && (
+                    <span style={{
+                      fontSize: 9,
+                      padding: '2px 5px',
+                      borderRadius: 3,
+                      background: 'rgba(48, 209, 88, 0.12)',
+                      color: 'var(--ag-accent-success)',
+                      fontFamily: 'var(--ag-font-mono)',
+                      fontWeight: 700,
+                      border: '1px solid #2C2D35'
+                    }}>
+                      MOD ACTIVE
+                    </span>
+                  )}
+
+                  {game.hasAntiCheat && (
+                    <span style={{
+                      fontSize: 9,
+                      padding: '2px 5px',
+                      borderRadius: 3,
+                      background: 'rgba(204, 0, 0, 0.12)',
+                      color: 'var(--ag-accent)',
+                      fontFamily: 'var(--ag-font-mono)',
+                      fontWeight: 700,
+                      border: '1px solid #2C2D35'
+                    }}>
+                      ANTI-CHEAT
                     </span>
                   )}
                 </div>
+              </div>
+
+              {/* Right Arrow */}
+              <div style={{ color: '#6A6D7C', fontSize: 13, fontFamily: 'var(--ag-font-mono)' }}>
+                →
               </div>
             </div>
           ))}
@@ -280,3 +251,4 @@ export function HeroCommandCenter({
     </div>
   );
 }
+

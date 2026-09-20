@@ -118,9 +118,72 @@ bool ImGuiVulkanIntegration::Initialize(
         return false;
     }
 
+    m_colorFormat = colorFormat;
     m_initialized = true;
     LOG_INFO("ImGuiVulkan: Initialized successfully.");
     return true;
+}
+
+VkFramebuffer ImGuiVulkanIntegration::GetOrCreateFramebuffer(VkImage image, VulkanCachedFramebuffer& cached, VkExtent2D extent) {
+    if (!image || !m_device) return VK_NULL_HANDLE;
+
+    if (cached.image == image && cached.framebuffer != VK_NULL_HANDLE) {
+        return cached.framebuffer;
+    }
+
+    DestroyCachedFramebuffer(cached);
+
+    auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(m_device);
+    if (!dt) return VK_NULL_HANDLE;
+
+    VkImageViewCreateInfo viewInfo = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
+    viewInfo.image = image;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = m_colorFormat;
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+
+    if (dt->CreateImageView(m_device, &viewInfo, nullptr, &cached.view) != VK_SUCCESS) {
+        LOG_ERROR("ImGuiVulkan: Failed to create image view for overlay target");
+        return VK_NULL_HANDLE;
+    }
+
+    VkFramebufferCreateInfo fbInfo = { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
+    fbInfo.renderPass = m_renderPass;
+    fbInfo.attachmentCount = 1;
+    fbInfo.pAttachments = &cached.view;
+    fbInfo.width = extent.width;
+    fbInfo.height = extent.height;
+    fbInfo.layers = 1;
+
+    if (dt->CreateFramebuffer(m_device, &fbInfo, nullptr, &cached.framebuffer) != VK_SUCCESS) {
+        LOG_ERROR("ImGuiVulkan: Failed to create framebuffer for overlay target");
+        dt->DestroyImageView(m_device, cached.view, nullptr);
+        cached.view = VK_NULL_HANDLE;
+        return VK_NULL_HANDLE;
+    }
+
+    cached.image = image;
+    return cached.framebuffer;
+}
+
+void ImGuiVulkanIntegration::DestroyCachedFramebuffer(VulkanCachedFramebuffer& cached) {
+    if (!m_device) return;
+    auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(m_device);
+    if (!dt) return;
+
+    if (cached.framebuffer != VK_NULL_HANDLE) {
+        dt->DestroyFramebuffer(m_device, cached.framebuffer, nullptr);
+        cached.framebuffer = VK_NULL_HANDLE;
+    }
+    if (cached.view != VK_NULL_HANDLE) {
+        dt->DestroyImageView(m_device, cached.view, nullptr);
+        cached.view = VK_NULL_HANDLE;
+    }
+    cached.image = VK_NULL_HANDLE;
 }
 
 void ImGuiVulkanIntegration::Render(VkCommandBuffer cmdBuffer, VkFramebuffer framebuffer, VkExtent2D extent) {
@@ -151,9 +214,58 @@ void ImGuiVulkanIntegration::Render(VkCommandBuffer cmdBuffer, VkFramebuffer fra
     }
 }
 
+void ImGuiVulkanIntegration::Render(VkCommandBuffer cmdBuffer, VkImage leftDest, VkImage rightDest, VkExtent2D extent) {
+    if (!m_initialized || !cmdBuffer || !leftDest) return;
+
+    VkFramebuffer fbLeft = GetOrCreateFramebuffer(leftDest, m_cachedLeft, extent);
+    if (!fbLeft) return;
+
+    VkFramebuffer fbRight = VK_NULL_HANDLE;
+    if (rightDest && rightDest != leftDest) {
+        fbRight = GetOrCreateFramebuffer(rightDest, m_cachedRight, extent);
+    }
+
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+
+    OverlayManager::GetInstance().Render();
+
+    ImDrawData* drawData = ImGui::GetDrawData();
+    if (!drawData || drawData->TotalVtxCount <= 0) return;
+
+    auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(m_device);
+    if (!dt) return;
+
+    // Draw to Left Eye
+    VkRenderPassBeginInfo info = {};
+    info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    info.renderPass = m_renderPass;
+    info.framebuffer = fbLeft;
+    info.renderArea.extent = extent;
+    info.clearValueCount = 0;
+    info.pClearValues = nullptr;
+
+    if (dt->CmdBeginRenderPass) {
+        dt->CmdBeginRenderPass(cmdBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
+        ImGui_ImplVulkan_RenderDrawData(drawData, cmdBuffer);
+        dt->CmdEndRenderPass(cmdBuffer);
+
+        // Draw to Right Eye (same draw data, zero frame re-generation)
+        if (fbRight) {
+            info.framebuffer = fbRight;
+            dt->CmdBeginRenderPass(cmdBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
+            ImGui_ImplVulkan_RenderDrawData(drawData, cmdBuffer);
+            dt->CmdEndRenderPass(cmdBuffer);
+        }
+    }
+}
+
 void ImGuiVulkanIntegration::Shutdown() {
     std::lock_guard<std::mutex> lock(m_mutex);
     if (m_initialized) {
+        DestroyCachedFramebuffer(m_cachedLeft);
+        DestroyCachedFramebuffer(m_cachedRight);
+
         ImGui_ImplVulkan_Shutdown();
         auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(m_device);
         if (m_renderPass != VK_NULL_HANDLE) {

@@ -276,16 +276,19 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     // 4. Asset sync and binary signing tooling registered in package.json
     expect(pkgJson.scripts['sync:assets']).toBeDefined();
     expect(pkgJson.scripts['sign:binaries']).toBeDefined();
-    expect(pkgJson.version).toBe('0.1.63');
+    expect(pkgJson.version).toBe('0.1.75');
   });
 
-  test('v0.1.63 real-time telemetry streaming, SEH shield optimization, and tester-friendly milestone logging', () => {
+  test('v0.1.75 in-headset VR dashboard, obsidian glassmorphism UI, and launcher synchronization', () => {
     const runtimeStateCpp = readRepoFile('src', 'core', 'runtime_state.cpp');
     const versionHeader = readRepoFile('src', 'core', 'version.h');
     const injectionMgrTs = readRepoFile('launcher', 'electron', 'injectionManager.ts');
     const diagnosticsMgrTs = readRepoFile('launcher', 'electron', 'diagnosticsManager.ts');
     const appTsx = readRepoFile('launcher', 'src', 'App.tsx');
     const sessionLogTsx = readRepoFile('launcher', 'src', 'components', 'SessionLog.tsx');
+    const heroCommandTsx = readRepoFile('launcher', 'src', 'components', 'HeroCommandCenter.tsx');
+    const settingsPanelTsx = readRepoFile('launcher', 'src', 'components', 'SettingsPanel.tsx');
+    const sidebarTsx = readRepoFile('launcher', 'src', 'components', 'Sidebar.tsx');
     const sehShieldH = readRepoFile('src', 'core', 'seh_shield.h');
     const frameCoordCpp = readRepoFile('src', 'core', 'frame_coordinator.cpp');
     const cameraTrackerCpp = readRepoFile('src', 'memory_scanner', 'camera_delta_tracker.cpp');
@@ -294,7 +297,7 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     // 1. No stale v0.1.16 version strings remain anywhere in the engine or launcher
     expect(runtimeStateCpp).not.toContain('v0.1.16');
     expect(runtimeStateCpp).toContain('NEXVR_ENGINE_VERSION');
-    expect(versionHeader).toContain('#define NEXVR_ENGINE_VERSION "0.1.63"');
+    expect(versionHeader).toContain('#define NEXVR_ENGINE_VERSION "0.1.75"');
     expect(injectionMgrTs).not.toContain('v0.1.16');
     expect(diagnosticsMgrTs).not.toContain('v0.1.16');
 
@@ -328,6 +331,14 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     // 7. App.tsx batches IPC log updates via requestAnimationFrame to protect UI thread
     expect(appTsx).toContain('requestAnimationFrame');
     expect(appTsx).toContain('logQueueRef');
+
+    // 8. Minimalist full-window showcase with smoke gray borders and Sidebar GAME LIBRARY header
+    expect(sidebarTsx).toContain('GAME LIBRARY');
+    expect(sidebarTsx).toContain('+ ADD GAME');
+    expect(sidebarTsx).toContain('SEARCH TITLES...');
+    expect(heroCommandTsx).toContain('settings-card');
+    expect(settingsPanelTsx).toContain('settings-card');
+    expect(settingsPanelTsx).toContain('PER-TITLE VR CONFIGURATION');
   });
 });
 

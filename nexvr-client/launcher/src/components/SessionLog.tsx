@@ -68,52 +68,81 @@ export function SessionLog({ logLines }: { logLines: string[] }) {
     }
   };
 
-  return (
-    <div className="fade-in-up stagger-3" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <div className="section-header" style={{ marginBottom: 0, flex: 1 }}>
-          SESSION LOG
-          {logLines.length > 0 && (
-            <span className="game-count" style={{ marginLeft: 8 }}>{logLines.length}</span>
-          )}
+  const sectionLabel = (title: string, subtitle?: string) => (
+    <div>
+      <div style={{
+        fontSize: 13,
+        fontFamily: 'var(--ag-font-display)',
+        color: '#FFFFFF',
+        letterSpacing: '0.08em',
+        fontWeight: 700,
+        textTransform: 'uppercase',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+      }}>
+        <span style={{ 
+          width: 3, 
+          height: 13, 
+          background: 'var(--ag-accent)', 
+          borderRadius: 2,
+        }} />
+        {title}
+        {logLines.length > 0 && (
+          <span style={{ 
+            marginLeft: 8, 
+            color: 'var(--ag-accent)', 
+            fontSize: 14, 
+            fontWeight: 800, 
+            fontFamily: 'var(--ag-font-mono)' 
+          }}>
+            {logLines.length}
+          </span>
+        )}
+      </div>
+      {subtitle && (
+        <div style={{
+          fontSize: 11.5,
+          fontFamily: 'var(--ag-font-ui)',
+          color: '#848884',
+          marginTop: 4,
+          paddingLeft: 11,
+          lineHeight: 1.4,
+        }}>
+          {subtitle}
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="settings-item-enter stagger-3" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
+        {sectionLabel(
+          'SESSION TELEMETRY & ENGINE LOG',
+          'Live diagnostic pipe output, hook status, and OpenXR swapchain metrics'
+        )}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button
             onClick={() => window.ag.utils.openLog()}
-            className="btn-glow"
+            className="btn-outline-laser"
             title="Open active engine & VR log in default text editor"
             style={{
-              background: 'transparent',
-              border: '1px solid rgba(0, 240, 255, 0.3)',
-              color: 'var(--ag-accent-primary, #00f0ff)',
-              fontFamily: 'var(--ag-font-mono)',
               fontSize: '10px',
-              letterSpacing: '1px',
-              padding: '5px 12px',
-              borderRadius: 'var(--ag-radius-sm)',
-              cursor: 'pointer',
-              textTransform: 'uppercase' as const,
-              transition: 'all 0.3s var(--ag-transition)',
+              padding: '6px 12px',
+              borderColor: '#383A44',
+              color: '#FFF'
             }}
           >
             ↗ OPEN LOG
           </button>
           <button
             onClick={() => window.ag.utils.openLogFolder()}
-            className="btn-glow"
+            className="btn-outline-laser"
             title="Open logs folder in Windows Explorer"
             style={{
-              background: 'transparent',
-              border: '1px solid var(--ag-border)',
-              color: 'var(--ag-text-muted)',
-              fontFamily: 'var(--ag-font-mono)',
               fontSize: '10px',
-              letterSpacing: '1px',
-              padding: '5px 12px',
-              borderRadius: 'var(--ag-radius-sm)',
-              cursor: 'pointer',
-              textTransform: 'uppercase' as const,
-              transition: 'all 0.3s var(--ag-transition)',
+              padding: '6px 12px',
             }}
           >
             FOLDER
@@ -121,28 +150,22 @@ export function SessionLog({ logLines }: { logLines: string[] }) {
           <button
             onClick={handleSendToDev}
             disabled={sendingDev}
-            className="btn-glow"
+            className="btn-outline-laser"
             title="Upload session log and diagnostic telemetry directly to developer Discord"
             style={{
-              background: 'transparent',
-              border: sendDevResult === 'success'
-                ? '1px solid var(--ag-accent-success)'
+              borderColor: sendDevResult === 'success'
+                ? 'var(--ag-accent-success)'
                 : sendDevResult === 'error'
-                  ? '1px solid var(--ag-accent-danger)'
-                  : '1px solid rgba(168, 85, 247, 0.4)',
+                  ? 'var(--ag-accent-danger)'
+                  : 'rgba(204, 0, 0, 0.4)',
               color: sendDevResult === 'success'
                 ? 'var(--ag-accent-success)'
                 : sendDevResult === 'error'
                   ? 'var(--ag-accent-danger)'
-                  : '#c084fc',
-              fontFamily: 'var(--ag-font-mono)',
+                  : 'var(--ag-accent)',
               fontSize: '10px',
-              letterSpacing: '1px',
-              padding: '5px 12px',
-              borderRadius: 'var(--ag-radius-sm)',
+              padding: '6px 12px',
               cursor: sendingDev ? 'wait' : 'pointer',
-              textTransform: 'uppercase' as const,
-              transition: 'all 0.3s var(--ag-transition)',
             }}
           >
             {sendingDev
@@ -156,23 +179,21 @@ export function SessionLog({ logLines }: { logLines: string[] }) {
           <button
             onClick={handleExport}
             disabled={exporting || logLines.length === 0}
-            className="btn-glow"
+            className="btn-outline-laser"
             style={{
-              background: 'transparent',
-              border: '1px solid var(--ag-border)',
               color: exportResult === 'success'
                        ? 'var(--ag-accent-success)'
                        : exportResult === 'error'
                          ? 'var(--ag-accent-danger)'
-                         : 'var(--ag-text-muted)',
-              fontFamily: 'var(--ag-font-mono)',
+                         : '#848884',
+              borderColor: exportResult === 'success'
+                       ? 'var(--ag-accent-success)'
+                       : exportResult === 'error'
+                         ? 'var(--ag-accent-danger)'
+                         : '#383A44',
               fontSize: '10px',
-              letterSpacing: '1px',
-              padding: '5px 12px',
-              borderRadius: 'var(--ag-radius-sm)',
+              padding: '6px 12px',
               cursor: logLines.length === 0 ? 'not-allowed' : 'pointer',
-              textTransform: 'uppercase' as const,
-              transition: 'all 0.3s var(--ag-transition)',
               opacity: logLines.length === 0 ? 0.4 : 1,
             }}
           >
@@ -186,11 +207,12 @@ export function SessionLog({ logLines }: { logLines: string[] }) {
       
       <div 
         ref={scrollContainerRef}
+        className="settings-card fast-smooth-scroll"
         style={{ 
-        flex: 1, minHeight: 140, 
-        background: 'rgba(2, 3, 5, 0.95)', 
-        border: '1px solid rgba(0,240,255,0.15)', 
-        borderRadius: 'var(--ag-radius-md)', 
+        flex: 1, minHeight: 150, 
+        background: '#020305', 
+        border: '1px solid #2C2D35', 
+        borderRadius: 6, 
         padding: '16px 20px', 
         fontFamily: 'var(--ag-font-mono)', 
         fontSize: 12, lineHeight: 1.8, 
@@ -200,11 +222,17 @@ export function SessionLog({ logLines }: { logLines: string[] }) {
       }}>
         <div style={{ position: 'relative', zIndex: 2 }}>
           {logLines.length === 0 ? (
-            <div className="empty-state" style={{ minHeight: 100, gap: 8 }}>
-              <div className="text" style={{ display: 'flex', alignItems: 'center' }}>
-                {`> SYSTEM IDLE. AWAITING COMMAND...`} <span className="blink-cursor" style={{marginLeft: 8}}>█</span>
+            <div className="empty-state" style={{ minHeight: 110, gap: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', fontFamily: 'var(--ag-font-mono)', fontSize: 13, fontWeight: 700, color: '#FFFFFF', letterSpacing: '0.04em' }}>
+                <span>{`> SYSTEM IDLE. AWAITING COMMAND `}</span>
+                <span className="dot-pulse dot-1" style={{ color: 'var(--ag-accent)', fontWeight: 900 }}>.</span>
+                <span className="dot-pulse dot-2" style={{ color: 'var(--ag-accent)', fontWeight: 900, marginLeft: 2 }}>.</span>
+                <span className="dot-pulse dot-3" style={{ color: 'var(--ag-accent)', fontWeight: 900, marginLeft: 2 }}>.</span>
+                <span className="blink-cursor" style={{ marginLeft: 8, color: '#FFFFFF', fontWeight: 900 }}>█</span>
               </div>
-              <div className="hint">Select a game and click INITIALIZE INJECTION to begin</div>
+              <div className="log-hint-pulse" style={{ color: '#848884', fontFamily: 'var(--ag-font-mono)', fontSize: 11.5, letterSpacing: '0.04em', marginTop: 2 }}>
+                Select a game and click INITIALIZE INJECTION to begin
+              </div>
             </div>
           ) : (
             logLines.map((l, i) => {

@@ -106,6 +106,13 @@ bool VulkanGraphicsBackend::Initialize(void* nativeDevice, void* nativeContext) 
         }
     }
 
+    if (m_physicalDevice && m_device && queue) {
+        VkInstance inst = VulkanDispatchTable::Get().GetInstanceForDevice(m_device);
+        if (inst) {
+            ImGuiVulkanIntegration::GetInstance().Initialize(inst, m_physicalDevice, m_device, queueFamilyIndex, queue, VK_FORMAT_R8G8B8A8_UNORM);
+        }
+    }
+
     m_isInitialized = true;
     m_state = StereoRendererState::READY;
     return true;
@@ -173,6 +180,13 @@ bool VulkanGraphicsBackend::InitializeVulkan(VkDevice device, VkPhysicalDevice p
     if (m_physicalDevice) {
         if (!CreateGPUResources()) {
             std::cerr << "[VulkanGraphicsBackend] WARNING: CreateGPUResources failed." << std::endl;
+        }
+    }
+
+    if (m_physicalDevice && m_device && queue) {
+        VkInstance inst = VulkanDispatchTable::Get().GetInstanceForDevice(m_device);
+        if (inst) {
+            ImGuiVulkanIntegration::GetInstance().Initialize(inst, m_physicalDevice, m_device, queueFamilyIndex, queue, VK_FORMAT_R8G8B8A8_UNORM);
         }
     }
 
@@ -624,6 +638,12 @@ void VulkanGraphicsBackend::SubmitStereoFrame(
 
                     copyToEye(leftDest);
                     copyToEye(rightDest);
+
+                    // Render In-Headset VR Dashboard if active
+                    if (OverlayManager::GetInstance().IsOverlayVisible() && leftDest) {
+                        VkExtent2D ext = { currentSnapshot.width, currentSnapshot.height };
+                        ImGuiVulkanIntegration::GetInstance().Render(cmd, leftDest, rightDest, ext);
+                    }
 
                     // Transition game backbuffer back: TRANSFER_SRC -> PRESENT_SRC
                     VkImageMemoryBarrier restoreBarrier{};
