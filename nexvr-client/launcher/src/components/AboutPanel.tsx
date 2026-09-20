@@ -58,7 +58,7 @@ export function AboutPanel({ version }: { version?: string }) {
         flex: 1, 
         width: '100%',
         height: '100%',
-        padding: '16px 20px', 
+        padding: '24px 28px 28px 28px', 
         display: 'flex', 
         flexDirection: 'column', 
         alignItems: 'center', 
@@ -70,7 +70,7 @@ export function AboutPanel({ version }: { version?: string }) {
         style={{
           margin: 'auto 0',
           width: '100%',
-          maxWidth: 680,
+          maxWidth: 780,
           display: 'flex',
           flexDirection: 'column', 
           alignItems: 'center'
@@ -80,7 +80,7 @@ export function AboutPanel({ version }: { version?: string }) {
           className="settings-card settings-open-anim" 
           style={{ 
             width: '100%', 
-            padding: '24px 28px 22px 28px',
+            padding: '36px 40px 30px 40px',
             display: 'flex', 
             flexDirection: 'column', 
             alignItems: 'center',
@@ -89,8 +89,8 @@ export function AboutPanel({ version }: { version?: string }) {
         >
           {/* Centered Large Title */}
           <h1 style={{ 
-            margin: '0 0 4px 0', 
-            fontSize: 26, 
+            margin: '0 0 6px 0', 
+            fontSize: 30, 
             fontWeight: 800, 
             letterSpacing: '-0.01em', 
             fontFamily: 'var(--ag-font-display)', 
@@ -102,22 +102,22 @@ export function AboutPanel({ version }: { version?: string }) {
 
           {/* Subtitle & Description */}
           <p style={{ 
-            margin: '0 0 6px 0', 
+            margin: '0 0 10px 0', 
             color: 'var(--ag-accent)', 
-            fontSize: 12, 
+            fontSize: 13, 
             fontFamily: 'var(--ag-font-mono)', 
-            letterSpacing: '0.04em',
+            letterSpacing: '0.05em',
             fontWeight: 700
           }}>
             Universal VR Injection Runtime
           </p>
 
           <p style={{ 
-            margin: '0 0 16px 0', 
+            margin: '0 0 24px 0', 
             color: 'var(--ag-text-muted)', 
-            fontSize: 11.5, 
-            lineHeight: '1.45', 
-            maxWidth: 540,
+            fontSize: 12.5, 
+            lineHeight: '1.55', 
+            maxWidth: 580,
             fontFamily: 'var(--ag-font-ui)'
           }}>
             Hardware-accelerated stereoscopic VR injector with 6DOF tracking and DirectML neural reprojection for standard PC games.
@@ -128,8 +128,8 @@ export function AboutPanel({ version }: { version?: string }) {
             width: '100%', 
             display: 'grid', 
             gridTemplateColumns: '1fr 1fr', 
-            gap: 10, 
-            marginBottom: 10 
+            gap: 12, 
+            marginBottom: 14 
           }}>
             {[
               { 
@@ -159,18 +159,18 @@ export function AboutPanel({ version }: { version?: string }) {
                   background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0%, rgba(255, 255, 255, 0.006) 100%), #060608', 
                   border: '1px solid #2C2D35', 
                   borderTop: '2px solid #CC0000', 
-                  borderRadius: 6, 
-                  padding: '11px 14px', 
+                  borderRadius: 8, 
+                  padding: '14px 18px', 
                   textAlign: 'left', 
                   display: 'flex', 
                   flexDirection: 'column', 
-                  gap: 3, 
+                  gap: 4, 
                   boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 14px rgba(0, 0, 0, 0.35)',
                 }}
               >
                 <div style={{ 
                   color: 'var(--ag-text-dim)', 
-                  fontSize: 9.5, 
+                  fontSize: 10, 
                   fontFamily: 'var(--ag-font-mono)', 
                   letterSpacing: '0.08em', 
                   fontWeight: 700 
@@ -179,19 +179,19 @@ export function AboutPanel({ version }: { version?: string }) {
                 </div>
                 <div style={{ 
                   color: '#FFF', 
-                  fontSize: 14, 
+                  fontSize: 15, 
                   fontFamily: 'var(--ag-font-display)', 
                   fontWeight: 800,
                   letterSpacing: '0.02em',
-                  marginTop: 1
+                  marginTop: 2
                 }}>
                   {item.title}
                 </div>
                 <div style={{ 
                   color: 'var(--ag-text-muted)', 
-                  fontSize: 11, 
+                  fontSize: 11.5, 
                   fontFamily: 'var(--ag-font-ui)',
-                  lineHeight: '1.35',
+                  lineHeight: '1.4',
                   fontWeight: 500,
                   marginTop: 1
                 }}>
@@ -202,17 +202,17 @@ export function AboutPanel({ version }: { version?: string }) {
           </div>
 
           {/* Diagnostics Utility Toolbar */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8, width: '100%' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10, width: '100%' }}>
             <button 
               type="button"
               onClick={() => { if (window.ag?.utils?.openLogFolder) window.ag.utils.openLogFolder(); }} 
               style={{ 
-                padding: '8px 14px', 
+                padding: '10px 16px', 
                 borderRadius: 'var(--ag-radius-sm)', 
                 color: 'var(--ag-text-primary)', 
                 cursor: 'pointer', 
                 fontFamily: 'var(--ag-font-display)', 
-                fontSize: 11, 
+                fontSize: 11.5, 
                 letterSpacing: '0.06em', 
                 fontWeight: 700, 
                 border: '1px solid #383A44', 
@@ -234,12 +234,12 @@ export function AboutPanel({ version }: { version?: string }) {
               type="button"
               onClick={handleCopyDiagnostics} 
               style={{ 
-                padding: '8px 14px', 
+                padding: '10px 16px', 
                 borderRadius: 'var(--ag-radius-sm)', 
                 color: copied ? 'var(--ag-accent-success)' : 'var(--ag-text-primary)', 
                 cursor: 'pointer', 
                 fontFamily: 'var(--ag-font-display)', 
-                fontSize: 11, 
+                fontSize: 11.5, 
                 letterSpacing: '0.06em', 
                 fontWeight: 700, 
                 border: copied ? '1px solid var(--ag-accent-success)' : '1px solid #383A44', 
@@ -264,16 +264,16 @@ export function AboutPanel({ version }: { version?: string }) {
           </div>
 
           {/* Action Buttons: 2 Utility Buttons */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10, width: '100%' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14, width: '100%' }}>
             <button 
               onClick={() => handleLink('https://discord.gg/FBeGjgK2fd')} 
               style={{ 
-                padding: '8px 14px', 
+                padding: '10px 16px', 
                 borderRadius: 'var(--ag-radius-sm)', 
                 color: 'var(--ag-text-primary)', 
                 cursor: 'pointer', 
                 fontFamily: 'var(--ag-font-display)', 
-                fontSize: 11, 
+                fontSize: 11.5, 
                 letterSpacing: '0.08em', 
                 fontWeight: 600, 
                 border: '1px solid #383A44', 
@@ -295,12 +295,12 @@ export function AboutPanel({ version }: { version?: string }) {
             <button 
               onClick={() => handleLink('https://discord.gg/FBeGjgK2fd')} 
               style={{ 
-                padding: '8px 14px', 
+                padding: '10px 16px', 
                 borderRadius: 'var(--ag-radius-sm)', 
                 color: 'var(--ag-text-primary)', 
                 cursor: 'pointer', 
                 fontFamily: 'var(--ag-font-display)', 
-                fontSize: 11, 
+                fontSize: 11.5, 
                 letterSpacing: '0.08em', 
                 fontWeight: 600, 
                 border: '1px solid #383A44', 
@@ -327,36 +327,36 @@ export function AboutPanel({ version }: { version?: string }) {
             background: 'rgba(255, 255, 255, 0.02)',
             border: '1px solid #2C2D35',
             borderLeft: '3px solid #CC0000',
-            borderRadius: 6,
-            padding: '10px 14px',
-            marginBottom: 12,
+            borderRadius: 8,
+            padding: '12px 16px',
+            marginBottom: 16,
             textAlign: 'left',
             display: 'flex',
             flexDirection: 'column',
-            gap: 5
+            gap: 6
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ color: '#F0F0F5', fontSize: 10.5, fontWeight: 700, fontFamily: 'var(--ag-font-display)', letterSpacing: '0.06em' }}>
+              <span style={{ color: '#F0F0F5', fontSize: 11, fontWeight: 700, fontFamily: 'var(--ag-font-display)', letterSpacing: '0.06em' }}>
                 SECURITY & ANTIVIRUS NOTICE
               </span>
-              <span style={{ color: 'var(--ag-text-muted)', fontSize: 9.5, fontFamily: 'var(--ag-font-mono)' }}>
+              <span style={{ color: 'var(--ag-text-muted)', fontSize: 10, fontFamily: 'var(--ag-font-mono)' }}>
                 TIER 1 / PROTOTYPE
               </span>
             </div>
-            <p style={{ color: 'var(--ag-text-dim)', fontSize: 10.5, lineHeight: '1.45', margin: 0 }}>
+            <p style={{ color: 'var(--ag-text-dim)', fontSize: 11, lineHeight: '1.45', margin: 0 }}>
               Because NexVR attaches directly to game graphics swapchains via memory detours, Windows Defender may flag an injection false-positive. Add this folder to Defender exclusions for uninterrupted play.
             </p>
-            <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+            <div style={{ display: 'flex', gap: 8, marginTop: 3 }}>
               <button
                 type="button"
                 onClick={handleCopyExclusion}
                 style={{
-                  padding: '5px 11px',
+                  padding: '6px 12px',
                   borderRadius: 'var(--ag-radius-sm)',
                   color: copiedExclusion ? 'var(--ag-accent-success)' : 'var(--ag-text-primary)',
                   cursor: 'pointer',
                   fontFamily: 'var(--ag-font-mono)',
-                  fontSize: 10,
+                  fontSize: 10.5,
                   fontWeight: 600,
                   border: copiedExclusion ? '1px solid var(--ag-accent-success)' : '1px solid #383A44',
                   background: copiedExclusion ? 'rgba(48, 209, 88, 0.08)' : 'rgba(255, 255, 255, 0.03)',
@@ -373,12 +373,12 @@ export function AboutPanel({ version }: { version?: string }) {
             onClick={() => handleLink('https://discord.gg/FBeGjgK2fd')} 
             style={{ 
               width: '100%', 
-              padding: '11px 18px', 
+              padding: '13px 20px', 
               borderRadius: 'var(--ag-radius-sm)', 
               color: '#FFFFFF', 
               cursor: 'pointer', 
               fontFamily: 'var(--ag-font-display)', 
-              fontSize: 12, 
+              fontSize: 12.5, 
               letterSpacing: '0.08em', 
               fontWeight: 800, 
               border: '1px solid #CC0000', 
@@ -410,8 +410,8 @@ export function AboutPanel({ version }: { version?: string }) {
           fontFamily: 'var(--ag-font-mono)', 
           letterSpacing: '0.06em', 
           opacity: 0.75,
-          marginTop: 16,
-          marginBottom: 16,
+          marginTop: 22,
+          marginBottom: 24,
           textAlign: 'center'
         }}>
           © 2026 sathishssj3 · NexVR Engine · All Rights Reserved
