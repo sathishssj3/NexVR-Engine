@@ -1,9 +1,11 @@
 {
-  "engineVersion": "0.1.79",
+  "engineVersion": "0.1.80",
   "buildDate": "2026-09-21",
-  "timestamp": 1789975400000,
-  "changelog": "Settings Tab Streamlining & Display Preset Restoration v0.1.79",
+  "timestamp": 1789975900000,
+  "changelog": "Full Window Startup & Window State Synchronization v0.1.80",
   "features": [
+    "Full Window Startup: NexVR Engine automatically initializes and opens in full maximized window without screen jumping",
+    "Dynamic Restore / Maximize Controls: Double-click title bar or toggle the dual-square restore control with real-time Electron IPC state synchronization",
     "Refined Settings View: Removed redundant Library & Storage Utilities section to declutter engine preferences",
     "Display & Stereo Reset Defaults: Integrated dedicated reset button directly into Display & Stereo Projection section header with confirmation dialog",
     "10 Hero Game Profiles: Pre-configured out-of-the-box profiles for No Man's Sky (Vulkan), Skyrim Special Edition (DX11), Fallout 4 (DX11), Valheim (Unity Vulkan), and Monster Hunter: World (DX11)",

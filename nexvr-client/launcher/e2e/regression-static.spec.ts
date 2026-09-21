@@ -276,10 +276,10 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     // 4. Asset sync and binary signing tooling registered in package.json
     expect(pkgJson.scripts['sync:assets']).toBeDefined();
     expect(pkgJson.scripts['sign:binaries']).toBeDefined();
-    expect(pkgJson.version).toBe('0.1.79');
+    expect(pkgJson.version).toBe('0.1.80');
   });
 
-  test('v0.1.79 in-headset VR dashboard, obsidian glassmorphism UI, Apple design motion, and launcher synchronization', () => {
+  test('v0.1.80 in-headset VR dashboard, obsidian glassmorphism UI, Apple design motion, and launcher synchronization', () => {
     const runtimeStateCpp = readRepoFile('src', 'core', 'runtime_state.cpp');
     const versionHeader = readRepoFile('src', 'core', 'version.h');
     const injectionMgrTs = readRepoFile('launcher', 'electron', 'injectionManager.ts');
@@ -297,7 +297,7 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     // 1. No stale v0.1.16 version strings remain anywhere in the engine or launcher
     expect(runtimeStateCpp).not.toContain('v0.1.16');
     expect(runtimeStateCpp).toContain('NEXVR_ENGINE_VERSION');
-    expect(versionHeader).toContain('#define NEXVR_ENGINE_VERSION "0.1.79"');
+    expect(versionHeader).toContain('#define NEXVR_ENGINE_VERSION "0.1.80"');
     expect(injectionMgrTs).not.toContain('v0.1.16');
     expect(diagnosticsMgrTs).not.toContain('v0.1.16');
 

@@ -54,7 +54,9 @@ declare global {
       window: {
         minimize: () => void,
         maximize: () => void,
-        close: () => void
+        close: () => void,
+        isMaximized?: () => Promise<boolean>,
+        onMaximizedChange?: (callback: (isMaximized: boolean) => void) => (() => void),
       },
       shell: {
         openExternal: (url: string) => Promise<void> | void
@@ -80,6 +82,7 @@ export default function App() {
   const [transitioning, setTransitioning] = useState(false);
   const [hasConsented, setHasConsented] = useState<boolean>(() => localStorage.getItem('ag_ac_consent') === 'true');
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
+  const [isMaximized, setIsMaximized] = useState(true);
   const [tabAnimNonce, setTabAnimNonce] = useState(0);
   const [modalState, setModalState] = useState<{
     isOpen: boolean;
@@ -103,6 +106,17 @@ export default function App() {
 
   // Fast & smooth accelerated scrolling
   useFastSmoothScroll(mainContentRef, { speed: 1.7, smoothness: 0.25 }, [currentTab, tabAnimNonce]);
+
+  // Synchronize window maximized state with Electron main process
+  useEffect(() => {
+    if (window.ag?.window?.isMaximized) {
+      window.ag.window.isMaximized().then(setIsMaximized).catch(() => {});
+    }
+    const unsub = window.ag?.window?.onMaximizedChange?.((max) => {
+      setIsMaximized(max);
+    });
+    return () => unsub?.();
+  }, []);
 
   const scanGames = async () => {
     if (window.ag && window.ag.library) {
@@ -423,13 +437,17 @@ export default function App() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', zIndex: 1 }}>
       {/* Title Bar */}
-      <div className="glass-panel" style={{ 
-        height: 46, WebkitAppRegion: 'drag', display: 'flex', alignItems: 'center', 
-        justifyContent: 'space-between', padding: '0 0 0 22px', 
-        borderBottom: '1px solid var(--ag-border)', 
-        borderTop: 'none', borderLeft: 'none', borderRight: 'none', zIndex: 10, 
-        boxShadow: '0 4px 20px rgba(0,0,0,0.3), inset 0 -1px 1px rgba(255,255,255,0.03)' 
-      } as any}>
+      <div 
+        className="glass-panel" 
+        onDoubleClick={() => window.ag?.window?.maximize()}
+        style={{ 
+          height: 46, WebkitAppRegion: 'drag', display: 'flex', alignItems: 'center', 
+          justifyContent: 'space-between', padding: '0 0 0 22px', 
+          borderBottom: '1px solid var(--ag-border)', 
+          borderTop: 'none', borderLeft: 'none', borderRight: 'none', zIndex: 10, 
+          boxShadow: '0 4px 20px rgba(0,0,0,0.3), inset 0 -1px 1px rgba(255,255,255,0.03)' 
+        } as any}
+      >
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <strong style={{ 
             color: 'var(--ag-text-primary)', letterSpacing: '0.06em', fontSize: 13,
@@ -445,7 +463,7 @@ export default function App() {
             fontFamily: 'var(--ag-font-mono)', letterSpacing: '0.05em', 
             fontWeight: 800
           }}>
-            {updateStatus?.version ? updateStatus.version.replace(/^v/, '') : '0.1.75'}
+            {updateStatus?.version ? updateStatus.version.replace(/^v/, '') : '0.1.80'}
           </span>
           {updateStatus?.updated && (
             <span style={{
@@ -526,7 +544,7 @@ export default function App() {
           </button>
           <button 
             onClick={() => window.ag?.window?.maximize()}
-            title="Maximize"
+            title={isMaximized ? "Restore Down" : "Maximize"}
             style={{ 
               width: 46, height: '100%', 
               background: 'transparent', border: 'none', 
@@ -537,9 +555,16 @@ export default function App() {
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#FFF'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ag-text-muted)'; }}
           >
-            <svg width="10" height="10" viewBox="0 0 10 10" style={{ display: 'block' }}>
-              <rect x="0.75" y="0.75" width="8.5" height="8.5" fill="none" stroke="currentColor" strokeWidth="1.1" rx="0.5" />
-            </svg>
+            {isMaximized ? (
+              <svg width="10" height="10" viewBox="0 0 10 10" style={{ display: 'block' }}>
+                <path d="M2.5 2V0.75H9.25V7.5H8" fill="none" stroke="currentColor" strokeWidth="1.1" />
+                <rect x="0.75" y="2.25" width="7" height="7" fill="none" stroke="currentColor" strokeWidth="1.1" rx="0.5" />
+              </svg>
+            ) : (
+              <svg width="10" height="10" viewBox="0 0 10 10" style={{ display: 'block' }}>
+                <rect x="0.75" y="0.75" width="8.5" height="8.5" fill="none" stroke="currentColor" strokeWidth="1.1" rx="0.5" />
+              </svg>
+            )}
           </button>
           <button 
             onClick={() => window.ag?.window?.close()}

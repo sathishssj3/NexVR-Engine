@@ -109,11 +109,24 @@ function createWindow() {
     console.error('[CRITICAL] Render process gone:', JSON.stringify(details));
   });
 
-  // Show window only after renderer has painted — eliminates blank window phase
+  // Track window maximization states for custom titlebar controls
+  mainWindow.on('maximize', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('window:maximized-change', true);
+    }
+  });
+
+  mainWindow.on('unmaximize', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('window:maximized-change', false);
+    }
+  });
+
+  // Show window in full window (maximized) only after renderer has painted — eliminates blank window phase
   mainWindow.once('ready-to-show', () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.maximize();
       mainWindow.show();
-      mainWindow.center();
       mainWindow.focus();
     }
   });
@@ -121,8 +134,8 @@ function createWindow() {
   // Fallback: force-show after 4s if ready-to-show never fires (e.g. render crash)
   setTimeout(() => {
     if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
+      mainWindow.maximize();
       mainWindow.show();
-      mainWindow.center();
       mainWindow.focus();
     }
   }, 4000);
@@ -230,4 +243,9 @@ ipcMain.on('window:maximize', (event) => {
 ipcMain.on('window:close', (event) => {
   assertTrustedIpcSender(event);
   if (mainWindow) mainWindow.close();
+});
+
+ipcMain.handle('window:isMaximized', (event) => {
+  assertTrustedIpcSender(event);
+  return mainWindow && !mainWindow.isDestroyed() ? mainWindow.isMaximized() : false;
 });

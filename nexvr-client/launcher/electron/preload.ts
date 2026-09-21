@@ -57,6 +57,14 @@ contextBridge.exposeInMainWorld('ag', {
     minimize: () => ipcRenderer.send('window:minimize'),
     maximize: () => ipcRenderer.send('window:maximize'),
     close: () => ipcRenderer.send('window:close'),
+    isMaximized: () => ipcRenderer.invoke('window:isMaximized'),
+    onMaximizedChange: (callback: (isMaximized: boolean) => void) => {
+      const listener = (_event: unknown, val: boolean) => callback(val);
+      ipcRenderer.on('window:maximized-change', listener);
+      return () => {
+        ipcRenderer.removeListener('window:maximized-change', listener);
+      };
+    },
   },
   shell: {
     openExternal: (url: string) => ipcRenderer.invoke('shell:openExternal', url),
