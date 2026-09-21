@@ -5,7 +5,7 @@
 // ============================================================================
 
 #ifndef NEXVR_ENGINE_VERSION
-#define NEXVR_ENGINE_VERSION "0.1.78"
+#define NEXVR_ENGINE_VERSION "0.1.79"
 #endif
 
 #ifndef NEXVR_ENGINE_NAME

@@ -6,23 +6,22 @@ interface SettingsViewProps {
   vrStatus: VRStatus;
   updateStatus: UpdateStatus | null;
   onUpdateStatusChange: (st: UpdateStatus) => void;
-  onRescan: () => Promise<void>;
+  onRescan?: () => Promise<void>;
 }
 
 export function SettingsView({
   vrStatus,
   updateStatus,
   onUpdateStatusChange,
-  onRescan,
+  onRescan: _onRescan,
 }: SettingsViewProps) {
   const [checking, setChecking] = useState(false);
-  const [isRescanning, setIsRescanning] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
   const [resetModalOpen, setResetModalOpen] = useState(false);
 
   const activeVersion = updateStatus?.version 
     ? (updateStatus.version.startsWith('v') ? updateStatus.version : `v${updateStatus.version}`) 
-    : 'v0.1.78';
+    : 'v0.1.79';
 
   // Global default config persisted in localStorage
   const [globalConfig, setGlobalConfig] = useState<VRConfig>(() => {
@@ -68,7 +67,7 @@ export function SettingsView({
       hapticFeedback: true,
     };
     saveGlobalConfig(defaults);
-    setFeedbackMsg('Global settings restored to recommended factory defaults.');
+    setFeedbackMsg('Display & stereo projection settings restored to recommended factory defaults.');
     setTimeout(() => setFeedbackMsg(null), 4000);
   };
 
@@ -104,59 +103,47 @@ export function SettingsView({
     }
   };
 
-  const handleRescanClick = async () => {
-    if (isRescanning) return;
-    setIsRescanning(true);
-    setFeedbackMsg('Scanning Steam, Epic Games, and custom directories for installed games...');
-    try {
-      await onRescan();
-      setFeedbackMsg('Game libraries successfully scanned and synchronized.');
-    } catch (e: any) {
-      setFeedbackMsg(`Library scan failed: ${e?.message || 'Unknown error'}`);
-    } finally {
-      setIsRescanning(false);
-      setTimeout(() => setFeedbackMsg(null), 4000);
-    }
-  };
-
   const Toggle = ({ value, onToggle }: { value: boolean; onToggle: () => void }) => (
     <div className={`ag-toggle ${value ? 'on' : 'off'}`} onClick={onToggle} />
   );
 
-  const sectionLabel = (title: string, subtitle?: string) => (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{
-        fontSize: 13.5,
-        fontFamily: 'var(--ag-font-display)',
-        color: '#FFFFFF',
-        letterSpacing: '0.08em',
-        fontWeight: 700,
-        textTransform: 'uppercase',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-      }}>
-        <span style={{ 
-          width: 3, 
-          height: 13, 
-          background: 'var(--ag-accent)', 
-          borderRadius: 2,
-          boxShadow: 'none' 
-        }} />
-        {title}
-      </div>
-      {subtitle && (
+  const sectionLabel = (title: string, subtitle?: string, actionButton?: React.ReactNode) => (
+    <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10 }}>
+      <div>
         <div style={{
-          fontSize: 11.5,
-          fontFamily: 'var(--ag-font-ui)',
-          color: '#848884',
-          marginTop: 4,
-          paddingLeft: 11,
-          lineHeight: 1.4,
+          fontSize: 13.5,
+          fontFamily: 'var(--ag-font-display)',
+          color: '#FFFFFF',
+          letterSpacing: '0.08em',
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
         }}>
-          {subtitle}
+          <span style={{ 
+            width: 3, 
+            height: 13, 
+            background: 'var(--ag-accent)', 
+            borderRadius: 2,
+            boxShadow: 'none' 
+          }} />
+          {title}
         </div>
-      )}
+        {subtitle && (
+          <div style={{
+            fontSize: 11.5,
+            fontFamily: 'var(--ag-font-ui)',
+            color: '#848884',
+            marginTop: 4,
+            paddingLeft: 11,
+            lineHeight: 1.4,
+          }}>
+            {subtitle}
+          </div>
+        )}
+      </div>
+      {actionButton}
     </div>
   );
 
@@ -349,8 +336,6 @@ export function SettingsView({
               </div>
             </div>
 
-
-
             {/* What's New Two-Column Changelog with Inset Panels */}
             <div style={{
               paddingTop: 16,
@@ -402,7 +387,38 @@ export function SettingsView({
         {/* 2. DISPLAY & STEREO PROJECTION */}
         {/* ========================================================= */}
         <div className="settings-item-enter stagger-2" style={{ marginBottom: 32 }}>
-          {sectionLabel('DISPLAY & STEREO PROJECTION', 'Stereoscopic viewport calibration, color gamma, and depth buffers')}
+          {sectionLabel(
+            'DISPLAY & STEREO PROJECTION', 
+            'Stereoscopic viewport calibration, color gamma, and depth buffers',
+            <button
+              onClick={handleResetDefaults}
+              style={{
+                background: 'rgba(204, 0, 0, 0.06)',
+                border: '1px solid rgba(204, 0, 0, 0.35)',
+                boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+                color: 'var(--ag-accent)',
+                padding: '6px 14px',
+                borderRadius: 4,
+                fontSize: 11,
+                fontFamily: 'var(--ag-font-display)',
+                letterSpacing: '0.06em',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                flexShrink: 0
+              }}
+              onMouseEnter={e => { 
+                e.currentTarget.style.background = 'rgba(204, 0, 0, 0.14)'; 
+                e.currentTarget.style.borderColor = 'rgba(204, 0, 0, 0.55)'; 
+              }}
+              onMouseLeave={e => { 
+                e.currentTarget.style.background = 'rgba(204, 0, 0, 0.06)'; 
+                e.currentTarget.style.borderColor = 'rgba(204, 0, 0, 0.35)'; 
+              }}
+            >
+              RESET DEFAULTS
+            </button>
+          )}
 
           <div className="settings-card" style={{ padding: '6px 18px' }}>
             <div className="setting-row">
@@ -557,7 +573,7 @@ export function SettingsView({
         {/* ========================================================= */}
         {/* 4. HARDWARE & RUNTIME TELEMETRY (4-Cell Bento Grid) */}
         {/* ========================================================= */}
-        <div className="settings-item-enter stagger-4" style={{ marginBottom: 32 }}>
+        <div className="settings-item-enter stagger-4" style={{ marginBottom: 36 }}>
           {sectionLabel('HARDWARE & RUNTIME TELEMETRY', 'Active compositor environment and graphics injection status')}
 
           <div style={{
@@ -655,112 +671,13 @@ export function SettingsView({
           </div>
         </div>
 
-        {/* ========================================================= */}
-        {/* 5. LIBRARY & STORAGE UTILITIES */}
-        {/* ========================================================= */}
-        <div className="settings-item-enter stagger-5" style={{ marginBottom: 36 }}>
-          {sectionLabel('LIBRARY & STORAGE UTILITIES', 'Maintenance actions, library rescan, and configuration reset')}
-
-          <div className="settings-card" style={{
-            padding: '20px 24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 14
-          }}>
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#FFF', fontFamily: 'var(--ag-font-display)', letterSpacing: '0.025em', marginBottom: 4 }}>
-                Library Synchronization &amp; Storage Maintenance
-              </div>
-              <div style={{ fontSize: 12, color: '#848884', fontFamily: 'var(--ag-font-ui)' }}>
-                Rescan discovered games, un-hide dismissed titles, or restore factory defaults.
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <button
-                onClick={handleRescanClick}
-                disabled={isRescanning}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.035)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.06)',
-                  color: 'var(--ag-text-primary)',
-                  padding: '8px 15px',
-                  borderRadius: 4,
-                  fontSize: 11.5,
-                  fontFamily: 'var(--ag-font-display)',
-                  letterSpacing: '0.06em',
-                  fontWeight: 600,
-                  cursor: isRescanning ? 'wait' : 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)'; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.035)'; }}
-              >
-                {isRescanning ? 'RESCANNING...' : 'RESCAN LIBRARIES'}
-              </button>
-              <button
-                onClick={async () => {
-                  if (window.ag && window.ag.library) {
-                    await window.ag.library.restoreIgnoredGames();
-                    await onRescan();
-                    setFeedbackMsg('Ignored games have been restored to your active library.');
-                    setTimeout(() => setFeedbackMsg(null), 4000);
-                  }
-                }}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.035)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.06)',
-                  color: 'var(--ag-text-primary)',
-                  padding: '8px 15px',
-                  borderRadius: 4,
-                  fontSize: 11.5,
-                  fontFamily: 'var(--ag-font-display)',
-                  letterSpacing: '0.06em',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)'; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.035)'; }}
-              >
-                RESTORE HIDDEN GAMES
-              </button>
-              <button
-                onClick={handleResetDefaults}
-                style={{
-                  background: 'rgba(204, 0, 0, 0.06)',
-                  border: '1px solid rgba(204, 0, 0, 0.35)',
-                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)',
-                  color: 'var(--ag-accent)',
-                  padding: '8px 15px',
-                  borderRadius: 4,
-                  fontSize: 11.5,
-                  fontFamily: 'var(--ag-font-display)',
-                  letterSpacing: '0.06em',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(204, 0, 0, 0.14)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(204, 0, 0, 0.06)'; }}
-              >
-                RESET DEFAULTS
-              </button>
-            </div>
-          </div>
-        </div>
-
       </div>
 
       <ConfirmModal
         isOpen={resetModalOpen}
-        title="RESTORE GLOBAL DEFAULTS"
-        description={"Are you sure you want to restore all global settings to recommended factory defaults?\n\nThis will reset global stereo resolution, tonemapping, and input multipliers. Any custom per-title configurations saved for individual games will not be modified."}
-        confirmText="RESTORE DEFAULTS"
+        title="RESET DISPLAY DEFAULTS"
+        description={"Are you sure you want to restore display and stereoscopic projection settings to factory defaults?\n\nThis will reset recommended resolution, sRGB tonemapping, depth submission, and AI inpainting to recommended presets."}
+        confirmText="RESET DEFAULTS"
         cancelText="CANCEL"
         variant="danger"
         onConfirm={confirmResetDefaults}

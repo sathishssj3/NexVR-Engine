@@ -1,9 +1,11 @@
 {
-  "engineVersion": "0.1.78",
-  "buildDate": "2026-09-20",
-  "timestamp": 1789917360105,
-  "changelog": "Hero Game Profiles & Prototype Launch Readiness v0.1.78",
+  "engineVersion": "0.1.79",
+  "buildDate": "2026-09-21",
+  "timestamp": 1789975400000,
+  "changelog": "Settings Tab Streamlining & Display Preset Restoration v0.1.79",
   "features": [
+    "Refined Settings View: Removed redundant Library & Storage Utilities section to declutter engine preferences",
+    "Display & Stereo Reset Defaults: Integrated dedicated reset button directly into Display & Stereo Projection section header with confirmation dialog",
     "10 Hero Game Profiles: Pre-configured out-of-the-box profiles for No Man's Sky (Vulkan), Skyrim Special Edition (DX11), Fallout 4 (DX11), Valheim (Unity Vulkan), and Monster Hunter: World (DX11)",
     "Antivirus & Defender Notice: In-app security guidance explaining DLL swapchain memory detours with 1-click PowerShell folder exclusion command",
     "Anti-Cheat Tripwire Hardening: Added signature and process checks for Ricochet and FaceIt anti-cheat to guarantee zero multiplayer account bans",

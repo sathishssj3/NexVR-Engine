@@ -45,8 +45,8 @@ export function AboutPanel({ version }: { version?: string }) {
     } catch {}
   };
 
-  const targetVer = '0.1.78';
-  const effectiveVer = (!version || version === '0.1.77' || version === 'v0.1.77' || version === '0.1.29') 
+  const targetVer = '0.1.79';
+  const effectiveVer = (!version || version === '0.1.78' || version === 'v0.1.78' || version === '0.1.77' || version === 'v0.1.77' || version === '0.1.29') 
     ? targetVer 
     : version.replace(/^v/i, '');
   const currentVer = `v${effectiveVer}`;
