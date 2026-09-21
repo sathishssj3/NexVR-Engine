@@ -1,7 +1,7 @@
 {
   "engineVersion": "0.1.81",
   "buildDate": "2026-09-21",
-  "timestamp": 1789976300000,
+  "timestamp": 1789993625762,
   "changelog": "Hardware Telemetry Card Typography Harmonization v0.1.81",
   "features": [
     "Hardware Telemetry Typography Harmonization: Changed detected headset refresh rate readout to unified neutral gray for consistent visual hierarchy",
