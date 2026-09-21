@@ -9,20 +9,22 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const launcherDir = path.resolve(__dirname, '..');
 
-const installedAppDir = path.join(
-  process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local'),
-  'Programs',
-  'launcher'
-);
-const installedResourcesDir = path.join(installedAppDir, 'resources');
-const installedAsarPath = path.join(installedResourcesDir, 'app.asar');
+const candidateDirs = [
+  path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local'), 'Programs', 'launcher'),
+  path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local'), 'Programs', 'NexVR Engine'),
+  path.join(process.env.PROGRAMFILES || 'C:\\Program Files', 'NexVR Engine'),
+];
 
-console.log(`[PatchLauncher] Target installed app: ${installedAppDir}`);
-console.log(`[PatchLauncher] Target app.asar: ${installedAsarPath}`);
+let installedAppDir = candidateDirs.find(d => fs.existsSync(path.join(d, 'resources', 'app.asar')));
+let installedResourcesDir = installedAppDir ? path.join(installedAppDir, 'resources') : '';
+let installedAsarPath = installedResourcesDir ? path.join(installedResourcesDir, 'app.asar') : '';
 
-if (!fs.existsSync(installedAsarPath)) {
-  console.error(`[PatchLauncher] ERROR: Installed app.asar not found at ${installedAsarPath}`);
-  process.exit(1);
+console.log(`[PatchLauncher] Target installed app: ${installedAppDir || 'None found'}`);
+console.log(`[PatchLauncher] Target app.asar: ${installedAsarPath || 'None found'}`);
+
+if (!installedAsarPath || !fs.existsSync(installedAsarPath)) {
+  console.log(`[PatchLauncher] Notice: Installed app.asar not found (likely running from source in dev mode). Skipping asar sync.`);
+  process.exit(0);
 }
 
 // 1. Kill any running NexVR Engine instance so file handles are unlocked

@@ -1,9 +1,10 @@
 {
-  "engineVersion": "0.1.80",
+  "engineVersion": "0.1.81",
   "buildDate": "2026-09-21",
-  "timestamp": 1789975900000,
-  "changelog": "Full Window Startup & Window State Synchronization v0.1.80",
+  "timestamp": 1789976300000,
+  "changelog": "Hardware Telemetry Card Typography Harmonization v0.1.81",
   "features": [
+    "Hardware Telemetry Typography Harmonization: Changed detected headset refresh rate readout to unified neutral gray for consistent visual hierarchy",
     "Full Window Startup: NexVR Engine automatically initializes and opens in full maximized window without screen jumping",
     "Dynamic Restore / Maximize Controls: Double-click title bar or toggle the dual-square restore control with real-time Electron IPC state synchronization",
     "Refined Settings View: Removed redundant Library & Storage Utilities section to declutter engine preferences",
