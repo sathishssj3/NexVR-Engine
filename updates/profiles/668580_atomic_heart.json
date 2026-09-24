@@ -9,7 +9,7 @@
   "matrixPrecision": "Float32",
   "motionAimSensitivity": 1.1,
   "useRecommendedResolution": true,
-  "srgbCorrection": false,
+  "srgbCorrection": true,
   "depthSubmission": true,
   "rawInputMode": true,
   "autoInjectOnLaunch": true

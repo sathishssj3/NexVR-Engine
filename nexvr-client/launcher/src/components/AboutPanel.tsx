@@ -45,8 +45,8 @@ export function AboutPanel({ version }: { version?: string }) {
     } catch {}
   };
 
-  const targetVer = '0.1.81';
-  const effectiveVer = (!version || version === '0.1.80' || version === 'v0.1.80' || version === '0.1.79' || version === 'v0.1.79' || version === '0.1.78' || version === 'v0.1.78' || version === '0.1.77' || version === 'v0.1.77' || version === '0.1.29') 
+  const targetVer = '0.1.90';
+  const effectiveVer = (!version || version === '0.1.89' || version === 'v0.1.89' || version === '0.1.88' || version === 'v0.1.88' || version === '0.1.87' || version === 'v0.1.87' || version === '0.1.86' || version === 'v0.1.86' || version === '0.1.85' || version === 'v0.1.85' || version === '0.1.84' || version === 'v0.1.84' || version === '0.1.83' || version === 'v0.1.83' || version === '0.1.82' || version === 'v0.1.82' || version === '0.1.81' || version === 'v0.1.81' || version === '0.1.80' || version === 'v0.1.80' || version === '0.1.79' || version === 'v0.1.79' || version === '0.1.78' || version === 'v0.1.78' || version === '0.1.77' || version === 'v0.1.77' || version === '0.1.29') 
     ? targetVer 
     : version.replace(/^v/i, '');
   const currentVer = `v${effectiveVer}`;

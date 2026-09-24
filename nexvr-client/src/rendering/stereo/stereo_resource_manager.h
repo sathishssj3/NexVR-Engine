@@ -21,6 +21,7 @@ public:
     ID3D11ComputeShader* GetReprojectionShader() const { return reprojectionShader_.Get(); }
     ID3D11ComputeShader* GetAswShader() const { return aswShader_.Get(); }
     ID3D11Buffer* GetConstantBuffer() const { return constantBuffer_.Get(); }
+    ID3D11SamplerState* GetLinearSampler() const { return linearSampler_.Get(); }
 
     // Produces shader-readable views of the game's colour and depth textures,
     // which the reprojection compute shader samples as t0/t1.
@@ -49,6 +50,7 @@ private:
     bool CreateRenderTargets(uint32_t width, uint32_t height, DXGI_FORMAT format);
     bool LoadShaders();
     bool CreateConstantBuffer();
+    bool CreateSamplerState();
 
     // Binds `source` directly when it is already shader-readable, otherwise
     // lazily (re)creates `shadow` to match and copies into it. `srvFormat` is
@@ -75,6 +77,7 @@ private:
     Microsoft::WRL::ComPtr<ID3D11ComputeShader> reprojectionShader_;
     Microsoft::WRL::ComPtr<ID3D11ComputeShader> aswShader_;
     Microsoft::WRL::ComPtr<ID3D11Buffer> constantBuffer_;
+    Microsoft::WRL::ComPtr<ID3D11SamplerState> linearSampler_;
 
     // Shadow copies of the game's colour/depth, used only when the originals
     // are not shader-readable. Kept across frames and rebuilt on size change.

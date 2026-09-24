@@ -21,7 +21,7 @@ export function SettingsView({
 
   const activeVersion = updateStatus?.version 
     ? (updateStatus.version.startsWith('v') ? updateStatus.version : `v${updateStatus.version}`) 
-    : 'v0.1.81';
+    : 'v0.1.90';
 
   // Global default config persisted in localStorage
   const [globalConfig, setGlobalConfig] = useState<VRConfig>(() => {
@@ -31,7 +31,7 @@ export function SettingsView({
     } catch {}
     return {
       useRecommendedResolution: true,
-      srgbCorrection: false,
+      srgbCorrection: true,
       depthSubmission: false,
       motionAimSensitivity: 1.0,
       rawInputMode: true,
@@ -57,7 +57,7 @@ export function SettingsView({
     setResetModalOpen(false);
     const defaults: VRConfig = {
       useRecommendedResolution: true,
-      srgbCorrection: false,
+      srgbCorrection: true,
       depthSubmission: false,
       motionAimSensitivity: 1.0,
       rawInputMode: true,

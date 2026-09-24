@@ -2,6 +2,8 @@
 #include "core/logger.h"
 #include <iostream>
 #include <vector>
+#include <cmath>
+#include <algorithm>
 
 namespace vrinject {
 namespace openxr {
@@ -181,10 +183,7 @@ bool OpenXRFrameSubmitter::ReleaseAndEndDX11(
         return XrExtent2Di{static_cast<int32_t>(desc.Width), static_cast<int32_t>(desc.Height)};
     };
 
-    XrExtent2Di leftExt = extentOf(leftDest);
-    XrExtent2Di rightExt = extentOf(rightDest);
-
-    // Left Eye
+    // Left Eye - Native full surrounding headset FOV
     projectionViews[0].pose = lastLeftPose_;
     projectionViews[0].fov = lastLeftFov_;
     projectionViews[0].subImage.swapchain = swapchainManager->GetLeftSwapchain();
@@ -192,7 +191,7 @@ bool OpenXRFrameSubmitter::ReleaseAndEndDX11(
     projectionViews[0].subImage.imageRect.offset = {0, 0};
     projectionViews[0].subImage.imageRect.extent = extentOf(leftDest);
 
-    // Right Eye
+    // Right Eye - Native full surrounding headset FOV
     projectionViews[1].pose = lastRightPose_;
     projectionViews[1].fov = lastRightFov_;
     projectionViews[1].subImage.swapchain = swapchainManager->GetRightSwapchain();
@@ -311,13 +310,12 @@ bool OpenXRFrameSubmitter::ReleaseAndEndDX12(
     // 7. End Frame
     state_ = SubmitterState::END_FRAME;
     
-    XrFovf fov = {-0.8f, 0.8f, 0.8f, -0.8f};
-
     XrCompositionLayerProjectionView projectionViews[2] = {
         {XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW},
         {XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW}
     };
 
+    // Left Eye - Native full surrounding headset FOV
     projectionViews[0].pose = lastLeftPose_;
     projectionViews[0].fov = lastLeftFov_;
     projectionViews[0].subImage.swapchain = swapchainManager->GetLeftSwapchain();
@@ -326,6 +324,7 @@ bool OpenXRFrameSubmitter::ReleaseAndEndDX12(
     projectionViews[0].subImage.imageRect.extent.width = leftWidth;
     projectionViews[0].subImage.imageRect.extent.height = leftHeight;
     
+    // Right Eye - Native full surrounding headset FOV
     projectionViews[1].pose = lastRightPose_;
     projectionViews[1].fov = lastRightFov_;
     projectionViews[1].subImage.swapchain = swapchainManager->GetRightSwapchain();
@@ -382,13 +381,17 @@ bool OpenXRFrameSubmitter::BeginAndAcquireVulkan(
     state_ = SubmitterState::WAIT_FRAME;
     XrFrameWaitInfo waitInfo{XR_TYPE_FRAME_WAIT_INFO};
     XrResult res = xrWaitFrame(session, &waitInfo, &currentFrameState_);
-    if (XR_FAILED(res)) return false;
+    if (XR_FAILED(res)) {
+        return false;
+    }
 
     // 2. Begin Frame
     state_ = SubmitterState::BEGIN_FRAME;
     XrFrameBeginInfo beginInfo{XR_TYPE_FRAME_BEGIN_INFO};
     res = xrBeginFrame(session, &beginInfo);
-    if (XR_FAILED(res)) return false;
+    if (XR_FAILED(res)) {
+        return false;
+    }
 
     if (!currentFrameState_.shouldRender) {
         state_ = SubmitterState::END_FRAME;
@@ -452,6 +455,7 @@ bool OpenXRFrameSubmitter::ReleaseAndEndVulkan(
         {XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW}
     };
 
+    // Left Eye - Native full surrounding headset FOV
     projectionViews[0].pose = lastLeftPose_;
     projectionViews[0].fov = lastLeftFov_;
     projectionViews[0].subImage.swapchain = swapchainManager->GetLeftSwapchain();
@@ -460,6 +464,7 @@ bool OpenXRFrameSubmitter::ReleaseAndEndVulkan(
     projectionViews[0].subImage.imageRect.extent.width = leftWidth;
     projectionViews[0].subImage.imageRect.extent.height = leftHeight;
     
+    // Right Eye - Native full surrounding headset FOV
     projectionViews[1].pose = lastRightPose_;
     projectionViews[1].fov = lastRightFov_;
     projectionViews[1].subImage.swapchain = swapchainManager->GetRightSwapchain();

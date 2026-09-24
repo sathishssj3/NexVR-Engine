@@ -72,9 +72,16 @@ if (fs.existsSync(srcShadersDir)) {
 
 // 3. Target Directories for Profiles
 const srcProfilesDir = path.join(clientDir, 'profiles');
+const appDataProfiles = path.join(
+  process.env.APPDATA || '',
+  'NexVR Engine',
+  'updates',
+  'profiles'
+);
 const profileDestinations = [
   path.join(rootDir, 'updates', 'profiles'),
   path.join(rootDir, 'nexvr-docs', 'landing-page', 'public', 'updates', 'profiles'),
+  ...(process.env.APPDATA ? [appDataProfiles] : []),
 ];
 
 if (fs.existsSync(srcProfilesDir)) {

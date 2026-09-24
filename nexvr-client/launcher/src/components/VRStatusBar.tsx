@@ -214,7 +214,7 @@ export function VRStatusBar({ status, selectedGame, injectState, onInject, onUni
                   : injectState === 'success' 
                     ? 'rgba(48, 209, 88, 0.25)' 
                     : !selectedGame 
-                      ? '#120808'
+                      ? '#1A1B22'
                       : isDisconnected
                         ? 'rgba(255, 159, 10, 0.12)'
                         : 'linear-gradient(135deg, #FF1A1A 0%, #CC0000 55%, #990000 100%)', 
@@ -230,14 +230,14 @@ export function VRStatusBar({ status, selectedGame, injectState, onInject, onUni
               color: isAntiCheat 
                 ? 'var(--ag-accent-danger)' 
                 : !selectedGame 
-                  ? '#848884' 
+                  ? '#FFFFFF' 
                   : isDisconnected
                     ? '#FFB340'
                     : '#FFF',
               padding: '14px 32px',
               borderRadius: 'var(--ag-radius-sm)',
               cursor: (!selectedGame || isAntiCheat || injectState === 'success' || injectState === 'error' || injectState === 'cancelled') ? 'not-allowed' : 'pointer',
-              opacity: (!selectedGame && injectState === 'default') ? 0.45 : 1,
+              opacity: 1,
               fontFamily: 'var(--ag-font-display)',
               fontWeight: 900,
               fontSize: 14,

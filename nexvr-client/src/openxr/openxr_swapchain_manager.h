@@ -34,6 +34,9 @@ public:
     XrSwapchain GetLeftSwapchain() const { return leftSwapchain_; }
     XrSwapchain GetRightSwapchain() const { return rightSwapchain_; }
 
+    uint32_t GetWidth() const { return width_; }
+    uint32_t GetHeight() const { return height_; }
+
     int64_t GetFormat() const { return format_; }
     bool IsSrgb() const { return format_ == 29 || format_ == 91 || format_ == 43 || format_ == 50; }
 

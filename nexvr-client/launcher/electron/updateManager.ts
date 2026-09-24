@@ -104,11 +104,13 @@ export function purgeStaleOtaCacheIfAppNewer(): void {
     const appVer = getAppVersion();
     if (!appVer) return;
 
-    // If local cached OTA belongs to an older version than the installed app,
+    const updatesDir = getUpdatesDir();
+    const profilesDir = path.join(updatesDir, 'profiles');
+
+    // If in dev mode, or if local cached OTA belongs to an older version than the installed app,
     // clear outdated cached binaries so the bundled assets are guaranteed to run.
-    if (local && compareSemver(appVer, local.engineVersion) > 0) {
-      console.info(`[UpdateManager] Current app (v${appVer}) is newer than cached OTA (v${local.engineVersion}). Purging stale OTA cache.`);
-      const updatesDir = getUpdatesDir();
+    if ((!app?.isPackaged) || (local && compareSemver(appVer, local.engineVersion) > 0)) {
+      console.info(`[UpdateManager] Purging stale OTA cache (devMode=${!app?.isPackaged}, appVer=${appVer}, localVer=${local?.engineVersion}).`);
       const filesToPurge = ['vrinject.dll', 'vr-inject-cli.exe', 'vrinject.json', 'installed_manifest.json', 'manifest.json'];
       for (const f of filesToPurge) {
         const fp = path.join(updatesDir, f);
@@ -120,6 +122,26 @@ export function purgeStaleOtaCacheIfAppNewer(): void {
       if (fs.existsSync(shadersDir)) {
         try { fs.rmSync(shadersDir, { recursive: true, force: true }); } catch {}
       }
+      if (fs.existsSync(profilesDir)) {
+        try { fs.rmSync(profilesDir, { recursive: true, force: true }); } catch {}
+      }
+    } else if (fs.existsSync(profilesDir)) {
+      // Sanitize any lingering profiles with obsolete srgbCorrection: false
+      try {
+        const pFiles = fs.readdirSync(profilesDir);
+        for (const pf of pFiles) {
+          if (pf.endsWith('.json')) {
+            const pfPath = path.join(profilesDir, pf);
+            try {
+              const pData = JSON.parse(fs.readFileSync(pfPath, 'utf-8'));
+              if (pData.srgbCorrection === false) {
+                pData.srgbCorrection = true;
+                fs.writeFileSync(pfPath, JSON.stringify(pData, null, 2), 'utf-8');
+              }
+            } catch {}
+          }
+        }
+      } catch {}
     }
   } catch (err) {
     console.warn('[UpdateManager] Error during stale OTA cache check:', err);

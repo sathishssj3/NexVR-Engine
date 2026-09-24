@@ -151,12 +151,33 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
       CameraCandidate bestCandidate = {};
       bool hasBest = false;
       
-      Matrix4x4 dynamicViewMatrix;
-      Matrix4x4 dynamicProjMatrix;
+      Matrix4x4 dynamicViewMatrix = {};
+      Matrix4x4 dynamicProjMatrix = {};
       if (m_deltaTracker.GetLockedCamera(dynamicViewMatrix, dynamicProjMatrix)) {
           // Dynamic scanner found a locked camera matrix!
           bestCandidate.id = 0xC0CA3E01; // Non-zero unique ID so CameraLockManager accepts it
           bestCandidate.view = dynamicViewMatrix;
+
+          // If projection matrix is missing, square (shadow/cube), or invalid, synthesize a mathematically
+          // clean perspective projection matching the actual viewport aspect ratio (e.g. 1920x1080 -> 16:9)
+          if (!PageScanner::IsValidProjectionMatrixFloat(&dynamicProjMatrix.m[0][0])) {
+              float width = static_cast<float>(m_currentSnapshot.width > 0 ? m_currentSnapshot.width : 1920);
+              float height = static_cast<float>(m_currentSnapshot.height > 0 ? m_currentSnapshot.height : 1080);
+              float aspect = width / height;
+              float fovHRad = 90.0f * (3.1415926535f / 180.0f);
+              float tanHalfFovH = std::tan(fovHRad * 0.5f);
+              float tanHalfFovV = tanHalfFovH / aspect;
+
+              dynamicProjMatrix = {};
+              dynamicProjMatrix.m[0][0] = 1.0f / tanHalfFovH;
+              dynamicProjMatrix.m[1][1] = 1.0f / tanHalfFovV;
+              // Left-handed, reverse-Z projection (standard for UE4/UE5 and modern DX11 games)
+              dynamicProjMatrix.m[2][2] = 0.0f; // Far plane at infinity in reverse-Z
+              dynamicProjMatrix.m[2][3] = 1.0f; // Left-handed w' = z
+              dynamicProjMatrix.m[3][2] = 0.1f; // Near plane = 0.1m
+              dynamicProjMatrix.m[3][3] = 0.0f;
+          }
+
           bestCandidate.projection = dynamicProjMatrix;
           bestCandidate.valid = true;
           bestCandidate.temporalScore = 1.0f;
@@ -164,16 +185,19 @@ void FrameCoordinator::OnPresentBegin(const RenderFrameSnapshot &snapshot) {
 
           // Detect projection properties (reverseZ, handedness)
           bool rowMajor = true;
-          bool reverseZ = false;
-          if (CameraClassifier::ClassifyMatrix(dynamicProjMatrix, rowMajor, reverseZ)) {
-              bestCandidate.rowMajor = rowMajor;
-              bestCandidate.reversedZ = reverseZ;
-              bestCandidate.isLeftHanded = (dynamicProjMatrix.m[2][3] > 0.0f);
-          } else {
-              bestCandidate.rowMajor = true;
-              bestCandidate.reversedZ = false;
-              bestCandidate.isLeftHanded = true;
+          bool reverseZ = true; // Default to true (UE4/UE5 reverse-Z standard)
+          const auto* configMgr = SubsystemContext::Get().GetConfig();
+          if (configMgr) {
+              const auto& cfg = configMgr->GetConfig();
+              reverseZ = cfg.reverseZ;
+              rowMajor = cfg.rowMajorMatrices;
+          } else if (CameraClassifier::ClassifyMatrix(dynamicProjMatrix, rowMajor, reverseZ)) {
+              // Successfully classified from matrix
           }
+
+          bestCandidate.rowMajor = rowMajor;
+          bestCandidate.reversedZ = reverseZ;
+          bestCandidate.isLeftHanded = (dynamicProjMatrix.m[2][3] > 0.0f);
 
           // Compute ViewProjection = View * Proj
           Matrix4x4 vp = {};

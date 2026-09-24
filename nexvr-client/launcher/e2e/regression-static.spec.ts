@@ -162,11 +162,11 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     expect(shader).not.toContain('pow(max(outColor.rgb, 0.0f), 2.2f)');
     expect(shader).not.toContain('pow(max(leftColor.rgb, 0.0f), 2.2f)');
 
-    // Launcher configuration manager and settings defaults must enforce srgbCorrection false
+    // Launcher configuration manager and settings defaults must enforce universal srgbCorrection true
     const configMgr = readRepoFile('launcher', 'electron', 'configManager.ts');
     const settingsView = readRepoFile('launcher', 'src', 'components', 'SettingsView.tsx');
-    expect(configMgr).toMatch(/defaultVRConfig:\s*VRConfig\s*=\s*\{[\s\S]*srgbCorrection:\s*false/);
-    expect(settingsView).toContain('srgbCorrection: false');
+    expect(configMgr).toMatch(/defaultVRConfig:\s*VRConfig\s*=\s*\{[\s\S]*srgbCorrection:\s*true/);
+    expect(settingsView).toContain('srgbCorrection: true');
 
     // C++ structs must declare contrast, saturation, brightness and srgbCorrection
     expect(dx12ManagerH).toContain('float contrast;');
@@ -187,11 +187,11 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     expect(stereoRendererCpp).toContain('constants->brightness');
     expect(stereoRendererCpp).toContain('constants->srgbCorrection');
 
-    // Curated profiles: Sekiro untouched (srgbCorrection false, contrast 1.0 default); Hogwarts Legacy calibrated to desktop richness
+    // Curated profiles: Sekiro and Hogwarts Legacy calibrated to desktop richness with universal sRGB linearization
     const sekiroProfile = JSON.parse(readRepoFile('profiles', '814380_sekiro.json'));
     const hogwartsProfile = JSON.parse(readRepoFile('profiles', '990080_hogwarts_legacy.json'));
-    expect(sekiroProfile.srgbCorrection).toBe(false);
-    expect(hogwartsProfile.srgbCorrection).toBe(false);
+    expect(sekiroProfile.srgbCorrection).toBe(true);
+    expect(hogwartsProfile.srgbCorrection).toBe(true);
     expect(hogwartsProfile.contrast).toBe(1.20);
     expect(hogwartsProfile.saturation).toBe(1.15);
     expect(hogwartsProfile.brightness).toBe(1.14);
@@ -276,10 +276,10 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     // 4. Asset sync and binary signing tooling registered in package.json
     expect(pkgJson.scripts['sync:assets']).toBeDefined();
     expect(pkgJson.scripts['sign:binaries']).toBeDefined();
-    expect(pkgJson.version).toBe('0.1.81');
+    expect(pkgJson.version).toBe('0.1.90');
   });
 
-  test('v0.1.81 in-headset VR dashboard, obsidian glassmorphism UI, Apple design motion, and launcher synchronization', () => {
+  test('v0.1.90 in-headset VR dashboard, aspect ratio FOV normalization, universal sRGB, and launcher synchronization', () => {
     const runtimeStateCpp = readRepoFile('src', 'core', 'runtime_state.cpp');
     const versionHeader = readRepoFile('src', 'core', 'version.h');
     const injectionMgrTs = readRepoFile('launcher', 'electron', 'injectionManager.ts');
@@ -297,7 +297,7 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     // 1. No stale v0.1.16 version strings remain anywhere in the engine or launcher
     expect(runtimeStateCpp).not.toContain('v0.1.16');
     expect(runtimeStateCpp).toContain('NEXVR_ENGINE_VERSION');
-    expect(versionHeader).toContain('#define NEXVR_ENGINE_VERSION "0.1.81"');
+    expect(versionHeader).toContain('#define NEXVR_ENGINE_VERSION "0.1.90"');
     expect(injectionMgrTs).not.toContain('v0.1.16');
     expect(diagnosticsMgrTs).not.toContain('v0.1.16');
 

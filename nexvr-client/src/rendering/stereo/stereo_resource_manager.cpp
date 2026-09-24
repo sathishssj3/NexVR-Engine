@@ -62,6 +62,7 @@ void StereoResourceManager::ReleaseResources() {
     reprojectionShader_.Reset();
     aswShader_.Reset();
     constantBuffer_.Reset();
+    linearSampler_.Reset();
     gameColorCopy_.Reset();
     gameDepthCopy_.Reset();
     gameColorSRV_.Reset();
@@ -210,6 +211,12 @@ bool StereoResourceManager::Initialize(uint32_t width, uint32_t height, DXGI_FOR
         return false;
     }
 
+    if (!CreateSamplerState()) {
+        LOG_ERROR("StereoResourceManager: Failed to create linear sampler state");
+        ReleaseResources();
+        return false;
+    }
+
     width_ = width;
     height_ = height;
     format_ = format;
@@ -307,6 +314,24 @@ bool StereoResourceManager::CreateConstantBuffer() {
 
     HRESULT hr = device_->CreateBuffer(&cbDesc, nullptr, &constantBuffer_);
     return SUCCEEDED(hr);
+}
+
+bool StereoResourceManager::CreateSamplerState() {
+    D3D11_SAMPLER_DESC desc = {};
+    desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+    desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+    desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+    desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    desc.MinLOD = 0.0f;
+    desc.MaxLOD = D3D11_FLOAT32_MAX;
+
+    HRESULT hr = device_->CreateSamplerState(&desc, &linearSampler_);
+    if (FAILED(hr)) {
+        LOG_ERROR("StereoResourceManager: CreateSamplerState failed (hr=0x%X)", hr);
+        return false;
+    }
+    return true;
 }
 
 } // namespace vrinject

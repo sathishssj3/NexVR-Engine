@@ -7,7 +7,7 @@ import { assertTrustedIpcSender, gamePathsMap, gameExeMap, validateGameId, valid
 const defaultVRConfig: VRConfig = {
   motionAimSensitivity: 1.0,
   useRecommendedResolution: true,
-  srgbCorrection: false,
+  srgbCorrection: true,
   depthSubmission: false,
   rawInputMode: true,
   autoInjectOnLaunch: true,
@@ -26,7 +26,7 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     matrixPrecision: 'Float32',
     motionAimSensitivity: 1.0,
     useRecommendedResolution: true,
-    srgbCorrection: false,
+    srgbCorrection: true,
     depthSubmission: true,
     rawInputMode: true,
     autoInjectOnLaunch: true,
@@ -42,7 +42,7 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     matrixPrecision: 'Float32',
     motionAimSensitivity: 1.0,
     useRecommendedResolution: true,
-    srgbCorrection: false,
+    srgbCorrection: true,
     depthSubmission: true,
     rawInputMode: true,
     autoInjectOnLaunch: true,
@@ -59,7 +59,7 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     matrixPrecision: 'Float32',
     motionAimSensitivity: 1.2,
     useRecommendedResolution: true,
-    srgbCorrection: false,
+    srgbCorrection: true,
     depthSubmission: true,
     rawInputMode: true,
     autoInjectOnLaunch: true,
@@ -73,7 +73,7 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     matrixPrecision: 'Float32',
     motionAimSensitivity: 0.9,
     useRecommendedResolution: true,
-    srgbCorrection: false,
+    srgbCorrection: true,
     depthSubmission: false,
     rawInputMode: true,
     autoInjectOnLaunch: true,
@@ -87,7 +87,7 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     matrixPrecision: 'Float32',
     motionAimSensitivity: 1.1,
     useRecommendedResolution: true,
-    srgbCorrection: false,
+    srgbCorrection: true,
     depthSubmission: true,
     rawInputMode: true,
     autoInjectOnLaunch: true,
@@ -101,13 +101,10 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     matrixPrecision: 'Float32',
     motionAimSensitivity: 1.0,
     useRecommendedResolution: true,
-    srgbCorrection: false,
+    srgbCorrection: true,
     depthSubmission: false,
     rawInputMode: true,
     autoInjectOnLaunch: true,
-    contrast: 1.18,
-    saturation: 1.12,
-    brightness: 1.15,
   },
   // Palworld
   '1623730': {
@@ -118,7 +115,7 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     matrixPrecision: 'Float32',
     motionAimSensitivity: 1.0,
     useRecommendedResolution: true,
-    srgbCorrection: false,
+    srgbCorrection: true,
     depthSubmission: true,
     rawInputMode: true,
     autoInjectOnLaunch: true,
@@ -132,7 +129,7 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     matrixPrecision: 'Float32',
     motionAimSensitivity: 1.0,
     useRecommendedResolution: true,
-    srgbCorrection: false,
+    srgbCorrection: true,
     depthSubmission: false,
     rawInputMode: true,
     autoInjectOnLaunch: true,
@@ -146,7 +143,7 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     matrixPrecision: 'Float32',
     motionAimSensitivity: 1.0,
     useRecommendedResolution: true,
-    srgbCorrection: false,
+    srgbCorrection: true,
     depthSubmission: false,
     rawInputMode: true,
     autoInjectOnLaunch: true,
@@ -160,7 +157,7 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     matrixPrecision: 'Float32',
     motionAimSensitivity: 1.0,
     useRecommendedResolution: true,
-    srgbCorrection: false,
+    srgbCorrection: true,
     depthSubmission: false,
     rawInputMode: true,
     autoInjectOnLaunch: true,
@@ -174,7 +171,7 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     matrixPrecision: 'Float32',
     motionAimSensitivity: 1.0,
     useRecommendedResolution: true,
-    srgbCorrection: false,
+    srgbCorrection: true,
     depthSubmission: false,
     rawInputMode: true,
     autoInjectOnLaunch: true,
@@ -188,7 +185,7 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     matrixPrecision: 'Float32',
     motionAimSensitivity: 1.0,
     useRecommendedResolution: true,
-    srgbCorrection: false,
+    srgbCorrection: true,
     depthSubmission: false,
     rawInputMode: true,
     autoInjectOnLaunch: true,
@@ -202,7 +199,7 @@ const curatedProfiles: Record<string, Partial<VRConfig>> = {
     matrixPrecision: 'Float32',
     motionAimSensitivity: 1.0,
     useRecommendedResolution: true,
-    srgbCorrection: false,
+    srgbCorrection: true,
     depthSubmission: false,
     rawInputMode: true,
     autoInjectOnLaunch: true,
@@ -223,13 +220,23 @@ function loadProfilesFromDisk(): Record<string, Partial<VRConfig>> {
     } catch {}
 
     // Check root profiles directory (development, packaged resources, OTA updates, and custom user profiles)
-    const candidateDirs = [
-      ...(userUpdatesProfiles ? [userUpdatesProfiles] : []),
-      ...(customProfilesDir ? [customProfilesDir] : []),
+    const localDirs = [
+      path.resolve(__dirname, '../../../../nexvr-client/profiles'),
       path.resolve(__dirname, '../../../profiles'),
       path.resolve(__dirname, '../../profiles'),
       path.join(process.resourcesPath, 'profiles'),
     ];
+    const candidateDirs = (!app?.isPackaged)
+      ? [
+          ...(userUpdatesProfiles ? [userUpdatesProfiles] : []),
+          ...(customProfilesDir ? [customProfilesDir] : []),
+          ...localDirs,
+        ]
+      : [
+          ...(userUpdatesProfiles ? [userUpdatesProfiles] : []),
+          ...(customProfilesDir ? [customProfilesDir] : []),
+          ...localDirs,
+        ];
     for (const pDir of candidateDirs) {
       if (fs.existsSync(pDir)) {
         const files = fs.readdirSync(pDir);
@@ -241,7 +248,7 @@ function loadProfilesFromDisk(): Record<string, Partial<VRConfig>> {
                 profiles[data.id] = {
                   motionAimSensitivity: typeof data.motionAimSensitivity === 'number' ? data.motionAimSensitivity : 1.0,
                   useRecommendedResolution: data.useRecommendedResolution !== false,
-                  srgbCorrection: Boolean(data.srgbCorrection),
+                  srgbCorrection: data.srgbCorrection !== false,
                   depthSubmission: Boolean(data.depthSubmission),
                   rawInputMode: data.rawInputMode !== false,
                   autoInjectOnLaunch: data.autoInjectOnLaunch !== false,
@@ -322,6 +329,13 @@ ipcMain.handle('config:read', async (event, id: string): Promise<VRConfig> => {
       if (fs.existsSync(cfgPath)) {
         const content = fs.readFileSync(cfgPath, 'utf-8');
         const parsed = JSON.parse(content);
+        // Auto-heal legacy vrinject.json where srgbCorrection was set to false
+        if (parsed.srgbCorrection === false) {
+          parsed.srgbCorrection = true;
+          try {
+            fs.writeFileSync(cfgPath, JSON.stringify({ ...initialConfig, ...parsed }, null, 2), 'utf-8');
+          } catch {}
+        }
         return validateConfig({ ...initialConfig, ...parsed });
       }
     }
@@ -349,7 +363,7 @@ ipcMain.handle('config:write', async (event, id: string, cfg: unknown) => {
     // Synchronize config to both installPath and target shipping binary directory
     const dirsToSync = new Set<string>([installPath]);
     if (targetDir && fs.existsSync(targetDir)) dirsToSync.add(targetDir);
-    for (const sub of ['Phoenix/Binaries/Win64', 'Chameleon/Binaries/Win64', 'Binaries/Win64']) {
+    for (const sub of ['Phoenix/Binaries/Win64', 'Chameleon/Binaries/Win64', 'Dungeonhaven/Binaries/Win64', 'Binaries/Win64']) {
       const subDir = path.join(installPath, sub);
       if (fs.existsSync(subDir)) dirsToSync.add(subDir);
     }
@@ -357,6 +371,7 @@ ipcMain.handle('config:write', async (event, id: string, cfg: unknown) => {
     const baseProfile = getActiveProfiles()[validId] || {};
     const finalCfg: VRConfig = {
       ...validCfg,
+      srgbCorrection: validCfg.srgbCorrection !== false,
       engine: validCfg.engine ?? baseProfile.engine,
       api: validCfg.api ?? baseProfile.api,
       reverseZ: validCfg.reverseZ ?? baseProfile.reverseZ,

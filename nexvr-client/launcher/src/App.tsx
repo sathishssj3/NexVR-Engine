@@ -463,7 +463,7 @@ export default function App() {
             fontFamily: 'var(--ag-font-mono)', letterSpacing: '0.05em', 
             fontWeight: 800
           }}>
-            {updateStatus?.version ? updateStatus.version.replace(/^v/, '') : '0.1.81'}
+            {updateStatus?.version ? updateStatus.version.replace(/^v/, '') : '0.1.90'}
           </span>
           {updateStatus?.updated && (
             <span style={{

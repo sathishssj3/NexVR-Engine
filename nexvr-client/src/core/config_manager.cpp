@@ -112,27 +112,11 @@ bool ConfigManager::Load(const std::string& moduleDir, const std::string& explic
             j.value("motionAimSensitivity", 1.0f), 0.1f, 10.0f);
             
         m_config.useRecommendedResolution = j.value("useRecommendedResolution", true);
-        m_config.srgbCorrection = j.value("srgbCorrection", false);
+        m_config.srgbCorrection = j.value("srgbCorrection", true);
 
-        // Curated title calibration fallback: If contrast/saturation/brightness was not specified in the local json,
-        // provide title-specific calibrated defaults for known titles like Hogwarts Legacy
-        float defaultContrast = 1.0f;
-        float defaultSaturation = 1.0f;
-        float defaultBrightness = 1.0f;
-        std::string gameId = j.value("id", "");
-        if (gameId == "990080" || hostExeLower.find("hogwarts") != std::string::npos || hostExeLower.find("phoenix") != std::string::npos) {
-            defaultContrast = 1.20f;
-            defaultSaturation = 1.15f;
-            defaultBrightness = 1.14f;
-        } else if (gameId == "1110910" || hostExeLower.find("dungeonhaven") != std::string::npos || hostExeLower.find("mortalshell") != std::string::npos) {
-            defaultContrast = 1.18f;
-            defaultSaturation = 1.12f;
-            defaultBrightness = 1.15f;
-        }
-
-        m_config.contrast = std::clamp(j.value("contrast", defaultContrast), 0.5f, 2.0f);
-        m_config.saturation = std::clamp(j.value("saturation", defaultSaturation), 0.5f, 2.0f);
-        m_config.brightness = std::clamp(j.value("brightness", defaultBrightness), 0.5f, 2.0f);
+        m_config.contrast = std::clamp(j.value("contrast", 1.0f), 0.5f, 2.0f);
+        m_config.saturation = std::clamp(j.value("saturation", 1.0f), 0.5f, 2.0f);
+        m_config.brightness = std::clamp(j.value("brightness", 1.0f), 0.5f, 2.0f);
         m_config.depthSubmission = j.value("depthSubmission", false);
         m_config.rawInputMode = j.value("rawInputMode", true);
         m_config.autoInjectOnLaunch = j.value("autoInjectOnLaunch", false);

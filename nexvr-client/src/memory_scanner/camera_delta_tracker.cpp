@@ -127,17 +127,33 @@ void CameraDeltaTracker::PollAndTrackCandidates() {
         ++it;
     }
 
+    bool lockedStillValid = false;
+    if (m_lockedPointer) {
+        auto it = m_candidates.find(m_lockedPointer);
+        if (it != m_candidates.end()) {
+            Matrix4x4 lockedMat;
+            if (SafeReadMatrix(m_lockedPointer, it->second.isDoublePrecision, lockedMat)) {
+                if (PageScanner::IsValidViewMatrixFloat(&lockedMat.m[0][0])) {
+                    lockedStillValid = true;
+                }
+            }
+        }
+    }
+
     if (bestPointer && bestScore >= 2.6f) { // base 2.0 + temporalScore >= 0.6
         if (m_lockedPointer != bestPointer) {
-            static bool s_firstLockLogged = false;
-            if (!s_firstLockLogged) {
-                LOG_INFO("[OK] Camera Tracking: 6DOF View Matrix Locked (Confidence: %.0f%%)", (std::min)(100.0f, (bestScore - 2.0f) * 100.0f));
-                s_firstLockLogged = true;
-            } else {
-                LOG_DEBUG("CameraDeltaTracker: Adjusted candidate view matrix at %p (score: %.2f)", bestPointer, bestScore);
+            // Only switch to a different pointer if we don't have a valid lock, or if the new candidate is exceptionally strong
+            if (!lockedStillValid || bestScore >= 2.85f) {
+                static bool s_firstLockLogged = false;
+                if (!s_firstLockLogged) {
+                    LOG_INFO("[OK] Camera Tracking: 6DOF View Matrix Locked (Confidence: %.0f%%)", (std::min)(100.0f, (bestScore - 2.0f) * 100.0f));
+                    s_firstLockLogged = true;
+                } else {
+                    LOG_DEBUG("CameraDeltaTracker: Adjusted candidate view matrix at %p (score: %.2f)", bestPointer, bestScore);
+                }
+                m_lockedPointer = bestPointer;
+                FindMatchingProjection(m_lockedPointer, m_candidates[bestPointer].isDoublePrecision);
             }
-            m_lockedPointer = bestPointer;
-            FindMatchingProjection(m_lockedPointer, m_candidates[bestPointer].isDoublePrecision);
         }
         m_lockedConfidence = (std::min)(1.0f, (bestScore - 2.0f) / 1.0f);
 
@@ -158,7 +174,12 @@ void CameraDeltaTracker::PollAndTrackCandidates() {
                 }
             }
         }
-    } else if (bestScore < 2.2f) {
+    } else if (lockedStillValid) {
+        // Hysteresis: An established lock remains valid even when the player is idle or walking with WASD!
+        // Do NOT drop the camera lock simply because the player stopped moving the mouse!
+        m_lockedConfidence = (std::max)(m_lockedConfidence, 0.90f);
+    } else {
+        // Memory address is no longer valid or no longer an orthonormal matrix
         m_lockedConfidence = (std::max)(0.0f, m_lockedConfidence - 0.05f);
         if (m_lockedConfidence <= 0.0f) {
             m_lockedPointer = nullptr;
@@ -170,28 +191,48 @@ void CameraDeltaTracker::PollAndTrackCandidates() {
 void CameraDeltaTracker::FindMatchingProjection(uint8_t* viewAddress, bool isDouble) {
     if (!viewAddress) return;
 
+    auto isWidescreenProj = [](const Matrix4x4& testMat) -> bool {
+        if (!PageScanner::IsValidProjectionMatrixFloat(&testMat.m[0][0], 90.0f)) return false;
+        float m00 = std::abs(testMat.m[0][0]);
+        float m11 = std::abs(testMat.m[1][1]);
+        if (m00 < 0.1f || m11 < 0.1f) return false;
+        // Shadow cascades and reflection probes are square (aspect ratio 1.0).
+        // Camera projections in games (16:9, 16:10, 21:9) have aspect ratio > 1.25.
+        float aspectRow = m11 / m00;
+        float aspectCol = m00 / m11;
+        return (aspectRow > 1.25f && aspectRow < 2.8f) || (aspectCol > 1.25f && aspectCol < 2.8f);
+    };
+
     // First, inspect nearby struct offsets: cameras frequently store View and Proj adjacently
     const int nearbyOffsets[] = { 64, -64, 128, -128, 192, -192, 256, -256, 320, 384, 512 };
     for (int offset : nearbyOffsets) {
         uint8_t* probeAddr = viewAddress + offset;
         Matrix4x4 testMat;
         if (SafeReadMatrix(probeAddr, isDouble, testMat)) {
-            if (PageScanner::IsValidProjectionMatrixFloat(&testMat.m[0][0], 90.0f)) {
+            if (isWidescreenProj(testMat)) {
                 m_lockedProjPointer = probeAddr;
-                LOG_DEBUG("CameraDeltaTracker: Found paired projection matrix at offset %d (%p)", offset, probeAddr);
+                LOG_DEBUG("CameraDeltaTracker: Found paired widescreen projection matrix at offset %d (%p)", offset, probeAddr);
                 return;
             }
         }
     }
 
-    // Second, inspect candidates collected by PageScanner for stable projection matrices
+    // Second, inspect candidates collected by PageScanner for stable widescreen projection matrices
     for (const auto& pair : m_candidates) {
         if (pair.second.isProjectionMatrix && pair.second.temporalScore > 0.5f) {
-            m_lockedProjPointer = pair.first;
-            LOG_DEBUG("CameraDeltaTracker: Found matching projection matrix candidate at %p", pair.first);
-            return;
+            Matrix4x4 testMat;
+            if (SafeReadMatrix(pair.first, pair.second.isDoublePrecision, testMat)) {
+                if (isWidescreenProj(testMat)) {
+                    m_lockedProjPointer = pair.first;
+                    LOG_DEBUG("CameraDeltaTracker: Found matching widescreen projection matrix candidate at %p", pair.first);
+                    return;
+                }
+            }
         }
     }
+
+    // Do NOT bind square shadow maps or cubemaps! Leave null so FrameCoordinator synthesizes clean perspective
+    m_lockedProjPointer = nullptr;
 }
 
 void CameraDeltaTracker::UpdateHeadsetPose(const XrPosef& pose) {
@@ -226,9 +267,31 @@ bool CameraDeltaTracker::GetLockedCamera(Matrix4x4& outView, Matrix4x4& outProj)
         return false;
     }
 
-    // Retrieve projection matrix if paired
+    // Validate that the view matrix rotation block remains orthonormal
+    if (!PageScanner::IsValidViewMatrixFloat(&outView.m[0][0])) {
+        return false;
+    }
+
+    // Retrieve projection matrix if paired and valid widescreen
+    bool hasValidProj = false;
     if (m_lockedProjPointer) {
-        SafeReadMatrix(m_lockedProjPointer, it->second.isDoublePrecision, outProj);
+        if (SafeReadMatrix(m_lockedProjPointer, it->second.isDoublePrecision, outProj)) {
+            if (PageScanner::IsValidProjectionMatrixFloat(&outProj.m[0][0], 90.0f)) {
+                float m00 = std::abs(outProj.m[0][0]);
+                float m11 = std::abs(outProj.m[1][1]);
+                if (m00 >= 0.1f && m11 >= 0.1f) {
+                    float aspectRow = m11 / m00;
+                    float aspectCol = m00 / m11;
+                    if ((aspectRow > 1.25f && aspectRow < 2.8f) || (aspectCol > 1.25f && aspectCol < 2.8f)) {
+                        hasValidProj = true;
+                    }
+                }
+            }
+        }
+    }
+
+    if (!hasValidProj) {
+        std::memset(&outProj, 0, sizeof(Matrix4x4));
     }
 
     return true;
@@ -251,32 +314,39 @@ void CameraDeltaTracker::UpdateCandidateMotion(DynamicCandidate& candidate, cons
         return;
     }
 
-    float delta = CalculateDelta(candidate.previousMatrix, currentMatrix);
+    // Compute rotation delta specifically across the 3x3 orthonormal block
+    float rotDelta = 0.0f;
+    for (int r = 0; r < 3; ++r) {
+        for (int c = 0; c < 3; ++c) {
+            rotDelta += std::abs(currentMatrix.m[r][c] - candidate.previousMatrix.m[r][c]);
+        }
+    }
+    float fullDelta = CalculateDelta(candidate.previousMatrix, currentMatrix);
     candidate.previousMatrix = currentMatrix;
     
     bool hasPhysicalMotion = (inputMotionEnergy > 0.15f);
 
     if (candidate.isViewMatrix) {
-        if (delta > 0.0002f && delta < 2.5f && hasPhysicalMotion) {
+        if (rotDelta > 0.0002f && rotDelta < 2.5f && hasPhysicalMotion) {
             candidate.temporalScore = (std::min)(candidate.temporalScore + 0.15f, 1.0f);
             candidate.consecutiveMatches++;
-        } else if (delta < 0.0001f && hasPhysicalMotion) {
+        } else if (rotDelta < 0.0001f && hasPhysicalMotion) {
             // Player moved view, but matrix didn't rotate (static object / HUD)
             candidate.temporalScore = (std::max)(candidate.temporalScore - 0.10f, 0.0f);
             candidate.consecutiveMatches = 0;
-        } else if (delta > 0.002f && !hasPhysicalMotion) {
-            // Movement without input (cutscene or unrelated game animation)
+        } else if (rotDelta > 0.002f && !hasPhysicalMotion) {
+            // Rotation without physical input (cutscene or unrelated game animation)
             candidate.temporalScore = (std::max)(candidate.temporalScore - 0.08f, 0.0f);
             candidate.consecutiveMatches = 0;
-        } else if (delta < 0.0001f && !hasPhysicalMotion) {
-            // Static as expected when idle
+        } else if (rotDelta < 0.0001f && !hasPhysicalMotion) {
+            // Static as expected when idle or walking with WASD
             if (candidate.consecutiveMatches > 3) {
                 // Keep score stable
             }
         }
     } else if (candidate.isProjectionMatrix) {
         // Projection matrices should remain static during normal camera look
-        if (delta < 0.0001f) {
+        if (fullDelta < 0.0001f) {
             candidate.temporalScore = (std::min)(candidate.temporalScore + 0.05f, 1.0f);
         } else {
             candidate.temporalScore = (std::max)(candidate.temporalScore - 0.10f, 0.0f);

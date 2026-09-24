@@ -30,6 +30,14 @@ public:
     // Test hook for DX11 tests
     IGraphicsBackend* GetGraphicsBackend() { return m_graphicsBackend.get(); }
 
+    bool IsOpenXRReady() const {
+        return m_oxrRuntime && 
+               m_oxrRuntime->GetState() >= openxr::RuntimeState::SESSION_READY &&
+               m_oxrRuntime->GetState() != openxr::RuntimeState::STOPPING &&
+               m_oxrRuntime->GetState() != openxr::RuntimeState::STOPPED &&
+               m_oxrRuntime->GetState() != openxr::RuntimeState::FAILED;
+    }
+
 private:
     
     RenderFrameSnapshot m_currentSnapshot;

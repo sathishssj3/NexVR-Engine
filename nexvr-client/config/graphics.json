@@ -2,7 +2,7 @@
   "preferredBackend": "DX11",
   "resolutionScale": 1.0,
   "useRecommendedResolution": true,
-  "srgbCorrection": false,
+  "srgbCorrection": true,
   "depthSubmission": false,
   "enableASW": true,
   "aswTargetFps": 90,

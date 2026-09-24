@@ -491,14 +491,17 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
       const rootConfigPath = path.join(installPath, 'vrinject.json');
       let baseProfile: Record<string, any> = {};
 
-      const profileDirs = [
-        path.join(app.getPath('userData'), 'updates', 'profiles'),
+      const localProfileDirs = [
         path.resolve(__dirname, '../../../../nexvr-client/profiles'),
         path.resolve(__dirname, '../../../../profiles'),
         path.resolve(__dirname, '../../../profiles'),
         path.resolve(__dirname, '../../profiles'),
         path.join(process.resourcesPath, 'profiles'),
       ];
+      const otaProfileDir = path.join(app.getPath('userData'), 'updates', 'profiles');
+      const profileDirs = (!app.isPackaged)
+        ? [otaProfileDir, ...localProfileDirs]
+        : [otaProfileDir, ...localProfileDirs];
       const exeBase = targetExeName ? path.basename(targetExeName, '.exe').toLowerCase() : '';
       for (const pDir of profileDirs) {
         try {
@@ -514,6 +517,7 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
               }
               if (isMatch) {
                 const parsed = JSON.parse(fs.readFileSync(path.join(pDir, f), 'utf-8'));
+                if (parsed.srgbCorrection === false) parsed.srgbCorrection = true;
                 baseProfile = { ...baseProfile, ...parsed };
                 break;
               }
@@ -534,7 +538,7 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
           matrixPrecision: 'Float32',
           motionAimSensitivity: 1.0,
           useRecommendedResolution: true,
-          srgbCorrection: false,
+          srgbCorrection: true,
           depthSubmission: false,
           rawInputMode: true,
           autoInjectOnLaunch: true,
@@ -553,13 +557,10 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
           matrixPrecision: 'Float32',
           motionAimSensitivity: 1.0,
           useRecommendedResolution: true,
-          srgbCorrection: false,
+          srgbCorrection: true,
           depthSubmission: false,
           rawInputMode: true,
           autoInjectOnLaunch: true,
-          contrast: 1.18,
-          saturation: 1.12,
-          brightness: 1.15,
         };
       }
 
@@ -575,7 +576,7 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
           matrixPrecision: 'Float32',
           motionAimSensitivity: 1.0,
           useRecommendedResolution: true,
-          srgbCorrection: false,
+          srgbCorrection: true,
           depthSubmission: true,
           rawInputMode: true,
           autoInjectOnLaunch: true,
@@ -604,6 +605,14 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
             ...(baseProfile.brightness !== undefined ? { brightness: baseProfile.brightness } : (cur.brightness !== undefined ? { brightness: cur.brightness } : {})),
           };
         } catch {}
+      }
+
+      // Universal Desktop 1:1 Color Fidelity Invariant:
+      // Game backbuffers are display-ready sRGB. OpenXR compositor applies display gamma decode (c^(1/2.2)),
+      // which without srgbCorrection results in washed-out milky blacks (e.g. 0.05 becomes 0.256, 5x brighter).
+      // srgbCorrection MUST ALWAYS be true to perform the exact pow(c, 2.2f) transfer cancellation.
+      if (activeConfig.srgbCorrection !== true) {
+        activeConfig.srgbCorrection = true;
       }
 
       activeSessionConfig = activeConfig;

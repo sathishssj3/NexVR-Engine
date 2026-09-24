@@ -425,11 +425,11 @@ void OverlayManager::Render() {
                 ImGui::Spacing();
 
                 bool srgb = cfg.srgbCorrection;
-                if (ImGui::Checkbox("Legacy sRGB Gamma Correction", &srgb)) {
+                if (ImGui::Checkbox("sRGB Display Gamma Calibration", &srgb)) {
                     cfg.srgbCorrection = srgb;
                     cfgManager->Save();
                 }
-                ImGui::TextDisabled("Legacy toggle for older non-linear titles (keep off for modern UE4/UE5/DX12 titles).");
+                ImGui::TextDisabled("Applies exact 2.2 display gamma cancellation so headset shades and blacks match desktop 1:1.");
 
                 ImGui::EndTabItem();
             }
@@ -499,7 +499,7 @@ void OverlayManager::Render() {
                     cfg.contrast = 1.0f;
                     cfg.saturation = 1.0f;
                     cfg.brightness = 1.0f;
-                    cfg.srgbCorrection = false;
+                    cfg.srgbCorrection = true;
                     cfg.useRecommendedResolution = true;
                     cfg.depthSubmission = false;
                     cfg.motionAimSensitivity = 1.0f;

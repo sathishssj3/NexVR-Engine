@@ -15,7 +15,7 @@ struct VRConfig {
     bool enableImGuiOverlay = true;
     float motionAimSensitivity = 1.0f;
     bool useRecommendedResolution = true;
-    bool srgbCorrection = false;
+    bool srgbCorrection = true;
     float contrast = 1.0f;
     float saturation = 1.0f;
     float brightness = 1.0f;

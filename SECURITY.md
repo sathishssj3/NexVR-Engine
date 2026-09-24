@@ -1,6 +1,6 @@
 # Security Policy
 
-NexVR Engine implements several security measures to ensure safe and predictable injection behavior. 
+NexVR Engine implements several security measures to ensure safe and predictable injection behavior.
 
 ## Implemented Security Checks
 

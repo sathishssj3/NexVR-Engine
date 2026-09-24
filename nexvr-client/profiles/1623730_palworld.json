@@ -9,7 +9,7 @@
   "matrixPrecision": "Double64",
   "motionAimSensitivity": 1,
   "useRecommendedResolution": true,
-  "srgbCorrection": false,
+  "srgbCorrection": true,
   "depthSubmission": true,
   "rawInputMode": true,
   "autoInjectOnLaunch": true

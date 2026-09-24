@@ -71,13 +71,14 @@ float3 ApplyPerceptualGrading(float3 color, float contrast, float saturation, fl
     return saturate(col);
 }
 
-// Optional IEC 61966-2-1 transfer curve: active ONLY if explicitly opted in via profile (SrgbCorrection != 0).
-// Modern game backbuffers are already tone-mapped and display-ready for sRGB; default passes through 1:1 untouched.
+// Display gamma transfer curve: active when opted in via profile (SrgbCorrection != 0).
+// Modern game backbuffers are already tone-mapped and display-ready for sRGB. The OpenXR compositor
+// and display runtimes (SteamVR, Quest Link, Virtual Desktop) apply an inverse gamma curve (~1/2.2) when presenting.
+// Applying exact display gamma pow(clamp(c, 0.0f, 1.0f), 2.2f) provides an identical mathematical cancellation
+// (pow(c, 2.2f))^(1/2.2) == c, preventing lifted shadows and reproducing desktop graphics 1:1 with zero brightening.
 float3 ApplySrgbTransfer(float3 c)
 {
-    float3 linearLow = c / 12.92f;
-    float3 linearHigh = pow(max((c + 0.055f) / 1.055f, 0.0f), 2.4f);
-    return lerp(linearLow, linearHigh, step(0.04045f, c));
+    return pow(clamp(c, 0.0f, 1.0f), 2.2f);
 }
 
 // Standard depth unprojection

@@ -159,6 +159,18 @@ The following fixes ensure all games (DX11, DX12, Vulkan) correctly display in V
 - **Fix**: Completely removed `pow(c, 2.2f)` from `stereo_reprojection.hlsl` so compute shaders always pass through untouched game backbuffer pixels directly to OpenXR swapchains without double-gamma squaring. Changed the system-wide default for `srgbCorrection` to `false` in `ConfigManager`, schemas, and overlay reset handlers. Updated all curated profiles (`990080_hogwarts_legacy.json`, `668580_atomic_heart.json`, `1623730_palworld.json`, `1245620_elden_ring.json`, `1110910_mortal_shell.json`, `meccha_chameleon.json`, `814380_sekiro.json`) to `srgbCorrection: false`. Added a hardened launcher fallback in `injectionManager.ts` for Hogwarts Legacy (`Phoenix` / `HogwartsLegacy`). Bumped engine and launcher to `v0.1.11` with semver-aware hotfix detection in `updateManager.ts`.
 - **Rule**: Universal default for `srgbCorrection` must remain `false`. Games output already-tonemapped sRGB frames; compute shaders must never artificially apply exponential gamma curves (`pow(c, 2.2)`) unless specifically requested by an opt-in user toggle. All fixes must bump the version number before release.
 
+### BUG-22: Camera Lock Hysteresis & Temporal Score Decay Prevention
+- **Files**: `nexvr-client/src/memory_scanner/camera_delta_tracker.cpp`, `nexvr-client/src/core/frame_coordinator.cpp`
+- **Problem**: In games like *Mortal Shell* and *Sekiro*, standing idle or walking with keyboard WASD without mouse movement caused `inputMotionEnergy` to drop to zero. The tracker penalized camera translation without mouse turn, decaying `m_lockedConfidence` to 0.0f within ~220 ms and dropping the camera lock. This caused violent flickering between 3D stereo reprojection and 2D flat mode. Additionally, uninitialized stack matrices and square 1:1 shadow cascade projection bindings caused warped FOVs and pinhole zooms.
+- **Fix**: Implemented lock retention hysteresis in `CameraDeltaTracker` preserving established orthonormal camera locks at >=90% confidence during idle/WASD movement. Separated 3x3 rotation deltas from row-3 translation deltas. Added aspect ratio validation ($1.25 < \text{aspect} < 2.8$) rejecting square shadow cascades. Ensured clean, zero-initialized Left-Handed Reverse-Z 16:9 perspective fallback matrices in `FrameCoordinator`.
+- **Rule**: Established camera locks must never be dropped purely due to lack of mouse movement. Projection candidate validation must filter out square shadow cascades and reflection probes.
+
+### BUG-23: Desktop 60 Hz VSync Decoupling from 90 Hz OpenXR Compositor
+- **Files**: `nexvr-client/src/hooks/dx11_hook.cpp`
+- **Problem**: When games ran with desktop VSync enabled on a 60 Hz monitor, DX11 `Present(1, ...)` put the render thread to sleep until the 16.6 ms desktop v-blank. OpenXR / SteamVR running at 90 Hz (11.1 ms) missed submission deadlines on every frame, resulting in a solid purple/magenta reprojection dropped-frame wall in the SteamVR GPU performance graph despite low GPU render times (<1.5 ms).
+- **Fix**: Decoupled desktop presentation by checking `FrameCoordinator::IsOpenXRReady()`. When an OpenXR VR session is presenting, `effectiveSyncInterval = 0` is passed to desktop `Present()`, allowing the game loop to present immediately and feed the OpenXR compositor at the full 90/120 Hz cadence without dropped frames.
+- **Rule**: When VR injection is presenting to OpenXR, desktop swapchains must never sleep on desktop monitor v-blank intervals.
+
 
 ## 7. Anti-Cheat & AV Posture Tier List
 

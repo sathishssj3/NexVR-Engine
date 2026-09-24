@@ -207,7 +207,12 @@ HRESULT ProcessPresent(SwapChainType* pSwapChain, OriginalFunc originalFunc, Arg
 
 
 static HRESULT hkPresentInternal(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
-    return ProcessPresent(pSwapChain, OriginalPresent, SyncInterval, Flags);
+    UINT effectiveSyncInterval = SyncInterval;
+    auto* coordinator = SubsystemContext::Get().GetFrameCoordinator();
+    if (coordinator && coordinator->IsOpenXRReady()) {
+        effectiveSyncInterval = 0; // Decouple from 60 Hz monitor VSync so OpenXR runs at full 90 Hz
+    }
+    return ProcessPresent(pSwapChain, OriginalPresent, effectiveSyncInterval, Flags);
 }
 
 HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
@@ -221,7 +226,12 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 }
 
 static HRESULT hkPresent1Internal(IDXGISwapChain1* pSwapChain, UINT SyncInterval, UINT PresentFlags, const DXGI_PRESENT_PARAMETERS* pPresentParameters) {
-    return ProcessPresent(pSwapChain, OriginalPresent1, SyncInterval, PresentFlags, pPresentParameters);
+    UINT effectiveSyncInterval = SyncInterval;
+    auto* coordinator = SubsystemContext::Get().GetFrameCoordinator();
+    if (coordinator && coordinator->IsOpenXRReady()) {
+        effectiveSyncInterval = 0; // Decouple from 60 Hz monitor VSync so OpenXR runs at full 90 Hz
+    }
+    return ProcessPresent(pSwapChain, OriginalPresent1, effectiveSyncInterval, PresentFlags, pPresentParameters);
 }
 
 HRESULT __stdcall hkPresent1(IDXGISwapChain1* pSwapChain, UINT SyncInterval, UINT PresentFlags, const DXGI_PRESENT_PARAMETERS* pPresentParameters) {

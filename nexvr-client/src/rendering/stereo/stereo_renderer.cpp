@@ -87,6 +87,11 @@ bool StereoRenderer::RenderStereoFrame(ID3D11DeviceContext* context,
     context->CSSetShader(cs, nullptr, 0);
     context->CSSetConstantBuffers(0, 1, &cb);
 
+    ID3D11SamplerState* sampler = resourceManager->GetLinearSampler();
+    if (sampler) {
+        context->CSSetSamplers(0, 1, &sampler);
+    }
+
     ID3D11ShaderResourceView* srvs[] = { gameColorSRV, gameDepthSRV };
     context->CSSetShaderResources(0, 2, srvs);
 
@@ -105,6 +110,9 @@ bool StereoRenderer::RenderStereoFrame(ID3D11DeviceContext* context,
 
     ID3D11UnorderedAccessView* nullUAVs[] = { nullptr, nullptr };
     context->CSSetUnorderedAccessViews(0, 2, nullUAVs, nullptr);
+
+    ID3D11SamplerState* nullSampler = nullptr;
+    context->CSSetSamplers(0, 1, &nullSampler);
     
     return true;
 }

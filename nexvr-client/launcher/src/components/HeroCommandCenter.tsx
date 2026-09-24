@@ -110,19 +110,17 @@ export function HeroCommandCenter({
                 alignItems: 'center',
                 gap: 16,
                 border: '1px solid #2C2D35',
-                background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.005) 100%), #07070A',
+                background: '#14151C',
                 borderRadius: 8,
-                transition: 'all 0.18s ease',
+                transition: 'background 0.18s ease, border-color 0.18s ease',
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.borderColor = '#4A4D5C';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.6)';
+                e.currentTarget.style.background = '#1C1D26';
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.borderColor = '#2C2D35';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.background = '#14151C';
               }}
             >
               {/* Game Icon (High quality, no broken pixels, solid smoke gray border) */}

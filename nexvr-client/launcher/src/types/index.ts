@@ -29,7 +29,7 @@ export interface UpdateStatus {
 export interface VRConfig {
   motionAimSensitivity:    number;   // 0.1–10.0, default 1.0
   useRecommendedResolution: boolean; // default true
-  srgbCorrection:          boolean;  // default false
+  srgbCorrection:          boolean;  // default true
   depthSubmission:         boolean;  // default false
   rawInputMode:            boolean;  // default true
   autoInjectOnLaunch:      boolean;  // default true

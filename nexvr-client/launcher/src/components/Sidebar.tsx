@@ -230,15 +230,15 @@ export function Sidebar({ games, waitingGames = [], selectedId, onSelect, onResc
                 </div>
               </div>
             ) : (
-              filtered.map((g: GameEntry, i: number) => {
+              filtered.map((g: GameEntry) => {
                 const isSelected = selectedId === g.id;
                 return (
                   <div 
                     key={g.id} 
-                    className={`game-item-banner slide-in-left stagger-${Math.min(i + 1, 5)} ${isSelected ? 'game-banner-selected' : ''}`}
+                    className={`game-item-banner ${isSelected ? 'game-banner-selected' : ''}`}
                     onClick={() => onSelect(g)}
                   >
-                    {/* Game Avatar Box (No red border, clean solid smoke gray, high quality) */}
+                    {/* Game Avatar Box (Clean solid smoke gray, flat, high quality) */}
                     <div 
                       className="game-avatar-box"
                       style={{ 
@@ -251,7 +251,7 @@ export function Sidebar({ games, waitingGames = [], selectedId, onSelect, onResc
                         justifyContent: 'center', 
                         marginRight: 12, 
                         flexShrink: 0, 
-                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.6)', 
+                        boxShadow: 'none', 
                         overflow: 'hidden', 
                         border: '1px solid #2C2D35',
                         padding: 3,
@@ -290,7 +290,7 @@ export function Sidebar({ games, waitingGames = [], selectedId, onSelect, onResc
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', zIndex: 2 }}>
                       <span style={{ 
                         fontSize: 15.5, 
-                        fontWeight: 600, 
+                        fontWeight: 700, 
                         color: '#FFFFFF', 
                         whiteSpace: 'nowrap', 
                         textOverflow: 'ellipsis', 

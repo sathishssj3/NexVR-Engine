@@ -111,9 +111,19 @@ void StereoCameraGenerator::Generate(const RenderFrameSnapshot& renderSnapshot,
     Matrix4x4 leftPoseView = createPoseView(renderSnapshot.leftPose);
     Matrix4x4 rightPoseView = createPoseView(renderSnapshot.rightPose);
 
+    bool hasValidGameView = (std::abs(camera.view.m[0][0]) > 0.0001f ||
+                             std::abs(camera.view.m[1][1]) > 0.0001f ||
+                             std::abs(camera.view.m[2][2]) > 0.0001f ||
+                             std::abs(camera.view.m[3][3]) > 0.0001f);
+
     // Eye View = GameView * OpenXRPoseView
-    outLeftEye.view = Multiply(camera.view, leftPoseView);
-    outRightEye.view = Multiply(camera.view, rightPoseView);
+    if (hasValidGameView) {
+        outLeftEye.view = Multiply(camera.view, leftPoseView);
+        outRightEye.view = Multiply(camera.view, rightPoseView);
+    } else {
+        outLeftEye.view = leftPoseView;
+        outRightEye.view = rightPoseView;
+    }
 
     // Apply the original projection matrix scale factors to the OpenXR FOV.
     // Actually, to use OpenXR's FOV directly, we just build a projection matrix from it.
