@@ -1,49 +1,62 @@
 # NexVR Engine — Competitive Research & Market Landscape
-
-## 1. Market Opportunity & Industry Context
-
-### The "VR Content Desert" Problem
-* **Hardware Scale**: Over **30 Million** consumer VR headsets have been sold to date (Meta Quest 2/3/3S, Valve Index, PlayStation VR2, Bigscreen Beyond). PC VR via Quest Link / Virtual Desktop represents the largest and fastest-growing enthusiast segment on Steam (accounting for ~2% of all active Steam users, or over 3.5 million active monthly VR gamers).
-* **The Software Bottleneck**: Developing native AAA VR games is economically high-risk for major game publishers. Native VR titles cost $30M–$80M to build, but address a market fraction compared to the $180B global flat-screen gaming market. Consequently, AAA studios have largely abandoned dedicated VR development.
-* **The Untapped Opportunity**: Steam hosts over **90,000+ PC games** spanning DirectX 11, DirectX 12, and Vulkan. Converting even 1% of the top 500 flat-screen PC titles into stereoscopic 6DOF VR unlocks a library 100x larger than the entire native VR store ecosystem combined.
+*Updated September 2026 with Verified Industry Developments & Legal Precedents*
 
 ---
 
-## 2. Competitive Landscape & Matrix
+## 1. Market Opportunity & Industry Context
 
-| Feature / Dimension | **NexVR Engine** (Our Solution) | **UEVR** (Praydog) | **LukeRoss R.E.A.L.** | **VorpX** |
+### The Core Problem: The AAA "VR Content Desert"
+* **Hardware Scale**: Over **2.0M–2.8M** active PC VR headsets are connected monthly on Steam (Meta Quest 2/3/3S via Link/Virtual Desktop represent ~70% of SteamVR usage).
+* **The 2026 Hardware Tailwind (Valve Steam Frame)**: In September 2026, Valve announced the **Steam Frame** ($1,059 / $1,299), specifically built to run and stream flat Steam PC games into spatial virtual reality. This represents the first major demand catalyst for PC VR in years.
+* **The Software Bottleneck**: Major game studios have largely ceased native AAA VR game development ($40M–$80M budgets are economically unviable for a modest native VR install base).
+* **The Untapped Opportunity**: Over **95% of the top 500 flat PC blockbusters** on Steam have zero VR support. Converting these high-budget flat titles into 6DOF spatial VR unlocks a library of unmatched quality without requiring game studios to spend millions on native VR rewrites.
+
+---
+
+## 2. Competitive Landscape & Matrix (Verified 2026 Reality)
+
+| Feature / Dimension | **NexVR Engine** (Our Platform) | **UEVR** (Praydog) | **LukeRoss R.E.A.L.** | **VorpX** |
 | :--- | :--- | :--- | :--- | :--- |
-| **Graphics API Coverage** | **Universal DX11, DX12 & Vulkan** | Unreal Engine 4/5 only | Bespoke per-game mods | DX9, DX11, limited DX12 |
-| **Engine Flexibility** | **Engine-Agnostic** (FromSoftware, REDengine, Unreal, Custom) | **Strictly Unreal Engine** | Handcrafted individual titles | Profile-dependent |
-| **Stereo Technique** | **Synchronous Reprojection + Neural Inpainting** | Native Stereo Hooks (UE-only) | Alternate Eye Rendering (AER) | Z-Buffer Displacement / G3D |
-| **Motion Sickness / Ghosting** | **Low** (Real-time depth-aware stereo frame pacing) | Low (UE native) | **High** (AER causes eye judder during fast motion) | High (Z-displacement smearing) |
-| **Fragility to Game Patches** | **Heuristic Memory Scanning** (Auto-detects camera matrices) | UObject/UWorld reflection | Static pointers (breaks on game update) | Static pointers (breaks on game update) |
-| **Target Audience & UX** | **1-Click Consumer Launcher**, In-Headset VR Dashboard | Highly technical dev UI (50+ sliders) | Manual DLL file copying / Patreon | Complex, dated 2012-era interface |
-| **Business Model** | Freemium Core + Cloud Profiles / Subscription | Open-Source / Donations | $10/month Patreon Subscription | $40 One-Time Commercial License |
+| **Graphics API Coverage** | **Universal DX11, DX12 & Vulkan** | Unreal Engine 4/5 only | Bespoke per-game mods | DX9, DX11, beta DX12 |
+| **Engine Flexibility** | **Engine-Agnostic** (FromSoftware, Custom, Unreal) | **Strictly Unreal Engine** | Handcrafted individual titles | Profile-dependent |
+| **Spatial / Stereo Method** | **Depth-Aware Synchronous Reprojection** | Native UE Stereo Pipeline Hooks | Alternate Eye Rendering (AER) | Geometry 3D (G3D) & Z-Buffer |
+| **Motion Sickness / Artifacts**| **Low** (Real-time depth pacing, 0 judder) | Low (UE native stereo) | **High** (AER causes temporal ghosting during fast motion) | Moderate to High (dependent on mode) |
+| **Fragility to Game Updates** | **Heuristic Memory Scanning** (Dynamic camera delta correlation) | Deep UObject/UWorld reflection | Static memory offsets (breaks on game patches) | Static memory offsets (breaks on game patches) |
+| **User Experience & UX** | **1-Click Consumer Launcher**, In-Headset VR Dashboard (ImGui) | High technical friction (50+ developer sliders & camera bones) | Manual DLL copying & Patreon distribution | Complex 2012-era interface |
+| **Pricing & Business Model**| **100% Free Core Injector & Profiles** + Paid "Plus" Tier ($39/yr) | 100% Free & Open-Source | Free basic mods / Patreon Early Access | ~$44 One-Time Commercial License |
+| **Legal DMCA Exposure** | **Low** (Game-agnostic platform, zero paid game mods) | **Low** (Open-source community project) | **High** (Hit by CD Projekt RED, Take-Two, and 505 Games DMCAs) | Moderate |
 
 ---
 
 ## 3. Deep-Dive Competitor Analysis
 
 ### A. UEVR (Praydog)
-* **What it does well**: Excellent depth and camera integration for Unreal Engine 4 and 5 titles by hooking deep into UE's internal UObject reflections.
-* **Core Limitation**: Completely restricted to Unreal Engine. It cannot run non-Unreal titles (e.g., *Sekiro*, *Elden Ring*, *Cyberpunk 2077*, *Mortal Shell*, *Spider-Man*, *Red Dead Redemption 2*).
-* **User Pain Point**: The interface is overwhelming for mainstream gamers, requiring manual configuration of camera bones, weapon attachments, and FOV overrides.
+* **What it is**: A remarkable open-source project that hooks into Unreal Engine’s internal `UObject` and stereo rendering pipeline.
+* **Strengths**: Provides deep native stereo rendering for Unreal Engine 4 and 5 games with 6DOF controller attachments.
+* **Limitations**: 
+  - Strictly limited to Unreal Engine titles. It completely fails on non-Unreal titles (*Sekiro*, *Cyberpunk 2077*, *Elden Ring*, Unity games, and custom proprietary engines).
+  - High barrier to entry: Geared toward modding power-users; requires adjusting dozens of technical sliders, rotation offsets, and camera attachment bones.
+* **NexVR Wedge**: 1-click consumer launch with zero configuration required, and coverage across non-Unreal proprietary game engines.
 
 ### B. LukeRoss (R.E.A.L. VR)
-* **What it does well**: Outstanding visual polish on a dozen hand-selected AAA titles (*Cyberpunk 2077*, *GTA V*, *Elden Ring*).
-* **Core Limitation**: Employs **Alternate Eye Rendering (AER)**, rendering the left eye on frame 1 and the right eye on frame 2. In fast-paced action or combat, this causes severe temporal ghosting, judder, and motion sickness. Each game requires months of manual reverse engineering.
-* **Business Model**: Gated behind a recurring Patreon subscription.
+* **What it is**: High-profile bespoke mods for individual AAA titles (*GTA V*, *Cyberpunk 2077*, *Horizon Zero Dawn*).
+* **The 2026 DMCA Reality**: In January 2026, **CD Projekt RED issued a DMCA takedown against his paywalled Cyberpunk 2077 mod**, following prior takedowns by Take-Two (2022) and 505 Games. By March 2026, Luke Ross was forced to make all mods freely available, shifting Patreon to feature early-access.
+* **Technical Limitation**: Relies on **Alternate Eye Rendering (AER)**, rendering the left eye on frame 1 and the right eye on frame 2. In fast action games or melee combat, AER induces severe temporal judder and motion sickness.
+* **NexVR Wedge**: True synchronous depth reprojection (both eyes rendered on the same timeline) and an insulation from DMCA by keeping all game profiles 100% free.
 
-### C. VorpX (Legacy Commercial Tool)
-* **What it does well**: Pioneered the space with support for hundreds of older DirectX 9/11 titles.
-* **Core Limitation**: Built on older architecture reliant on static memory offsets. When a game updates, the profile breaks until manually patched. Most games only run in "Z-Buffer 3D" (a 2.5D post-process displacement) rather than true dual-camera geometry. The UI feels like an engineering prototype from 2012.
+### C. VorpX
+* **What it is**: The original commercial VR injector software (~$44 one-time license).
+* **Strengths**: Long legacy support for older DX9/DX11 titles, Geometry 3D mode on supported games, and added OpenXR support.
+* **Limitations**: Relies heavily on static pointer offsets that break with game patches; UI is dated and intimidating for modern Quest/PCVR users; requires manual profile tuning.
+* **NexVR Wedge**: Modern consumer Electron desktop launcher, in-headset dashboard, and heuristic camera matrix detection that survives game updates.
 
 ---
 
-## 4. NexVR’s Strategic Defensibility & Moat
+## 4. NexVR’s Verified Beachhead & Defensibility Moat
 
-1. **Universal Graphics Interception**: Operates at the graphics driver and API level (`IDXGISwapChain`, `D3D12CommandQueue`, `VkQueue`), allowing it to inject into any game engine regardless of internal architecture.
-2. **Heuristic Camera Matrix Detection**: Replaces fragile static pointer chains with runtime memory scanning that correlates camera deltas with user input, making profiles resilient to game updates.
-3. **Display & Color Space Pipeline**: Native OpenXR 1.0 swapchain management with universal sRGB tonemapping and desktop 60 Hz VSync decoupling for fluid 90 Hz / 120 Hz playback.
-4. **Consumer-Grade Launcher & Telemetry**: Modern Electron/React desktop client, in-headset ImGui overlay, signed binaries, automated OTA updates, and Cloudflare/Discord telemetry.
+1. **The Non-Unreal Proof (*Sekiro: Shadows Die Twice*)**:
+   While *Hogwarts Legacy* and *Mortal Shell* are built on Unreal Engine 4 (where UEVR already has a presence), ***Sekiro* runs on FromSoftware's proprietary engine (DirectX 11)**. *Sekiro* is NexVR’s definitive proof of engine-agnostic capability where UEVR cannot operate.
+2. **DMCA Insulation by Design**:
+   NexVR treats the injector and all game profiles as **100% free public utilities**. Monetization is strictly confined to game-agnostic platform features (multi-PC cloud profile sync, telemetry-driven GPU auto-tuning, and early-access engine builds).
+3. **Hardware Pacing for Wireless Quest & Steam Frame**:
+   Decouples 60 Hz desktop monitor VSync to feed OpenXR runtimes at solid 90 Hz / 120 Hz, preventing dropped frames on wireless Quest headsets and spatial streaming devices.

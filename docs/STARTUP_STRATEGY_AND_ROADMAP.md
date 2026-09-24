@@ -25,26 +25,29 @@ gantt
     section Phase 3: Monetization
     M5-6: Paid Validation ($5/mo & $39/yr)          :p3, 2027-01, 2027-03
     section Phase 4: Public Launch
-    M7-9: Public v1.0 & Creator Seeding             :p4, 2027-03, 2027-06
+    M7-9: Public v1.0 & Steam Frame Outreach        :p4, 2027-03, 2027-06
     section Phase 5: Scale
-    M10-12: Catalog Expansion & Pre-Seed Raise      :p5, 2027-06, 2027-09
+    M10-12: Non-Unreal Catalog Expansion & Angels   :p5, 2027-06, 2027-09
 ```
 
 ### Detailed Phase Breakdown
 
-1. **Months 1–2: Reliability and Safety (Critical Path)**
-   - Freeze the three-game beachhead (*Sekiro: Shadows Die Twice*, *Hogwarts Legacy*, *Mortal Shell*).
-   - Build reproducible compatibility tests and enforce safe failure/recovery mechanisms.
-   - Establish a transparent, enforceable 3-Tier anti-cheat policy.
+1. **Months 1–2: Reliability & Safety (Critical Path)**
+   - Freeze the initial Trinity beachhead (*Sekiro: Shadows Die Twice*, *Hogwarts Legacy*, *Mortal Shell*).
+   - Recognize that *Sekiro* is our sole non-Unreal proof; establish benchmark stability across all 3.
+   - Enforce fail-closed anti-cheat detection and remote profile kill-switch.
 2. **Months 3–4: Closed Beta (50–100 Qualified Testers)**
    - Measure successful first sessions, crash frequencies, vestibular discomfort, repeat usage, and willingness to pay.
-3. **Months 5–6: Paid Validation (Limited Paid Tier)**
-   - Validate actual purchases and renewal intent before building expensive cloud or AI infrastructure.
-4. **Months 7–9: Public v1.0 Commercial Launch (Conditional on Release Gates)**
-   - Launch only if safety, compatibility, usability, and support metrics meet the agreed release gates.
-   - Initiate creator-led distribution (*Habie147*, *Beardo Benjo*, *VROasis*) and Flat2VR partnerships.
-5. **Months 10–12: Expansion & Seed Round**
-   - Add verified game profiles sequentially, track subscription retention, and open investor conversations.
+   - Add telemetry tag prompt (comfortable / judder / edge smearing / UI).
+3. **Months 5–6: Paid Validation (Priced "Plus" Tier)**
+   - Offer an optional $39/year (or $5/mo) Plus subscription. Validate actual purchases and renewal intent.
+   - Guardrail: Core injector and all profiles remain 100% free. Paid tier covers only multi-PC cloud sync, GPU auto-tuning, and early engine builds.
+4. **Months 7–9: Public v1.0 Commercial Launch (Timed to Steam Frame)**
+   - Align launch with Valve Steam Frame hardware shipments and holiday PC VR demand.
+   - Initiate creator-led distribution (*Habie147*, *Beardo Benjo*, *VROasis*) featuring *Sekiro* as the non-Unreal flagship.
+5. **Months 10–12: Expansion & Angel Round ($100k–$300k)**
+   - Add non-Unreal titles (e.g. Unity or FromSoftware titles) to widen the moat against UEVR.
+   - Prepare technical evidence pack and open conversations with gaming/tools investors.
 
 ---
 
@@ -53,16 +56,15 @@ gantt
 ### Current State & Problem
 NexVR v0.1.90-beta includes three technically diverse titles in its initial beachhead:
 
-| Game | Graphics API | Engine Type | Role in Beachhead |
+| Game | Graphics API | Engine Type | Role in Beachhead & Moat |
 | :--- | :--- | :--- | :--- |
-| **Sekiro: Shadows Die Twice** | DirectX 11 | FromSoftware Proprietary | High-speed melee combat, rapid camera rotation, precision timing |
-| **Hogwarts Legacy** | DirectX 12 | Unreal Engine 4/5 | Heavy modern graphics pipeline, complex lighting, dynamic shadows |
-| **Mortal Shell** | DirectX 11 | Unreal Engine 4 | Demanding third-person action with custom post-processing |
+| **Sekiro: Shadows Die Twice** | DirectX 11 | **FromSoftware Proprietary** | **Flagship Moat**: Non-Unreal title where UEVR cannot operate. High-speed combat & camera rotation. |
+| **Hogwarts Legacy** | DirectX 12 | Unreal Engine 4/5 | Demanding modern D3D12 pipeline, complex lighting, dynamic shadows. |
+| **Mortal Shell** | DirectX 11 | Unreal Engine 4 | Action RPG test for DX11 post-processing and camera delta retention. |
 
-There are three distinct products inside NexVR:
-1. **Desktop Game Launcher**: Discovers and organizes installed games with an intuitive consumer UI.
-2. **Runtime Injection Layer**: Intercepts graphics swapchains and manages OpenXR 1.0 stereo composition.
-3. **Compatibility Service**: Maintains and distributes verified, version-locked game configurations.
+> [!IMPORTANT]
+> **The Moat Reality Check:**
+> Because *Hogwarts Legacy* and *Mortal Shell* are built on Unreal Engine 4 (where UEVR already has community profiles), **Sekiro is currently our single proof of the engine-agnostic moat**. The next game integrations added to the Verified list must be non-Unreal titles to solidify this advantage.
 
 ### v1.0 Acceptance Release Gates
 
@@ -70,42 +72,20 @@ There are three distinct products inside NexVR:
 | :--- | :--- | :--- |
 | **Successful Launch Rate** | ≥ 95% | On documented supported hardware configurations |
 | **First-Time Setup Success** | ≥ 90% | Without manual developer intervention |
-| **Crash-Free Sessions** | ≥ 99% | Zero unhandled exceptions or memory leaks caused by NexVR |
+| **Crash-Free Sessions** | ≥ 99% | Zero unhandled exceptions caused by NexVR runtime |
 | **Defect-Free Sessions** | ≥ 95% | No severe visual glitches, FOV warp, or camera drift |
 | **Time to First VR Gameplay** | ≤ 10 minutes | From download completion to in-headset play |
 | **Recovery from Failed Launch** | ≤ 2 minutes | Restores game directory cleanly with zero data loss |
 | **Anti-Cheat Incidents** | **0** | Strict adherence to single-player offline policy |
 
-### Feature Prioritization: v1.0 vs v2.0+
-
-#### v1.0 Must-Have (Critical Path)
-- Desktop launcher with automatic detection of installed Steam/Epic games.
-- Curated catalog with explicit support status and known limitations.
-- One-click launch for verified profiles.
-- Safe installation and clean DLL removal process.
-- Local profile storage, backup, and rollback.
-- In-headset ImGui dashboard for IPD, convergence, and recentering.
-- Crash diagnostics, support bundle export, and privacy-first log redaction.
-- Authenticode-signed binaries and secure SHA-256 update verification.
-- Mandatory first-run legal, anti-cheat, and health disclaimer modal.
-
-#### v2.0+ (Nice-to-Have / Post-PMF)
-- Cloud profile synchronization and cross-device version history.
-- Community profile sharing marketplace with moderation and voting.
-- Neural inpainting for edge disocclusion gap filling.
-- Automatic AI-driven camera matrix classification for unprofiled titles.
-- Large catalog expansion (100+ titles).
-
 ---
 
 ## 2. Market Validation & Demand Metrics
 
-### Five Stages of Demand Validation
-1. **Qualified Interest**: Track how many gamers with a compatible PC and headset request beta access.
-2. **Activation**: Measure how many successfully install NexVR and reach their first VR session.
-3. **Engagement**: Track repeat usage, session duration, and multi-game play.
-4. **Monetization**: Measure conversion rates and refund requests at real price points.
-5. **Retention & Advocacy**: Measure paid renewals and voluntary community recommendations.
+### Realistic Market Sizing
+* **Active Headsets on Steam**: **~2.0M–2.8M** monthly active PC VR headsets on Steam (~1.7% of total Steam userbase).
+* **The Tailwinds**: **Valve Steam Frame** (announced Sept 2026 at $1,059 / $1,299) designed to stream flat PC games into spatial environments.
+* **The Software Gap**: Over **95% of the top 500 flat PC blockbusters** lack VR support.
 
 ### Key Quantitative Targets
 
@@ -113,84 +93,58 @@ There are three distinct products inside NexVR:
 | :--- | :--- | :--- |
 | **Beta Activation** | ≥ 60% of invited testers | Validates setup flow and onboarding appeal |
 | **First-Session Success** | ≥ 90% of activated testers | Tests out-of-the-box hardware compatibility |
-| **D7 Retention** | ≥ 30% | Tests whether users return after novelty fades |
-| **D30 Retention** | ≥ 20% | Demonstrates long-term utility |
-| **Median Session Duration** | ≥ 45 minutes | Assesses ergonomic comfort and immersive value |
-| **Paid Conversion** | ≥ 5% of activated users | Proves initial willingness to pay |
-| **Month-2 Paid Retention** | ≥ 70% | Tests subscription durability |
+| **D7 Retention** | ≥ 35% | Tests whether users return after novelty fades |
+| **D28 Retention** | ≥ 20% | Demonstrates long-term utility |
+| **Median Session Duration** | ≥ 40 minutes | Assesses ergonomic comfort and immersive value |
+| **Paid Conversion** | ≥ 2–3% of activated users | Realistic benchmark for consumer utility tooling |
 | **Refund Rate** | ≤ 10% | Validates that expectations match reality |
-| **Support Burden** | ≤ 0.3 tickets / active user / mo | Ensures operations can scale sustainably |
+| **AV / SmartScreen Blocks** | ≤ 5% of installs | Tests binary reputation and signing trust |
 
 ---
 
 ## 3. Technical & Technological Requirements
 
-### System Architecture Overview
-
-```mermaid
-graph TD
-    Launcher[Desktop Launcher - Electron/React] --> Preflight[Preflight & Health Checks]
-    Preflight --> Injector[CLI Injector - vr-inject-cli.exe]
-    Injector --> Target[Target Game Process]
-    Target --> DLL[Runtime Hook - vrinject.dll]
-    DLL --> Hooks[D3D11 / D3D12 / Vulkan Detours]
-    Hooks --> Camera[Camera Delta Tracker & Hysteresis]
-    Hooks --> Reproj[Depth-Aware Stereo Reprojection]
-    Reproj --> OpenXR[OpenXR 1.0 Compositor / Headset]
-    Launcher --> Edge[Cloudflare Edge API / KV Store]
-    Edge --> Discord[Discord #nexvr-logs Telemetry]
-```
-
-### The Three Hardest Technical Challenges
-
-1. **Game Detection Accuracy**:
-   - *Approach*: Combine official storefront local manifests (Steam `appmanifest_<id>.acf`) with heuristic executable signature checks.
-   - *Target*: ≥ 98% precision for automatic detection.
-2. **Camera Discovery & Lock Stability**:
-   - *Approach*: Runtime memory scanner utilizing camera delta tracking, hysteresis thresholds (preserving locks at ≥90% confidence during idle/WASD movement), and aspect-ratio validation (filtering out square shadow cascades).
-   - *Target*: ≥ 95% of tested sessions maintain stable camera lock without drift.
-3. **OpenXR Frame Pacing & Comfort**:
-   - *Approach*: Decouple desktop 60 Hz VSync (`effectiveSyncInterval = 0`) when OpenXR is presenting; submit frames within the strict 11.1ms (90Hz) window.
-   - *Target*: 0 dropped compositor frames during normal gameplay.
+### The Code Signing & Anti-Virus Reality (India Founder Context)
+* **SmartScreen Reputation**: Microsoft SmartScreen calculates trust per file SHA-256 hash over time. 
+* **The Architecture Rule**: Keep the injector binary (`vr-inject-cli.exe`) **tiny, stable, and rarely recompiled**. Constantly modifying the CLI executable resets its hash reputation with Windows Defender. All frequent updates must land in the user-mode launcher or `vrinject.dll`.
+* **Binary Hygiene**: Compile with `asInvoker` by default; elevate only via launcher UAC when targeting an elevated game. Avoid third-party packers or obfuscators that trigger false-positive heuristic flags.
 
 ---
 
 ## 4. Go-to-Market Strategy & Creator Seeding
 
-### Positioning Statement
+### Positioning: Transparency over Hype
 > **"Play supported PC games in VR, with a 1-click launcher and verified compatibility."**
-> *(Avoid claiming universal support for 90,000 games before individual titles are battle-tested).*
+> *(Never claim 90,000 games work until individual profiles are tested and verified).*
 
-### Creator Seeding Program
-Direct outreach to leading VR creators (*Habie147*, *Beardo Benjo*, *VROasis*, *Cas and Chary*):
-- Provide a turnkey, pre-configured setup with 0 friction.
-- Give early access to high-demand spectacle titles (*Sekiro*, *Hogwarts Legacy*).
-- Never mandate scripted talking points; embrace honest feedback.
-- A single high-performing YouTube gameplay video delivers higher conversion than $20,000 in paid ads.
+### Creator Seeding
+* **Priority Creators**: Focus outreach on *Beardo Benjo*, *Habie147*, and *VROasis*.
+* **The Demo Reel**: Pitch with a **30-second side-by-side clip of *Sekiro* in 6DOF VR** (a non-Unreal title they have never seen running in native 6DOF VR).
+* **Timing**: Coordinate video coverage with the delivery of the **Valve Steam Frame**.
 
 ---
 
-## 5. Business Model & Monetization Architecture
+## 5. Business Model & DMCA Insulation
 
-### Free vs. Premium Tier Matrix
+### The Luke Ross DMCA Precedent: Why Profiles Must Be Free
+In January 2026, **CD Projekt RED hit Luke Ross with a DMCA takedown** for paywalling his *Cyberpunk 2077* VR mod on Patreon. Take-Two and 505 Games executed similar takedowns. Luke Ross was forced to make all his mods **100% free**, maintaining Patreon purely for general supporter early-access.
 
-| Feature | Free Tier | Premium Tier ($5/mo or $39/yr) |
+> [!CAUTION]
+> **Legal Red Line:**
+> Charging money for access to specific game VR conversions or game profiles is what triggers publisher DMCA takedowns. NexVR will **NEVER** paywall game profiles or the core injector.
+
+### Free vs. Paid "Plus" Tier
+
+| Feature | Free Tier | Plus Tier ($39/year or $5/mo) |
 | :--- | :---: | :---: |
-| **Core Local Injector (DX11, DX12, Vulkan)** | ✅ Included | ✅ Included |
-| **Verified Trinity Profiles (Local)** | ✅ Included | ✅ Included |
-| **In-Headset VR Dashboard (ImGui)** | ✅ Included | ✅ Included |
-| **Basic Manual Settings & Overrides** | ✅ Included | ✅ Included |
-| **Cloud Profile Auto-Sync & Cloud Backup** | ❌ | ✅ Included |
-| **Verified Profile Updates (OTA)** | ❌ | ✅ Included |
-| **Advanced 1-Click Game Tuning Presets** | ❌ | ✅ Included |
-| **Neural Inpainting & Custom Models** | ❌ | ✅ Included (v2.0) |
-| **Priority Developer Support** | Community | Direct Discord Ticket |
-
-### Unit Economics (Illustrative Scenario)
-
-$$\text{Estimated LTV} = \frac{\text{Monthly Revenue} \times \text{Gross Margin}}{\text{Monthly Churn}} = \frac{\$5 \times 80\%}{8\%} = \$50.00$$
-
-Target Customer Acquisition Cost (CAC) at a healthy 3:1 ratio: **≤ $16.67**.
+| **Core Ingestion Engine (DX11, DX12, Vulkan)** | ✅ 100% Free | ✅ Included |
+| **All Game Profiles & Community Profiles** | ✅ 100% Free | ✅ Included |
+| **In-Headset VR Dashboard & 6DOF Tracking** | ✅ 100% Free | ✅ Included |
+| **Automatic OTA Profile Updates** | ✅ 100% Free | ✅ Included |
+| **Multi-PC Cloud Settings Sync & Backup** | ❌ | ✅ Included |
+| **Telemetry-Driven GPU Auto-Tuning Presets**| ❌ | ✅ Included |
+| **Early-Access Engine Builds (Experimental)** | ❌ | ✅ Included |
+| **Neural Inpainting & Advanced Filters** | ❌ | ✅ Included (v2.0) |
 
 ---
 
@@ -211,41 +165,23 @@ Target Customer Acquisition Cost (CAC) at a healthy 3:1 ratio: **≤ $16.67**.
 +-----------------------------------------------------------------+
 ```
 
-### Risk Mitigation Policy
-1. **Zero Anti-Cheat Bypass**: NexVR will never attempt to circumvent active anti-cheat protections.
-2. **EULA Insulation**: Software operates purely as a local graphics presentation wrapper. Does not distribute copyrighted game assets or modify game binaries on disk.
-3. **Trademark Fair Use**: Game titles and publisher names are used strictly for compatibility identification. Explicit non-affiliation disclaimers are presented in the launcher and documentation.
+* **Fail-Closed Protection**: Injected CLI checks for active kernel anti-cheat hooks. If detected, injection immediately aborts.
+* **Remote Kill-Switch**: Cloudflare Edge API can instantly disable a game profile if a publisher raises an objection or updates security software.
+* **Cover Art Hygiene**: The launcher loads box art dynamically from the user's local Steam cache at runtime—NexVR never bundles or distributes third-party copyrighted game artwork.
 
 ---
 
 ## 7. Funding & Resource Allocation
 
-### Proposed $350,000 Pre-Seed Budget Breakdown
+### Realistic Sizing: Indie Business vs Venture Scale
+* A pure PC VR enthusiast subscription reaches **~$80,000 to $250,000 ARR** as a profitable solo/indie business.
+* To reach venture scale ($10M+ ARR), NexVR's long-term expansion thesis is:
+  1. **Spatial Hardware Support**: Extending Side-by-Side 3D output to lightweight XR glasses (*XREAL, Rokid, Viture*).
+  2. **Steam Frame / SteamOS Layer**: Providing zero-friction flat-to-VR streaming on Valve's new spatial handheld.
+  3. **Studio B2B Licensing**: Helping flat game developers release official VR editions with zero code rewrites.
 
-| Budget Category | Allocation (%) | Amount ($) | Strategic Purpose |
-| :--- | :---: | :---: | :--- |
-| **Engineering Hires** | **50%** | $175,000 | Senior Graphics/VR Systems Engineer (MSVC/Direct3D/Vulkan) |
-| **Testing & Hardware** | **12%** | $42,000 | Multi-GPU test rigs (RTX 3060 to 4090, AMD RX 7900) & headsets |
-| **Legal & Security** | **11%** | $38,500 | Software licensing counsel, EULA review, security audit |
-| **Community & Distribution** | **10%** | $35,000 | Creator seeding packages, documentation, community manager |
-| **Reserve Buffer** | **10%** | $35,000 | 3-month operational runway contingency |
-| **Cloud & Infrastructure** | **7%** | $24,500 | Cloudflare KV/D1 databases, object storage, build servers |
-| **Total** | **100%** | **$350,000** | **12–18 Month Runway to Sustainable Series Seed** |
-
----
-
-## Implementation Status & Immediate Next Steps
-
-As of **September 2026 (v0.1.90-beta)**, the technical implementation has already surpassed the initial planning baseline:
-- ✅ **Trinity Engines Verified**: DX11 (*Sekiro*), DX12 (*Hogwarts Legacy*), and Vulkan adapters functional.
-- ✅ **Automated Dual Telemetry**: Live Cloudflare KV + Discord `#nexvr-logs` telemetry pipeline operational.
-- ✅ **Legal & Safety Modal**: Mandatory first-run liability waiver and health advisory deployed.
-- ✅ **Desktop Packaging**: Authenticode-signed NSIS and Portable installers generated for v0.1.90.
-
-### Immediate Action Checklist
-- [x] Freeze Trinity scope and verify regression test suites.
-- [x] Deploy edge telemetry pipeline and in-launcher bug submission modal.
-- [x] Configure encrypted webhook secrets on Cloudflare Pages.
-- [ ] **Send Founder's Ring invitation (`docs/FOUNDERS_RING_INVITATION.md`) to initial 5–10 VIP testers.**
-- [ ] **Track first 50 gameplay sessions in `docs/PHASE_1_FEEDBACK_TRACKER.md`.**
-- [ ] **Schedule preliminary legal consultation for commercial EULA review.**
+### Target $100k–$150k Angel Check Allocation
+1. **60%**: Technical hire (C++/Direct3D/Vulkan systems engineer).
+2. **15%**: Legal consultation (IP/gaming EULA specialist and US entity setup).
+3. **15%**: Hardware test lab (multi-GPU test rigs, Valve Steam Frame).
+4. **10%**: Buffer reserve.
