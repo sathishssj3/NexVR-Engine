@@ -7,6 +7,7 @@ import { AboutPanel } from './components/AboutPanel';
 import { SettingsView } from './components/SettingsView';
 import { HeroCommandCenter } from './components/HeroCommandCenter';
 import { ConfirmModal } from './components/ConfirmModal';
+import { LegalModal } from './components/LegalModal';
 import { useFastSmoothScroll } from './hooks/useFastSmoothScroll';
 import './index.css';
 
@@ -99,6 +100,21 @@ export default function App() {
     onConfirm: () => {},
   });
   const closeModal = () => setModalState(prev => ({ ...prev, isOpen: false }));
+
+  const [legalModalOpen, setLegalModalOpen] = useState<boolean>(() => {
+    return localStorage.getItem('nexvr_beta_eula_accepted') !== 'true';
+  });
+  const [isLegalFirstRun, setIsLegalFirstRun] = useState<boolean>(() => {
+    return localStorage.getItem('nexvr_beta_eula_accepted') !== 'true';
+  });
+
+  const handleAcceptLegal = () => {
+    localStorage.setItem('nexvr_beta_eula_accepted', 'true');
+    localStorage.setItem('nexvr_beta_eula_timestamp', Date.now().toString());
+    localStorage.setItem('ag_ac_consent', 'true');
+    setHasConsented(true);
+    setLegalModalOpen(false);
+  };
   const injectTokenRef = useRef<number>(0);
   const mainContentRef = useRef<HTMLDivElement>(null);
   const logQueueRef = useRef<string[]>([]);
@@ -655,6 +671,10 @@ export default function App() {
           <AboutPanel 
             key={`about-${tabAnimNonce}`}
             version={updateStatus?.version} 
+            onOpenLegal={() => {
+              setIsLegalFirstRun(false);
+              setLegalModalOpen(true);
+            }}
           />
         )}
       </div>
@@ -670,6 +690,13 @@ export default function App() {
       <ConfirmModal
         {...modalState}
         onCancel={closeModal}
+      />
+
+      <LegalModal
+        isOpen={legalModalOpen}
+        isFirstRun={isLegalFirstRun}
+        onAccept={handleAcceptLegal}
+        onClose={() => setLegalModalOpen(false)}
       />
     </div>
   );

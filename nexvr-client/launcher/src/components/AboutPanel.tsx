@@ -1,6 +1,12 @@
 import { useState } from 'react';
 
-export function AboutPanel({ version }: { version?: string }) {
+export function AboutPanel({ 
+  version, 
+  onOpenLegal 
+}: { 
+  version?: string; 
+  onOpenLegal?: () => void; 
+}) {
   const [copied, setCopied] = useState(false);
 
   const handleLink = async (url: string) => {
@@ -321,6 +327,45 @@ export function AboutPanel({ version }: { version?: string }) {
             </button>
           </div>
 
+          {/* Terms & Legal Safety Guidelines Button */}
+          {onOpenLegal && (
+            <button 
+              type="button"
+              onClick={onOpenLegal} 
+              style={{ 
+                width: '100%',
+                padding: '9px 16px', 
+                borderRadius: 'var(--ag-radius-sm)', 
+                color: '#A0A3B1', 
+                cursor: 'pointer', 
+                fontFamily: 'var(--ag-font-mono)', 
+                fontSize: 11, 
+                letterSpacing: '0.06em', 
+                fontWeight: 700, 
+                border: '1px dashed #3A3C48', 
+                background: 'rgba(255, 255, 255, 0.015)', 
+                marginBottom: 14,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                transition: 'all 0.15s ease' 
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = '#CC0000';
+                e.currentTarget.style.color = '#FFF';
+                e.currentTarget.style.background = 'rgba(204, 0, 0, 0.05)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = '#3A3C48';
+                e.currentTarget.style.color = '#A0A3B1';
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.015)';
+              }}
+            >
+              <span>⚖️</span> VIEW TERMS, ANTI-CHEAT POLICY & SAFETY WAIVER
+            </button>
+          )}
+
           {/* Antivirus & Windows Defender Whitelist Notice */}
           <div style={{
             width: '100%',
@@ -403,18 +448,23 @@ export function AboutPanel({ version }: { version?: string }) {
 
         </div>
 
-        {/* Clean Monospace Copyright placed OUTSIDE the card box (downside) */}
+        {/* Clean Monospace Copyright & Legal Notice placed OUTSIDE the card box */}
         <div style={{ 
           color: '#848884', 
           fontSize: 11, 
           fontFamily: 'var(--ag-font-mono)', 
-          letterSpacing: '0.06em', 
-          opacity: 0.75,
-          marginTop: 22,
+          letterSpacing: '0.04em', 
+          opacity: 0.8,
+          marginTop: 20,
           marginBottom: 24,
-          textAlign: 'center'
+          textAlign: 'center',
+          maxWidth: 680,
+          lineHeight: '1.6'
         }}>
-          © 2026 sathishssj3 · NexVR Engine · All Rights Reserved
+          <div>© 2026 sathishssj3 · NexVR Engine · All Rights Reserved</div>
+          <div style={{ marginTop: 6, fontSize: 10, color: 'var(--ag-text-muted)', fontFamily: 'var(--ag-font-ui)' }}>
+            NexVR Engine is an independent community spatial modding project. All game titles, registered trademarks, and publisher logos are the exclusive property of their respective copyright holders.
+          </div>
         </div>
       </div>
     </div>
