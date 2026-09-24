@@ -15,8 +15,8 @@ Thank you for being one of our first hand-picked testers. You are receiving earl
 
 Choose either the installer or the standalone portable package:
 
-* 📦 **Standard Installer**: `NexVR-Engine-Setup-0.1.90.exe` (Recommended — one-click install)
-* 💼 **Portable Archive**: `NexVR-Engine-Portable-0.1.90.exe` (Extract and run anywhere without installing)
+* 📦 **Standard Installer (Recommended)**: [Download NexVR-Engine-Setup-0.1.90.exe](https://github.com/sathishssj3/NexVR-Engine/releases/download/v0.1.90/NexVR-Engine-Setup-0.1.90.exe)
+* 💼 **Standalone Portable**: [Download NexVR-Engine-Portable-0.1.90.exe](https://github.com/sathishssj3/NexVR-Engine/releases/download/v0.1.90/NexVR-Engine-Portable-0.1.90.exe)
 
 > 💡 **Antivirus Note**: Because NexVR intercepts graphics pipelines in real time, Windows Defender may show a SmartScreen warning. NexVR binaries are Authenticode signed. You can click **More Info -> Run Anyway**, or run this quick PowerShell command to whitelist the folder:
 > ```powershell
@@ -62,11 +62,10 @@ Once in-game with your headset on:
 ---
 
 ### 📝 5. How to Report Feedback
-
+ 
 If you experience any crashes, tracking stutter, or visual glitches:
-1. Open the NexVR Launcher.
-2. Go to **About** -> Click **"COPY SYSTEM SPECS"**.
-3. Paste the specs along with your headset model (Quest Link, Virtual Desktop, Index, etc.) and what you experienced in this channel.
-
+1. **1-Click in Launcher (Fastest)**: Go to **About** -> Click **"REPORT ISSUE"**. You can describe what happened, and it will automatically attach sanitized diagnostic logs and send them directly to our Discord engineering team!
+2. **Or post in Discord**: Share your headset model (Quest Link, Virtual Desktop, Index, etc.) and what you experienced in `#nexvr-logs` or `#beta-feedback`.
+ 
 *Thank you for helping us shape the future of universal flat-to-VR gaming!*
 ```
