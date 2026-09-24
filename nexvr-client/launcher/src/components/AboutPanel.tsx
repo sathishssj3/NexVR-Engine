@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ReportBugModal } from './ReportBugModal';
 
 export function AboutPanel({ 
   version, 
@@ -8,6 +9,7 @@ export function AboutPanel({
   onOpenLegal?: () => void; 
 }) {
   const [copied, setCopied] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   const handleLink = async (url: string) => {
     try {
@@ -299,7 +301,8 @@ export function AboutPanel({
               COMMUNITY & GUIDES
             </button>
             <button 
-              onClick={() => handleLink('https://discord.gg/FBeGjgK2fd')} 
+              type="button"
+              onClick={() => setShowReportModal(true)} 
               style={{ 
                 padding: '10px 16px', 
                 borderRadius: 'var(--ag-radius-sm)', 
@@ -467,6 +470,11 @@ export function AboutPanel({
           </div>
         </div>
       </div>
+
+      <ReportBugModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+      />
     </div>
   );
 }

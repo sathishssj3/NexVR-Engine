@@ -190,3 +190,21 @@ The In-Headset ImGui VR Overlay dashboard is implemented across all supported gr
 - **DirectX 12 (`ImGuiDX12Integration`)**: Manages dedicated SRV and RTV descriptor heaps, transitions OpenXR eye targets to `D3D12_RESOURCE_STATE_RENDER_TARGET`, and executes ImGui command lists directly on the game's direct command queue.
 - **Vulkan (`ImGuiVulkanIntegration`)**: Creates dedicated descriptor pools, render passes, and command buffer submissions for rendering ImGui draw data to OpenXR swapchain images.
 - **Universal Input Navigation**: Left controller menu button (`/user/hand/left/input/menu/click`), gamepad combos (`L3 + R3` / `Back`), and keyboard hotkeys (`HOME`, `F11`, `INSERT`, `~`) toggle the overlay. All 3D stereo parameters (IPD, Convergence, World Scale) modified in the overlay are synced directly with `ConfigManager` and persisted.
+
+## 9. Pre-Beta Governance, Safety & Telemetry Architecture
+
+### QUAL-07: First-Launch Closed Beta Legal, Anti-Cheat & Safety Modal
+- **Files**: `nexvr-client/launcher/src/components/LegalModal.tsx`, `nexvr-client/launcher/src/App.tsx`, `nexvr-client/launcher/src/components/AboutPanel.tsx`
+- **Purpose**: Protects project maintainers and beta testers with mandatory first-run agreements:
+  1. *Single-Player Only & Zero Anti-Cheat Liability*: Explicitly informs users that injecting into multiplayer titles protected by kernel anti-cheat is prohibited and that maintainers bear zero liability for bans.
+  2. *VR Health & Epilepsy Advisory*: Informs users of vestibular mismatch risks, motion sensitivity, and 15-minute break recommendations.
+  3. *Trademark Fair Use*: Disclaims commercial affiliation with third-party publishers or headsets.
+  4. *As-Is Closed Beta*: Warns testers to back up saved game data prior to testing.
+
+### FEAT-09: Automated Dual Telemetry & Bug Reporting System (Cloudflare Edge KV + Discord)
+- **Files**: `nexvr-docs/landing-page/functions/api/report.js`, `nexvr-client/launcher/electron/telemetryManager.ts`, `nexvr-client/launcher/src/components/ReportBugModal.tsx`, `scripts/fetch_reports.mjs`
+- **Architecture**:
+  - **Client Launcher**: Provides a 1-click "REPORT ISSUE" modal in `AboutPanel` and auto-uploader in `SessionLog`. Sanitizes all PII before transmission by replacing Windows username paths (`C:\Users\[USER]\`) and private local IP addresses.
+  - **Cloudflare Edge Endpoint (`/api/report`)**: Stores full reports with 30-day TTL in Cloudflare KV, updates a fast ring-buffer index (`REPORTS_INDEX`), and forwards a rich Discord embed to `#beta-feedback` if configured.
+  - **Developer CLI (`scripts/fetch_reports.mjs`)**: Allows developers and AI assistants to fetch, inspect, and summarize incoming reports and engine logs with a single command without needing manual tester copy-pasting.
+
