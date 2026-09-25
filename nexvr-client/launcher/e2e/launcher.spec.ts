@@ -16,6 +16,15 @@ test.describe('Launcher E2E Tests', () => {
     window.on('console', (msg: any) => console.log('PAGE LOG:', msg.text()));
     window.on('pageerror', (err: any) => console.log('PAGE ERROR:', err.message));
     await window.waitForLoadState('domcontentloaded');
+
+    // Bypass first-run modal for automated tests
+    await window.evaluate(() => {
+      localStorage.setItem('nexvr_beta_eula_accepted', 'true');
+      localStorage.setItem('nexvr_beta_eula_timestamp', Date.now().toString());
+      localStorage.setItem('ag_ac_consent', 'true');
+    });
+    await window.reload();
+    await window.waitForLoadState('domcontentloaded');
   });
 
   test.afterAll(async () => {
@@ -25,7 +34,7 @@ test.describe('Launcher E2E Tests', () => {
   });
 
   test('should render the top bar with NEXVR ENGINE title', async () => {
-    const title = window.locator('strong:has-text("NEXVR ENGINE")');
+    const title = window.getByText('NEXVR ENGINE', { exact: true });
     await expect(title).toBeVisible();
     
     const version = window.locator('span:has-text("v0.1.")');
@@ -34,7 +43,15 @@ test.describe('Launcher E2E Tests', () => {
 
   test('should show VR status bar with default or detected status', async () => {
     // wait for VR status polling (5s) or use initial
-    const hmdElement = window.locator('span:has-text("Unknown HMD")').or(window.locator('span:has-text("Meta Quest")')).or(window.locator('span:has-text("SteamVR HMD")')).or(window.locator('span:has-text("WMR Headset")')).first();
+    const hmdElement = window.locator('span:has-text("NO VR HEADSET")')
+      .or(window.locator('span:has-text("VR HEADSET")'))
+      .or(window.locator('span:has-text("NOT CONNECTED")'))
+      .or(window.locator('span:has-text("CONNECTED")'))
+      .or(window.locator('span:has-text("Unknown HMD")'))
+      .or(window.locator('span:has-text("Meta Quest")'))
+      .or(window.locator('span:has-text("SteamVR HMD")'))
+      .or(window.locator('span:has-text("WMR Headset")'))
+      .first();
     await expect(hmdElement).toBeVisible();
   });
 

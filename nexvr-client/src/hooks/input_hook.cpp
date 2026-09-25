@@ -370,11 +370,12 @@ DWORD WINAPI InputHook::HookedXInputSetState(DWORD dwUserIndex, XINPUT_VIBRATION
     InputHook& self = GetInstance();
     
     if (dwUserIndex == 0 && pVibration) {
-        // if (self.m_openxrManager) {
-        //     float left = (float)pVibration->wLeftMotorSpeed / 65535.0f;
-        //     float right = (float)pVibration->wRightMotorSpeed / 65535.0f;
-        //     self.m_openxrManager->ApplyHapticFeedback(left, right);
-        // }
+        // Store game vibration as normalized [0,1] for OpenXR haptic feedback.
+        // InputManager::Update() consumes these via ConsumeVibration() and calls
+        // xrApplyHapticFeedback on the left/right hand haptic output actions.
+        float left  = static_cast<float>(pVibration->wLeftMotorSpeed)  / 65535.0f;
+        float right = static_cast<float>(pVibration->wRightMotorSpeed) / 65535.0f;
+        self.SetVibration(left, right);
         return ERROR_SUCCESS;
     }
 

@@ -197,8 +197,11 @@ async function downloadFileWithFallback(
   fileName: string,
   baseUrls: string[],
   destPath: string,
-  expectedHash?: string
+  expectedHash: string
 ): Promise<void> {
+  if (!expectedHash || typeof expectedHash !== 'string' || expectedHash.trim().length !== 64) {
+    throw new Error(`Security violation: missing or invalid 64-char SHA-256 hash for OTA asset ${fileName}. OTA updates fail-closed.`);
+  }
   let lastErr: Error | null = null;
   const normalizedFile = fileName.replace(/\\/g, '/');
   for (const base of baseUrls) {
@@ -211,18 +214,16 @@ async function downloadFileWithFallback(
       const buffer = Buffer.from(await res.arrayBuffer());
 
       // Cryptographic integrity verification against SHA-256 manifest hash
-      if (expectedHash) {
-        const actualHash = crypto.createHash('sha256').update(buffer).digest('hex');
-        if (actualHash.toLowerCase() !== expectedHash.toLowerCase()) {
-          // Normalize text line endings (\r\n -> \n and \n -> \r\n) to prevent false-positive CRLF/LF rejections on text assets
-          const asString = buffer.toString('utf-8');
-          const hashLf = crypto.createHash('sha256').update(Buffer.from(asString.replace(/\r\n/g, '\n'), 'utf-8')).digest('hex');
-          const hashCrlf = crypto.createHash('sha256').update(Buffer.from(asString.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n'), 'utf-8')).digest('hex');
-          if (hashLf.toLowerCase() !== expectedHash.toLowerCase() && hashCrlf.toLowerCase() !== expectedHash.toLowerCase()) {
-            throw new Error(
-              `Integrity check failed for ${fileName}: expected SHA-256 ${expectedHash}, got ${actualHash}`
-            );
-          }
+      const actualHash = crypto.createHash('sha256').update(buffer).digest('hex');
+      if (actualHash.toLowerCase() !== expectedHash.toLowerCase()) {
+        // Normalize text line endings (\r\n -> \n and \n -> \r\n) to prevent false-positive CRLF/LF rejections on text assets
+        const asString = buffer.toString('utf-8');
+        const hashLf = crypto.createHash('sha256').update(Buffer.from(asString.replace(/\r\n/g, '\n'), 'utf-8')).digest('hex');
+        const hashCrlf = crypto.createHash('sha256').update(Buffer.from(asString.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n'), 'utf-8')).digest('hex');
+        if (hashLf.toLowerCase() !== expectedHash.toLowerCase() && hashCrlf.toLowerCase() !== expectedHash.toLowerCase()) {
+          throw new Error(
+            `Integrity check failed for ${fileName}: expected SHA-256 ${expectedHash}, got ${actualHash}`
+          );
         }
       }
 
@@ -309,13 +310,19 @@ export async function checkForEngineHotfix(): Promise<UpdateStatus> {
       ];
 
       // Download all files in manifest with path traversal protection and integrity verification
+      if (!remote.hashes || typeof remote.hashes !== 'object') {
+        throw new Error('Integrity check rejected: OTA manifest is missing the hashes dictionary.');
+      }
       for (const file of remote.files) {
         const dest = resolveWithinRoot(updatesDir, file);
         const parentDir = path.dirname(dest);
         if (!fs.existsSync(parentDir)) {
           fs.mkdirSync(parentDir, { recursive: true });
         }
-        const expectedHash = remote.hashes?.[file];
+        const expectedHash = remote.hashes[file];
+        if (!expectedHash || typeof expectedHash !== 'string' || expectedHash.trim().length !== 64) {
+          throw new Error(`Integrity check rejected: file ${file} lacks a valid SHA-256 hash in the OTA manifest.`);
+        }
         await downloadFileWithFallback(file, candidateBases, dest, expectedHash);
         console.info(`[UpdateManager] Downloaded & verified hotfix file: ${file}`);
       }

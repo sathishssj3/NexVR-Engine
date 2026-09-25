@@ -249,6 +249,35 @@ export function LegalModal({
               This software is provided "AS-IS" without warranty of any kind. As an active Closed Beta release, graphics driver anomalies or application crashes may occur. Users are advised to back up their game save files before launching with VR injection active.
             </div>
           </div>
+
+          {/* Card 5: Privacy & Opt-in Diagnostic Telemetry */}
+          <div
+            style={{
+              background: 'rgba(255, 255, 255, 0.02)',
+              border: '1px solid #282932',
+              borderRadius: 6,
+              padding: '14px 16px'
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                color: '#A259FF',
+                fontFamily: 'var(--ag-font-display)',
+                fontSize: 12,
+                fontWeight: 800,
+                letterSpacing: '0.04em',
+                marginBottom: 6
+              }}
+            >
+              <span>🔒</span> 5. PRIVACY & SANITIZED OPT-IN DIAGNOSTICS
+            </div>
+            <div style={{ fontSize: 12, lineHeight: 1.55, color: '#A0A3B1', fontFamily: 'var(--ag-font-ui)' }}>
+              NexVR Engine processes graphics swapchains and stereo reprojection locally on your PC. Automated crash reporting and diagnostic telemetry are opt-in and disabled by default. If enabled or when manually submitting an issue, all Windows user directories (<code>C:\Users\[USER]\</code>) and IP addresses are sanitized prior to transmission. You can modify your diagnostic preferences anytime in Settings.
+            </div>
+          </div>
         </div>
 
         {/* Checkboxes (Required on First-Run) */}

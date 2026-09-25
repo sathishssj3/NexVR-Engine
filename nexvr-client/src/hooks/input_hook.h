@@ -41,6 +41,22 @@ public:
     int GetVirtualCursorX() const { return m_virtualCursorX.load(); }
     int GetVirtualCursorY() const { return m_virtualCursorY.load(); }
 
+    // Gamepad vibration feedback for OpenXR haptics
+    void SetVibration(float left, float right) {
+        m_vibrationLeft.store(left, std::memory_order_relaxed);
+        m_vibrationRight.store(right, std::memory_order_relaxed);
+        m_vibrationPending.store(true, std::memory_order_release);
+    }
+
+    bool ConsumeVibration(float& outLeft, float& outRight) {
+        if (!m_vibrationPending.exchange(false, std::memory_order_acq_rel)) {
+            return false;
+        }
+        outLeft = m_vibrationLeft.load(std::memory_order_relaxed);
+        outRight = m_vibrationRight.load(std::memory_order_relaxed);
+        return true;
+    }
+
     // Physical and gamepad input observation for camera correlation (Option A)
     void RecordPhysicalMouseDelta(int dx, int dy);
     void RecordThumbstickDelta(float rx, float ry);
@@ -92,6 +108,11 @@ public:
     std::atomic<int> m_observedPhysicalMouseDeltaY{0};
     std::atomic<int> m_observedThumbDeltaX{0};
     std::atomic<int> m_observedThumbDeltaY{0};
+
+    // OpenXR vibration haptics
+    std::atomic<float> m_vibrationLeft{0.0f};
+    std::atomic<float> m_vibrationRight{0.0f};
+    std::atomic<bool> m_vibrationPending{false};
 
 private:
     void CaptureThreadLoop();

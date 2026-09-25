@@ -416,6 +416,30 @@ export function AboutPanel({
             </div>
           </div>
 
+          {/* Privacy & Opt-in Diagnostics Badge */}
+          <div style={{
+            width: '100%',
+            background: 'rgba(255, 255, 255, 0.015)',
+            border: '1px solid #282932',
+            borderRadius: 8,
+            padding: '10px 14px',
+            marginBottom: 16,
+            textAlign: 'left',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 13 }}>🔒</span>
+              <span style={{ color: '#A0A3B1', fontSize: 11, fontFamily: 'var(--ag-font-ui)' }}>
+                Telemetry Policy: Privacy by default. Automated crash diagnostics are opt-in.
+              </span>
+            </div>
+            <span style={{ color: 'var(--ag-accent)', fontSize: 10.5, fontFamily: 'var(--ag-font-mono)', fontWeight: 700 }}>
+              OPT-IN ONLY
+            </span>
+          </div>
+
           {/* Full-width Discord CTA Button placed INSIDE the card box */}
           <button 
             onClick={() => handleLink('https://discord.gg/FBeGjgK2fd')} 

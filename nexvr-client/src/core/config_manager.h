@@ -37,6 +37,25 @@ struct VRConfig {
     bool reverseZ = true;
     bool hasRowMajorOverride = false;
     bool rowMajorMatrices = true;
+
+    // P0.2: Floating Curved HUD in World Space
+    bool curvedHud = true;               // Enable curved HUD reprojection for corner elements
+    float hudDistance = 1.8f;             // Virtual HUD distance in meters
+    float hudCurvature = 0.35f;           // Cylinder curvature (0 = flat, 1 = half cylinder)
+
+    // P1.1: Cutscene Auto-Theater Mode
+    bool cutsceneTheater = true;          // Detect camera cuts and switch to cinema screen
+    float theaterDistance = 5.0f;          // Virtual cinema screen distance in meters
+    float theaterCutThreshold = 120.0f;   // Degrees/sec rotational jerk threshold for cut detection
+
+    // P1.2: Dynamic Comfort Vignette
+    bool comfortVignette = true;          // Enable dynamic peripheral FOV restriction
+    float vignetteStrength = 0.6f;        // Max vignette intensity [0, 1]
+    float vignetteOnset = 45.0f;          // Angular velocity (deg/s) where vignette starts
+
+    // P2: 6DOF Camera Decoupling & Horizon Lock
+    bool horizonLock = false;             // Lock camera roll to gravity (stabilize horizon)
+    float horizonLockStrength = 0.85f;    // Blend factor for roll dampening [0, 1]
 };
 
 class ConfigManager {

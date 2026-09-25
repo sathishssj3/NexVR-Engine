@@ -6,6 +6,7 @@
 
 VK_BINDING(0) cbuffer StereoConstants : register(b0)
 {
+    // --- Chunk 0: bytes 0–255 (existing layout, unchanged) ---
     row_major float4x4 InverseViewProj;
     row_major float4x4 LeftViewProj;
     row_major float4x4 RightViewProj;
@@ -23,6 +24,22 @@ VK_BINDING(0) cbuffer StereoConstants : register(b0)
     uint Height;
     uint ShouldAttemptStereo;
     uint SrgbCorrection;
+
+    // --- Chunk 1: bytes 256–511 (P0.2/P1.1/P1.2/P2) ---
+    uint CurvedHudEnabled;
+    float HudDistance;
+    float HudCurvature;
+    float _pad0;
+
+    float ComfortVignetteRadius;
+    float ComfortVignetteFeather;
+    float TheaterModeWeight;
+    float TheaterDistance;
+
+    float HorizonRollCorrection;
+    float HorizonLockStrength;
+    float _pad1;
+    float _pad2;
 };
 
 VK_BINDING(1) Texture2D<float4> GameColor : register(t0);
@@ -128,6 +145,80 @@ float4 InpaintDisocclusion(int2 p, float refDepth, float4 fallbackColor, uint w,
     return result;
 }
 
+// P0.2: Curved HUD Reprojection
+// Maps flat screen-space HUD pixels onto a virtual cylindrical surface floating
+// at HudDistance in front of the viewer. This pulls corner UI elements toward the
+// center of the user's field of view, reducing eye strain.
+float2 CurvedHudUV(float2 uv, float curvature, float distance)
+{
+    // Convert UV to centered coordinates [-1, 1]
+    float2 centered = uv * 2.0f - 1.0f;
+    
+    // Apply cylindrical mapping: x wraps around a cylinder, y remains linear
+    float theta = centered.x * 3.14159265f * curvature; // angle on cylinder
+    float newX = sin(theta) / (curvature * 3.14159265f + 0.001f);
+    
+    // Reconstruct UV
+    float2 result = float2(newX, centered.y) * 0.5f + 0.5f;
+    return result;
+}
+
+// P1.2: Comfort Vignette
+// Darkens peripheral pixels based on an angular velocity-driven radius.
+// Reduces motion sickness during fast camera rotation.
+float ComputeVignetteAlpha(float2 uv, float radius, float feather)
+{
+    // Distance from screen center in normalized coords
+    float2 centered = uv * 2.0f - 1.0f;
+    float dist = length(centered);
+    
+    // Smooth vignette falloff: 1.0 = fully visible, 0.0 = fully darkened
+    float innerRadius = max(radius, 0.1f);
+    float outerRadius = innerRadius + max(feather, 0.05f);
+    float alpha = smoothstep(outerRadius, innerRadius, dist);
+    return alpha;
+}
+
+// P1.1: Theater Mode Projection
+// Projects the game image onto a virtual cinema screen floating in a dark void.
+// theaterWeight controls the blend from normal view (0) to full theater (1).
+float4 ApplyTheaterMode(float4 normalColor, float2 uv, float theaterWeight, float theaterDist)
+{
+    if (theaterWeight < 0.001f)
+        return normalColor;
+
+    // Theater screen occupies center 70% of the viewport
+    float2 centered = uv * 2.0f - 1.0f;
+    float2 screenUV = centered / 0.7f * 0.5f + 0.5f;
+    
+    float4 theaterColor = float4(0.02f, 0.02f, 0.02f, 1.0f); // Dark void
+    
+    if (screenUV.x >= 0.0f && screenUV.x <= 1.0f && screenUV.y >= 0.0f && screenUV.y <= 1.0f)
+    {
+        theaterColor = GameColor.SampleLevel(LinearSampler, screenUV, 0);
+        theaterColor.a = 1.0f;
+    }
+    
+    return lerp(normalColor, theaterColor, theaterWeight);
+}
+
+// P2: Horizon Lock Roll Stabilization
+// Stabilizes the virtual horizon by counter-rotating screen coordinates by HorizonRollCorrection.
+float2 ApplyHorizonLock(float2 uv, float rollCorr, float strength)
+{
+    if (abs(rollCorr) < 0.0001f || strength < 0.001f)
+        return uv;
+
+    float2 centered = uv * 2.0f - 1.0f;
+    float c = cos(rollCorr);
+    float s = sin(rollCorr);
+    float2 rotated = float2(
+        centered.x * c - centered.y * s,
+        centered.x * s + centered.y * c
+    );
+    return rotated * 0.5f + 0.5f;
+}
+
 [numthreads(8, 8, 1)]
 void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
@@ -137,19 +228,34 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
     int2 pixelPos = int2(dispatchThreadId.x, dispatchThreadId.y);
     float2 uv = float2(((float)pixelPos.x + 0.5f) / (float)Width, ((float)pixelPos.y + 0.5f) / (float)Height);
 
+    // P2: Apply Horizon Lock roll stabilization
+    float2 sampleUV = ApplyHorizonLock(uv, HorizonRollCorrection, HorizonLockStrength);
+
     // Sample raw 2D color
-    float4 baseColor = GameColor.SampleLevel(LinearSampler, uv, 0);
+    float4 baseColor = GameColor.SampleLevel(LinearSampler, sampleUV, 0);
     baseColor.a = 1.0f;
     
     if (ShouldAttemptStereo == 0)
     {
         // 2D Mode: Pass-through with perceptual grading (1:1 desktop parity at default settings)
         float4 outColor = baseColor;
+
+        // P1.1: Theater mode in 2D passthrough
+        outColor = ApplyTheaterMode(outColor, uv, TheaterModeWeight, TheaterDistance);
+
         outColor.rgb = ApplyPerceptualGrading(outColor.rgb, Contrast, Saturation, Brightness);
         if (SrgbCorrection != 0)
         {
             outColor.rgb = ApplySrgbTransfer(outColor.rgb);
         }
+
+        // P1.2: Comfort Vignette
+        if (ComfortVignetteRadius < 0.99f)
+        {
+            float vAlpha = ComputeVignetteAlpha(uv, ComfortVignetteRadius, ComfortVignetteFeather);
+            outColor.rgb *= vAlpha;
+        }
+
         outColor.a = 1.0f;
         
         OutLeftEye[pixelPos] = outColor;
@@ -157,17 +263,37 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
         return;
     }
     
-    float depth = GameDepth.SampleLevel(LinearSampler, uv, 0).r;
+    float depth = GameDepth.SampleLevel(LinearSampler, sampleUV, 0).r;
     
     // 2D HUD / Clear depth check / Skybox horizon check
     if (depth <= 0.0001f || depth >= 0.9995f)
     {
         float4 hudColor = baseColor;
+
+        // P0.2: Curved HUD reprojection for corner elements
+        if (CurvedHudEnabled != 0 && depth <= 0.0001f)
+        {
+            float2 curvedUV = CurvedHudUV(uv, HudCurvature, HudDistance);
+            hudColor = GameColor.SampleLevel(LinearSampler, curvedUV, 0);
+            hudColor.a = 1.0f;
+        }
+
+        // P1.1: Theater mode for HUD
+        hudColor = ApplyTheaterMode(hudColor, uv, TheaterModeWeight, TheaterDistance);
+
         hudColor.rgb = ApplyPerceptualGrading(hudColor.rgb, Contrast, Saturation, Brightness);
         if (SrgbCorrection != 0)
         {
             hudColor.rgb = ApplySrgbTransfer(hudColor.rgb);
         }
+
+        // P1.2: Comfort Vignette
+        if (ComfortVignetteRadius < 0.99f)
+        {
+            float vAlpha = ComputeVignetteAlpha(uv, ComfortVignetteRadius, ComfortVignetteFeather);
+            hudColor.rgb *= vAlpha;
+        }
+
         hudColor.a = 1.0f;
         OutLeftEye[pixelPos] = hudColor;
         OutRightEye[pixelPos] = hudColor;
@@ -175,7 +301,7 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
     }
     
     // Unproject pixel ray to 3D world space
-    float3 worldPos = WorldPositionFromDepth(uv, depth);
+    float3 worldPos = WorldPositionFromDepth(sampleUV, depth);
     
     // Left Eye Backward Gather
     float4 leftClip = mul(float4(worldPos, 1.0f), LeftViewProj);
@@ -214,6 +340,10 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
             rightColor = InpaintDisocclusion(pixelPos, depth, baseColor, Width, Height);
         }
     }
+
+    // P1.1: Theater mode for 3D content
+    leftColor = ApplyTheaterMode(leftColor, uv, TheaterModeWeight, TheaterDistance);
+    rightColor = ApplyTheaterMode(rightColor, uv, TheaterModeWeight, TheaterDistance);
     
     // Apply perceptual filmic harmonization (pure 1:1 identity at default Contrast 1.0, Saturation 1.0, Brightness 1.0)
     leftColor.rgb = ApplyPerceptualGrading(leftColor.rgb, Contrast, Saturation, Brightness);
@@ -223,6 +353,15 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
         leftColor.rgb = ApplySrgbTransfer(leftColor.rgb);
         rightColor.rgb = ApplySrgbTransfer(rightColor.rgb);
     }
+
+    // P1.2: Comfort Vignette
+    if (ComfortVignetteRadius < 0.99f)
+    {
+        float vAlpha = ComputeVignetteAlpha(uv, ComfortVignetteRadius, ComfortVignetteFeather);
+        leftColor.rgb *= vAlpha;
+        rightColor.rgb *= vAlpha;
+    }
+
     leftColor.a = 1.0f;
     rightColor.a = 1.0f;
 

@@ -2,47 +2,58 @@
 
 ---
 
-## ⚡ Option 1: Quick & Punchy DM Template (Recommended for DMs)
-*Use this for 1-on-1 Discord DMs or Reddit messages. Short, exciting, and zero confusion.*
+## 🎯 The "Developer Co-Creator" 2-Step DM Strategy (Recommended)
+*Use this when reaching out to PC VR gamers on Discord or Reddit. It builds 100% trust, eliminates malware suspicion, and gets testers excited to test on their hardware.*
 
+### Message 1: The Initial Hook (Send this first — NO `.exe` link)
 ```markdown
-Hey! 👋 I know you're into PC VR, so thought you might be interested in this.
+Hey! 👋 Saw you have a PC VR setup.
 
-I've been building **NexVR**, a universal injection engine that converts standard flat PC games into native, full 6DOF VR (not a 2D screen—you're actually inside the game world!). 
+I'm an engine developer building **NexVR**—a universal DirectX 11/12 injection runtime for PC games (similar to UEVR, but engine-agnostic so it works on FromSoftware titles like *Sekiro*).
 
-We just got **Sekiro: Shadows Die Twice** and **Mortal Shell** running at a solid 90 FPS with 6DOF head tracking and real-time stereo depth.
+I just finished the OpenXR compositor detours and heuristic camera scanner, and I'm looking for 2 or 3 Quest / PCVR gamers who have *Sekiro* or *Mortal Shell* installed to test run the alpha on real hardware.
 
-I'm inviting a small group of 5–10 VIP testers for our Phase 1 Founder's Ring closed beta before we go public. Would love for you to give it a spin on your headset!
-
-📦 **Download (1-Click Installer)**:
-https://github.com/sathishssj3/NexVR-Engine/releases/download/v0.1.90/NexVR-Engine-Setup-0.1.90.exe
-
-🎮 **Quick Start**:
-1. Connect your headset (Quest via Virtual Desktop/Link, Index, etc.).
-2. Run NexVR -> It auto-detects your Steam games.
-3. Set the game to **Borderless Windowed** and hit **Launch in VR**!
-4. Press the **Left Controller Menu button** in-game to tweak IPD or depth.
-
-If you hit any issues, there's a 1-click **"REPORT ISSUE"** button inside the launcher that sends logs directly to me, or you can chat with me right here.
-
-Let me know what you think! ⚔️🥽
+Would you be open to test-launching it on your headset and letting me know how the 6DOF tracking and frame pacing feel?
 ```
 
 ---
 
-## 📋 Option 2: Full Discord Channel Announcement (#beta-testing)
+### Message 2: When They Reply ("Sure / Yeah / Send it")
+*Send this only after they say yes. Notice it includes your GitHub link for instant credibility.*
+
+```markdown
+Awesome, really appreciate it! 🙌
+
+Here's our open GitHub repo so you can inspect the code and release:
+🔗 https://github.com/sathishssj3/NexVR-Engine
+
+📦 **1-Click Installer (v0.1.96)**:
+https://github.com/sathishssj3/NexVR-Engine/releases/download/v0.1.96/NexVR-Engine-Setup-0.1.96.exe
+
+🎮 **Quick test steps:**
+1. Connect your headset (Quest via Virtual Desktop or Link, Index, etc.).
+2. Open NexVR (it auto-detects your Steam games).
+3. Set the game to **Borderless Windowed**, then click **Launch in VR**!
+4. Press the **Left Controller Menu button** in-game to tweak comfort settings (Curved HUD, Motion Vignette, Horizon Lock, or Stereo Depth).
+
+There is a 1-click **"REPORT ISSUE"** button in the launcher's About tab that sends your log directly to my Discord if anything acts up. Let me know how the stereo depth and camera feel! ⚔️🥽
+```
+
+---
+
+## 📋 Full Discord Channel Announcement (#beta-testing)
 *Use this as a pinned post in your Discord `#announcements` or `#beta-testing` channel.*
 
 ```markdown
 👋 **Welcome to the NexVR Engine Closed Beta (Founder's Ring / Phase 1)!**
 
-Thank you for being one of our first hand-picked testers. You are receiving early access to **NexVR Engine v0.1.90-beta**, a universal injection engine that converts standard flat PC games into immersive, stereoscopic 3D VR experiences with real-time camera tracking.
+Thank you for being one of our first hand-picked testers. You are receiving early access to **NexVR Engine v0.1.96-beta**, a universal injection engine that converts standard flat PC games into immersive, stereoscopic 3D VR experiences with real-time camera tracking.
 
 ---
 
 ### 🚀 1. Download & Installation
-* 📦 **Standard Installer (Recommended)**: [Download NexVR-Engine-Setup-0.1.90.exe](https://github.com/sathishssj3/NexVR-Engine/releases/download/v0.1.90/NexVR-Engine-Setup-0.1.90.exe)
-* 💼 **Standalone Portable**: [Download NexVR-Engine-Portable-0.1.90.exe](https://github.com/sathishssj3/NexVR-Engine/releases/download/v0.1.90/NexVR-Engine-Portable-0.1.90.exe)
+* 📦 **Standard Installer (Recommended)**: [Download NexVR-Engine-Setup-0.1.96.exe](https://github.com/sathishssj3/NexVR-Engine/releases/download/v0.1.96/NexVR-Engine-Setup-0.1.96.exe)
+* 💼 **Standalone Portable**: [Download NexVR-Engine-Portable-0.1.96.exe](https://github.com/sathishssj3/NexVR-Engine/releases/download/v0.1.96/NexVR-Engine-Portable-0.1.96.exe)
 
 > 💡 **Antivirus Note**: Because NexVR intercepts graphics pipelines in real time, Windows Defender may show a SmartScreen warning. NexVR binaries are Authenticode signed. Click **More Info -> Run Anyway**.
 

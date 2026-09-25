@@ -9,7 +9,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 *Active development changes that have not yet been packaged into an official release.*
 
-## [0.2.1] - 2026-09-15
+## [0.3.0] - 2026-09-25
+
+### Added
+- **Direct3D 12 Native SDK Path (`XR_KHR_D3D12_enable`)**:
+  - `include/nexvr_sdk.h`: Exported `NexVR_GetGraphicsRequirementsDX12`, `NexVR_InitializeDX12`, `NexVR_SubmitFrameDX12`, and `NexVR_SubmitFrameWithDepthDX12`.
+  - Maintained DEC-020 additive ABI policy with zero breaking changes to existing D3D11 functions.
+  - Added `NexVR_InitializeDX12Info` and `NexVR_DepthInfoDX12` structs with `structSize` ABI compatibility guarantees.
+  - Added `NEXVR_ERROR_INVALID_COMMAND_QUEUE = -14` validating `D3D12_COMMAND_LIST_TYPE_DIRECT`.
+  - Added pure validation functions `ValidateInitializeDX12` and `ValidateDepthSubmitDX12` in `sdk_validation.cpp`.
+  - Implemented OpenXR D3D12 swapchain and depth lifecycle (`XrSwapchainImageD3D12KHR`, `XrGraphicsBindingD3D12KHR`).
+  - Implemented explicit GPU barrier sequencing (`RENDER_TARGET` $\to$ `COPY_DEST` $\to$ `RENDER_TARGET`, `colorState` $\to$ `COPY_SOURCE` $\to$ `colorState`), command list execution on game direct queue, and hardware fence synchronization.
+  - Model B device purity: `nexvr_sdk.dll` operates solely on the host's existing `ID3D12Device*` and `ID3D12CommandQueue*` without importing `D3D12CreateDevice` or injector primitives (`CreateRemoteThread`, `VirtualAllocEx`, MinHook).
+  - Test suites:
+    - `test_sdk_validation.cpp`: 36 unit tests covering initialization, requirements ordering, and depth validation.
+    - `test_sdk_imports.cpp`: 5 binary audit tests validating PE export table and asserting zero device-creation or injector imports.
+    - `test_sdk_dx12.cpp`: 10 functional tests verifying API contracts and null session bounds.
+  - Documentation: Created `docs/B2B_DX12_INTEGRATION_PLAN.md` and updated `docs/B2B_SDK_INTEGRATION_GUIDE.md`.
 
 ### Added
 - **Unity B2B Adapter Depth Buffer & Reverse-Z Submission**:

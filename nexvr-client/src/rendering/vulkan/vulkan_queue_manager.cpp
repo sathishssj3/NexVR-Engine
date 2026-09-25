@@ -70,12 +70,22 @@ VkQueue VulkanQueueManager::GetMainGraphicsQueue() const {
     return m_cachedMainQueue;
 }
 
-const QueueRecord* VulkanQueueManager::GetQueueRecord(VkQueue queue) const {
+std::optional<QueueRecord> VulkanQueueManager::GetQueueRecord(VkQueue queue) const {
     std::lock_guard lock(m_mutex);
     for (const auto& q : m_knownQueues) {
-        if (q.queueHandle == queue) return &q;
+        if (q.queueHandle == queue) return q;
     }
-    return nullptr;
+    return std::nullopt;
+}
+
+std::vector<QueueRecord> VulkanQueueManager::GetQueues() const {
+    std::lock_guard lock(m_mutex);
+    return m_knownQueues;
+}
+
+VkDevice VulkanQueueManager::GetDevice() const {
+    std::lock_guard lock(m_mutex);
+    return m_device;
 }
 
 void VulkanQueueManager::ReevaluateMainQueue() {

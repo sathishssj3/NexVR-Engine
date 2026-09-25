@@ -18,6 +18,11 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 
 const API_ENDPOINT = process.env.NEXVR_TELEMETRY_API || 'https://nexvr-engine.pages.dev/api/report';
 
+const ADMIN_SECRET = process.env.REPORTS_ADMIN_KEY || process.env.ADMIN_API_KEY || 'nexvr_admin_telemetry_secret_2026';
+const AUTH_HEADERS = {
+  'Authorization': `Bearer ${ADMIN_SECRET}`,
+};
+
 async function main() {
   const args = process.argv.slice(2);
   const isSave = args.includes('--save');
@@ -27,7 +32,9 @@ async function main() {
   if (targetId) {
     console.log(`\x1b[36m[NexVR]\x1b[0m Fetching report details for: ${targetId}...`);
     try {
-      const res = await fetch(`${API_ENDPOINT}?id=${encodeURIComponent(targetId)}`);
+      const res = await fetch(`${API_ENDPOINT}?id=${encodeURIComponent(targetId)}`, {
+        headers: AUTH_HEADERS,
+      });
       if (!res.ok) {
         console.error(`\x1b[31m[Error]\x1b[0m Failed to fetch report ${targetId} (HTTP ${res.status})`);
         process.exit(1);
@@ -74,11 +81,14 @@ async function main() {
   // Fetch Index
   console.log(`\x1b[36m[NexVR]\x1b[0m Fetching recent beta telemetry reports from Cloudflare...`);
   try {
-    const res = await fetch(API_ENDPOINT);
+    const res = await fetch(API_ENDPOINT, {
+      headers: AUTH_HEADERS,
+    });
     if (!res.ok) {
       console.error(`\x1b[31m[Error]\x1b[0m HTTP ${res.status}: ${res.statusText}`);
       process.exit(1);
     }
+
     const data = await res.json();
     const reports = data.reports || [];
 

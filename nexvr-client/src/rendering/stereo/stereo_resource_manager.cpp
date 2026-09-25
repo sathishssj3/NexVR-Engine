@@ -306,7 +306,7 @@ bool StereoResourceManager::CreateConstantBuffer() {
     // Let's make it 256 bytes for safety and flexibility.
     D3D11_BUFFER_DESC cbDesc = {};
     cbDesc.Usage = D3D11_USAGE_DYNAMIC;
-    cbDesc.ByteWidth = 256; 
+    cbDesc.ByteWidth = 512; // Expanded for P0.2/P1.1/P1.2/P2 features (two 256-byte aligned chunks)
     cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     cbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     cbDesc.MiscFlags = 0;

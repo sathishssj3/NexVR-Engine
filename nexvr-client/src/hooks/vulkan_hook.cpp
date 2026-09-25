@@ -1,4 +1,5 @@
 #include "hooks/vulkan_hook.h"
+#include "hooks/vulkan_queue_forwarding.h"
 #include "rendering/vulkan/vulkan_dispatch_table.h"
 #include "rendering/vulkan/vulkan_lifecycle_manager.h"
 #include "rendering/vulkan/vulkan_queue_manager.h"
@@ -262,15 +263,32 @@ VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkQueueSubmit(
     // Collect depth candidates from this submit's render passes
     VulkanDepthCandidateCollector::Get().CollectCandidates(device);
 
-    // Use direct trampoline if available (late injection), otherwise dispatch table
-    if (True_vkQueueSubmit_Direct) {
-        return True_vkQueueSubmit_Direct(queue, submitCount, pSubmits, fence);
+    // Use the direct trampoline for late injection without looking up the dispatch table.
+    PFN_vkQueueSubmit dispatch = nullptr;
+    if (!True_vkQueueSubmit_Direct) {
+        auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
+        if (dt) dispatch = dt->QueueSubmit;
     }
-    auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
-    if (dt && dt->QueueSubmit) {
-        return dt->QueueSubmit(queue, submitCount, pSubmits, fence);
+    if (!True_vkQueueSubmit_Direct && !dispatch) {
+        LOG_ERROR("Hooked_vkQueueSubmit: no driver forwarding target for device %p", device);
     }
-    return VK_SUCCESS;
+    const VkResult result = detail::ForwardQueueCall(True_vkQueueSubmit_Direct, dispatch, queue, submitCount, pSubmits, fence);
+    if (result == VK_ERROR_DEVICE_LOST) VulkanLifecycleManager::Get().ReportDeviceLost();
+    return result;
+}
+
+static VkResult ForwardQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, VkDevice device) {
+    PFN_vkQueuePresentKHR dispatch = nullptr;
+    if (!True_vkQueuePresentKHR_Direct) {
+        auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
+        if (dt) dispatch = dt->QueuePresentKHR;
+    }
+    if (!True_vkQueuePresentKHR_Direct && !dispatch) {
+        LOG_ERROR("Hooked_vkQueuePresentKHR: no driver forwarding target for device %p", device);
+    }
+    const VkResult result = detail::ForwardQueueCall(True_vkQueuePresentKHR_Direct, dispatch, queue, pPresentInfo);
+    if (result == VK_ERROR_DEVICE_LOST) VulkanLifecycleManager::Get().ReportDeviceLost();
+    return result;
 }
 
 static VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkQueuePresentKHR_Internal(
@@ -309,17 +327,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkQueuePresentKHR_Internal(
         VulkanDepthCandidateCollector::Get().CollectCandidates(device);
     }
 
-    // Always forward the present call using the direct trampoline (late injection)
-    if (True_vkQueuePresentKHR_Direct) {
-        return True_vkQueuePresentKHR_Direct(queue, pPresentInfo);
-    }
-    // Fallback to dispatch table
-    auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
-    if (dt && dt->QueuePresentKHR) {
-        return dt->QueuePresentKHR(queue, pPresentInfo);
-    }
-    // No fallback available, return success to avoid crashing
-    return VK_SUCCESS;
+    return ForwardQueuePresentKHR(queue, pPresentInfo, device);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkQueuePresentKHR(
@@ -331,15 +339,7 @@ VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkQueuePresentKHR(
     }
     __except (EXCEPTION_EXECUTE_HANDLER) {
         LOG_ERROR("VulkanHook: SEH hardware exception caught in Hooked_vkQueuePresentKHR! Safely forwarding to driver.");
-        if (True_vkQueuePresentKHR_Direct) {
-            return True_vkQueuePresentKHR_Direct(queue, pPresentInfo);
-        }
-        auto device = VulkanQueueManager::Get().GetDevice();
-        auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
-        if (dt && dt->QueuePresentKHR) {
-            return dt->QueuePresentKHR(queue, pPresentInfo);
-        }
-        return VK_SUCCESS;
+        return ForwardQueuePresentKHR(queue, pPresentInfo, VulkanQueueManager::Get().GetDevice());
     }
 }
 

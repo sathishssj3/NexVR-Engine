@@ -55,6 +55,13 @@ export async function sendDiscordTelemetry(
       return { success: false, message: 'Rate limited: please wait a few seconds before submitting another report.' };
     }
     lastManualReportTimestamp = now;
+  } else {
+    // Automated background diagnostics (session started, completed, lifecycle errors)
+    // require explicit user opt-in in accordance with privacy regulations and audit standards.
+    const isOptedIn = payload.config && (payload.config as any).telemetryOptIn === true;
+    if (!isOptedIn) {
+      return { success: true, message: 'Automatic diagnostic transmission suppressed (opt-in disabled).' };
+    }
   }
 
   // Prepare log content if available

@@ -1,5 +1,5 @@
 # NexVR Engine: The 1-Year Survival & Traction Roadmap
-*Target: From Functional Beta (v0.1.90) to Cash-Flow Viability & Pre-Seed Valuation in 12 Months*
+*Target: From Functional Beta (v0.1.96) to Cash-Flow Viability & Pre-Seed Valuation in 12 Months*
 
 ---
 
@@ -72,7 +72,7 @@ timeline
 **North Star Metric:** **$1,500 – $3,000 Monthly Recurring Revenue ($20k–$35k ARR)** with zero community backlash.
 
 ### Month 7: The Freemium Rollout (The Luke Ross Firewall)
-* **The Ironclad Legal Rule**: The core injection engine and ALL game profiles remain **100% FREE FOREVER**. (This guarantees immunity from CD Projekt/Take-Two style DMCA takedowns).
+* **The Interoperability Defense Rule**: The core injection engine and ALL game profiles remain **100% FREE FOREVER**. (Preserves clean interoperability status under fair use and avoids commercializing third-party game assets).
 * Launch **NexVR Plus** ($39/year pass or $5/month):
   1. *Multi-PC Cloud Settings Sync*: Seamless profile synchronization between desktop gaming PC and portable streaming laptops.
   2. *Telemetry-Driven GPU Auto-Tuning*: 1-click cloud presets tailored to the user's exact GPU/HMD combination derived from community telemetry.

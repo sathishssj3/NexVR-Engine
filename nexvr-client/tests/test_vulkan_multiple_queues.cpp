@@ -44,10 +44,37 @@ TEST(VulkanQueueGenerationTest, DetectsAndRejectsStaleQueueHandles) {
     // Simulate queue registration
     qm.Initialize(pd, dev1);
     qm.RegisterQueue(dev1, 0, 0, queue2);
-    EXPECT_NE(qm.GetQueueRecord(queue2), nullptr);
-    EXPECT_EQ(qm.GetQueueRecord(queue1), nullptr);
+    EXPECT_TRUE(qm.GetQueueRecord(queue2).has_value());
+    EXPECT_FALSE(qm.GetQueueRecord(queue1).has_value());
     
     // De-register / Shutdown
     qm.Shutdown();
-    EXPECT_EQ(qm.GetQueueRecord(queue2), nullptr);
+    EXPECT_FALSE(qm.GetQueueRecord(queue2).has_value());
+}
+
+TEST(VulkanQueueGenerationTest, QueueSnapshotsSurviveRegistryChanges) {
+    auto& qm = VulkanQueueManager::Get();
+    const auto device = reinterpret_cast<VkDevice>(0x333);
+    const auto queue = reinterpret_cast<VkQueue>(0x555);
+    qm.Initialize(VK_NULL_HANDLE, device);
+    qm.RegisterQueue(device, 3, 2, queue);
+
+    const auto record = qm.GetQueueRecord(queue);
+    ASSERT_TRUE(record.has_value());
+    EXPECT_EQ(record->queueFamilyIndex, 3u);
+    EXPECT_EQ(record->queueIndex, 2u);
+    EXPECT_EQ(qm.GetDevice(), device);
+    const auto queues = qm.GetQueues();
+    ASSERT_EQ(queues.size(), 1u);
+
+    qm.MarkQueueFamilyPresentSupport(3, false);
+    qm.RegisterQueue(device, 4, 0, reinterpret_cast<VkQueue>(0x999));
+    qm.Shutdown();
+
+    EXPECT_TRUE(record->supportsPresent);
+    EXPECT_TRUE(queues[0].supportsPresent);
+    EXPECT_EQ(record->queueHandle, queue);
+    EXPECT_FALSE(qm.GetQueueRecord(queue).has_value());
+    EXPECT_TRUE(qm.GetQueues().empty());
+    EXPECT_EQ(qm.GetDevice(), VK_NULL_HANDLE);
 }

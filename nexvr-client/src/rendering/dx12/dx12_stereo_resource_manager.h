@@ -11,6 +11,9 @@
 #include "heuristics/depth_snapshot.h"
 
 #include "core/stereo_types.h"
+#include "vr/cutscene_detector.h"
+#include "vr/comfort_vignette.h"
+#include "vr/horizon_lock.h"
 
 namespace vrinject {
 
@@ -22,6 +25,7 @@ struct DX12DescriptorAllocation {
 };
 
 struct DX12StereoShaderConstants {
+    // --- Chunk 0: bytes 0–255 (existing, unchanged layout) ---
     Matrix4x4 inverseViewProj;
     Matrix4x4 leftViewProj;
     Matrix4x4 rightViewProj;
@@ -35,6 +39,24 @@ struct DX12StereoShaderConstants {
     uint32_t height;
     uint32_t shouldAttemptStereo;
     uint32_t srgbCorrection;
+
+    // --- Chunk 1: bytes 256–511 (P0.2/P1.1/P1.2/P2 features) ---
+    uint32_t curvedHudEnabled;
+    float hudDistance;
+    float hudCurvature;
+    float _pad0;
+
+    float comfortVignetteRadius;
+    float comfortVignetteFeather;
+    float theaterModeWeight;
+    float theaterDistance;
+
+    float horizonRollCorrection;
+    float horizonLockStrength;
+    float _pad1;
+    float _pad2;
+
+    float _reserved[52];
 };
 
 class DX12StereoResourceManager {
@@ -101,6 +123,10 @@ private:
     bool CreateConstantBuffer();
     
     void UpdateViews(const CameraSnapshot& cam, const DepthSnapshot& depth);
+    
+    CutsceneDetector m_cutsceneDetector;
+    ComfortVignetteCalculator m_vignetteCalculator;
+    HorizonLock m_horizonLock;
 };
 
 } // namespace vrinject

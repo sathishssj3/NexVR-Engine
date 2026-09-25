@@ -7,6 +7,9 @@
 #include <mutex>
 #include "ai/ai_scheduler.h"
 #include "rendering/vulkan_memory_budget.h"
+#include "vr/cutscene_detector.h"
+#include "vr/comfort_vignette.h"
+#include "vr/horizon_lock.h"
 
 namespace vrinject {
 namespace vulkan {
@@ -100,6 +103,10 @@ private:
 
     VkImage m_oxrLeftDest = VK_NULL_HANDLE;
     VkImage m_oxrRightDest = VK_NULL_HANDLE;
+
+    CutsceneDetector m_cutsceneDetector;
+    ComfortVignetteCalculator m_vignetteCalculator;
+    HorizonLock m_horizonLock;
 };
 
 } // namespace vulkan

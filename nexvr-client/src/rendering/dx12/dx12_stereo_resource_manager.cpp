@@ -140,7 +140,7 @@ bool DX12StereoResourceManager::CreateConstantBuffer() {
 
     D3D12_RESOURCE_DESC desc = {};
     desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-    desc.Width = 256; // Aligned to 256 bytes
+    desc.Width = 512; // Expanded for P0.2/P1.1/P1.2/P2 (two 256-byte aligned chunks)
     desc.Height = 1;
     desc.DepthOrArraySize = 1;
     desc.MipLevels = 1;
@@ -163,7 +163,7 @@ bool DX12StereoResourceManager::CreateConstantBuffer() {
     // Create CBV
     D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
     cbvDesc.BufferLocation = m_constantBuffer->GetGPUVirtualAddress();
-    cbvDesc.SizeInBytes = 256;
+    cbvDesc.SizeInBytes = 512;
 
     D3D12_CPU_DESCRIPTOR_HANDLE cbvHandle = m_cbvSrvUavHeap->GetCPUDescriptorHandleForHeapStart();
     m_device->CreateConstantBufferView(&cbvDesc, cbvHandle);
@@ -232,6 +232,42 @@ void DX12StereoResourceManager::UpdateFrameResources(
         consts.saturation = (c.saturation > 0.0f) ? c.saturation : 1.0f;
         consts.brightness = (c.brightness > 0.0f) ? c.brightness : 1.0f;
         consts.srgbCorrection = c.srgbCorrection ? 1 : 0;
+
+        // Camera forward vector from view matrix
+        Vector3 forward = { cam.view.m[0][2], cam.view.m[1][2], cam.view.m[2][2] };
+
+        // P0.2: Curved HUD
+        consts.curvedHudEnabled = c.curvedHud ? 1 : 0;
+        consts.hudDistance = c.hudDistance;
+        consts.hudCurvature = c.hudCurvature;
+
+        // P1.2: Comfort vignette (dynamically computed from head yaw velocity)
+        if (c.comfortVignette) {
+            float yawDeg = atan2f(forward.x, forward.z) * (180.0f / 3.14159265f);
+            consts.comfortVignetteRadius = m_vignetteCalculator.Update(yawDeg, c.vignetteOnset, c.vignetteStrength);
+            consts.comfortVignetteFeather = c.vignetteStrength;
+        } else {
+            consts.comfortVignetteRadius = 1.0f; // 1.0 = fully open (no vignette)
+            consts.comfortVignetteFeather = 0.0f;
+        }
+
+        // P1.1: Theater mode weight (driven by CutsceneDetector)
+        if (c.cutsceneTheater) {
+            consts.theaterModeWeight = m_cutsceneDetector.Update(forward, c.theaterCutThreshold);
+        } else {
+            consts.theaterModeWeight = 0.0f;
+        }
+        consts.theaterDistance = c.theaterDistance;
+
+        // P2: Horizon lock (computed by roll correction smoothing)
+        if (c.horizonLock) {
+            consts.horizonRollCorrection = m_horizonLock.ComputeRollCorrection(cam.view, c.horizonLockStrength);
+            consts.horizonLockStrength = c.horizonLockStrength;
+        } else {
+            consts.horizonRollCorrection = 0.0f;
+            consts.horizonLockStrength = 0.0f;
+        }
+
         memcpy(m_mappedConstantBuffer, &consts, sizeof(DX12StereoShaderConstants));
     }
 

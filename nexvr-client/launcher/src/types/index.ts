@@ -33,6 +33,7 @@ export interface VRConfig {
   depthSubmission:         boolean;  // default false
   rawInputMode:            boolean;  // default true
   autoInjectOnLaunch:      boolean;  // default true
+  telemetryOptIn?:         boolean;  // default false (Privacy by default: explicit opt-in required for automated diagnostics)
   engine?:                 string;
   api?:                    string;
   reverseZ?:               boolean;

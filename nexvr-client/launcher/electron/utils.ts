@@ -58,6 +58,7 @@ export function validateConfig(cfg: unknown): VRConfig {
   if (typeof c.performanceOverlay === 'boolean') res.performanceOverlay = c.performanceOverlay;
   if (typeof c.hapticFeedback === 'boolean') res.hapticFeedback = c.hapticFeedback;
   if (typeof c.aiInpainting === 'boolean') res.aiInpainting = c.aiInpainting;
+  if (typeof c.telemetryOptIn === 'boolean') res.telemetryOptIn = c.telemetryOptIn;
   return res;
 }
 

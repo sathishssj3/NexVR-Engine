@@ -120,7 +120,8 @@ We welcome community contributions! You can add support for new games without wr
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [Proprietary Software License Agreement](LICENSE). All rights reserved.
+For enterprise licensing, commercial game integrations, and studio partnerships, please see [NexVR B2B Integration Guide](docs/B2B_SDK_INTEGRATION_GUIDE.md).
 
 ---
 

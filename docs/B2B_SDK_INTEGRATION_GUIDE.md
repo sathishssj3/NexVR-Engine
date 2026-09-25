@@ -1,7 +1,9 @@
 # NexVR B2B SDK — Integration Guide
 
-**Version:** 0.2.1 · DirectX 11 · Windows x64
+**Version:** 0.3.0 · DirectX 12 & DirectX 11 · Windows x64
 **Audience:** the engineer wiring NexVR into an engine
+
+> For the Direct3D 12 Native SDK Path specifications, barrier lifecycles, and Unreal Engine 5 integration details, see [docs/B2B_DX12_INTEGRATION_PLAN.md](file:///c:/Users/sathi/.gemini/antigravity/scratch/vr-inject/docs/B2B_DX12_INTEGRATION_PLAN.md).
 
 ---
 

@@ -139,6 +139,25 @@ bool ConfigManager::Load(const std::string& moduleDir, const std::string& explic
             m_config.hasRowMajorOverride = true;
             m_config.rowMajorMatrices = j.value("rowMajorMatrices", true);
         }
+
+        // P0.2: Curved HUD
+        m_config.curvedHud = j.value("curvedHud", true);
+        m_config.hudDistance = std::clamp(j.value("hudDistance", 1.8f), 0.5f, 10.0f);
+        m_config.hudCurvature = std::clamp(j.value("hudCurvature", 0.35f), 0.0f, 1.0f);
+
+        // P1.1: Cutscene Auto-Theater
+        m_config.cutsceneTheater = j.value("cutsceneTheater", true);
+        m_config.theaterDistance = std::clamp(j.value("theaterDistance", 5.0f), 1.0f, 20.0f);
+        m_config.theaterCutThreshold = std::clamp(j.value("theaterCutThreshold", 120.0f), 30.0f, 360.0f);
+
+        // P1.2: Comfort Vignette
+        m_config.comfortVignette = j.value("comfortVignette", true);
+        m_config.vignetteStrength = std::clamp(j.value("vignetteStrength", 0.6f), 0.0f, 1.0f);
+        m_config.vignetteOnset = std::clamp(j.value("vignetteOnset", 45.0f), 10.0f, 180.0f);
+
+        // P2: Horizon Lock
+        m_config.horizonLock = j.value("horizonLock", false);
+        m_config.horizonLockStrength = std::clamp(j.value("horizonLockStrength", 0.85f), 0.0f, 1.0f);
         
         LOG_INFO("Configuration loaded successfully from %s", m_configPath.c_str());
         return true;
@@ -185,6 +204,25 @@ bool ConfigManager::Save() {
         if (!m_config.matrixPrecision.empty()) j["matrixPrecision"] = m_config.matrixPrecision;
         if (m_config.hasReverseZOverride) j["reverseZ"] = m_config.reverseZ;
         if (m_config.hasRowMajorOverride) j["rowMajorMatrices"] = m_config.rowMajorMatrices;
+
+        // P0.2: Curved HUD
+        j["curvedHud"] = m_config.curvedHud;
+        j["hudDistance"] = m_config.hudDistance;
+        j["hudCurvature"] = m_config.hudCurvature;
+
+        // P1.1: Cutscene Auto-Theater
+        j["cutsceneTheater"] = m_config.cutsceneTheater;
+        j["theaterDistance"] = m_config.theaterDistance;
+        j["theaterCutThreshold"] = m_config.theaterCutThreshold;
+
+        // P1.2: Comfort Vignette
+        j["comfortVignette"] = m_config.comfortVignette;
+        j["vignetteStrength"] = m_config.vignetteStrength;
+        j["vignetteOnset"] = m_config.vignetteOnset;
+
+        // P2: Horizon Lock
+        j["horizonLock"] = m_config.horizonLock;
+        j["horizonLockStrength"] = m_config.horizonLockStrength;
         
         // FIX (portable): Use wide path for saving as well.
         int wLen = MultiByteToWideChar(CP_UTF8, 0, m_configPath.c_str(), -1, nullptr, 0);

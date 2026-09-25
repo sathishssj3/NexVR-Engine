@@ -13,6 +13,15 @@ else()
     add_link_options(-Wl,-z,now -Wl,-z,relro)
 endif()
 
+if(NOT TARGET nexvr_warnings)
+    add_library(nexvr_warnings INTERFACE)
+    if(MSVC)
+        target_compile_options(nexvr_warnings INTERFACE /W4)
+    else()
+        target_compile_options(nexvr_warnings INTERFACE -Wall -Wextra)
+    endif()
+endif()
+
 # Force all build artifacts into a single bin/ directory so the injector
 # can locate vrinject.dll next to itself at runtime.
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

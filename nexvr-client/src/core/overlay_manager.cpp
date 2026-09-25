@@ -434,6 +434,123 @@ void OverlayManager::Render() {
                 ImGui::EndTabItem();
             }
 
+            // TAB: Comfort & HUD (P0.2 / P1.1 / P1.2 / P2)
+            if (ImGui::BeginTabItem("  Comfort & HUD  ")) {
+                ImGui::Spacing();
+                ImGui::TextColored(ImVec4(0.00f, 0.85f, 1.00f, 1.0f), "Floating Curved HUD");
+                ImGui::Separator();
+
+                bool curvedHud = cfg.curvedHud;
+                if (ImGui::Checkbox("Enable Curved HUD", &curvedHud)) {
+                    cfg.curvedHud = curvedHud;
+                    cfgManager->Save();
+                }
+                ImGui::TextDisabled("Wraps flat HUD elements onto a virtual cylinder for comfortable corner viewing.");
+
+                if (cfg.curvedHud) {
+                    ImGui::Spacing();
+                    float hudDist = cfg.hudDistance;
+                    ImGui::Text("HUD Distance: %.1f m", hudDist);
+                    if (ImGui::SliderFloat("##hudDist", &hudDist, 0.5f, 5.0f, "%.1f m")) {
+                        cfg.hudDistance = hudDist;
+                        cfgManager->Save();
+                    }
+
+                    float hudCurve = cfg.hudCurvature;
+                    ImGui::Text("Curvature: %.2f", hudCurve);
+                    if (ImGui::SliderFloat("##hudCurve", &hudCurve, 0.0f, 1.0f, "%.2f")) {
+                        cfg.hudCurvature = hudCurve;
+                        cfgManager->Save();
+                    }
+                    ImGui::TextDisabled("0 = flat screen, 1 = half cylinder wrap.");
+                }
+
+                ImGui::Spacing();
+                ImGui::Spacing();
+                ImGui::TextColored(ImVec4(0.00f, 0.85f, 1.00f, 1.0f), "Comfort Vignette");
+                ImGui::Separator();
+
+                bool vigEn = cfg.comfortVignette;
+                if (ImGui::Checkbox("Dynamic Comfort Vignette", &vigEn)) {
+                    cfg.comfortVignette = vigEn;
+                    cfgManager->Save();
+                }
+                ImGui::TextDisabled("Darkens peripheral vision during fast camera motion to reduce motion sickness.");
+
+                if (cfg.comfortVignette) {
+                    ImGui::Spacing();
+                    float vigStr = cfg.vignetteStrength;
+                    ImGui::Text("Vignette Intensity: %.0f%%", vigStr * 100.0f);
+                    if (ImGui::SliderFloat("##vigStr", &vigStr, 0.1f, 1.0f, "%.0f%%")) {
+                        cfg.vignetteStrength = vigStr;
+                        cfgManager->Save();
+                    }
+
+                    float vigOnset = cfg.vignetteOnset;
+                    ImGui::Text("Onset Speed: %.0f deg/s", vigOnset);
+                    if (ImGui::SliderFloat("##vigOnset", &vigOnset, 10.0f, 120.0f, "%.0f deg/s")) {
+                        cfg.vignetteOnset = vigOnset;
+                        cfgManager->Save();
+                    }
+                    ImGui::TextDisabled("Lower = more sensitive, triggers vignette on slower head movements.");
+                }
+
+                ImGui::Spacing();
+                ImGui::Spacing();
+                ImGui::TextColored(ImVec4(0.00f, 0.85f, 1.00f, 1.0f), "Cutscene Auto-Theater");
+                ImGui::Separator();
+
+                bool theater = cfg.cutsceneTheater;
+                if (ImGui::Checkbox("Auto-Theater Mode", &theater)) {
+                    cfg.cutsceneTheater = theater;
+                    cfgManager->Save();
+                }
+                ImGui::TextDisabled("Detects cinematic camera cuts and switches to a floating cinema screen in VR.");
+
+                if (cfg.cutsceneTheater) {
+                    ImGui::Spacing();
+                    float thDist = cfg.theaterDistance;
+                    ImGui::Text("Screen Distance: %.1f m", thDist);
+                    if (ImGui::SliderFloat("##thDist", &thDist, 1.0f, 15.0f, "%.1f m")) {
+                        cfg.theaterDistance = thDist;
+                        cfgManager->Save();
+                    }
+
+                    float thThresh = cfg.theaterCutThreshold;
+                    ImGui::Text("Cut Sensitivity: %.0f deg/s", thThresh);
+                    if (ImGui::SliderFloat("##thThresh", &thThresh, 30.0f, 300.0f, "%.0f deg/s")) {
+                        cfg.theaterCutThreshold = thThresh;
+                        cfgManager->Save();
+                    }
+                    ImGui::TextDisabled("Lower = more sensitive cut detection.");
+                }
+
+                ImGui::Spacing();
+                ImGui::Spacing();
+                ImGui::TextColored(ImVec4(0.00f, 0.85f, 1.00f, 1.0f), "Horizon Lock");
+                ImGui::Separator();
+
+                bool hLock = cfg.horizonLock;
+                if (ImGui::Checkbox("Horizon Lock (Roll Stabilization)", &hLock)) {
+                    cfg.horizonLock = hLock;
+                    cfgManager->Save();
+                }
+                ImGui::TextDisabled("Prevents the world from tilting when games apply camera roll (explosions, motorcycle lean).");
+
+                if (cfg.horizonLock) {
+                    ImGui::Spacing();
+                    float hStr = cfg.horizonLockStrength;
+                    ImGui::Text("Lock Strength: %.0f%%", hStr * 100.0f);
+                    if (ImGui::SliderFloat("##hStr", &hStr, 0.1f, 1.0f, "%.0f%%")) {
+                        cfg.horizonLockStrength = hStr;
+                        cfgManager->Save();
+                    }
+                    ImGui::TextDisabled("100% = fully locked horizon, lower values allow subtle roll.");
+                }
+
+                ImGui::EndTabItem();
+            }
+
             // TAB 2: Performance & Graphics
             if (ImGui::BeginTabItem("  Graphics & Performance  ")) {
                 ImGui::Spacing();
@@ -505,6 +622,18 @@ void OverlayManager::Render() {
                     cfg.motionAimSensitivity = 1.0f;
                     cfg.rawInputMode = true;
                     cfg.enableNeuralInpainter = true;
+                    // P0.2/P1.1/P1.2/P2 defaults
+                    cfg.curvedHud = true;
+                    cfg.hudDistance = 1.8f;
+                    cfg.hudCurvature = 0.35f;
+                    cfg.comfortVignette = true;
+                    cfg.vignetteStrength = 0.6f;
+                    cfg.vignetteOnset = 45.0f;
+                    cfg.cutsceneTheater = true;
+                    cfg.theaterDistance = 5.0f;
+                    cfg.theaterCutThreshold = 120.0f;
+                    cfg.horizonLock = false;
+                    cfg.horizonLockStrength = 0.85f;
                     cfgManager->Save();
                 }
                 ImGui::TextDisabled("Restores optimal eye comfort, natural character proportions, and vibrant colors.");

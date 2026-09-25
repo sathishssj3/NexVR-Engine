@@ -2,6 +2,7 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include <mutex>
+#include <optional>
 
 namespace vrinject {
 namespace vulkan {
@@ -32,9 +33,9 @@ public:
     void MarkQueueFamilyPresentSupport(uint32_t queueFamilyIndex, bool supportsPresent);
 
     VkQueue GetMainGraphicsQueue() const;
-    const QueueRecord* GetQueueRecord(VkQueue queue) const;
-    std::vector<QueueRecord> GetQueues() const { return m_knownQueues; }
-    VkDevice GetDevice() const { return m_device; }
+    std::optional<QueueRecord> GetQueueRecord(VkQueue queue) const;
+    std::vector<QueueRecord> GetQueues() const;
+    VkDevice GetDevice() const;
 
 private:
     VulkanQueueManager() = default;

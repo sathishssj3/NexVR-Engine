@@ -20,6 +20,22 @@ const envSchema = z.object({
   CORS_ORIGINS: z.string().default('http://localhost:3000,http://localhost:5173,https://nexvr.dev'),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
   RATE_LIMIT_MAX: z.coerce.number().default(100),
+}).superRefine((data, ctx) => {
+  if (data.NODE_ENV === 'production') {
+    if (!data.JWT_SECRET || data.JWT_SECRET === 'nexvr-enterprise-jwt-super-secret-key-change-in-prod') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['JWT_SECRET'],
+        message: 'Production deployment requires a secure, custom JWT_SECRET (default fallback rejected).',
+      });
+    } else if (data.JWT_SECRET.length < 32) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['JWT_SECRET'],
+        message: 'Production JWT_SECRET must have at least 32 characters of entropy.',
+      });
+    }
+  }
 });
 
 export const config = envSchema.parse(process.env);

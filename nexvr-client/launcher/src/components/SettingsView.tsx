@@ -571,7 +571,29 @@ export function SettingsView({
         </div>
 
         {/* ========================================================= */}
-        {/* 4. HARDWARE & RUNTIME TELEMETRY (4-Cell Bento Grid) */}
+        {/* 4. PRIVACY & DIAGNOSTIC PREFERENCES */}
+        {/* ========================================================= */}
+        <div className="settings-item-enter stagger-3" style={{ marginBottom: 32 }}>
+          {sectionLabel('PRIVACY & DIAGNOSTICS', 'Crash reporting, telemetry consent, and data retention choices')}
+
+          <div className="settings-card" style={{ padding: '6px 18px' }}>
+            <div className="setting-row">
+              <div className="setting-label">
+                <span className="title">Automatic Diagnostic & Crash Reporting</span>
+                <span className="desc">
+                  Transmit sanitized error reports and GPU runtime environment specs to engineers upon crash. All usernames, directory paths, and IP addresses are scrubbed locally. Disabled by default.
+                </span>
+              </div>
+              <Toggle
+                value={globalConfig.telemetryOptIn ?? false}
+                onToggle={() => saveGlobalConfig({ ...globalConfig, telemetryOptIn: !(globalConfig.telemetryOptIn ?? false) })}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ========================================================= */}
+        {/* 5. HARDWARE & RUNTIME TELEMETRY (4-Cell Bento Grid) */}
         {/* ========================================================= */}
         <div className="settings-item-enter stagger-4" style={{ marginBottom: 36 }}>
           {sectionLabel('HARDWARE & RUNTIME TELEMETRY', 'Active compositor environment and graphics injection status')}

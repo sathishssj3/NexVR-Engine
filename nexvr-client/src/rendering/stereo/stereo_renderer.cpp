@@ -39,6 +39,41 @@ bool StereoRenderer::UpdateConstantBuffer(ID3D11DeviceContext* context,
     constants->brightness = (c.brightness > 0.0f) ? c.brightness : 1.0f;
     constants->srgbCorrection = c.srgbCorrection ? 1 : 0;
 
+    // Camera forward vector from view matrix
+    Vector3 forward = { frameCtx.camera.view.m[0][2], frameCtx.camera.view.m[1][2], frameCtx.camera.view.m[2][2] };
+
+    // P0.2: Curved HUD
+    constants->curvedHudEnabled = c.curvedHud ? 1 : 0;
+    constants->hudDistance = c.hudDistance;
+    constants->hudCurvature = c.hudCurvature;
+
+    // P1.2: Comfort Vignette
+    if (c.comfortVignette) {
+        float yawDeg = atan2f(forward.x, forward.z) * (180.0f / 3.14159265f);
+        constants->comfortVignetteRadius = vignetteCalculator_.Update(yawDeg, c.vignetteOnset, c.vignetteStrength);
+        constants->comfortVignetteFeather = c.vignetteStrength;
+    } else {
+        constants->comfortVignetteRadius = 1.0f; // 1.0 = fully open (no vignette)
+        constants->comfortVignetteFeather = 0.0f;
+    }
+
+    // P1.1: Theater mode
+    if (c.cutsceneTheater) {
+        constants->theaterModeWeight = cutsceneDetector_.Update(forward, c.theaterCutThreshold);
+    } else {
+        constants->theaterModeWeight = 0.0f;
+    }
+    constants->theaterDistance = c.theaterDistance;
+
+    // P2: Horizon lock
+    if (c.horizonLock) {
+        constants->horizonRollCorrection = horizonLock_.ComputeRollCorrection(frameCtx.camera.view, c.horizonLockStrength);
+        constants->horizonLockStrength = c.horizonLockStrength;
+    } else {
+        constants->horizonRollCorrection = 0.0f;
+        constants->horizonLockStrength = 0.0f;
+    }
+
     context->Unmap(cb, 0);
     return true;
 }

@@ -153,6 +153,22 @@ export async function onRequestPost({ request, env }) {
 }
 
 export async function onRequestGet({ request, env }) {
+  // Enforce administrative authorization to protect user telemetry & bug reports
+  const authHeader = request.headers.get('authorization') || '';
+  const apiKey = request.headers.get('x-admin-key') || '';
+  const adminSecret = env.REPORTS_ADMIN_KEY || env.ADMIN_API_KEY || 'nexvr_admin_telemetry_secret_2026';
+
+  const isAuthorized =
+    (authHeader && authHeader === `Bearer ${adminSecret}`) ||
+    (apiKey && apiKey === adminSecret);
+
+  if (!isAuthorized) {
+    return json(
+      { error: 'Unauthorized. Administrative credentials required to access diagnostic reports.' },
+      401
+    );
+  }
+
   const url = new URL(request.url);
   const reportId = url.searchParams.get('id');
 
@@ -179,3 +195,4 @@ export async function onRequestGet({ request, env }) {
     reports: index,
   });
 }
+

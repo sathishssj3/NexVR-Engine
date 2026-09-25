@@ -153,14 +153,19 @@ void RuntimeState::BackgroundInitialize() {
 }
 
 void RuntimeState::BackgroundTeardown() {
-    SubsystemContext::Get().GetDiagnosticContext()->PostEvent(DiagnosticLevel::Info, "Runtime", "Starting background teardown");
+    auto* diag = SubsystemContext::Get().GetDiagnosticContext();
+    if (diag) {
+        diag->PostEvent(DiagnosticLevel::Info, "Runtime", "Starting background teardown");
+    }
     
     HookManager::Get().ShutdownHooks();
     seh::UnregisterVehShield();
     
-    SubsystemContext::Get().Shutdown();
+    if (diag) {
+        diag->PostEvent(DiagnosticLevel::Info, "Runtime", "Teardown complete");
+    }
 
-    SubsystemContext::Get().GetDiagnosticContext()->PostEvent(DiagnosticLevel::Info, "Runtime", "Teardown complete");
+    SubsystemContext::Get().Shutdown();
     TransitionTo(RuntimePhase::Stopped);
 }
 

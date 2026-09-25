@@ -199,10 +199,10 @@ bool VulkanGraphicsBackend::CreateGPUResources() {
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(m_device);
     if (!dt) return false;
 
-    // --- Camera Uniform Buffer (256 bytes = StereoShaderConstants) ---
+    // --- Camera Uniform Buffer (512 bytes = expanded StereoShaderConstants) ---
     VkBufferCreateInfo bufInfo{};
     bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufInfo.size = 256; // StereoShaderConstants
+    bufInfo.size = 512; // Expanded StereoShaderConstants for P0.2/P1.1/P1.2/P2
     bufInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     bufInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -402,11 +402,46 @@ void VulkanGraphicsBackend::RenderStereo(
         shaderConsts.brightness = (c.brightness > 0.0f) ? c.brightness : 1.0f;
         shaderConsts.srgbCorrection = c.srgbCorrection ? 1 : 0;
 
+        // Camera forward vector from view matrix
+        Vector3 forward = { camSnapshot.view.m[0][2], camSnapshot.view.m[1][2], camSnapshot.view.m[2][2] };
+
+        // P0.2: Curved HUD
+        shaderConsts.curvedHudEnabled = c.curvedHud ? 1 : 0;
+        shaderConsts.hudDistance = c.hudDistance;
+        shaderConsts.hudCurvature = c.hudCurvature;
+
+        // P1.2: Comfort Vignette
+        if (c.comfortVignette) {
+            float yawDeg = atan2f(forward.x, forward.z) * (180.0f / 3.14159265f);
+            shaderConsts.comfortVignetteRadius = m_vignetteCalculator.Update(yawDeg, c.vignetteOnset, c.vignetteStrength);
+            shaderConsts.comfortVignetteFeather = c.vignetteStrength;
+        } else {
+            shaderConsts.comfortVignetteRadius = 1.0f; // 1.0 = fully open (no vignette)
+            shaderConsts.comfortVignetteFeather = 0.0f;
+        }
+
+        // P1.1: Theater mode
+        if (c.cutsceneTheater) {
+            shaderConsts.theaterModeWeight = m_cutsceneDetector.Update(forward, c.theaterCutThreshold);
+        } else {
+            shaderConsts.theaterModeWeight = 0.0f;
+        }
+        shaderConsts.theaterDistance = c.theaterDistance;
+
+        // P2: Horizon lock
+        if (c.horizonLock) {
+            shaderConsts.horizonRollCorrection = m_horizonLock.ComputeRollCorrection(camSnapshot.view, c.horizonLockStrength);
+            shaderConsts.horizonLockStrength = c.horizonLockStrength;
+        } else {
+            shaderConsts.horizonRollCorrection = 0.0f;
+            shaderConsts.horizonLockStrength = 0.0f;
+        }
+
         auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(m_device);
         if (!dt) return;
 
         void* mapped = nullptr;
-        dt->MapMemory(m_device, m_cameraBufferMemory, 0, 256, 0, &mapped);
+        dt->MapMemory(m_device, m_cameraBufferMemory, 0, 512, 0, &mapped);
         if (mapped) {
             memcpy(mapped, &shaderConsts, sizeof(StereoShaderConstants));
             dt->UnmapMemory(m_device, m_cameraBufferMemory);
@@ -452,7 +487,10 @@ void VulkanGraphicsBackend::RenderStereo(
                 VK_QUEUE_FAMILY_IGNORED);
         }
 
-        if (!m_gameColorView) return; // Cannot render without a color view
+        if (!m_gameColorView) {
+            m_state = StereoRendererState::DEGRADED;
+            return; // Cannot render without a color view
+        }
 
         bool ok = m_renderer->Render(camSnapshot, effectiveDepth,
                            m_cameraBuffer, 256, m_gameColorView, m_depthImageView ? m_depthImageView : m_gameColorView,
@@ -460,9 +498,16 @@ void VulkanGraphicsBackend::RenderStereo(
                            *m_commandManager, *m_syncManager, *m_stateTracker,
                            m_oxrLeftDest, m_oxrRightDest,
                            shouldAttemptStereo);
-        if (!ok && camSnapshot.frame < 10) {
-            std::cerr << "[VulkanGraphicsBackend] RenderStereo: Render() returned false on frame " << camSnapshot.frame << std::endl;
+        if (ok) {
+            m_state = StereoRendererState::READY;
+        } else {
+            m_state = StereoRendererState::DEGRADED;
+            if (camSnapshot.frame < 10) {
+                std::cerr << "[VulkanGraphicsBackend] RenderStereo: Render() returned false on frame " << camSnapshot.frame << std::endl;
+            }
         }
+    } else {
+        m_state = StereoRendererState::DEGRADED;
     }
 }
 
@@ -534,6 +579,7 @@ void VulkanGraphicsBackend::SubmitStereoFrame(
             // direct copy path (monoscopic 2D in headset, zero format conversion).
             bool stereoOk = false;
             if (shouldAttemptStereo) {
+                SetOpenXRSwapchainImages(leftDest, rightDest);
                 RenderStereo(currentSnapshot, camSnapshot, depthSnapshot, params, shouldAttemptStereo, uiMaskHandle);
                 stereoOk = (GetState() == StereoRendererState::READY);
             }
