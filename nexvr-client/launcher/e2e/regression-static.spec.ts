@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
+import { verifyManifestSignature, getCanonicalManifestData, OTA_PINNED_PUBLIC_KEY, UpdateManifest } from '../electron/updateManager';
 
 const launcherRoot = path.resolve(__dirname, '..');
 const repoRoot = path.resolve(launcherRoot, '..');
@@ -345,5 +347,48 @@ test.describe('Cross-game isolation and profile safety regression tests', () => 
     expect(settingsPanelTsx).toContain('settings-card');
     expect(settingsPanelTsx).toContain('PER-TITLE VR CONFIGURATION');
   });
+
+  test('OTA manifest digital signature verification and malicious-update rejection', () => {
+    const manifestPath = path.resolve(repoRoot, '..', 'updates', 'manifest.json');
+    const manifest: UpdateManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+
+    // 1. Production manifest has a cryptographic Ed25519 signature
+    expect(manifest.signature).toBeDefined();
+    expect(typeof manifest.signature).toBe('string');
+    expect(manifest.signature!.length).toBe(128); // 64 bytes = 128 hex characters
+
+    // 2. Production manifest passes cryptographic signature verification against pinned key
+    const isValid = verifyManifestSignature(manifest);
+    expect(isValid).toBe(true);
+
+    // 3. Malicious tampering rejection: modified file hash must fail verification
+    const tamperedManifest: UpdateManifest = JSON.parse(JSON.stringify(manifest));
+    const firstKey = Object.keys(tamperedManifest.hashes || {})[0];
+    if (firstKey && tamperedManifest.hashes) {
+      tamperedManifest.hashes[firstKey] = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'; // altered hash
+      expect(verifyManifestSignature(tamperedManifest)).toBe(false);
+    }
+
+    // 4. Malicious version tampering rejection: bumped engineVersion must fail verification
+    const versionTampered: UpdateManifest = JSON.parse(JSON.stringify(manifest));
+    versionTampered.engineVersion = '99.99.99';
+    expect(verifyManifestSignature(versionTampered)).toBe(false);
+
+    // 5. Unsigned manifest rejection: absent signature must fail verification
+    const unsignedManifest: UpdateManifest = JSON.parse(JSON.stringify(manifest));
+    delete unsignedManifest.signature;
+    expect(verifyManifestSignature(unsignedManifest)).toBe(false);
+
+    // 6. Forged key rejection: manifest signed with attacker's unauthorized key must fail verification
+    const { privateKey: attackerPrivKey } = crypto.generateKeyPairSync('ed25519', {
+      publicKeyEncoding: { type: 'spki', format: 'pem' },
+      privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+    });
+    const canonical = getCanonicalManifestData(manifest);
+    const forgedSignature = crypto.sign(null, canonical, attackerPrivKey).toString('hex');
+    const forgedManifest: UpdateManifest = { ...manifest, signature: forgedSignature };
+    expect(verifyManifestSignature(forgedManifest)).toBe(false);
+  });
 });
+
 

@@ -6,6 +6,8 @@
  * notifications to Discord if a webhook is configured.
  */
 
+const MAX_REPORT_BYTES = 256 * 1024;
+
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
@@ -31,11 +33,36 @@ export async function onRequestOptions() {
 }
 
 export async function onRequestPost({ request, env }) {
+  if (Number(request.headers.get('content-length')) > MAX_REPORT_BYTES) {
+    return json({ error: 'Report payload too large.' }, 413);
+  }
+
+  const reader = request.body?.getReader();
+  if (!reader) return json({ error: 'Malformed JSON payload.' }, 400);
+
   let body;
   try {
-    body = await request.json();
+    const decoder = new TextDecoder();
+    let raw = '';
+    let size = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > MAX_REPORT_BYTES) {
+        await reader.cancel();
+        return json({ error: 'Report payload too large.' }, 413);
+      }
+      raw += decoder.decode(value, { stream: true });
+    }
+    body = JSON.parse(raw + decoder.decode());
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return json({ error: 'Malformed JSON payload.' }, 400);
+    }
   } catch {
     return json({ error: 'Malformed JSON payload.' }, 400);
+  } finally {
+    reader.releaseLock();
   }
 
   const timestamp = Date.now();
@@ -97,7 +124,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   // 2. Forward to Discord Webhook if configured
-  const webhookUrl = env.DISCORD_WEBHOOK_URL || body.discordWebhookUrl;
+  const webhookUrl = env.DISCORD_WEBHOOK_URL;
   if (webhookUrl && webhookUrl.startsWith('https://discord.com/api/webhooks/')) {
     try {
       const isError = report.status === 'error';
@@ -156,11 +183,22 @@ export async function onRequestGet({ request, env }) {
   // Enforce administrative authorization to protect user telemetry & bug reports
   const authHeader = request.headers.get('authorization') || '';
   const apiKey = request.headers.get('x-admin-key') || '';
-  const adminSecret = env.REPORTS_ADMIN_KEY || env.ADMIN_API_KEY || 'nexvr_admin_telemetry_secret_2026';
+  const knownCompromised = 'nexvr_admin_telemetry_secret_2026';
 
-  const isAuthorized =
-    (authHeader && authHeader === `Bearer ${adminSecret}`) ||
-    (apiKey && apiKey === adminSecret);
+  if (authHeader.includes(knownCompromised) || apiKey === knownCompromised) {
+    return json(
+      { error: 'Unauthorized. The provided administrative credential has been revoked.' },
+      401
+    );
+  }
+
+  const adminKeys = [env.REPORTS_ADMIN_KEY, env.ADMIN_API_KEY].filter(
+    key => typeof key === 'string' && key.trim().length > 0 && key !== knownCompromised
+  );
+
+  const isAuthorized = adminKeys.length > 0 && adminKeys.some(
+    key => authHeader === `Bearer ${key}` || apiKey === key
+  );
 
   if (!isAuthorized) {
     return json(

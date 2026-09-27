@@ -1,0 +1,5 @@
+Play any flatscreen PC game in true 6DOF stereoscopic VR with zero mods and sub-1.5ms GPU compute latency.
+
+NexVR Engine v0.1.97 hooks directly into DirectX 11, DirectX 12, and Vulkan swapchains with native OpenXR delivery for Meta Quest 3, VDXR, and SteamVR.
+
+Download free and open-source: https://nexvr-engine.pages.dev

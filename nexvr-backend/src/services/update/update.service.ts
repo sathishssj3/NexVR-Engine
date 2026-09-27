@@ -91,7 +91,7 @@ export class UpdateService {
     return { key, uploadUrl };
   }
 
-  private compareSemver(v1: string, v2: string): number {
+  compareSemver(v1: string, v2: string): number {
     const clean1 = v1.replace(/^v/, '').split('.').map(Number);
     const clean2 = v2.replace(/^v/, '').split('.').map(Number);
 

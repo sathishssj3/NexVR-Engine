@@ -40,6 +40,33 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
+    - name: Decode Release Signing Certificate
+      if: matrix.configuration == 'Release' && startsWith(github.ref, 'refs/tags/')
+      shell: pwsh
+      env:
+        CERT_BASE64: ${{ secrets.SIGN_CERT_PATH }}
+        CERT_PASSWORD: ${{ secrets.SIGN_CERT_PASS }}
+      run: |
+        $ErrorActionPreference = 'Stop'
+        if ([string]::IsNullOrWhiteSpace($env:CERT_BASE64) -or [string]::IsNullOrWhiteSpace($env:CERT_PASSWORD)) {
+          throw "Release signing certificate and password are required."
+        }
+        $certPath = Join-Path $env:RUNNER_TEMP 'nexvr-signing.pfx'
+        try {
+          [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:CERT_BASE64))
+          $cert = [Security.Cryptography.X509Certificates.X509Certificate2]::new($certPath, $env:CERT_PASSWORD)
+          $eku = $cert.Extensions | Where-Object { $_ -is [Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension] } | Select-Object -First 1
+          if (-not $cert.HasPrivateKey -or (Get-Date) -lt $cert.NotBefore -or (Get-Date) -gt $cert.NotAfter -or
+              -not $eku -or -not @($eku.EnhancedKeyUsages | Where-Object { $_.Value -eq '1.3.6.1.5.5.7.3.3' }).Count) {
+            throw "Invalid code-signing certificate."
+          }
+        } catch {
+          Remove-Item -LiteralPath $certPath -Force -ErrorAction SilentlyContinue
+          throw "Release signing certificate is invalid or cannot be decoded."
+        }
+        "SIGN_CERT_PATH=$certPath" >> $env:GITHUB_ENV
+        "SIGN_CERT_PASS=$env:CERT_PASSWORD" >> $env:GITHUB_ENV
+
     - name: Setup MSVC & CMake
       uses: ilammy/msvc-dev-cmd@v1.13.0
 
@@ -179,6 +206,27 @@ jobs:
           **/TEST-*.xml
         retention-days: 7
 
+    - name: Setup Node.js for Full Suite Verification
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+        cache-dependency-path: |
+          nexvr-client/launcher/package-lock.json
+          nexvr-backend/package-lock.json
+
+    - name: Run Launcher CI Checks
+      working-directory: nexvr-client/launcher
+      run: |
+        npm install
+        npm run test:ci
+
+    - name: Run Backend Test Suite
+      working-directory: nexvr-backend
+      run: |
+        npm install
+        npm test
+
     # Export compiled engine binaries from Release configuration so testers and the release job can reuse them
     - name: Upload Release Engine Binaries
       if: matrix.configuration == 'Release'
@@ -206,6 +254,8 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
+      with:
+        lfs: true
 
     - name: Download Pre-compiled Engine Binaries
       uses: actions/download-artifact@v4
@@ -213,56 +263,86 @@ jobs:
         name: test-ai-binaries
         path: build/bin
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
-
-    - name: Generate Dummy Models
-      shell: pwsh
-      run: |
-        pip install onnx
-        if (-not (Test-Path models)) { mkdir models }
-        python generate_dummy_onnx.py
-        Copy-Item models/dummy.onnx models/depth_inpainter.onnx
-        Copy-Item models/dummy_ui.onnx models/ui_synthesizer.onnx
-
-    - name: Decode Code Signing Certificate
+    - name: Decode Release Signing Certificate
       shell: pwsh
       env:
         CERT_BASE64: ${{ secrets.SIGN_CERT_PATH }}
+        CERT_PASSWORD: ${{ secrets.SIGN_CERT_PASS }}
       run: |
-        if ([string]::IsNullOrWhiteSpace($env:CERT_BASE64)) {
-          Write-Host "No certificate secret found. Skipping decoding."
-          exit 0
+        $ErrorActionPreference = 'Stop'
+        if ([string]::IsNullOrWhiteSpace($env:CERT_BASE64) -or [string]::IsNullOrWhiteSpace($env:CERT_PASSWORD)) {
+          throw "Release signing certificate and password are required."
         }
-
-        # Remove absolutely everything that is not a valid Base64 character
-        $cleanBase64 = $env:CERT_BASE64 -replace '[^A-Za-z0-9+/=]', ''
-
-        # Ensure the string length is a multiple of 4 (add missing padding)
-        $pad = $cleanBase64.Length % 4
-        if ($pad -gt 0) {
-          Write-Host "Warning: Missing padding detected. Attempting to auto-fix..."
-          $cleanBase64 += "=" * (4 - $pad)
-        }
-
-        $certPath = "${{ github.workspace }}\cert.pfx"
+        $certPath = Join-Path $env:RUNNER_TEMP 'nexvr-signing.pfx'
         try {
-          $bytes = [Convert]::FromBase64String($cleanBase64)
-          [IO.File]::WriteAllBytes($certPath, $bytes)
-
-          # Validate that the file is an authentic, readable PKCS#12 archive
-          $certPass = "${{ secrets.SIGN_CERT_PASS }}"
-          $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certPath, $certPass)
-          Write-Host "Successfully validated code signing certificate: $($cert.Subject)"
-          echo "SIGN_CERT_PATH=$certPath" >> $env:GITHUB_ENV
-          echo "SIGN_CERT_PASS=$certPass" >> $env:GITHUB_ENV
+          [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:CERT_BASE64))
+          $cert = [Security.Cryptography.X509Certificates.X509Certificate2]::new($certPath, $env:CERT_PASSWORD)
+          $eku = $cert.Extensions | Where-Object { $_ -is [Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension] } | Select-Object -First 1
+          if (-not $cert.HasPrivateKey -or (Get-Date) -lt $cert.NotBefore -or (Get-Date) -gt $cert.NotAfter -or
+              -not $eku -or -not @($eku.EnhancedKeyUsages | Where-Object { $_.Value -eq '1.3.6.1.5.5.7.3.3' }).Count) {
+            throw "Invalid code-signing certificate."
+          }
         } catch {
-          Write-Host "::warning::Code signing certificate decoding or validation failed: $_"
-          Write-Host "::warning::The secret SIGN_CERT_PATH is truncated, corrupt, or password-mismatched. Proceeding with unsigned packaging so release build succeeds."
-          if (Test-Path $certPath) {
-            Remove-Item $certPath -Force -ErrorAction SilentlyContinue
+          Remove-Item -LiteralPath $certPath -Force -ErrorAction SilentlyContinue
+          throw "Release signing certificate is invalid or cannot be decoded."
+        }
+        "SIGN_CERT_PATH=$certPath" >> $env:GITHUB_ENV
+        "SIGN_CERT_PASS=$env:CERT_PASSWORD" >> $env:GITHUB_ENV
+
+    - name: Verify Signed Engine Binaries
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        $cert = [Security.Cryptography.X509Certificates.X509Certificate2]::new($env:SIGN_CERT_PATH, $env:SIGN_CERT_PASS)
+        $dll = 'build/bin/vrinject.dll'
+        $cli = 'build/bin/vr-inject-cli.exe'
+        foreach ($file in @($dll, $cli)) {
+          $signature = Get-AuthenticodeSignature -LiteralPath $file
+          if ($signature.Status -ne 'Valid' -or -not $signature.SignerCertificate -or
+              $signature.SignerCertificate.Thumbprint -ne $cert.Thumbprint) {
+            throw "Invalid or unexpected Authenticode signature: $file"
+          }
+        }
+        # CMake signs the DLL, hashes it into expected_hash.h, then builds the CLI.
+        $dllHash = (Get-FileHash -LiteralPath $dll -Algorithm SHA256).Hash
+        $cliImage = [IO.File]::ReadAllBytes((Resolve-Path -LiteralPath $cli).Path)
+        if (-not [Text.Encoding]::Unicode.GetString($cliImage).Contains($dllHash)) {
+          throw "The signed DLL's SHA-256 does not match the CLI's embedded verification hash."
+        }
+
+    - name: Verify Production Model Weights
+      shell: pwsh
+      env:
+        RELEASE_MODELS_SHA256: ${{ secrets.RELEASE_MODELS_SHA256 }}
+      run: |
+        $ErrorActionPreference = 'Stop'
+        if ([string]::IsNullOrWhiteSpace($env:RELEASE_MODELS_SHA256)) {
+          throw "Approved production model hashes are required for a public release."
+        }
+        try {
+          $expected = ConvertFrom-Json -InputObject $env:RELEASE_MODELS_SHA256 -AsHashtable -ErrorAction Stop
+        } catch {
+          throw "Release model hashes must be a JSON object of relative filenames to SHA-256 digests."
+        }
+        if ($expected -isnot [System.Collections.IDictionary] -or $expected.Count -eq 0) {
+          throw "Release model hash manifest is empty or invalid."
+        }
+        foreach ($name in @('depth_inpainter.onnx', 'ui_synthesizer.onnx')) {
+          if (-not $expected.ContainsKey($name)) { throw "Missing approved model hash: $name" }
+        }
+        $modelDir = (Resolve-Path -LiteralPath 'nexvr-client/models').Path
+        $files = @(Get-ChildItem -LiteralPath $modelDir -File -Recurse | Where-Object { $_.Name -match '\.onnx(\.data)?$' })
+        if ($files.Count -ne $expected.Count) { throw "Every packaged ONNX model must have an approved hash." }
+        foreach ($file in $files) {
+          $name = [IO.Path]::GetRelativePath($modelDir, $file.FullName).Replace('\', '/')
+          if ($name -match '(^|/)dummy(_ui)?\.onnx$' -or -not $expected.ContainsKey($name) -or
+              $expected[$name] -notmatch '^[A-Fa-f0-9]{64}$' -or
+              (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash -ne $expected[$name]) {
+            throw "Unapproved or missing production model weight: $name"
+          }
+          if ([Text.Encoding]::ASCII.GetString([IO.File]::ReadAllBytes($file.FullName)) -match
+              'dummy_generator|dummy_model|dummy_graph|dummy_add|version https://git-lfs.github.com/spec/v1') {
+            throw "Dummy model or Git LFS pointer cannot be released: $name"
           }
         }
 
@@ -288,6 +368,23 @@ jobs:
       working-directory: ./nexvr-client/launcher
       # This triggers vite build, tsc, and electron-builder
       run: npm run pack
+
+    - name: Verify Packaged Launcher Signatures
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        $cert = [Security.Cryptography.X509Certificates.X509Certificate2]::new($env:SIGN_CERT_PATH, $env:SIGN_CERT_PASS)
+        foreach ($pattern in @('NexVR-Engine-Setup-*.exe', 'NexVR-Engine-Portable-*.exe')) {
+          $files = @(Get-ChildItem -LiteralPath 'nexvr-client/launcher/dist-electron' -Filter $pattern -File)
+          if ($files.Count -eq 0) { throw "Missing packaged launcher: $pattern" }
+          foreach ($file in $files) {
+            $signature = Get-AuthenticodeSignature -LiteralPath $file.FullName
+            if ($signature.Status -ne 'Valid' -or -not $signature.SignerCertificate -or
+                $signature.SignerCertificate.Thumbprint -ne $cert.Thumbprint) {
+              throw "Invalid or unexpected launcher signature: $($file.Name)"
+            }
+          }
+        }
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4

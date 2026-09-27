@@ -487,7 +487,7 @@ function buildEmailHtml(recipientEmail) {
                       </tr>
                       <tr>
                         <td colspan="2" style="font-size: 12px; color: #8A8A92; padding-top: 6px; line-height: 1.5;">
-                          Your priority pass unlocks immediate Tier 1 engine binaries, zero telemetry tracking, and direct access to all shipped engine profiles.
+                          Your priority pass unlocks immediate Tier 1 engine binaries, opt-in privacy-respecting diagnostics, and direct access to all shipped engine profiles.
                         </td>
                       </tr>
                     </table>
@@ -658,7 +658,7 @@ Frame Budget: 11.1ms
 
 Your Founder Access Pass:
 Code: STEREO-FOUNDER-#8492
-Status: Priority Allocated (Tier 1 engine binaries, zero telemetry tracking)
+Status: Priority Allocated (Tier 1 engine binaries, opt-in privacy-respecting diagnostics)
 
 Tested & Tuned Profiles:
 - Cyberpunk 2077 (REDengine 4 · DX12)

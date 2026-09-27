@@ -1,7 +1,7 @@
 {
   "engineVersion": "0.1.97",
   "buildDate": "2026-09-27",
-  "timestamp": 1790506514944,
+  "timestamp": 1790526692924,
   "changelog": "NexVR Engine v0.1.97 — Hotfix: Resolved black screen in VR headset for 10-bit HDR & 4K games (Sekiro R10G10B10A2 parity) and OpenXR typeless format family copy compatibility",
   "features": [
     "P0.1 Virtual Controller Emulation: Full VR motion controller mapping to XInput with bidirectional haptic vibration feedback for native controller-free gameplay",
@@ -88,5 +88,6 @@
     "shaders/comfort_guard_analysis.hlsl": "8089dd179cae077aae72a4db31e79a0339c8ef801dc0dc56da962bc9aedab4f6",
     "shaders/asw_shader.hlsl": "ae77436c5869e5dcd5175bc0050f3e55f1f9abebd3aed49336867954fcee461c",
     "shaders/depth_reprojection.hlsl": "eb0e672fdaebaea0e1afa542990770b5d7d5044a18156f983623478c9e0541f5"
-  }
+  },
+  "signature": "b1582005c1348ab8b3cb06275cf62c82e553cc7178465ce647b8fcac0b5a471d68afe65c02038b8f71c3864d71c14e9aa2ed469896ce9eaa96432bdcb8c0f50a"
 }

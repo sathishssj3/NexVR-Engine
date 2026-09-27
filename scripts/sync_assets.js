@@ -133,6 +133,33 @@ if (fs.existsSync(manifestFile)) {
       manifest.hashes = hashes;
     }
 
+    // 4.5 Canonicalize and digitally sign manifest with Ed25519 publisher key
+    function getCanonicalManifestData(m) {
+      const files = Array.isArray(m.files) ? [...m.files].sort() : [];
+      const h = {};
+      if (m.hashes) {
+        for (const key of Object.keys(m.hashes).sort()) {
+          h[key] = m.hashes[key];
+        }
+      }
+      return Buffer.from(JSON.stringify({
+        engineVersion: m.engineVersion,
+        timestamp: m.timestamp,
+        files,
+        hashes: h,
+      }));
+    }
+
+    const keyFile = path.join(rootDir, 'scripts', 'ota_signing_key.pem');
+    const privateKeyPem = process.env.OTA_SIGNING_KEY || (fs.existsSync(keyFile) ? fs.readFileSync(keyFile, 'utf-8') : null);
+    if (privateKeyPem) {
+      const canonical = getCanonicalManifestData(manifest);
+      manifest.signature = crypto.sign(null, canonical, privateKeyPem).toString('hex');
+      console.log(`[+] Digitally signed OTA manifest with Ed25519 key (signature: ${manifest.signature.slice(0, 16)}...)`);
+    } else {
+      console.warn('[!] Warning: OTA signing key not found. Manifest will not contain a cryptographic publisher signature.');
+    }
+
     const jsonStr = JSON.stringify(manifest, null, 2);
     fs.writeFileSync(manifestFile, jsonStr, 'utf-8');
     console.log(`[+] Recomputed hashes and updated: ${path.relative(rootDir, manifestFile)}`);

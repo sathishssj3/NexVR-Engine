@@ -12,6 +12,39 @@ export interface UpdateManifest {
   fixes?: string[];
   files: string[];
   hashes?: Record<string, string>;
+  signature?: string;
+}
+
+export const OTA_PINNED_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEAeSfbx4ROSXaiiYejnxCdmI0A6eRd8/EK0CBAVqGapL0=
+-----END PUBLIC KEY-----`;
+
+export function getCanonicalManifestData(manifest: UpdateManifest): Buffer {
+  const files = Array.isArray(manifest.files) ? [...manifest.files].sort() : [];
+  const hashes: Record<string, string> = {};
+  if (manifest.hashes) {
+    for (const key of Object.keys(manifest.hashes).sort()) {
+      hashes[key] = manifest.hashes[key];
+    }
+  }
+  return Buffer.from(JSON.stringify({
+    engineVersion: manifest.engineVersion,
+    timestamp: manifest.timestamp,
+    files,
+    hashes,
+  }));
+}
+
+export function verifyManifestSignature(manifest: UpdateManifest, pinnedKey: string = OTA_PINNED_PUBLIC_KEY): boolean {
+  if (!manifest.signature || typeof manifest.signature !== 'string' || manifest.signature.length < 64) {
+    return false;
+  }
+  try {
+    const canonical = getCanonicalManifestData(manifest);
+    return crypto.verify(null, canonical, pinnedKey, Buffer.from(manifest.signature, 'hex'));
+  } catch {
+    return false;
+  }
 }
 
 export interface UpdateStatus {
@@ -262,6 +295,19 @@ export async function checkForEngineHotfix(): Promise<UpdateStatus> {
     const local = getLocalManifest();
     const appVer = getAppVersion();
     const activeVersion = local?.engineVersion || appVer;
+
+    // Cryptographic authenticity verification: reject unauthenticated or tampered manifests
+    if (!verifyManifestSignature(remote)) {
+      console.error('[UpdateManager] Security rejection: Remote manifest failed cryptographic signature verification against pinned publisher key.');
+      return {
+        checking: false,
+        hasUpdate: false,
+        updated: !!local,
+        version: activeVersion,
+        error: 'Security rejection: Untrusted or unsigned OTA update manifest. Update rejected.',
+      };
+    }
+
     const versionComp = compareSemver(remote.engineVersion, activeVersion);
 
     // Prevent older remote hotfix from downgrading a newer packaged installation

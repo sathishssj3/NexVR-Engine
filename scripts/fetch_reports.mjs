@@ -18,9 +18,14 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 
 const API_ENDPOINT = process.env.NEXVR_TELEMETRY_API || 'https://nexvr-engine.pages.dev/api/report';
 
-const ADMIN_SECRET = process.env.REPORTS_ADMIN_KEY || process.env.ADMIN_API_KEY || 'nexvr_admin_telemetry_secret_2026';
+const ADMIN_SECRET = process.env.REPORTS_ADMIN_KEY || process.env.ADMIN_API_KEY;
+if (!ADMIN_SECRET || ADMIN_SECRET.trim().length === 0) {
+  console.error('\x1b[31m[Security Error]\x1b[0m REPORTS_ADMIN_KEY or ADMIN_API_KEY environment variable is required.');
+  console.error('Refusing to authenticate with default or fallback credentials (fail-closed).');
+  process.exit(1);
+}
 const AUTH_HEADERS = {
-  'Authorization': `Bearer ${ADMIN_SECRET}`,
+  'Authorization': `Bearer ${ADMIN_SECRET.trim()}`,
 };
 
 async function main() {
