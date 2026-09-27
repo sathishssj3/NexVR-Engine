@@ -43,6 +43,19 @@
 * [`05-product/feature-prioritization.md`](05-product/feature-prioritization.md) — MoSCoW matrix (v1.0 completed vs v1.1 growth).
 * [`05-product/user-journey.md`](05-product/user-journey.md) — The 6-stage journey to the "Aha!" moment in the first 10 seconds.
 
+### 6.1 🏛️ 10-Year Deep-Tech Operational Playbooks (Google / Meta / IBM Standards)
+* [`10-year-playbook/README.md`](10-year-playbook/README.md) — 🏛️ **Executive Playbooks Index** (Heilmeier Catechism & TRL 1–9 frameworks).
+* [`10-year-playbook/year-01-consumer-beachhead.md`](10-year-playbook/year-01-consumer-beachhead.md) — **Year 1**: The 1-Click Consumer Beachhead ($185k · 3,700 passes · 0 debt).
+* [`10-year-playbook/year-02-b2b-studio-sdk.md`](10-year-playbook/year-02-b2b-studio-sdk.md) — **Year 2**: B2B Studio SDK & First OEM Bundling ($742k · 3 studio ports).
+* [`10-year-playbook/year-03-oem-hardware-bundling.md`](10-year-playbook/year-03-oem-hardware-bundling.md) — **Year 3**: OEM Pre-Installs & B2B Tipping Point ($2.46M · 35k headsets).
+* [`10-year-playbook/year-04-enterprise-defense-sim.md`](10-year-playbook/year-04-enterprise-defense-sim.md) — **Year 4**: Industrial Defense Scale & 100k Headsets ($6.81M · $4.9M EBITDA).
+* [`10-year-playbook/year-05-category-dominance-100m.md`](10-year-playbook/year-05-category-dominance-100m.md) — **Year 5**: PC Category Dominance ($15.25M · $100M Valuation · $80M Net Worth).
+* [`10-year-playbook/year-06-spatial-ai-nerfs.md`](10-year-playbook/year-06-spatial-ai-nerfs.md) — **Year 6**: Spatial AI Video API & 3D Gaussians ($38M · $266M Net Worth).
+* [`10-year-playbook/year-07-smart-glasses-os-microcode.md`](10-year-playbook/year-07-smart-glasses-os-microcode.md) — **Year 7**: Qualcomm Silicon & Android XR Microcode ($72M · $495M Net Worth).
+* [`10-year-playbook/year-08-universal-spatial-os-billionaire.md`](10-year-playbook/year-08-universal-spatial-os-billionaire.md) — **Year 8**: Universal Spatial OS (**$150M ARR · $2.25B Val · $1.08B BILLIONAIRE**).
+* [`10-year-playbook/year-09-robotics-reality-grid.md`](10-year-playbook/year-09-robotics-reality-grid.md) — **Year 9**: Robotics Teleoperation & Pre-IPO Scale ($280M ARR · $1.89B Net Worth).
+* [`10-year-playbook/year-10-nasdaq-ipo-titan.md`](10-year-playbook/year-10-nasdaq-ipo-titan.md) — **Year 10**: NASDAQ IPO ($NXVR) at **$10B Market Cap · $3.50B Net Worth**.
+
 ### 7. 💵 Financial Projections
 * [`06-financial/revenue-model.md`](06-financial/revenue-model.md) — Pricing mechanics and conversion scenarios.
 * [`06-financial/unit-economics.md`](06-financial/unit-economics.md) — **4.65 : 1 LTV:CAC ratio** ($39.50 LTV vs $8.50 CAC).
