@@ -37,6 +37,7 @@
 * [`04-brand/brand-personality.md`](04-brand/brand-personality.md) — Magician + Ruler archetypes and high-tech cockpit design tokens.
 
 ### 6. 📦 Product & Roadmaps
+* [`05-product/10-year-roadmap.md`](05-product/10-year-roadmap.md) — 🚀 **10-Year Master Product & Technology Roadmap (2026–2036)** (5 Eras: PCVR Beachhead → OEM Bundling → Enterprise Sim → Universal Spatial OS → NASDAQ IPO).
 * [`05-product/mvp-definition.md`](05-product/mvp-definition.md) — Scope definition and the **"Hero 10" Guaranteed Masterpieces** (*Sekiro*, *Elden Ring*, *Hogwarts*).
 * [`05-product/feature-prioritization.md`](05-product/feature-prioritization.md) — MoSCoW matrix (v1.0 completed vs v1.1 growth).
 * [`05-product/user-journey.md`](05-product/user-journey.md) — The 6-stage journey to the "Aha!" moment in the first 10 seconds.
