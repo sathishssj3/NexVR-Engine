@@ -77,33 +77,22 @@ export function LegalModal({
       >
         {/* Header */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span
-              style={{
-                width: 4,
-                height: 20,
-                borderRadius: 2,
-                background: '#CC0000',
-                flexShrink: 0
-              }}
-            />
-            <h2
-              style={{
-                margin: 0,
-                fontSize: 16,
-                fontWeight: 800,
-                letterSpacing: '0.06em',
-                fontFamily: 'var(--ag-font-display)',
-                color: '#FFFFFF',
-                textTransform: 'uppercase'
-              }}
-            >
-              {isFirstRun ? 'CLOSED BETA TERMS & SAFETY ADVISORY' : 'TERMS, LEGAL & SAFETY DISCLAIMERS'}
-            </h2>
-          </div>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 16,
+              fontWeight: 800,
+              letterSpacing: '0.06em',
+              fontFamily: 'var(--ag-font-display)',
+              color: '#FFFFFF',
+              textTransform: 'uppercase'
+            }}
+          >
+            {isFirstRun ? 'CLOSED BETA TERMS & SAFETY ADVISORY' : 'TERMS, LEGAL & SAFETY DISCLAIMERS'}
+          </h2>
           <p
             style={{
-              margin: '0 0 0 14px',
+              margin: 0,
               fontSize: 11.5,
               color: 'var(--ag-accent)',
               fontFamily: 'var(--ag-font-mono)',
@@ -111,7 +100,7 @@ export function LegalModal({
               letterSpacing: '0.04em'
             }}
           >
-            NexVR Engine v0.1.90-beta · Confidential Testing Guidelines
+            NexVR Engine v0.1.98 · Confidential Testing Guidelines
           </p>
         </div>
 
@@ -150,7 +139,16 @@ export function LegalModal({
                 marginBottom: 6
               }}
             >
-              <span>🛡️</span> 1. SINGLE-PLAYER ONLY & ZERO ANTI-CHEAT LIABILITY
+              <span
+                style={{
+                  width: 3,
+                  height: 13,
+                  borderRadius: 1.5,
+                  background: '#CC0000',
+                  flexShrink: 0
+                }}
+              />
+              1. SINGLE-PLAYER ONLY & ZERO ANTI-CHEAT LIABILITY
             </div>
             <div style={{ fontSize: 12, lineHeight: 1.55, color: '#A0A3B1', fontFamily: 'var(--ag-font-ui)' }}>
               NexVR Engine is intended strictly for single-player, mod-friendly, and offline gameplay. Injecting memory detours into competitive multiplayer games protected by Anti-Cheat systems (such as Easy Anti-Cheat, BattlEye, Riot Vanguard, or Ricochet) is strictly prohibited. Although the launcher contains automatic tripwires that refuse injection when anti-cheat signatures are detected, the user assumes sole responsibility for complying with each game's End User License Agreement.
@@ -175,7 +173,7 @@ export function LegalModal({
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                color: '#FFB340',
+                color: '#FF4D4D',
                 fontFamily: 'var(--ag-font-display)',
                 fontSize: 12,
                 fontWeight: 800,
@@ -183,7 +181,16 @@ export function LegalModal({
                 marginBottom: 6
               }}
             >
-              <span>⚠️</span> 2. VR HEALTH, EPILEPSY & MOTION SICKNESS ADVISORY
+              <span
+                style={{
+                  width: 3,
+                  height: 13,
+                  borderRadius: 1.5,
+                  background: '#CC0000',
+                  flexShrink: 0
+                }}
+              />
+              2. VR HEALTH, EPILEPSY & MOTION SICKNESS ADVISORY
             </div>
             <div style={{ fontSize: 12, lineHeight: 1.55, color: '#A0A3B1', fontFamily: 'var(--ag-font-ui)' }}>
               Stereoscopic 3D rendering and 6DOF head tracking can induce vestibular mismatch, motion sickness, disorientation, eye fatigue, or nausea. Users with a history of photosensitive seizures, epilepsy, or balance disorders should consult a physician before using VR injection software.
@@ -206,7 +213,7 @@ export function LegalModal({
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                color: '#4DA6FF',
+                color: '#FF4D4D',
                 fontFamily: 'var(--ag-font-display)',
                 fontSize: 12,
                 fontWeight: 800,
@@ -214,7 +221,16 @@ export function LegalModal({
                 marginBottom: 6
               }}
             >
-              <span>⚖️</span> 3. TRADEMARKS & NON-AFFILIATION DISCLAIMER
+              <span
+                style={{
+                  width: 3,
+                  height: 13,
+                  borderRadius: 1.5,
+                  background: '#CC0000',
+                  flexShrink: 0
+                }}
+              />
+              3. TRADEMARKS & NON-AFFILIATION DISCLAIMER
             </div>
             <div style={{ fontSize: 12, lineHeight: 1.55, color: '#A0A3B1', fontFamily: 'var(--ag-font-ui)' }}>
               NexVR Engine is an independent, community-driven spatial modding runtime. All trademarks, registered game titles, and publisher logos (including but not limited to <em>Sekiro: Shadows Die Twice, Elden Ring, Mortal Shell, Cyberpunk 2077, Hogwarts Legacy, FromSoftware, Bandai Namco, Epic Games, Unreal Engine, Valve, SteamVR, Meta Quest</em>) remain the exclusive property of their respective copyright holders. Mention of any game or trademark does not imply affiliation, sponsorship, or endorsement.
@@ -235,7 +251,7 @@ export function LegalModal({
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                color: '#30D158',
+                color: '#FF4D4D',
                 fontFamily: 'var(--ag-font-display)',
                 fontSize: 12,
                 fontWeight: 800,
@@ -243,7 +259,16 @@ export function LegalModal({
                 marginBottom: 6
               }}
             >
-              <span>🧪</span> 4. "AS-IS" BETA SOFTWARE & SAVE DATA BACKUPS
+              <span
+                style={{
+                  width: 3,
+                  height: 13,
+                  borderRadius: 1.5,
+                  background: '#CC0000',
+                  flexShrink: 0
+                }}
+              />
+              4. "AS-IS" BETA SOFTWARE & SAVE DATA BACKUPS
             </div>
             <div style={{ fontSize: 12, lineHeight: 1.55, color: '#A0A3B1', fontFamily: 'var(--ag-font-ui)' }}>
               This software is provided "AS-IS" without warranty of any kind. As an active Closed Beta release, graphics driver anomalies or application crashes may occur. Users are advised to back up their game save files before launching with VR injection active.
@@ -264,7 +289,7 @@ export function LegalModal({
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                color: '#A259FF',
+                color: '#FF4D4D',
                 fontFamily: 'var(--ag-font-display)',
                 fontSize: 12,
                 fontWeight: 800,
@@ -272,7 +297,16 @@ export function LegalModal({
                 marginBottom: 6
               }}
             >
-              <span>🔒</span> 5. PRIVACY & SANITIZED OPT-IN DIAGNOSTICS
+              <span
+                style={{
+                  width: 3,
+                  height: 13,
+                  borderRadius: 1.5,
+                  background: '#CC0000',
+                  flexShrink: 0
+                }}
+              />
+              5. PRIVACY & SANITIZED OPT-IN DIAGNOSTICS
             </div>
             <div style={{ fontSize: 12, lineHeight: 1.55, color: '#A0A3B1', fontFamily: 'var(--ag-font-ui)' }}>
               NexVR Engine processes graphics swapchains and stereo reprojection locally on your PC. Automated crash reporting and diagnostic telemetry are opt-in and disabled by default. If enabled or when manually submitting an issue, all Windows user directories (<code>C:\Users\[USER]\</code>) and IP addresses are sanitized prior to transmission. You can modify your diagnostic preferences anytime in Settings.

@@ -9,6 +9,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 *Active development changes that have not yet been packaged into an official release.*
 
+## [0.1.98] - 2026-09-28
+
+### Added
+- **Pre-Launch System Health & Compatibility Doctor**:
+  - Added real-time automated diagnostics scanning for OpenXR active runtime, graphics drivers (NVIDIA / AMD / Intel), Windows Developer Mode, Defender folder exclusions, and headset connectivity.
+  - Interactive "Run Pre-Flight Scan" action in Launcher Settings and Diagnostics panel.
+  - One-click "Apply Defender Exclusion" automated PowerShell elevation.
+- **Multi-Launcher Auto-Detection**:
+  - Added Electronic Arts (EA App / Origin) library auto-discovery via LocalStorage manifest scanning and registry resolution.
+  - Unified scanner across Steam, Epic Games Store, and EA App.
+- **Zero-Friction Clean Machine Parity**:
+  - Added automated `scripts/verify_clean_machine.ps1` parity suite checking native binaries, Release CRT linkage, zero developer path leakage, and electron-builder packaging completeness.
+  - Updated Legal Disclaimer modal with testing guidelines and safe usage agreements.
+
+
 ## [0.3.0] - 2026-09-25
 
 ### Added

@@ -65,3 +65,24 @@ export interface ScanResult {
   active: GameEntry[];
   waiting: GameEntry[];
 }
+
+export interface SystemCheckItem {
+  id: string;
+  name: string;
+  status: 'ok' | 'warning' | 'error';
+  message: string;
+  fixAction?: {
+    label: string;
+    actionId: string;
+    url?: string;
+  };
+}
+
+export interface SystemHealthReport {
+  overall: 'healthy' | 'warning' | 'error';
+  os: string;
+  build: number;
+  gpu: string;
+  checks: SystemCheckItem[];
+  timestamp: string;
+}

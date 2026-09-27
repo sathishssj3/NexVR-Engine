@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { VRConfig, UpdateStatus, VRStatus } from '../types';
+import type { VRConfig, UpdateStatus, VRStatus, SystemHealthReport } from '../types';
 import { ConfirmModal } from './ConfirmModal';
 
 interface SettingsViewProps {
@@ -18,6 +18,50 @@ export function SettingsView({
   const [checking, setChecking] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
   const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [healthReport, setHealthReport] = useState<SystemHealthReport | null>(null);
+  const [checkingHealth, setCheckingHealth] = useState(false);
+  const [exportingZip, setExportingZip] = useState(false);
+  const [zipMessage, setZipMessage] = useState<string | null>(null);
+
+  const handleCheckHealth = async () => {
+    if (!window.ag?.doctor?.check) return;
+    setCheckingHealth(true);
+    try {
+      const report = await window.ag.doctor.check();
+      setHealthReport(report);
+    } catch (e) {
+      console.error('System doctor check failed:', e);
+    } finally {
+      setCheckingHealth(false);
+    }
+  };
+
+  const handleApplyFix = async (actionId: string) => {
+    if (!window.ag?.doctor?.applyFix) return;
+    try {
+      await window.ag.doctor.applyFix(actionId);
+      setTimeout(handleCheckHealth, 1000);
+    } catch (e) {
+      console.error('Apply fix failed:', e);
+    }
+  };
+
+  const handleExportZip = async () => {
+    if (!window.ag?.log?.export) return;
+    setExportingZip(true);
+    setZipMessage(null);
+    try {
+      const res = await window.ag.log.export([]);
+      if (res && res.success) {
+        setZipMessage(`Exported: ${res.path}`);
+        setTimeout(() => setZipMessage(null), 5000);
+      }
+    } catch (e) {
+      console.error('Export zip failed:', e);
+    } finally {
+      setExportingZip(false);
+    }
+  };
 
   const activeVersion = updateStatus?.version 
     ? (updateStatus.version.startsWith('v') ? updateStatus.version : `v${updateStatus.version}`) 
@@ -224,7 +268,7 @@ export function SettingsView({
               fontSize: 11.5,
               fontFamily: 'var(--ag-font-mono)',
               color: feedbackMsg.includes('installed') || feedbackMsg.includes('up to date') || feedbackMsg.includes('synchronized') || feedbackMsg.includes('restored')
-                ? 'var(--ag-accent-success)'
+                ? '#FFFFFF'
                 : 'var(--ag-accent)',
               background: 'rgba(255, 255, 255, 0.02)',
               border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -374,7 +418,7 @@ export function SettingsView({
                 </div>
                 <div style={{ fontSize: 12, color: '#848884', lineHeight: '1.6', display: 'flex', flexDirection: 'column', gap: 6, fontWeight: 600 }}>
                   <div>• <strong style={{ color: '#FFF', fontWeight: 800 }}>Pure Solid Black UI:</strong> Zero background grid lines and removed CRT scanlines for line-free clarity.</div>
-                  <div>• <strong style={{ color: '#FFF', fontWeight: 800 }}>DirectML Neural Inpainter:</strong> Sub-1.5ms GPU edge inpainting for occluded stereo pixels.</div>
+                  <div>• <strong style={{ color: '#FFF', fontWeight: 800 }}>GPU Disocclusion Fill:</strong> Sub-1.5ms compute shader edge inpainting for occluded stereo pixels.</div>
                   <div>• <strong style={{ color: '#FFF', fontWeight: 800 }}>Discord Community CTA:</strong> One-click verified community server integration.</div>
                 </div>
               </div>
@@ -456,8 +500,8 @@ export function SettingsView({
 
             <div className="setting-row">
               <div className="setting-label">
-                <span className="title">DirectML Neural Inpainting</span>
-                <span className="desc">AI neural edge completion for occluded stereo pixels on graphics worker thread (&lt;1.5ms)</span>
+                <span className="title">Stereo Disocclusion Fill</span>
+                <span className="desc">Bilateral edge inpainting for occluded stereo pixels on the compute queue (&lt;1.5ms)</span>
               </div>
               <Toggle
                 value={globalConfig.aiInpainting ?? true}
@@ -571,9 +615,181 @@ export function SettingsView({
         </div>
 
         {/* ========================================================= */}
-        {/* 4. PRIVACY & DIAGNOSTIC PREFERENCES */}
+        {/* 4. SYSTEM HEALTH & COMPATIBILITY DOCTOR */}
         {/* ========================================================= */}
         <div className="settings-item-enter stagger-3" style={{ marginBottom: 32 }}>
+          {sectionLabel('SYSTEM HEALTH & COMPATIBILITY DOCTOR', 'Pre-flight runtime checks, dependency diagnostics & troubleshooting')}
+
+          <div className="settings-card" style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <p style={{ color: 'var(--ag-text-dim)', fontSize: 12, lineHeight: '1.5', margin: 0, fontFamily: 'var(--ag-font-ui)' }}>
+              Verify whether your PC has all required runtimes, active OpenXR runtimes, and engine dependencies installed to eliminate launch or injection failures.
+            </p>
+
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={handleCheckHealth}
+                disabled={checkingHealth}
+                style={{
+                  background: '#CC0000',
+                  border: '1px solid #CC0000',
+                  color: '#FFFFFF',
+                  borderRadius: 4,
+                  padding: '7px 18px',
+                  fontFamily: 'var(--ag-font-display)',
+                  fontSize: 11.5,
+                  letterSpacing: '0.08em',
+                  fontWeight: 800,
+                  cursor: checkingHealth ? 'wait' : 'pointer',
+                  opacity: checkingHealth ? 0.6 : 1,
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={e => {
+                  if (!checkingHealth) {
+                    e.currentTarget.style.background = '#E60000';
+                    e.currentTarget.style.borderColor = '#FF1A1A';
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!checkingHealth) {
+                    e.currentTarget.style.background = '#CC0000';
+                    e.currentTarget.style.borderColor = '#CC0000';
+                  }
+                }}
+              >
+                {checkingHealth ? 'CHECKING HEALTH...' : 'RUN HEALTH CHECK'}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleExportZip}
+                disabled={exportingZip}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.035)',
+                  border: '1px solid #383A44',
+                  color: 'var(--ag-text-primary)',
+                  borderRadius: 4,
+                  padding: '7px 18px',
+                  fontFamily: 'var(--ag-font-display)',
+                  fontSize: 11.5,
+                  letterSpacing: '0.08em',
+                  fontWeight: 600,
+                  cursor: exportingZip ? 'wait' : 'pointer',
+                  opacity: exportingZip ? 0.6 : 1,
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={e => {
+                  if (!exportingZip) {
+                    e.currentTarget.style.borderColor = '#4A4D5C';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)';
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!exportingZip) {
+                    e.currentTarget.style.borderColor = '#383A44';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.035)';
+                  }
+                }}
+              >
+                {exportingZip ? 'PACKAGING ZIP...' : 'EXPORT DIAGNOSTIC BUNDLE (.ZIP)'}
+              </button>
+            </div>
+
+            {zipMessage && (
+              <div style={{ color: '#FFFFFF', fontSize: 11, fontFamily: 'var(--ag-font-mono)', marginTop: 2 }}>
+                ✓ {zipMessage}
+              </div>
+            )}
+
+            {/* Health Report Results List */}
+            {healthReport && (
+              <div style={{
+                marginTop: 6,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+                borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                paddingTop: 12
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                  <span style={{ fontSize: 11, fontFamily: 'var(--ag-font-mono)', color: '#FFFFFF', letterSpacing: '0.06em', fontWeight: 700 }}>
+                    OVERALL DIAGNOSTIC STATUS
+                  </span>
+                  <span style={{
+                    color: healthReport.overall === 'error' ? '#FF4D4D' : healthReport.overall === 'warning' ? '#FFB800' : '#FFFFFF',
+                    fontSize: 10,
+                    fontFamily: 'var(--ag-font-mono)',
+                    fontWeight: 700,
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    padding: '2px 8px',
+                    borderRadius: 4,
+                    border: '1px solid #333'
+                  }}>
+                    {healthReport.overall === 'healthy' ? 'ALL SYSTEMS OPERATIONAL' : 'ACTION RECOMMENDED'}
+                  </span>
+                </div>
+
+                {healthReport.checks.map(item => (
+                  <div
+                    key={item.id}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 4,
+                      padding: '10px 12px',
+                      background: 'rgba(255, 255, 255, 0.015)',
+                      borderRadius: 6,
+                      border: item.status === 'ok' ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(255, 77, 77, 0.3)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#FFF', fontSize: 11.5, fontWeight: 700, fontFamily: 'var(--ag-font-ui)' }}>
+                        {item.status === 'ok' ? '✓ ' : '! '} {item.name}
+                      </span>
+                      <span style={{
+                        color: item.status === 'ok' ? '#FFFFFF' : '#FF4D4D',
+                        fontSize: 9.5,
+                        fontFamily: 'var(--ag-font-mono)',
+                        fontWeight: 700
+                      }}>
+                        {item.status.toUpperCase()}
+                      </span>
+                    </div>
+                    <div style={{ color: '#848884', fontSize: 11, fontFamily: 'var(--ag-font-mono)' }}>
+                      {item.message}
+                    </div>
+                    {item.fixAction && (
+                      <div style={{ marginTop: 4 }}>
+                        <button
+                          type="button"
+                          onClick={() => handleApplyFix(item.fixAction!.actionId)}
+                          style={{
+                            padding: '4px 12px',
+                            borderRadius: 4,
+                            background: 'rgba(255, 77, 77, 0.12)',
+                            border: '1px solid #CC0000',
+                            color: '#FF6666',
+                            fontSize: 10,
+                            fontFamily: 'var(--ag-font-mono)',
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          APPLY FIX: {item.fixAction.label}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ========================================================= */}
+        {/* 5. PRIVACY & DIAGNOSTIC PREFERENCES */}
+        {/* ========================================================= */}
+        <div className="settings-item-enter stagger-4" style={{ marginBottom: 32 }}>
           {sectionLabel('PRIVACY & DIAGNOSTICS', 'Crash reporting, telemetry consent, and data retention choices')}
 
           <div className="settings-card" style={{ padding: '6px 18px' }}>
@@ -593,9 +809,9 @@ export function SettingsView({
         </div>
 
         {/* ========================================================= */}
-        {/* 5. HARDWARE & RUNTIME TELEMETRY (4-Cell Bento Grid) */}
+        {/* 6. HARDWARE & RUNTIME TELEMETRY (4-Cell Bento Grid) */}
         {/* ========================================================= */}
-        <div className="settings-item-enter stagger-4" style={{ marginBottom: 36 }}>
+        <div className="settings-item-enter stagger-5" style={{ marginBottom: 36 }}>
           {sectionLabel('HARDWARE & RUNTIME TELEMETRY', 'Active compositor environment and graphics injection status')}
 
           <div style={{
@@ -681,13 +897,13 @@ export function SettingsView({
               gap: 4
             }}>
               <div style={{ color: '#848884', fontSize: 10, fontFamily: 'var(--ag-font-mono)', letterSpacing: '0.08em', fontWeight: 600 }}>
-                NEURAL ACCELERATION
+                DISOCCLUSION FILL
               </div>
               <div style={{ color: '#FFF', fontSize: 15.5, fontFamily: 'var(--ag-font-display)', fontWeight: 800, letterSpacing: '0.03em', marginTop: 1 }}>
-                DirectML / ONNX
+                HLSL Compute Shaders
               </div>
               <div style={{ color: '#848884', fontSize: 12, fontFamily: 'var(--ag-font-ui)', lineHeight: '1.4', marginTop: 2 }}>
-                Hardware Direct3D 12 Tensor Inpainting Pipeline
+                Asynchronous compute queue bilateral edge reconstruction
               </div>
             </div>
           </div>
@@ -698,7 +914,7 @@ export function SettingsView({
       <ConfirmModal
         isOpen={resetModalOpen}
         title="RESET DISPLAY DEFAULTS"
-        description={"Are you sure you want to restore display and stereoscopic projection settings to factory defaults?\n\nThis will reset recommended resolution, sRGB tonemapping, depth submission, and AI inpainting to recommended presets."}
+        description={"Are you sure you want to restore display and stereoscopic projection settings to factory defaults?\n\nThis will reset recommended resolution, sRGB tonemapping, depth submission, and disocclusion fill to factory defaults."}
         confirmText="RESET DEFAULTS"
         cancelText="CANCEL"
         variant="danger"

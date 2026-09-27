@@ -687,6 +687,83 @@ ipcMain.handle('library:scan', async (event): Promise<{ active: GameEntry[], wai
       }
     } catch (e) {}
 
+    // EA App & Origin Library Scan (Steam, Epic, and EA multi-launcher support)
+    try {
+      const eaRoots = [
+        'C:\\Program Files\\EA Games',
+        'C:\\Program Files (x86)\\Origin Games',
+        'D:\\EA Games',
+        'E:\\EA Games',
+      ];
+
+      // Check registry for custom EA Desktop / Origin content path
+      try {
+        const regOut = child_process.execSync('reg query "HKLM\\SOFTWARE\\Electronic Arts\\EA Desktop" /v "InstallDir"', { encoding: 'utf-8', timeout: 2000 });
+        const m = regOut.match(/InstallDir\s+REG_SZ\s+(.+)/i);
+        if (m && m[1] && fs.existsSync(m[1].trim())) {
+          const customEa = m[1].trim();
+          if (!eaRoots.includes(customEa)) eaRoots.push(customEa);
+        }
+      } catch {}
+
+      for (const eaRoot of eaRoots) {
+        if (!fs.existsSync(eaRoot)) continue;
+        const subDirs = fs.readdirSync(eaRoot, { withFileTypes: true });
+        for (const sub of subDirs) {
+          if (!sub.isDirectory() || isIgnoredSoftware(sub.name)) continue;
+          const gamePath = path.join(eaRoot, sub.name);
+          const primaryExe = findPrimaryExecutable(gamePath);
+          if (!primaryExe || !fs.existsSync(primaryExe)) continue;
+
+          const gameId = `ea_${sub.name.toLowerCase().replace(/[^a-z0-9_]/g, '')}`;
+          if (seenIds.has(gameId) || ignoredIds.includes(gameId)) continue;
+
+          const ac = detectAntiCheat(gamePath);
+          let api = detectAPI(gamePath);
+          if (api === 'Unknown') {
+            const detected = inspectExeAPI(primaryExe);
+            api = detected !== 'Unknown' ? detected : 'DX11';
+          }
+
+          const displayName = sub.name;
+          const hasInjector = fs.existsSync(path.join(gamePath, 'vrinject.dll')) ||
+                              fs.existsSync(path.join(path.dirname(primaryExe), 'vrinject.dll'));
+
+          let iconBase64: string | undefined;
+          try {
+            const icon = await app.getFileIcon(primaryExe, { size: 'large' });
+            iconBase64 = icon.toDataURL();
+          } catch {}
+
+          const compatStatus = compatList[gameId] || defaultCompatList[gameId] || 'unknown';
+
+          seenIds.add(gameId);
+          gameExeMap[gameId] = primaryExe;
+          gamePathsMap[gameId] = gamePath;
+
+          const entry: GameEntry = {
+            id: gameId,
+            name: displayName,
+            installPath: gamePath,
+            executablePath: primaryExe,
+            sizeGB: 0,
+            api,
+            compat: compatStatus as any,
+            hasInjector,
+            hasAntiCheat: ac.hasAntiCheat,
+            antiCheatName: ac.antiCheatName,
+            iconBase64,
+          };
+
+          if (hiddenIds.includes(gameId)) {
+            waitingGames.push(entry);
+          } else {
+            games.push(entry);
+          }
+        }
+      }
+    } catch (e) {}
+
     // Custom Games Scan
     try {
       const customGamesFile = path.join(app.getPath('userData'), 'custom_games.json');

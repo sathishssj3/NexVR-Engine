@@ -52,8 +52,8 @@ const effectiveApiKey = cliApiKey || process.env.RESEND_API_KEY;
 const CONFIG = {
   appName: 'NexVR Engine',
   companyName: 'NexVR',
-  version: 'v0.1.54',
-  subject: 'NexVR Engine v0.1.54 — Early Access Update Live',
+  version: 'v0.1.98',
+  subject: 'NexVR Engine v0.1.98 — Public Release Now Live',
   fromEmail: process.env.FROM_EMAIL || 'onboarding@resend.dev',
   fromName: 'NexVR Engine',
   downloadUrl: 'https://nexvr-engine.pages.dev/api/dl',

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import type { GameEntry, VRStatus, VRConfig, ScanResult, UpdateStatus } from './types';
+import type { GameEntry, VRStatus, VRConfig, ScanResult, UpdateStatus, SystemHealthReport } from './types';
 import { Sidebar } from './components/Sidebar';
 import { GameDetail } from './components/GameDetail';
 import { VRStatusBar } from './components/VRStatusBar';
@@ -51,6 +51,10 @@ declare global {
       },
       telemetry: {
         sendReport: (options?: { gameId?: string; userNote?: string }) => Promise<{ success: boolean; message?: string }>
+      },
+      doctor?: {
+        check: () => Promise<SystemHealthReport>;
+        applyFix: (actionId: string) => Promise<{ success: boolean; message: string }>;
       },
       window: {
         minimize: () => void,
@@ -474,25 +478,13 @@ export default function App() {
           </strong>
           <span style={{ 
             marginLeft: 8, marginRight: 16, 
-            color: updateStatus?.updated ? 'var(--ag-accent-success)' : 'var(--ag-accent)', 
+            color: 'var(--ag-accent)', 
             fontSize: 11.5, 
             fontFamily: 'var(--ag-font-mono)', letterSpacing: '0.05em', 
             fontWeight: 800
           }}>
-            v{updateStatus?.version ? updateStatus.version.replace(/^v/, '') : '0.1.96'}
+            v{updateStatus?.version ? updateStatus.version.replace(/^v/, '') : '0.1.98'}
           </span>
-          {updateStatus?.updated && (
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              padding: '2px 8px', borderRadius: 3, fontSize: 9,
-              background: 'rgba(48, 209, 88, 0.12)', border: '1px solid rgba(48, 209, 88, 0.3)',
-              color: 'var(--ag-accent-success)', fontFamily: 'var(--ag-font-mono)',
-              marginRight: 16, letterSpacing: '0.05em'
-            }}>
-              <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--ag-accent-success)' }} />
-              HOTFIX ACTIVE
-            </span>
-          )}
           <div style={{ display: 'flex', gap: 2, height: '100%', WebkitAppRegion: 'no-drag' } as any}>
              {(['library', 'settings', 'about'] as const).map(tab => {
                const isActive = currentTab === tab;
@@ -679,13 +671,24 @@ export default function App() {
         )}
       </div>
 
-      <VRStatusBar 
-        status={vrStatus} 
-        selectedGame={selectedGame} 
-        injectState={injectState}
-        onInject={handleInject} 
-        onUninstallMod={handleUninstallMod}
-      />
+      <div 
+        style={{
+          flexShrink: 0,
+          marginBottom: (currentTab === 'settings' || currentTab === 'about') ? -72 : 0,
+          opacity: (currentTab === 'settings' || currentTab === 'about') ? 0 : 1,
+          pointerEvents: (currentTab === 'settings' || currentTab === 'about') ? 'none' : 'auto',
+          transition: 'margin-bottom 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease',
+          zIndex: 20
+        }}
+      >
+        <VRStatusBar 
+          status={vrStatus} 
+          selectedGame={selectedGame} 
+          injectState={injectState}
+          onInject={handleInject} 
+          onUninstallMod={handleUninstallMod}
+        />
+      </div>
 
       <ConfirmModal
         {...modalState}

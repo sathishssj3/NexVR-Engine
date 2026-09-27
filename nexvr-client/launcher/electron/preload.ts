@@ -53,6 +53,10 @@ contextBridge.exposeInMainWorld('ag', {
     sendReport: (options?: { gameId?: string; userNote?: string }) =>
       ipcRenderer.invoke('telemetry:sendReport', options),
   },
+  doctor: {
+    check: () => ipcRenderer.invoke('doctor:check'),
+    applyFix: (actionId: string) => ipcRenderer.invoke('doctor:applyFix', actionId),
+  },
   window: {
     minimize: () => ipcRenderer.send('window:minimize'),
     maximize: () => ipcRenderer.send('window:maximize'),

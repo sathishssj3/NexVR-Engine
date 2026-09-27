@@ -30,7 +30,7 @@ export function AboutPanel({
       `Platform: Windows x64 (MSVC 2022+)`,
       `Hook Engine: MinHook Detours (DX11 / DX12 / Vulkan)`,
       `Spatial Compositor: OpenXR 1.0.34`,
-      `AI Engine: DirectML 1.13.1 / ONNX Runtime 1.16.3`,
+      `Compute Pipeline: HLSL Disocclusion Fill & Bilateral Filter`,
       `User Agent: ${navigator.userAgent}`,
       `Date: ${new Date().toISOString()}`
     ].join('\n');
@@ -128,7 +128,7 @@ export function AboutPanel({
             maxWidth: 580,
             fontFamily: 'var(--ag-font-ui)'
           }}>
-            Hardware-accelerated stereoscopic VR injector with 6DOF tracking and DirectML neural reprojection for standard PC games.
+            Hardware-accelerated stereoscopic VR injector with 6DOF tracking and real-time compute shader reprojection for standard PC games.
           </p>
 
           {/* 4-Cell Specifications Bento Grid */}
@@ -156,9 +156,9 @@ export function AboutPanel({
                 desc: 'Low-latency VTable Swapchain & Queue Detours' 
               },
               { 
-                label: 'NEURAL PIPELINE', 
-                title: 'DirectML / ONNX', 
-                desc: 'Direct3D 12 Tensor Inpainting & Stereo Reprojection' 
+                label: 'DISOCCLUSION PIPELINE', 
+                title: 'HLSL / Compute', 
+                desc: 'Bilateral edge reconstruction and stereo reprojection' 
               },
             ].map((item) => (
               <div 
@@ -330,45 +330,6 @@ export function AboutPanel({
             </button>
           </div>
 
-          {/* Terms & Legal Safety Guidelines Button */}
-          {onOpenLegal && (
-            <button 
-              type="button"
-              onClick={onOpenLegal} 
-              style={{ 
-                width: '100%',
-                padding: '9px 16px', 
-                borderRadius: 'var(--ag-radius-sm)', 
-                color: '#A0A3B1', 
-                cursor: 'pointer', 
-                fontFamily: 'var(--ag-font-mono)', 
-                fontSize: 11, 
-                letterSpacing: '0.06em', 
-                fontWeight: 700, 
-                border: '1px dashed #3A3C48', 
-                background: 'rgba(255, 255, 255, 0.015)', 
-                marginBottom: 14,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                transition: 'all 0.15s ease' 
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = '#CC0000';
-                e.currentTarget.style.color = '#FFF';
-                e.currentTarget.style.background = 'rgba(204, 0, 0, 0.05)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = '#3A3C48';
-                e.currentTarget.style.color = '#A0A3B1';
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.015)';
-              }}
-            >
-              <span>⚖️</span> VIEW TERMS, ANTI-CHEAT POLICY & SAFETY WAIVER
-            </button>
-          )}
-
           {/* Antivirus & Windows Defender Whitelist Notice */}
           <div style={{
             width: '100%',
@@ -429,8 +390,7 @@ export function AboutPanel({
             alignItems: 'center',
             justifyContent: 'space-between'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 13 }}>🔒</span>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
               <span style={{ color: '#A0A3B1', fontSize: 11, fontFamily: 'var(--ag-font-ui)' }}>
                 Telemetry Policy: Privacy by default. Automated crash diagnostics are opt-in.
               </span>
@@ -474,6 +434,33 @@ export function AboutPanel({
           </button>
 
         </div>
+
+        {/* Text-only Legal & Anti-Cheat Waiver placed OUTSIDE / UNDER the card box */}
+        {onOpenLegal && (
+          <button 
+            type="button"
+            onClick={onOpenLegal} 
+            style={{ 
+              background: 'transparent',
+              border: 'none',
+              padding: 0,
+              marginTop: 18,
+              color: 'var(--ag-text-muted)',
+              cursor: 'pointer',
+              fontFamily: 'var(--ag-font-mono)',
+              fontSize: 11,
+              letterSpacing: '0.06em',
+              fontWeight: 700,
+              textDecoration: 'underline',
+              textUnderlineOffset: '3px',
+              transition: 'color 0.15s ease'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--ag-accent)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--ag-text-muted)'; }}
+          >
+            VIEW TERMS, ANTI-CHEAT POLICY &amp; SAFETY WAIVER
+          </button>
+        )}
 
         {/* Clean Monospace Copyright & Legal Notice placed OUTSIDE the card box */}
         <div style={{ 

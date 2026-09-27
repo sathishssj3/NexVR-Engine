@@ -1,8 +1,8 @@
 {
-  "engineVersion": "0.1.97",
+  "engineVersion": "0.1.98",
   "buildDate": "2026-09-27",
-  "timestamp": 1790526692924,
-  "changelog": "NexVR Engine v0.1.97 — Hotfix: Resolved black screen in VR headset for 10-bit HDR & 4K games (Sekiro R10G10B10A2 parity) and OpenXR typeless format family copy compatibility",
+  "timestamp": 1790540344370,
+  "changelog": "NexVR Engine v0.1.98 — Production Release: Integrated Pre-Launch System Health & Compatibility Doctor, Automated Multi-Launcher Discovery across Steam, Epic Games, and EA Desktop/Origin, and Clean-Machine Zero-Friction Parity",
   "features": [
     "P0.1 Virtual Controller Emulation: Full VR motion controller mapping to XInput with bidirectional haptic vibration feedback for native controller-free gameplay",
     "P0.2 Floating Curved World-Space HUD: Eliminates eye strain by projecting 2D UI passes onto an adjustable curved virtual canvas with configurable depth and curvature",
@@ -89,5 +89,5 @@
     "shaders/asw_shader.hlsl": "ae77436c5869e5dcd5175bc0050f3e55f1f9abebd3aed49336867954fcee461c",
     "shaders/depth_reprojection.hlsl": "eb0e672fdaebaea0e1afa542990770b5d7d5044a18156f983623478c9e0541f5"
   },
-  "signature": "b1582005c1348ab8b3cb06275cf62c82e553cc7178465ce647b8fcac0b5a471d68afe65c02038b8f71c3864d71c14e9aa2ed469896ce9eaa96432bdcb8c0f50a"
+  "signature": "45e16afb1ad87ca6437367a74e09b530f5e657e876de444d694da50b8e35a4a5c652ab1827db97a6e64c045afed5e748a16c2d8f209f59bf6828a30cb1b19801"
 }

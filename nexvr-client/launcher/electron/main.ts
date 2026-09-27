@@ -224,6 +224,7 @@ import './libraryManager';
 import './configManager';
 import './injectionManager';
 import './diagnosticsManager';
+import './systemDoctor';
 import { checkForEngineHotfix } from './updateManager';
 
 // Native Window Controls Handler
