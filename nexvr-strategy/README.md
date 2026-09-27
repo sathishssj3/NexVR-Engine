@@ -25,6 +25,7 @@
 * [`02-research/interview-synthesis.md`](02-research/interview-synthesis.md) — Findings from 12 gamer interviews and 5 closed-beta hardware tests.
 
 ### 4. 🎯 Strategy & Positioning
+* [`03-strategy/year-by-year-master-goals.md`](03-strategy/year-by-year-master-goals.md) — 🎯 **Year-by-Year Master Goals (2026–2036)** (The North Star goal, Kill/Pass metric, quarterly priorities, and anti-goals for all 10 years).
 * [`03-strategy/lean-canvas.md`](03-strategy/lean-canvas.md) — 1-page business engine (problem, solution, unfair advantage, revenue).
 * [`03-strategy/value-proposition.md`](03-strategy/value-proposition.md) — The *"Don't Play the Game. Be In It"* messaging hierarchy.
 * [`03-strategy/business-model.md`](03-strategy/business-model.md) — The $39 Founder Pass, unit economics, and 94% gross margin.
