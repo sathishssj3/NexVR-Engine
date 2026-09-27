@@ -4,6 +4,11 @@
 
 ---
 
+## 🌟 Executive & Investor Flagship Document
+* 📄 [**`MASTER_INVESTOR_MEMO.md`**](MASTER_INVESTOR_MEMO.md) — **The Complete VC Master Investment Memorandum & Diligence Dossier** (Executive thesis, bottom-up TAM/SAM/SOM, unit economics, technology moat, 18-month pro-forma, and risk matrix in a single document).
+
+---
+
 ## 🧭 Navigation Guide (By Domain)
 
 ### 1. 🔍 Intake & Sanity Check
