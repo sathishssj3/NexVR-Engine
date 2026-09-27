@@ -202,7 +202,48 @@ flowchart LR
 
 ---
 
+## 📖 Glossary: Full Forms of All Short Forms in this Document
+
+| Short Form | Full Form | Meaning / Description |
+| :--- | :--- | :--- |
+| **VR** | **Virtual Reality** | Fully immersive digital 3D environment. |
+| **PCVR** | **Personal Computer Virtual Reality** | High-end VR powered by desktop graphics hardware. |
+| **AR** | **Augmented Reality** | Digital graphics overlaid on the physical world. |
+| **XR** | **Extended Reality** | The universal umbrella term covering VR, AR, and Mixed Reality (MR). |
+| **6DOF** | **Six Degrees of Freedom** | Tracking rotational (pitch, yaw, roll) AND positional (XYZ) movements. |
+| **HUD** | **Heads-Up Display** | On-screen user interface elements (health bars, maps, crosshairs). |
+| **FOV** | **Field of View** | The observable angular extent visible through the display optics. |
+| **FPS** | **Frames Per Second** | Render frame rate (90 FPS = 11.1ms per frame). |
+| **SDK** | **Software Development Kit** | Developer software library and headers (`nexvr_sdk.h`). |
+| **API** | **Application Programming Interface** | Formal set of software protocols for communication. |
+| **OEM** | **Original Equipment Manufacturer** | Hardware makers (Pimax, Beyond, Samsung) bundling NexVR software. |
+| **OS** | **Operating System** | System software managing hardware resources (Android XR, Windows). |
+| **NPU** | **Neural Processing Unit** | Silicon hardware accelerator designed for AI neural networks. |
+| **GPU** | **Graphics Processing Unit** | Silicon processor executing 3D rasterization and compute shaders. |
+| **DSP** | **Digital Signal Processor** | Specialized silicon microprocessor for real-time sensor processing. |
+| **NeRF** | **Neural Radiance Field** | Deep learning technique synthesizing 3D views from 2D images. |
+| **3DGS** | **3D Gaussian Splatting** | Real-time radiance rendering technique using 3D Gaussian ellipsoids. |
+| **VRS** | **Variable Rate Shading** | GPU feature enabling foveated rendering by varying shading rates. |
+| **OpenXR** | **Open Cross-Platform Standard for XR** | Industry open standard developed by the Khronos Group. |
+| **DirectML**| **Direct Machine Learning** | Microsoft's hardware-accelerated DirectX 12 machine learning API. |
+| **DX11 / DX12**| **Microsoft DirectX 11 / 12** | Core graphics APIs on Windows PCs. |
+| **SPIR-V** | **Standard Portable Intermediate Representation** | Binary intermediate language for Vulkan graphics shaders. |
+| **BCI** | **Brain-Computer Interface** | Direct communication between neural activity sensors and computers. |
+| **EMG** | **Electromyography** | Sensor technology measuring muscle electrical signals. |
+| **DMA** | **Direct Memory Access** | Hardware feature allowing memory access without CPU overhead. |
+| **ACV** | **Annual Contract Value** | Annual recurring value of an enterprise contract ($150,000/yr). |
+| **ARR** | **Annual Recurring Revenue** | Annualized recurring subscription and royalty revenue. |
+| **EBITDA** | **Earnings Before Interest, Taxes, Depreciation, and Amortization** | Operating profitability metric before non-cash adjustments. |
+| **DAU** | **Daily Active Users** | Number of unique users engaging with the platform daily. |
+| **IPO** | **Initial Public Offering** | The initial sale of company shares on a public stock exchange. |
+| **NASDAQ**| **National Association of Securities Dealers Automated Quotations** | Leading US technology public stock exchange. |
+| **SOC2** | **Service Organization Control 2** | Enterprise data security and privacy auditing certification. |
+| **FedRAMP**| **Federal Risk and Authorization Management Program** | US government cybersecurity authorization standard. |
+
+---
+
 ### 📂 Strategic Cross-References
+* [**Master Glossary of All Terms & Full Forms**](../GLOSSARY.md)
 * [**The Billionaire Roadmap (8-Year Path)**](../06-financial/billionaire-roadmap.md)
 * [**5-Year Master Money Flow**](../06-financial/5-year-money-flow.md)
 * [**Master A-to-Z Validation Dossier**](../07-validation/MASTER_A_TO_Z_VALIDATION.md)

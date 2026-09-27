@@ -110,7 +110,38 @@ flowchart LR
 
 ---
 
+## 📖 Glossary: Full Forms of All Short Forms in this Document
+
+| Short Form | Full Form | Meaning / Description |
+| :--- | :--- | :--- |
+| **ARR** | **Annual Recurring Revenue** | Annualized recurring subscription, royalty, and license revenue. |
+| **EBITDA** | **Earnings Before Interest, Taxes, Depreciation, and Amortization** | Operating profitability before taxes and non-cash charges. |
+| **ACV** | **Annual Contract Value** | Average annualized contract revenue per enterprise customer ($150k/yr). |
+| **B2C** | **Business-to-Consumer** | Direct software sales to retail PC gamers. |
+| **B2B** | **Business-to-Business** | Commercial licensing to game studios, headset OEMs, and defense firms. |
+| **OEM** | **Original Equipment Manufacturer** | Hardware makers (Pimax, Beyond, Samsung) bundling NexVR software. |
+| **OS** | **Operating System** | System software platform (Android XR, Windows). |
+| **SDK** | **Software Development Kit** | Software development package and C++ headers (`nexvr_sdk.h`). |
+| **API** | **Application Programming Interface** | Formal set of software protocols for application communication. |
+| **VR** | **Virtual Reality** | Fully immersive simulated 3D digital reality. |
+| **AR** | **Augmented Reality** | Digital graphics and spatial windows overlaid on the physical world. |
+| **XR** | **Extended Reality** | Universal umbrella term for VR, AR, and Mixed Reality. |
+| **TAM** | **Total Addressable Market** | Total global revenue potential ($124.1M for Steam PCVR). |
+| **SAM** | **Serviceable Available Market** | Segment targeted by the company ($31.5M for RTX 3070+ gamers). |
+| **SOM** | **Serviceable Obtainable Market** | Realistic beachhead market ($975k for 25,000 users). |
+| **CAC** | **Customer Acquisition Cost** | Sales and marketing cost to acquire one customer ($8.50). |
+| **LTV** | **Lifetime Value** | Total estimated gross profit per customer ($39.50). |
+| **GPU** | **Graphics Processing Unit** | High-performance silicon processor executing 3D rasterization. |
+| **NPU** | **Neural Processing Unit** | Silicon microprocessor designed specifically for deep learning inference. |
+| **OpenXR** | **Open Cross-Platform Standard for XR** | Royalty-free open standard developed by the Khronos Group. |
+| **IPO** | **Initial Public Offering** | The initial sale of company shares on a public stock exchange. |
+| **M&A** | **Mergers and Acquisitions** | Corporate transaction purchasing or combining corporate entities. |
+
+---
+
 ### 📂 Cross-References
+* [**Master Glossary of All Terms & Full Forms**](../GLOSSARY.md)
+* [**Big Tech Financial Architecture Blueprint**](big-tech-financial-architecture.md)
 * [**5-Year Master Money Flow**](5-year-money-flow.md) — Line-by-line financial statement ($185k to $15.25M).
 * [**Master Investor Memo**](../MASTER_INVESTOR_MEMO.md) — Complete VC pitch and institutional investment thesis.
 * [**Unit Economics & CAC/LTV**](unit-economics.md) — 4.65:1 LTV:CAC foundation.

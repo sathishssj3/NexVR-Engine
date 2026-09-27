@@ -219,3 +219,38 @@ pie title Use of $500,000 Funds
   - [Download Setup Installer (v0.1.98)](https://github.com/sathishssj3/NexVR-Engine/releases/download/v0.1.98/NexVR-Engine-Setup-0.1.98.exe)
   - [Download Standalone Portable (v0.1.98)](https://github.com/sathishssj3/NexVR-Engine/releases/download/v0.1.98/NexVR-Engine-Portable-0.1.98.exe)
 * **Strategy Directory**: [`nexvr-strategy/`](file:///c:/Users/sathi/.gemini/antigravity/scratch/vr-inject/nexvr-strategy/README.md)
+* **Master Glossary**: [`GLOSSARY.md`](file:///c:/Users/sathi/.gemini/antigravity/scratch/vr-inject/nexvr-strategy/GLOSSARY.md)
+
+---
+
+## 📖 Glossary: Full Forms of All Short Forms in this Memo
+
+| Short Form | Full Form | Meaning / Description |
+| :--- | :--- | :--- |
+| **VC** | **Venture Capital** | Institutional investment funding early-stage high-growth companies. |
+| **ARR** | **Annual Recurring Revenue** | Annualized recurring subscription and contract revenue. |
+| **EBITDA** | **Earnings Before Interest, Taxes, Depreciation, and Amortization** | Operating profitability before non-cash adjustments. |
+| **ACV** | **Annual Contract Value** | Average annualized contract revenue per enterprise customer ($150k/yr). |
+| **LTV** | **Lifetime Value** | Total estimated gross profit generated per customer ($39.50). |
+| **CAC** | **Customer Acquisition Cost** | Total sales and marketing spend to acquire one customer ($8.50). |
+| **LTV:CAC**| **Lifetime Value to Customer Acquisition Cost Ratio** | Capital efficiency multiple (NexVR operates at **4.65 : 1**). |
+| **TAM** | **Total Addressable Market** | Total global market revenue opportunity ($124.1M for Steam PCVR). |
+| **SAM** | **Serviceable Available Market** | Segment targeted by the company ($31.5M for RTX 3070+ gamers). |
+| **SOM** | **Serviceable Obtainable Market** | Realistic initial target market ($975k for 25,000 users). |
+| **VR** | **Virtual Reality** | Fully immersive simulated 3D digital reality. |
+| **AR** | **Augmented Reality** | Digital graphics overlaid on the physical world. |
+| **XR** | **Extended Reality** | The universal umbrella term covering VR, AR, and Mixed Reality. |
+| **OpenXR** | **Open Cross-Platform Standard for XR** | Royalty-free open standard developed by the Khronos Group. |
+| **6DOF** | **Six Degrees of Freedom** | Tracking orientation (pitch, yaw, roll) AND positional (XYZ) motion. |
+| **HUD** | **Heads-Up Display** | In-game UI elements (health bar, crosshair, inventory). |
+| **FPS** | **Frames Per Second** | Render frame rate (90 FPS = 11.1ms per frame). |
+| **SDK** | **Software Development Kit** | C++ developer package and headers (`nexvr_sdk.h`). |
+| **OEM** | **Original Equipment Manufacturer** | Hardware makers (Pimax, Beyond, HTC) bundling NexVR. |
+| **PE** | **Portable Executable** | Executable and DLL file format on Windows operating systems. |
+| **DLL** | **Dynamic Link Library** | Shared binary library dynamically linked at runtime. |
+| **DX11 / DX12**| **Microsoft DirectX 11 / 12** | Core graphics APIs on Windows PCs. |
+| **DirectML**| **Direct Machine Learning** | Microsoft's hardware-accelerated DirectX 12 machine learning API. |
+| **OTA** | **Over-The-Air** | Automated wireless software updates and cloud profile sync. |
+| **CDN** | **Content Delivery Network** | Distributed server network for fast file downloads (Cloudflare). |
+| **B2C** | **Business-to-Consumer** | Direct retail software sales to PC gamers. |
+| **B2B** | **Business-to-Business** | Commercial licensing to game publishers and hardware OEMs. |

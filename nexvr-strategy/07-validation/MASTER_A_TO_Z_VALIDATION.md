@@ -214,8 +214,49 @@ Six non-negotiable quantitative tripwires to prevent burning time and money:
 
 ---
 
+## 📖 Glossary: Full Forms of All Short Forms in this Document
+
+| Short Form | Full Form | Meaning / Description |
+| :--- | :--- | :--- |
+| **VR** | **Virtual Reality** | Fully simulated 3D digital reality environment. |
+| **PCVR** | **Personal Computer Virtual Reality** | High-fidelity VR powered by dedicated desktop PC hardware. |
+| **OpenXR** | **Open Cross-Platform Standard for XR** | Royalty-free open standard developed by the Khronos Group. |
+| **6DOF** | **Six Degrees of Freedom** | Tracking orientation (pitch, yaw, roll) AND 3D position (XYZ). |
+| **HUD** | **Heads-Up Display** | In-game UI elements (health bar, crosshair, inventory). |
+| **FOV** | **Field of View** | Observable angular visible area in the headset optics. |
+| **FPS** | **Frames Per Second** | Render frame rate (90 FPS = 11.1ms frame budget). |
+| **SDK** | **Software Development Kit** | C++ developer package and headers (`nexvr_sdk.h`). |
+| **API** | **Application Programming Interface** | System protocol interface for software communication. |
+| **OEM** | **Original Equipment Manufacturer** | Hardware makers (Pimax, Beyond, HTC) bundling NexVR. |
+| **GPU** | **Graphics Processing Unit** | High-performance silicon processor executing 3D rasterization. |
+| **PE** | **Portable Executable** | Executable and DLL file format on Windows operating systems. |
+| **DLL** | **Dynamic Link Library** | Shared binary library dynamically linked at runtime. |
+| **DX11 / DX12**| **Microsoft DirectX 11 / 12** | Core 3D graphics rendering APIs on Windows PCs. |
+| **DXGI** | **DirectX Graphics Infrastructure** | Subsystem managing display swapchains on Windows. |
+| **FXC / DXC** | **Effects Compiler / DirectX Shader Compiler** | Compilers converting HLSL code into GPU bytecode. |
+| **HLSL** | **High-Level Shader Language** | Microsoft's shader programming language. |
+| **SPIR-V** | **Standard Portable Intermediate Representation** | Binary intermediate language for Vulkan graphics shaders. |
+| **DirectML**| **Direct Machine Learning** | Microsoft's hardware-accelerated DirectX 12 machine learning API. |
+| **CAC** | **Customer Acquisition Cost** | Total sales/marketing spend to acquire one paying customer ($8.50). |
+| **LTV** | **Lifetime Value** | Total gross profit generated per customer ($39.50). |
+| **LTV:CAC**| **Lifetime Value to Customer Acquisition Cost Ratio** | Efficiency ratio (NexVR operates at **4.65 : 1**). |
+| **TAM** | **Total Addressable Market** | Total global revenue potential ($124.1M for Steam PCVR). |
+| **SAM** | **Serviceable Available Market** | High-spec single-player campaign gamers ($31.5M). |
+| **SOM** | **Serviceable Obtainable Market** | Realistic beachhead market ($975k for 25,000 customers). |
+| **B2C** | **Business-to-Consumer** | Direct retail software sales to PC gamers. |
+| **B2B** | **Business-to-Business** | Commercial licensing to game publishers and hardware OEMs. |
+| **EBITDA** | **Earnings Before Interest, Taxes, Depreciation, and Amortization** | Operational net profitability before non-cash adjustments. |
+| **CI / CD** | **Continuous Integration / Continuous Deployment** | Automated software build and testing pipeline (`release.yml`). |
+| **HIL** | **Hardware-in-the-Loop** | Testing with physical hardware headsets in the test rig. |
+| **OTA** | **Over-The-Air** | Automated wireless software updates and cloud profile sync. |
+| **CDN** | **Content Delivery Network** | Distributed server network for fast file downloads (Cloudflare). |
+
+---
+
 ### 📂 Strategic Links & Documentation
+* [**Master Glossary of All Terms & Full Forms**](../GLOSSARY.md)
 * [**Master Investor Memo (Institutional Pitch)**](../MASTER_INVESTOR_MEMO.md)
+* [**Big Tech Financial Architecture Blueprint**](../06-financial/big-tech-financial-architecture.md)
 * [**5-Year B2C to B2B Master Money Flow**](../06-financial/5-year-money-flow.md)
 * [**The Billionaire Roadmap (8-Year Plan)**](../06-financial/billionaire-roadmap.md)
 * [**Unit Economics Ledger (4.65:1 LTV:CAC)**](../06-financial/unit-economics.md)

@@ -4,8 +4,9 @@
 
 ---
 
-## 🌟 Executive & Investor Flagship Document
+## 🌟 Executive & Investor Flagship Documents
 * 📄 [**`MASTER_INVESTOR_MEMO.md`**](MASTER_INVESTOR_MEMO.md) — **The Complete VC Master Investment Memorandum & Diligence Dossier** (Executive thesis, bottom-up TAM/SAM/SOM, unit economics, technology moat, 18-month pro-forma, and risk matrix in a single document).
+* 📖 [**`GLOSSARY.md`**](GLOSSARY.md) — **Master Glossary of Abbreviations, Acronyms, & Full Forms** (Complete A-to-Z dictionary covering all financial, graphics, technical, and business terms).
 
 ---
 

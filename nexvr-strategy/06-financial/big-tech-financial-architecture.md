@@ -196,7 +196,46 @@ How does the CEO allocate each dollar of net operating profit? Following the **W
 
 ---
 
+## 📖 Glossary: Full Forms of All Short Forms in this Document
+
+| Short Form | Full Form | Meaning / Description |
+| :--- | :--- | :--- |
+| **ASC 606** | **Accounting Standards Codification Topic 606** | Standard US GAAP rules for recognizing customer contract revenue. |
+| **GAAP** | **Generally Accepted Accounting Principles** | Official accounting rules and practices in the United States. |
+| **COGS** | **Cost of Goods Sold** | Direct costs of delivering the service (payment fees, CDN bandwidth). |
+| **OPEX** | **Operating Expenses** | Running expenses of the company (R&D, sales commissions, legal). |
+| **CapEx** | **Capital Expenditure** | Funds spent acquiring physical equipment or long-term hardware assets. |
+| **EBITDA** | **Earnings Before Interest, Taxes, Depreciation, and Amortization** | Operating profitability before non-cash and non-operating charges. |
+| **ARR** | **Annual Recurring Revenue** | Annualized recurring subscription and contract revenue. |
+| **MRR** | **Monthly Recurring Revenue** | Predictable monthly SaaS subscription revenue ($9.99/mo Pro). |
+| **ACV** | **Annual Contract Value** | Average annualized revenue per enterprise contract ($150,000/yr). |
+| **CAC** | **Customer Acquisition Cost** | Average marketing spend required to acquire one customer ($8.50). |
+| **LTV** | **Lifetime Value** | Total estimated gross profit generated per customer ($39.50). |
+| **B2C** | **Business-to-Consumer** | Direct software sales to individual gamers and retail users. |
+| **B2B** | **Business-to-Business** | Commercial licensing to game studios, headset OEMs, and defense firms. |
+| **OEM** | **Original Equipment Manufacturer** | Hardware makers (Pimax, Bigscreen, Samsung) that pre-install NexVR. |
+| **SDK** | **Software Development Kit** | Developer software package and C++ headers (`nexvr_sdk.h`). |
+| **API** | **Application Programming Interface** | Formal set of software protocols for application communication. |
+| **QSBS** | **Qualified Small Business Stock** | IRC Section 1202 tax incentive granting **100% tax-free capital gains** up to $10M+. |
+| **IRC** | **Internal Revenue Code** | Federal statutory tax code of the United States. |
+| **FDIC** | **Federal Deposit Insurance Corporation** | US government deposit insurance up to $250,000 per bank. |
+| **SIPC** | **Securities Investor Protection Corporation** | US protection for investors against failure of financial brokerages. |
+| **ICS** | **IntraFi Cash Service** | Intra-bank cash network that secures multi-million dollar FDIC insurance. |
+| **T-Bills**| **United States Treasury Bills** | Short-term debt obligations backed by the US Department of the Treasury. |
+| **GPU** | **Graphics Processing Unit** | Silicon processor executing 3D graphics and matrix mathematics. |
+| **NPU** | **Neural Processing Unit** | Silicon microprocessor designed specifically for deep learning inference. |
+| **OTA** | **Over-The-Air** | Automated wireless software updates and cloud profile delivery. |
+| **CDN** | **Content Delivery Network** | Geographically distributed server network for rapid file downloads. |
+| **R2** | **Cloudflare R2 Object Storage** | High-performance cloud storage with zero data egress charges. |
+| **SOC2** | **Service Organization Control 2** | Enterprise security auditing standard verifying data protection. |
+| **FedRAMP**| **Federal Risk and Authorization Management Program** | US government cybersecurity authorization for cloud software. |
+| **IPO** | **Initial Public Offering** | The first public listing and sale of company shares on a stock exchange. |
+| **NASDAQ**| **National Association of Securities Dealers Automated Quotations** | The leading global electronic stock exchange for technology companies. |
+
+---
+
 ### 📂 Strategic Cross-References
+* [**Master Glossary of All Terms & Full Forms**](../GLOSSARY.md)
 * [**The 10-Year Deep-Tech Operational Playbooks (Years 1–10)**](../10-year-playbook/README.md)
 * [**5-Year B2C to B2B Master Money Flow**](5-year-money-flow.md)
 * [**The Billionaire Roadmap (8-Year Path)**](billionaire-roadmap.md)

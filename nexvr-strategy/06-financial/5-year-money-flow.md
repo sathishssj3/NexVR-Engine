@@ -138,3 +138,32 @@ YEAR 5:  [█████░░░░░░░░░░░░░░░]  26% B2C
 1. **Zero Cloud GPU Compute Debt**: Unlike cloud-streaming companies (Shadow, Xbox Cloud) that burn millions on cloud servers, NexVR runs 100% locally on the user's PC GPU. Our marginal delivery cost never scales with gameplay hours.
 2. **Infinite Self-Funded Runway**: Because fixed costs remain under $1,000/mo in the early years, the company can never run out of money or be forced into a predatory down-round.
 3. **Cash-Flow Compounding**: B2C revenue pays for ongoing shader R&D; B2B contracts generate large non-dilutive balance-sheet reserves.
+
+---
+
+## 📖 Glossary: Full Forms of All Short Forms in this Document
+
+| Short Form | Full Form | Meaning / Description |
+| :--- | :--- | :--- |
+| **B2C** | **Business-to-Consumer** | Direct retail software sales to individual PC gamers. |
+| **B2B** | **Business-to-Business** | Commercial licensing to studios, hardware OEMs, and defense simulators. |
+| **COGS** | **Cost of Goods Sold** | Direct delivery costs (merchant gateway fees, CDN file hosting). |
+| **OPEX** | **Operating Expenses** | Running expenses of the company (engineering payroll, commissions, legal). |
+| **EBITDA** | **Earnings Before Interest, Taxes, Depreciation, and Amortization** | Operational net cash profitability before non-cash adjustments. |
+| **ARR** | **Annual Recurring Revenue** | Annualized recurring subscription and royalty revenue. |
+| **ACV** | **Annual Contract Value** | Average annualized contract revenue per enterprise customer ($150,000/yr). |
+| **OEM** | **Original Equipment Manufacturer** | Hardware makers (Pimax, Bigscreen) that pre-install NexVR software. |
+| **SDK** | **Software Development Kit** | C++ developer library and headers (`nexvr_sdk.h`). |
+| **VR** | **Virtual Reality** | Fully immersive digital 3D environment. |
+| **OpenXR** | **Open Cross-Platform Standard for XR** | Royalty-free open standard developed by the Khronos Group. |
+| **GPU** | **Graphics Processing Unit** | Desktop graphics processor executing 3D rasterization. |
+| **M&A** | **Mergers and Acquisitions** | Corporate transaction purchasing or combining corporate entities. |
+
+---
+
+### 📂 Strategic Cross-References
+* [**Master Glossary of All Terms & Full Forms**](../GLOSSARY.md)
+* [**Big Tech Financial Architecture Blueprint**](big-tech-financial-architecture.md)
+* [**The Billionaire Roadmap (8-Year Path)**](billionaire-roadmap.md)
+* [**The 10-Year Deep-Tech Operational Playbooks**](../10-year-playbook/README.md)
+* [**Strategic Knowledge Base Index**](../README.md)
