@@ -152,7 +152,7 @@ NexVR combines a high-converting one-time entry tier with recurring expansion an
 | **NET OPERATING PROFIT (EBITDA)** | **$4,810** | **$17,510** | **$51,250** | **$64,550** | **$110,670** | **$248,790** |
 | **Net EBITDA Margin %** | **71.4%** | **75.6%** | **80.4%** | **76.2%** | **78.1%** | **77.7%** |
 
-> 📊 **Long-Term B2B Scale**: See [`06-financial/5-year-money-flow.md`](06-financial/5-year-money-flow.md) for the complete 5-year roadmap scaling from **$185k (Year 1 B2C)** to **$15.25M (Year 5 B2B OEM & Enterprise Simulation)** with **$11.8M EBITDA**.
+> 📊 **Long-Term B2B & Billion-Dollar Trajectory**: See [`06-financial/5-year-money-flow.md`](06-financial/5-year-money-flow.md) for the 5-year B2C to B2B trajectory ($185k → $15.25M with $11.8M EBITDA), and [`06-financial/billionaire-roadmap.md`](06-financial/billionaire-roadmap.md) for the 8-year path to a **$1 Billion+ net worth** via spatial OS hardware bundling.
 
 ---
 

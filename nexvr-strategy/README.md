@@ -46,6 +46,7 @@
 * [`06-financial/unit-economics.md`](06-financial/unit-economics.md) — **4.65 : 1 LTV:CAC ratio** ($39.50 LTV vs $8.50 CAC).
 * [`06-financial/financial-projections.md`](06-financial/financial-projections.md) — 18-month pro-forma forecast ($320k gross revenue, $248k net profit).
 * [`06-financial/5-year-money-flow.md`](06-financial/5-year-money-flow.md) — **5-Year B2C to B2B Master Money Flow** ($185k → $15.25M revenue, $11.8M EBITDA, $80M–$120M exit valuation).
+* [`06-financial/billionaire-roadmap.md`](06-financial/billionaire-roadmap.md) — **The Billionaire Roadmap (8-Year Trajectory)** ($100k → $80M in Y5 → $1.08B Net Worth in Y8 via Spatial OS scale).
 
 ### 8. 🏆 Validation & Action Playbook
 * [`07-validation/validation-playbook.md`](07-validation/validation-playbook.md) — 5 ordered validation experiments.
