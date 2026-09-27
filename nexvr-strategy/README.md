@@ -49,9 +49,10 @@
 * [`06-financial/billionaire-roadmap.md`](06-financial/billionaire-roadmap.md) — **The Billionaire Roadmap (8-Year Trajectory)** ($100k → $80M in Y5 → $1.08B Net Worth in Y8 via Spatial OS scale).
 
 ### 8. 🏆 Validation & Action Playbook
-* [`07-validation/validation-playbook.md`](07-validation/validation-playbook.md) — 5 ordered validation experiments.
-* [`07-validation/risk-analysis.md`](07-validation/risk-analysis.md) — 5 core risks and engineering mitigations (anti-cheat, update drift).
-* [`07-validation/assumptions-tracker.md`](07-validation/assumptions-tracker.md) — Master assumptions ledger (6/8 already validated).
-* [`07-validation/experiment-design.md`](07-validation/experiment-design.md) — Top 3 experiment protocols and email templates.
-* [`07-validation/kill-criteria.md`](07-validation/kill-criteria.md) — 6 measurable triggers to pivot or stop.
+* [`07-validation/MASTER_A_TO_Z_VALIDATION.md`](07-validation/MASTER_A_TO_Z_VALIDATION.md) — 🌟 **Master A-to-Z Project Validation Dossier** (Complete synthesis of technical, product, market, unit economic, experiment, and risk validation).
 * [`07-validation/scorecard.md`](07-validation/scorecard.md) — Final investment scorecard: **8.1 / 10 GREENLIGHT**.
+* [`07-validation/assumptions-tracker.md`](07-validation/assumptions-tracker.md) — Master assumptions ledger (6/8 already validated).
+* [`07-validation/validation-playbook.md`](07-validation/validation-playbook.md) — 5 ordered validation experiments.
+* [`07-validation/experiment-design.md`](07-validation/experiment-design.md) — Top 3 experiment protocols and email templates.
+* [`07-validation/risk-analysis.md`](07-validation/risk-analysis.md) — 5 core risks and engineering mitigations (anti-cheat, update drift).
+* [`07-validation/kill-criteria.md`](07-validation/kill-criteria.md) — 6 measurable triggers to pivot or stop.
