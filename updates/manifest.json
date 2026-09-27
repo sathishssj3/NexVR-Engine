@@ -1,8 +1,8 @@
 {
-  "engineVersion": "0.1.96",
-  "buildDate": "2026-09-25",
-  "timestamp": 1790362392091,
-  "changelog": "NexVR Engine v0.1.96 — Native VR Polish: P0 6DOF Controller Emulation & Curved HUD, P1 Cutscene Auto-Theater & Dynamic Comfort Vignette, P2 Camera Decoupling & Horizon Lock",
+  "engineVersion": "0.1.97",
+  "buildDate": "2026-09-27",
+  "timestamp": 1790506514944,
+  "changelog": "NexVR Engine v0.1.97 — Hotfix: Resolved black screen in VR headset for 10-bit HDR & 4K games (Sekiro R10G10B10A2 parity) and OpenXR typeless format family copy compatibility",
   "features": [
     "P0.1 Virtual Controller Emulation: Full VR motion controller mapping to XInput with bidirectional haptic vibration feedback for native controller-free gameplay",
     "P0.2 Floating Curved World-Space HUD: Eliminates eye strain by projecting 2D UI passes onto an adjustable curved virtual canvas with configurable depth and curvature",
@@ -63,8 +63,8 @@
   ],
   "date": "2026-09-18T19:46:38.921Z",
   "hashes": {
-    "vrinject.dll": "5405c6c3c1c68d838801238c193c9d1d2b05f893aaeebc44eed46d4c1c14bc99",
-    "vr-inject-cli.exe": "bcb82ce0f6737153156354902edc902d1c73ce59483f579a002d164e6f933e0d",
+    "vrinject.dll": "01d6721b94930429a50e24d6137f2fa757f4bd41af9664e5a41d748084a6f382",
+    "vr-inject-cli.exe": "611b480d1271306ea19e217379d22930fa7d652d3875b4942fb6860b04ae59ed",
     "profiles/814380_sekiro.json": "ab4d5f334a20dc0ac7eeaada8f14aa62e5f19a31a81c6cf3f5aaa049566091a3",
     "profiles/990080_hogwarts_legacy.json": "af2035a15ce90d00050f8e8f577e4e6b6235be5e93d334040715c63f8e8b7144",
     "profiles/1091500_cyberpunk_2077.json": "08043689cbdacc9b7add01c05b2af17186a02739d20b50dfb0c42434860d7a05",

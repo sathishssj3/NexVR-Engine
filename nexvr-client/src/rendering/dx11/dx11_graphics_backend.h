@@ -61,6 +61,10 @@ private:
     
     std::unique_ptr<StereoResourceManager> m_resourceManager;
     std::unique_ptr<StereoRenderer> m_stereoRenderer;
+
+    DXGI_FORMAT m_targetFormat = DXGI_FORMAT_UNKNOWN;
+    uint32_t m_targetWidth = 0;
+    uint32_t m_targetHeight = 0;
 };
 
 } // namespace vrinject

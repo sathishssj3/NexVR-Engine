@@ -82,8 +82,8 @@ void DX11GraphicsBackend::RenderStereo(
         return;
     }
 
-    uint32_t width = frameSnapshot.width;
-    uint32_t height = frameSnapshot.height;
+    uint32_t width = (m_targetWidth > 0) ? m_targetWidth : frameSnapshot.width;
+    uint32_t height = (m_targetHeight > 0) ? m_targetHeight : frameSnapshot.height;
     if (width == 0) width = depthSnapshot.identity.width;
     if (height == 0) height = depthSnapshot.identity.height;
     if (width == 0) width = 1920;
@@ -111,8 +111,21 @@ void DX11GraphicsBackend::RenderStereo(
         height
     );
     
-    DXGI_FORMAT targetFmt = static_cast<DXGI_FORMAT>(frameSnapshot.format);
-    if (targetFmt == DXGI_FORMAT_UNKNOWN) targetFmt = DXGI_FORMAT_R8G8B8A8_UNORM;
+    // Determine target format: OpenXR swapchain format takes precedence over game format.
+    // If the game format is HDR / 10-bit (R10G10B10A2) or float (R16G16B16A16), normalize to R8G8B8A8
+    // so OpenXR can ingest it and D3D11 CopyResource succeeds without black screen.
+    DXGI_FORMAT targetFmt = (m_targetFormat != DXGI_FORMAT_UNKNOWN) 
+        ? m_targetFormat 
+        : static_cast<DXGI_FORMAT>(frameSnapshot.format);
+
+    if (targetFmt == DXGI_FORMAT_R10G10B10A2_UNORM || 
+        targetFmt == DXGI_FORMAT_R10G10B10A2_TYPELESS ||
+        targetFmt == DXGI_FORMAT_R10G10B10A2_UINT ||
+        targetFmt == DXGI_FORMAT_R16G16B16A16_FLOAT ||
+        targetFmt == DXGI_FORMAT_R16G16B16A16_UNORM ||
+        targetFmt == DXGI_FORMAT_UNKNOWN) {
+        targetFmt = DXGI_FORMAT_R8G8B8A8_UNORM;
+    }
 
     if (!m_resourceManager->Initialize(width, height, targetFmt)) {
         return;
@@ -164,6 +177,12 @@ void DX11GraphicsBackend::SubmitStereoFrame(
 ) {
     XrPosef leftPose, rightPose;
     XrFovf leftFov, rightFov;
+
+    if (oxrSwapchain) {
+        m_targetFormat = static_cast<DXGI_FORMAT>(oxrSwapchain->GetFormat());
+        m_targetWidth = oxrSwapchain->GetWidth();
+        m_targetHeight = oxrSwapchain->GetHeight();
+    }
 
     {
         ScopedCpuTimer oxrTimer(&cpuProfiler, CpuSegment::OpenXrSubmission);

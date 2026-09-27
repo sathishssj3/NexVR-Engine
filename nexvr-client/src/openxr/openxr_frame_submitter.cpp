@@ -101,6 +101,38 @@ bool OpenXRFrameSubmitter::BeginAndAcquireDX11(
     return true;
 }
 
+static bool AreD3D11FormatsCompatible(DXGI_FORMAT f1, DXGI_FORMAT f2) {
+    if (f1 == f2) return true;
+    auto getFamily = [](DXGI_FORMAT f) -> int {
+        switch (f) {
+            case DXGI_FORMAT_R8G8B8A8_TYPELESS:
+            case DXGI_FORMAT_R8G8B8A8_UNORM:
+            case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+            case DXGI_FORMAT_R8G8B8A8_UINT:
+            case DXGI_FORMAT_R8G8B8A8_SNORM:
+            case DXGI_FORMAT_R8G8B8A8_SINT:
+                return 1;
+            case DXGI_FORMAT_B8G8R8A8_TYPELESS:
+            case DXGI_FORMAT_B8G8R8A8_UNORM:
+            case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
+                return 2;
+            case DXGI_FORMAT_R10G10B10A2_TYPELESS:
+            case DXGI_FORMAT_R10G10B10A2_UNORM:
+            case DXGI_FORMAT_R10G10B10A2_UINT:
+                return 3;
+            case DXGI_FORMAT_R16G16B16A16_TYPELESS:
+            case DXGI_FORMAT_R16G16B16A16_FLOAT:
+            case DXGI_FORMAT_R16G16B16A16_UNORM:
+                return 4;
+            default:
+                return 0;
+        }
+    };
+    int fam1 = getFamily(f1);
+    int fam2 = getFamily(f2);
+    return (fam1 != 0 && fam1 == fam2);
+}
+
 bool OpenXRFrameSubmitter::ReleaseAndEndDX11(
     XrSession session,
     XrSpace referenceSpace,
@@ -126,14 +158,16 @@ bool OpenXRFrameSubmitter::ReleaseAndEndDX11(
     ID3D11Texture2D* leftDest = swapchainManager->GetLeftSwapchainImage(lastAcquiredLeftIndex_);
     ID3D11Texture2D* rightDest = swapchainManager->GetRightSwapchainImage(lastAcquiredRightIndex_);
 
-    if (leftEyeTex && leftDest) {
+    auto copyEye = [&](ID3D11Texture2D* src, ID3D11Texture2D* dst, const char* eyeName) {
+        if (!src || !dst) return;
         D3D11_TEXTURE2D_DESC srcDesc = {};
         D3D11_TEXTURE2D_DESC dstDesc = {};
-        leftEyeTex->GetDesc(&srcDesc);
-        leftDest->GetDesc(&dstDesc);
-        if (srcDesc.Format == dstDesc.Format && srcDesc.Width == dstDesc.Width && srcDesc.Height == dstDesc.Height) {
-            context->CopyResource(leftDest, leftEyeTex);
-        } else {
+        src->GetDesc(&srcDesc);
+        dst->GetDesc(&dstDesc);
+        bool compatible = (srcDesc.Format == dstDesc.Format) || AreD3D11FormatsCompatible(srcDesc.Format, dstDesc.Format);
+        if (compatible && srcDesc.Width == dstDesc.Width && srcDesc.Height == dstDesc.Height) {
+            context->CopyResource(dst, src);
+        } else if (compatible) {
             D3D11_BOX box;
             box.left = 0;
             box.top = 0;
@@ -141,27 +175,19 @@ bool OpenXRFrameSubmitter::ReleaseAndEndDX11(
             box.right = (std::min)(srcDesc.Width, dstDesc.Width);
             box.bottom = (std::min)(srcDesc.Height, dstDesc.Height);
             box.back = 1;
-            context->CopySubresourceRegion(leftDest, 0, 0, 0, 0, leftEyeTex, 0, &box);
-        }
-    }
-    if (rightEyeTex && rightDest) {
-        D3D11_TEXTURE2D_DESC srcDesc = {};
-        D3D11_TEXTURE2D_DESC dstDesc = {};
-        rightEyeTex->GetDesc(&srcDesc);
-        rightDest->GetDesc(&dstDesc);
-        if (srcDesc.Format == dstDesc.Format && srcDesc.Width == dstDesc.Width && srcDesc.Height == dstDesc.Height) {
-            context->CopyResource(rightDest, rightEyeTex);
+            context->CopySubresourceRegion(dst, 0, 0, 0, 0, src, 0, &box);
         } else {
-            D3D11_BOX box;
-            box.left = 0;
-            box.top = 0;
-            box.front = 0;
-            box.right = (std::min)(srcDesc.Width, dstDesc.Width);
-            box.bottom = (std::min)(srcDesc.Height, dstDesc.Height);
-            box.back = 1;
-            context->CopySubresourceRegion(rightDest, 0, 0, 0, 0, rightEyeTex, 0, &box);
+            static bool s_loggedFormatMismatch = false;
+            if (!s_loggedFormatMismatch) {
+                LOG_ERROR("OpenXRFrameSubmitter: D3D11 copy failed on %s! Incompatible format family (src format %u != dst format %u)",
+                          eyeName, srcDesc.Format, dstDesc.Format);
+                s_loggedFormatMismatch = true;
+            }
         }
-    }
+    };
+
+    copyEye(leftEyeTex, leftDest, "LeftEye");
+    copyEye(rightEyeTex, rightDest, "RightEye");
 
     // 6. Release Images
     state_ = SubmitterState::RELEASE;
