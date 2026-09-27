@@ -14,16 +14,21 @@
 ## 🧭 The 10-Year Strategic Evolution
 
 ```mermaid
-graph TD
-    P1["<b>ERA 1 (Years 1–2): THE PCVR BEACHHEAD</b><br/>• 1-Click Flat-to-VR Injection<br/>• 'Hero 10' Curated Masterpieces<br/>• System Doctor & 3D Curved HUD<br/><b>$185k → $742k Rev · 100% Self-Funded</b>"]
-    --> P2["<b>ERA 2 (Years 3–4): OEM & STUDIO STANDARD</b><br/>• Commercial Studio SDK (nexvr_sdk.h)<br/>• Pre-installed on Bigscreen/Pimax/Somnium<br/>• Crowdsourced Profile Marketplace (30%)<br/><b>$2.46M → $6.81M Rev · $4.9M EBITDA</b>"]
-    
-    P2 --> P3["<b>ERA 3 (Years 5–6): ENTERPRISE SIM & SPATIAL AI</b><br/>• Defense, Flight & Naval Simulation ACV<br/>• Real-Time 2D-to-3D Video Inpainting API<br/>• Neural Radiance (Gaussian Splat) Reprojection<br/><b>$15.2M → $38.0M Rev · $28.0M EBITDA</b>"]
-    
-    P3 --> P4["<b>ERA 4 (Years 7–8): THE UNIVERSAL SPATIAL OS</b><br/>• OS-Level Runtime for Android XR & Smart Glasses<br/>• Silicon Integration with Qualcomm Snapdragon XR<br/>• Real-Time 3D Holographic Windowing<br/><b>$72.0M → $150.0M ARR · $2.25B Valuation</b><br/><i>★ Founder Crosses $1,000,000,000 Net Worth</i>"]
-    
-    P4 --> P5["<b>ERA 5 (Years 9–10): UBIQUITOUS REALITY & IPO</b><br/>• 100M+ Daily Active Spatial Users<br/>• Autonomous Robotics & Teleoperation Grid<br/>• Generative 4D Interactive Worlds on the Fly<br/><b>$280.0M → $450.0M ARR · NASDAQ IPO ($10B Cap)</b>"]
+flowchart LR
+    E1["<b>ERA 1 (Y1-2)</b><br/>PCVR Beachhead<br/>$185k → $742k<br/>100% Self-Funded"]
+    --> E2["<b>ERA 2 (Y3-4)</b><br/>OEM & Studio SDK<br/>$2.46M → $6.8M<br/>Headset Bundling"]
+    --> E3["<b>ERA 3 (Y5-6)</b><br/>Enterprise Sim & AI<br/>$15.2M → $38M<br/>Defense ACV & NeRFs"]
+    --> E4["<b>ERA 4 (Y7-8)</b><br/>Universal Spatial OS<br/>$72M → $150M ARR<br/><b>$1.08B Net Worth</b>"]
+    --> E5["<b>ERA 5 (Y9-10)</b><br/>Global Grid & IPO<br/>$280M → $450M ARR<br/><b>$10B Market Cap</b>"]
 ```
+
+| Phase | **Era 1 (Y1-2)** | **Era 2 (Y3-4)** | **Era 3 (Y5-6)** | **Era 4 (Y7-8)** | **Era 5 (Y9-10)** |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Theme** | **Beachhead** | **OEM & Studios** | **Enterprise Sim** | **Spatial OS** | **NASDAQ IPO** |
+| **Gross Revenue** | $185k → $742k | $2.46M → $6.8M | $15.2M → $38M | $72M → $150M | $280M → $450M |
+| **Operating EBITDA** | $102k → $381k | $1.56M → $4.9M | $11.8M → $28M | $52M → $110M | $205M → $325M |
+| **Company Valuation**| $1.5M → $6.0M | $20M → $55M | $100M → $380M | $900M → $2.25B | **$8.0B – $12.0B** |
+| **Founder Net Worth** | $1.47M → $5.7M | $18M → $46.7M | $80M → $266M | **$1.08 BILLION** | **$3.50 BILLION** |
 
 ---
 

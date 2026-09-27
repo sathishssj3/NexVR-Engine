@@ -34,10 +34,10 @@ The PCVR gaming market has ~2.5 million active users on Steam with an addressabl
 To cross the **$1 Billion threshold**, NexVR executes an orchestrated 3-Horizon expansion into the broader **Spatial Computing Revolution**:
 
 ```mermaid
-graph TD
-    H1["<b>HORIZON 1: THE BEACHHEAD (Years 1–3)</b><br/>• Flat-to-VR Injection for PC Gamers<br/>• Revenue: $185k → $2.46M<br/>• Equity Retained: 95%<br/><b>Founder Net Worth: $15 Million</b>"]
-    --> H2["<b>HORIZON 2: OEM & STUDIO STANDARD (Years 4–5)</b><br/>• Studio SDK + Headset Bundles + Defense Sims<br/>• Revenue: $6.8M → $15.25M ($11.8M EBITDA)<br/>• Company Value: $100M (80% Equity)<br/><b>Founder Net Worth: $80 Million (Centi-Millionaire)</b>"]
-    --> H3["<b>HORIZON 3: SPATIAL COMPUTING OS (Years 6–8)</b><br/>• Pre-installed on 20M+ Smart Glasses & Android XR<br/>• Real-time 2D-to-3D Spatial AI Engine<br/>• Revenue: $150M+ ARR ($110M EBITDA)<br/>• Company Value: $2.0B – $2.5B (45%–50% Equity)<br/><b>Founder Net Worth: $1,000,000,000+ (BILLIONAIRE)</b>"]
+flowchart LR
+    H1["<b>HORIZON 1: Beachhead (Y1-3)</b><br/>$185k → $2.46M Rev<br/>PCVR Injection · 95% Equity<br/><b>$15M Net Worth</b>"]
+    --> H2["<b>HORIZON 2: OEM Standard (Y4-5)</b><br/>$6.8M → $15.25M Rev<br/>Studio SDK · 80% Equity<br/><b>$80M Net Worth (Centi-M)</b>"]
+    --> H3["<b>HORIZON 3: Spatial OS (Y6-8)</b><br/>$150M ARR · $110M EBITDA<br/>20M Glasses · 48% Equity<br/><b>$1.08 BILLION Net Worth</b>"]
 ```
 
 ---

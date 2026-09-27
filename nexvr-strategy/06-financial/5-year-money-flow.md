@@ -14,15 +14,12 @@
 ## 🧭 The 5-Year Strategic Evolution (The Trojan Horse Flywheel)
 
 ```mermaid
-graph TD
-    Y1["YEAR 1: B2C BEACHHEAD<br/>• $39 Founder Pass<br/>• $9.99/mo Pro SaaS<br/>• 10 Hero Profiles<br/><b>Revenue: $185,000 (94% Margin)</b>"]
-    --> Y2["YEAR 2: B2B STUDIO ENTRY<br/>• B2C Profile Marketplace<br/>• First 3 Indie Studio Port SDKs<br/>• $15k fee + 10% royalty<br/><b>Revenue: $742,000</b>"]
-    
-    Y2 --> Y3["YEAR 3: OEM HARDWARE BUNDLING<br/>• Pre-install deal with Beyond/Pimax<br/>• $12/headset royalty<br/>• 12 Studio SDK releases<br/><b>Revenue: $2,460,000</b>"]
-    
-    Y3 --> Y4["YEAR 4: ENTERPRISE SIMULATION<br/>• Retrofitting flight/defense sims<br/>• $75k–$150k enterprise ACV<br/>• Global consumer scale<br/><b>Revenue: $6,810,000</b>"]
-    
-    Y4 --> Y5["YEAR 5: CATEGORY DOMINANCE<br/>• Default universal VR runtime<br/>• 250k B2C users + 40 Studios<br/>• M&A Target for Meta/Valve/Sony<br/><b>Revenue: $15,250,000 ($11.8M EBITDA)</b>"]
+flowchart LR
+    Y1["<b>YEAR 1: B2C Beachhead</b><br/>$185,000 Rev<br/>94% Margin · $102k EBITDA"]
+    --> Y2["<b>YEAR 2: Studio SDK</b><br/>$742,000 Rev<br/>Indie Ports + $381k EBITDA"]
+    --> Y3["<b>YEAR 3: OEM Bundling</b><br/>$2,460,000 Rev<br/>35k Headsets · $1.56M EBITDA"]
+    --> Y4["<b>YEAR 4: Enterprise Sim</b><br/>$6,810,000 Rev<br/>Defense ACV · $4.93M EBITDA"]
+    --> Y5["<b>YEAR 5: Category Exit</b><br/>$15,250,000 Rev<br/><b>$11.87M EBITDA · $100M Val</b>"]
 ```
 
 ---
