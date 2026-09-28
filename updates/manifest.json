@@ -1,7 +1,7 @@
 {
   "engineVersion": "0.1.99",
   "buildDate": "2026-09-28",
-  "timestamp": 1790601892620,
+  "timestamp": 1790602180820,
   "changelog": "NexVR Engine v0.1.99 — Critical Hotfix: OpenXR Asymmetric FOV Diplopia Elimination with 2D Stereo Convergence Offset, Dual-Eye ImGui Menu Unification, Debounced Analog Stick & D-Pad Gamepad Navigation, and 1-Click Recommended Defaults Reset Action",
   "features": [
     "P0.1 Virtual Controller Emulation: Full VR motion controller mapping to XInput with bidirectional haptic vibration feedback for native controller-free gameplay",
@@ -89,5 +89,5 @@
     "shaders/asw_shader.hlsl": "ae77436c5869e5dcd5175bc0050f3e55f1f9abebd3aed49336867954fcee461c",
     "shaders/depth_reprojection.hlsl": "eb0e672fdaebaea0e1afa542990770b5d7d5044a18156f983623478c9e0541f5"
   },
-  "signature": "b8cb7a6f9735cbbb1d025838d899f011d75147e78bda546822a7dc9135170025fa5658f8e7a4620e587578b4d6aa1d1c9447f0a4182ce82eb4ea9205f5903201"
+  "signature": "b604ee8ab0901827ef9b182ffe9514c84d5b21188c00ec7cff5aebbdf2f06acb155e6662fa6f8623f1e4070deea876347e078fb27a3a06cbe330423b703e300b"
 }

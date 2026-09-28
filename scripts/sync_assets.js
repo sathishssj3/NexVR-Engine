@@ -32,6 +32,8 @@ console.log(`[+] Current Engine Version: v${currentVersion}`);
 const binDir = path.join(rootDir, 'build', 'bin');
 const updatesDir = path.join(rootDir, 'updates');
 const docsUpdatesDir = path.join(rootDir, 'nexvr-docs', 'landing-page', 'public', 'updates');
+const appDataUpdatesDir = process.env.APPDATA ? path.join(process.env.APPDATA, 'NexVR Engine', 'updates') : null;
+
 if (fs.existsSync(binDir)) {
   for (const binName of ['vrinject.dll', 'vr-inject-cli.exe']) {
     const srcBin = path.join(binDir, binName);
@@ -44,6 +46,11 @@ if (fs.existsSync(binDir)) {
         fs.copyFileSync(srcBin, path.join(docsUpdatesDir, binName));
         console.log(`[+] Synced binary ${binName} -> docs/updates/${binName}`);
       }
+      if (appDataUpdatesDir) {
+        if (!fs.existsSync(appDataUpdatesDir)) fs.mkdirSync(appDataUpdatesDir, { recursive: true });
+        fs.copyFileSync(srcBin, path.join(appDataUpdatesDir, binName));
+        console.log(`[+] Synced binary ${binName} -> AppData/updates/${binName}`);
+      }
     }
   }
 }
@@ -55,6 +62,7 @@ const shaderDestinations = [
   path.join(rootDir, 'build', 'bin', 'shaders'),
   path.join(rootDir, 'build', 'bin', 'vrinject_shaders'),
   path.join(rootDir, 'nexvr-docs', 'landing-page', 'public', 'updates', 'shaders'),
+  ...(appDataUpdatesDir ? [path.join(appDataUpdatesDir, 'shaders')] : []),
 ];
 
 if (fs.existsSync(srcShadersDir)) {
@@ -167,6 +175,11 @@ if (fs.existsSync(manifestFile)) {
     if (fs.existsSync(path.dirname(docsManifestFile))) {
       fs.writeFileSync(docsManifestFile, jsonStr, 'utf-8');
       console.log(`[+] Synced manifest -> ${path.relative(rootDir, docsManifestFile)}`);
+    }
+    if (appDataUpdatesDir) {
+      if (!fs.existsSync(appDataUpdatesDir)) fs.mkdirSync(appDataUpdatesDir, { recursive: true });
+      fs.writeFileSync(path.join(appDataUpdatesDir, 'manifest.json'), jsonStr, 'utf-8');
+      console.log(`[+] Synced manifest -> AppData/updates/manifest.json`);
     }
   } catch (e) {
     console.error('Error updating manifest:', e);
