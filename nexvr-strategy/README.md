@@ -60,6 +60,7 @@
 * [`10-year-playbook/year-10-nasdaq-ipo-titan.md`](10-year-playbook/year-10-nasdaq-ipo-titan.md) — **Year 10**: NASDAQ IPO ($NXVR) at **$10B Market Cap · $3.50B Net Worth**.
 
 ### 7. 💵 Financial Projections
+* [`06-financial/b2b-sdk-royalty-calculation-guide.md`](06-financial/b2b-sdk-royalty-calculation-guide.md) — 📐 **B2B SDK Royalty Calculation Guide** (Formulas for game studio rev-share, DLC add-ons, OEM hardware bundling, and the 5% audit clause).
 * [`06-financial/big-tech-financial-architecture.md`](06-financial/big-tech-financial-architecture.md) — 🏛️ **Big Tech Financial Architecture** (How Google, Apple, and Meta manage revenue, ASC 606 recognition, treasury, QSBS taxes, and capital allocation).
 * [`06-financial/revenue-model.md`](06-financial/revenue-model.md) — Pricing mechanics and conversion scenarios.
 * [`06-financial/unit-economics.md`](06-financial/unit-economics.md) — **4.65 : 1 LTV:CAC ratio** ($39.50 LTV vs $8.50 CAC).
