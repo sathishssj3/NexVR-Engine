@@ -137,14 +137,24 @@ void ImGuiDX11Integration::Render(ID3D11Device* device, ID3D11DeviceContext* con
 
     OverlayManager::GetInstance().Render();
 
+    // Stereoscopic Convergence:
+    // To fuse the in-headset menu at a comfortable reading depth (~1.8m)
+    // and eliminate double-vision/SBS in VR headsets, offset Left eye nasally (+X)
+    // and Right eye nasally (-X).
+    float stereoOffset = texDesc.Width * 0.022f; // ~2.2% horizontal shift
+
     ImDrawData* drawData = ImGui::GetDrawData();
     if (drawData && drawData->TotalVtxCount > 0) {
-        // 1. Draw into Left Eye
+        // 1. Draw into Left Eye (shifted rightward toward nose)
+        vp.TopLeftX = stereoOffset;
+        context->RSSetViewports(1, &vp);
         context->OMSetRenderTargets(1, &rtvLeft, nullptr);
         ImGui_ImplDX11_RenderDrawData(drawData);
 
-        // 2. Draw into Right Eye (reusing the exact same draw data, zero frame re-generation overhead)
+        // 2. Draw into Right Eye (shifted leftward toward nose)
         if (rtvRight) {
+            vp.TopLeftX = -stereoOffset;
+            context->RSSetViewports(1, &vp);
             context->OMSetRenderTargets(1, &rtvRight, nullptr);
             ImGui_ImplDX11_RenderDrawData(drawData);
         }

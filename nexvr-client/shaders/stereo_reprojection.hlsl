@@ -237,29 +237,45 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
     
     if (ShouldAttemptStereo == 0)
     {
-        // 2D Mode: Pass-through with perceptual grading (1:1 desktop parity at default settings)
-        float4 outColor = baseColor;
+        // 2D Virtual Screen Mode:
+        // In VR headsets, the left and right optical axes are canted (asymmetric nasal/temporal FOV).
+        // Sending identical screen-space coordinates causes severe binocular diplopia (SBS double vision)
+        // and eye-strain because the optical centers are angled apart.
+        // To fuse flat 2D content (loading screens, start menus, cutscenes) into a comfortable virtual screen at ~2.0m:
+        // Offset Left eye sampling rightward (nasal) and Right eye sampling leftward (nasal).
+        const float convergenceOffset = 0.022f; // ~2.2% horizontal shift matching ~1.8m convergence
+
+        float2 leftUV = float2(sampleUV.x - convergenceOffset, sampleUV.y);
+        float2 rightUV = float2(sampleUV.x + convergenceOffset, sampleUV.y);
+
+        float4 leftColor = (leftUV.x >= 0.0f && leftUV.x <= 1.0f) ? GameColor.SampleLevel(LinearSampler, leftUV, 0) : float4(0.02f, 0.02f, 0.02f, 1.0f);
+        float4 rightColor = (rightUV.x >= 0.0f && rightUV.x <= 1.0f) ? GameColor.SampleLevel(LinearSampler, rightUV, 0) : float4(0.02f, 0.02f, 0.02f, 1.0f);
 
         // P1.1: Theater mode in 2D passthrough
-        outColor = ApplyTheaterMode(outColor, uv, TheaterModeWeight, TheaterDistance);
+        leftColor = ApplyTheaterMode(leftColor, uv, TheaterModeWeight, TheaterDistance);
+        rightColor = ApplyTheaterMode(rightColor, uv, TheaterModeWeight, TheaterDistance);
 
-        outColor.rgb = ApplyPerceptualGrading(outColor.rgb, Contrast, Saturation, Brightness);
+        leftColor.rgb = ApplyPerceptualGrading(leftColor.rgb, Contrast, Saturation, Brightness);
+        rightColor.rgb = ApplyPerceptualGrading(rightColor.rgb, Contrast, Saturation, Brightness);
         if (SrgbCorrection != 0)
         {
-            outColor.rgb = ApplySrgbTransfer(outColor.rgb);
+            leftColor.rgb = ApplySrgbTransfer(leftColor.rgb);
+            rightColor.rgb = ApplySrgbTransfer(rightColor.rgb);
         }
 
         // P1.2: Comfort Vignette
         if (ComfortVignetteRadius < 0.99f)
         {
             float vAlpha = ComputeVignetteAlpha(uv, ComfortVignetteRadius, ComfortVignetteFeather);
-            outColor.rgb *= vAlpha;
+            leftColor.rgb *= vAlpha;
+            rightColor.rgb *= vAlpha;
         }
 
-        outColor.a = 1.0f;
-        
-        OutLeftEye[pixelPos] = outColor;
-        OutRightEye[pixelPos] = outColor;
+        leftColor.a = 1.0f;
+        rightColor.a = 1.0f;
+
+        OutLeftEye[pixelPos] = leftColor;
+        OutRightEye[pixelPos] = rightColor;
         return;
     }
     

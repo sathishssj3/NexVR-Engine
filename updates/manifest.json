@@ -1,8 +1,8 @@
 {
-  "engineVersion": "0.1.98",
-  "buildDate": "2026-09-27",
-  "timestamp": 1790540344370,
-  "changelog": "NexVR Engine v0.1.98 — Production Release: Integrated Pre-Launch System Health & Compatibility Doctor, Automated Multi-Launcher Discovery across Steam, Epic Games, and EA Desktop/Origin, and Clean-Machine Zero-Friction Parity",
+  "engineVersion": "0.1.99",
+  "buildDate": "2026-09-28",
+  "timestamp": 1790601892620,
+  "changelog": "NexVR Engine v0.1.99 — Critical Hotfix: OpenXR Asymmetric FOV Diplopia Elimination with 2D Stereo Convergence Offset, Dual-Eye ImGui Menu Unification, Debounced Analog Stick & D-Pad Gamepad Navigation, and 1-Click Recommended Defaults Reset Action",
   "features": [
     "P0.1 Virtual Controller Emulation: Full VR motion controller mapping to XInput with bidirectional haptic vibration feedback for native controller-free gameplay",
     "P0.2 Floating Curved World-Space HUD: Eliminates eye strain by projecting 2D UI passes onto an adjustable curved virtual canvas with configurable depth and curvature",
@@ -63,8 +63,8 @@
   ],
   "date": "2026-09-18T19:46:38.921Z",
   "hashes": {
-    "vrinject.dll": "01d6721b94930429a50e24d6137f2fa757f4bd41af9664e5a41d748084a6f382",
-    "vr-inject-cli.exe": "611b480d1271306ea19e217379d22930fa7d652d3875b4942fb6860b04ae59ed",
+    "vrinject.dll": "3d9aaefbc0350f7ded122c97add69bae3f049b82d5900830083b859070854972",
+    "vr-inject-cli.exe": "f973aca64fc4c8559ca2051cb6a1c710066fd8c13511cffb7ec86c9cf1b242b9",
     "profiles/814380_sekiro.json": "ab4d5f334a20dc0ac7eeaada8f14aa62e5f19a31a81c6cf3f5aaa049566091a3",
     "profiles/990080_hogwarts_legacy.json": "af2035a15ce90d00050f8e8f577e4e6b6235be5e93d334040715c63f8e8b7144",
     "profiles/1091500_cyberpunk_2077.json": "08043689cbdacc9b7add01c05b2af17186a02739d20b50dfb0c42434860d7a05",
@@ -78,7 +78,7 @@
     "profiles/892970_valheim.json": "43b3d0d793c92367fd0e8d4557649869554a3cc9d4578f153ee89871330cbcac",
     "profiles/582010_monster_hunter_world.json": "44b8106f599426de679050be70d9002da7288ec9dd9bf44dcbf8677bc4b1e3d1",
     "profiles/schema.json": "094ddf11f461ba7b6eeb81a01bbcf54c4010ffeded732f148db226798457dcdc",
-    "shaders/stereo_reprojection.hlsl": "55d64188fba9d9c86a304f9259bdba5c1eb1d40ec4371dee0bd2a6b85700790e",
+    "shaders/stereo_reprojection.hlsl": "db179f45eb87ff23dfc0fd5d5e75c2e3cc1f538439af96d125db00338463b8c0",
     "shaders/tonemap.hlsl": "a886e9369ac38e15171a03f6d55681897a2c2580e573fd5fa7d5552344a1cd5f",
     "shaders/stereo_resolve.hlsl": "b9787aa73933055a08e6ed372c7a83c0626462bb4a0f0bba9c734309b53b9dcf",
     "shaders/stereo_warp.hlsl": "0575ea5d393ac74782409acba603a8c687f271489935622de0392daa072a6c74",
@@ -89,5 +89,5 @@
     "shaders/asw_shader.hlsl": "ae77436c5869e5dcd5175bc0050f3e55f1f9abebd3aed49336867954fcee461c",
     "shaders/depth_reprojection.hlsl": "eb0e672fdaebaea0e1afa542990770b5d7d5044a18156f983623478c9e0541f5"
   },
-  "signature": "45e16afb1ad87ca6437367a74e09b530f5e657e876de444d694da50b8e35a4a5c652ab1827db97a6e64c045afed5e748a16c2d8f209f59bf6828a30cb1b19801"
+  "signature": "b8cb7a6f9735cbbb1d025838d899f011d75147e78bda546822a7dc9135170025fa5658f8e7a4620e587578b4d6aa1d1c9447f0a4182ce82eb4ea9205f5903201"
 }

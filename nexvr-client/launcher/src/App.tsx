@@ -483,7 +483,7 @@ export default function App() {
             fontFamily: 'var(--ag-font-mono)', letterSpacing: '0.05em', 
             fontWeight: 800
           }}>
-            v{updateStatus?.version ? updateStatus.version.replace(/^v/, '') : '0.1.98'}
+            v{updateStatus?.version ? updateStatus.version.replace(/^v/, '') : '0.1.99'}
           </span>
           <div style={{ display: 'flex', gap: 2, height: '100%', WebkitAppRegion: 'no-drag' } as any}>
              {(['library', 'settings', 'about'] as const).map(tab => {

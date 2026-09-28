@@ -100,7 +100,7 @@ export function LegalModal({
               letterSpacing: '0.04em'
             }}
           >
-            NexVR Engine v0.1.98 · Confidential Testing Guidelines
+            NexVR Engine v0.1.99 · Confidential Testing Guidelines
           </p>
         </div>
 

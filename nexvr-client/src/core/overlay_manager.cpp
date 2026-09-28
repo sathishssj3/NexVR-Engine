@@ -140,36 +140,82 @@ void OverlayManager::FeedGamepadInput(const XINPUT_GAMEPAD& pad) {
 
     ImGuiIO& io = ImGui::GetIO();
 
-    // Map XInput digital buttons to ImGui gamepad keys
+    // Map XInput digital action buttons
     io.AddKeyEvent(ImGuiKey_GamepadFaceDown, (pad.wButtons & XINPUT_GAMEPAD_A) != 0);       // A: Activate / Click
     io.AddKeyEvent(ImGuiKey_GamepadFaceRight, (pad.wButtons & XINPUT_GAMEPAD_B) != 0);      // B: Cancel / Close
     io.AddKeyEvent(ImGuiKey_GamepadFaceLeft, (pad.wButtons & XINPUT_GAMEPAD_X) != 0);       // X
     io.AddKeyEvent(ImGuiKey_GamepadFaceUp, (pad.wButtons & XINPUT_GAMEPAD_Y) != 0);         // Y
-
-    io.AddKeyEvent(ImGuiKey_GamepadDpadUp, (pad.wButtons & XINPUT_GAMEPAD_DPAD_UP) != 0);
-    io.AddKeyEvent(ImGuiKey_GamepadDpadDown, (pad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN) != 0);
-    io.AddKeyEvent(ImGuiKey_GamepadDpadLeft, (pad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) != 0);
-    io.AddKeyEvent(ImGuiKey_GamepadDpadRight, (pad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) != 0);
-
     io.AddKeyEvent(ImGuiKey_GamepadL1, (pad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER) != 0);
     io.AddKeyEvent(ImGuiKey_GamepadR1, (pad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER) != 0);
 
-    // Left analog stick navigation with deadzone
-    const float deadzone = 0.25f;
-    auto applyDeadzone = [deadzone](SHORT raw) -> float {
-        float v = static_cast<float>(raw) / 32768.0f;
-        if (v > deadzone) return (v - deadzone) / (1.0f - deadzone);
-        if (v < -deadzone) return (v + deadzone) / (1.0f - deadzone);
-        return 0.0f;
-    };
+    // Left analog stick thresholding (deflection > 40% initiates navigation)
+    const SHORT stickDeadzone = 13000;
+    bool stickUp    = pad.sThumbLY >  stickDeadzone;
+    bool stickDown  = pad.sThumbLY < -stickDeadzone;
+    bool stickLeft  = pad.sThumbLX < -stickDeadzone;
+    bool stickRight = pad.sThumbLX >  stickDeadzone;
 
-    float lx = applyDeadzone(pad.sThumbLX);
-    float ly = applyDeadzone(pad.sThumbLY);
+    // Combine D-Pad and Left Analog Stick into unified directional intents
+    bool wantUp    = ((pad.wButtons & XINPUT_GAMEPAD_DPAD_UP) != 0)    || stickUp;
+    bool wantDown  = ((pad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN) != 0)  || stickDown;
+    bool wantLeft  = ((pad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) != 0)  || stickLeft;
+    bool wantRight = ((pad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) != 0) || stickRight;
 
-    io.AddKeyAnalogEvent(ImGuiKey_GamepadLStickLeft, lx < 0.0f, -lx);
-    io.AddKeyAnalogEvent(ImGuiKey_GamepadLStickRight, lx > 0.0f, lx);
-    io.AddKeyAnalogEvent(ImGuiKey_GamepadLStickUp, ly > 0.0f, ly);
-    io.AddKeyAnalogEvent(ImGuiKey_GamepadLStickDown, ly < 0.0f, -ly);
+    // Direction ID: 0=none, 1=up, 2=down, 3=left, 4=right
+    int currentDir = 0;
+    if (wantUp) currentDir = 1;
+    else if (wantDown) currentDir = 2;
+    else if (wantLeft) currentDir = 3;
+    else if (wantRight) currentDir = 4;
+
+    static int s_activeDir = 0;
+    static auto s_lastStepTime = std::chrono::steady_clock::now();
+    static bool s_initialDelayPassed = false;
+
+    auto now = std::chrono::steady_clock::now();
+    bool shouldTriggerStep = false;
+
+    if (currentDir != 0) {
+        if (currentDir != s_activeDir) {
+            // New directional press: instant single step!
+            s_activeDir = currentDir;
+            s_lastStepTime = now;
+            s_initialDelayPassed = false;
+            shouldTriggerStep = true;
+        } else {
+            // Direction is being held down: apply console-style debounce & repeat rate
+            auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(now - s_lastStepTime).count();
+            if (!s_initialDelayPassed) {
+                if (elapsedMs >= 350) { // Initial hold delay: 350ms
+                    s_initialDelayPassed = true;
+                    s_lastStepTime = now;
+                    shouldTriggerStep = true;
+                }
+            } else {
+                if (elapsedMs >= 120) { // Subsequent repeat rate: 120ms (prevents flying past items)
+                    s_lastStepTime = now;
+                    shouldTriggerStep = true;
+                }
+            }
+        }
+    } else {
+        s_activeDir = 0;
+        s_initialDelayPassed = false;
+    }
+
+    // Send single-tick pulses to ImGui directional navigation
+    io.AddKeyEvent(ImGuiKey_GamepadDpadUp,    shouldTriggerStep && (s_activeDir == 1));
+    io.AddKeyEvent(ImGuiKey_GamepadDpadDown,  shouldTriggerStep && (s_activeDir == 2));
+    io.AddKeyEvent(ImGuiKey_GamepadDpadLeft,  shouldTriggerStep && (s_activeDir == 3));
+    io.AddKeyEvent(ImGuiKey_GamepadDpadRight, shouldTriggerStep && (s_activeDir == 4));
+
+    // Also pass analog coordinates for sliders that support fine dragging
+    float lx = static_cast<float>(pad.sThumbLX) / 32768.0f;
+    float ly = static_cast<float>(pad.sThumbLY) / 32768.0f;
+    io.AddKeyAnalogEvent(ImGuiKey_GamepadLStickLeft, lx < -0.2f, lx < -0.2f ? -lx : 0.0f);
+    io.AddKeyAnalogEvent(ImGuiKey_GamepadLStickRight, lx > 0.2f, lx > 0.2f ? lx : 0.0f);
+    io.AddKeyAnalogEvent(ImGuiKey_GamepadLStickUp, ly > 0.2f, ly > 0.2f ? ly : 0.0f);
+    io.AddKeyAnalogEvent(ImGuiKey_GamepadLStickDown, ly < -0.2f, ly < -0.2f ? -ly : 0.0f);
 
     // If B button is pressed when no active input field/widget has focus, close the overlay
     static bool s_lastB = false;
@@ -649,11 +695,50 @@ void OverlayManager::Render() {
         ImGui::Separator();
         ImGui::Spacing();
 
+        float availWidth = ImGui::GetContentRegionAvail().x;
+        float btnWidth = (availWidth - 14.0f) * 0.5f;
+
+        // Reset to Defaults Button (Requested by User)
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.35f, 0.18f, 0.22f, 0.85f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.55f, 0.22f, 0.28f, 0.95f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.70f, 0.25f, 0.32f, 1.00f));
+
+        if (ImGui::Button("  ↺  Reset to Recommended Defaults  ", ImVec2(btnWidth, 46))) {
+            cfg.ipd = 0.064f;
+            cfg.convergence = 10.0f;
+            cfg.vrScaleFactor = 100.0f;
+            cfg.resolutionScale = 1.0f;
+            cfg.contrast = 1.0f;
+            cfg.saturation = 1.0f;
+            cfg.brightness = 1.0f;
+            cfg.srgbCorrection = true;
+            cfg.useRecommendedResolution = true;
+            cfg.depthSubmission = false;
+            cfg.motionAimSensitivity = 1.0f;
+            cfg.rawInputMode = true;
+            cfg.enableNeuralInpainter = true;
+            cfg.curvedHud = true;
+            cfg.hudDistance = 1.8f;
+            cfg.hudCurvature = 0.35f;
+            cfg.comfortVignette = true;
+            cfg.vignetteStrength = 0.6f;
+            cfg.vignetteOnset = 45.0f;
+            cfg.cutsceneTheater = true;
+            cfg.theaterDistance = 5.0f;
+            cfg.theaterCutThreshold = 120.0f;
+            cfg.horizonLock = false;
+            cfg.horizonLockStrength = 0.85f;
+            cfgManager->Save();
+        }
+        ImGui::PopStyleColor(3);
+
+        ImGui::SameLine();
+
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.05f, 0.45f, 0.75f, 0.90f));
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.08f, 0.58f, 0.95f, 1.00f));
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.00f, 0.75f, 1.00f, 1.00f));
 
-        if (ImGui::Button("  ▶  Resume Game (Press B / L3+R3 / HOME to close)  ", ImVec2(-1, 48))) {
+        if (ImGui::Button("  ▶  Resume Game (B / L3+R3 / HOME)  ", ImVec2(btnWidth, 46))) {
             m_isVisible = false;
         }
 
