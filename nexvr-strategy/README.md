@@ -26,6 +26,7 @@
 * [`02-research/interview-synthesis.md`](02-research/interview-synthesis.md) — Findings from 12 gamer interviews and 5 closed-beta hardware tests.
 
 ### 4. 🎯 Strategy & Positioning
+* [`03-strategy/winning-execution-plan.md`](03-strategy/winning-execution-plan.md) — 🏆 **The Winning Execution Plan** (The master operating blueprint: 3 non-negotiable laws, competitive annihilation, 4-phase attack, daily 4-2-2 rhythm, and emergency protocols).
 * [`03-strategy/google-style-org-and-hiring-playbook.md`](03-strategy/google-style-org-and-hiring-playbook.md) — 🏛️ **Google-Style Org Architecture & Engineering Hiring Playbook** (The 6 core sectors, exact programmer profiles, L3–L8 leveling, and 10-year headcount plan).
 * [`03-strategy/year-by-year-master-goals.md`](03-strategy/year-by-year-master-goals.md) — 🎯 **Year-by-Year Master Goals (2026–2036)** (The North Star goal, Kill/Pass metric, quarterly priorities, and anti-goals for all 10 years).
 * [`03-strategy/lean-canvas.md`](03-strategy/lean-canvas.md) — 1-page business engine (problem, solution, unfair advantage, revenue).
