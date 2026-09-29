@@ -1156,17 +1156,29 @@ body::-webkit-scrollbar {
     box-sizing: border-box;
   }
   .d1 {
-    font-size: clamp(1.75rem, 8.5vw, 2.65rem) !important;
-    line-height: 1.02 !important;
+    font-size: clamp(2.35rem, 11vw, 4.25rem) !important;
+    line-height: 0.94 !important;
+    letter-spacing: -0.035em !important;
     max-width: 100%;
-    word-break: break-word;
-    overflow-wrap: break-word;
+    margin-bottom: 0.2rem;
   }
   .d1 .ghost {
     max-width: 100%;
+    white-space: nowrap;
   }
   .ghost::before {
     display: none !important;
+  }
+  .hero .lede {
+    font-size: 0.85rem !important;
+    line-height: 1.55 !important;
+    max-width: 42ch !important;
+    margin: 1.15rem auto 0 !important;
+    color: #8c8c94 !important;
+  }
+  .hero .btn-row {
+    margin-top: 1.5rem !important;
+    gap: 0.65rem !important;
   }
   .split {
     grid-template-columns: 1fr !important;
@@ -1519,13 +1531,30 @@ body::-webkit-scrollbar {
     --gutter: 1.15rem;
   }
   .d1 {
-    font-size: clamp(1.6rem, 7.8vw, 2.25rem) !important;
-    line-height: 1.05 !important;
-    word-break: break-word;
-    overflow-wrap: break-word;
+    font-size: clamp(2.2rem, 11.4vw, 3.25rem) !important;
+    line-height: 0.94 !important;
+    letter-spacing: -0.035em !important;
+    max-width: 100%;
+    margin-bottom: 0.15rem;
   }
   .d1 .ghost {
     max-width: 100%;
+    white-space: nowrap;
+  }
+  .hero .lede {
+    font-size: 0.8rem !important;
+    line-height: 1.5 !important;
+    max-width: 38ch !important;
+    margin: 0.95rem auto 0 !important;
+    color: #888890 !important;
+  }
+  .hero .btn-row {
+    margin-top: 1.35rem !important;
+    gap: 0.6rem !important;
+  }
+  .hero .btn-row .btn {
+    padding: 0.72rem 1.05rem !important;
+    font-size: 0.74rem !important;
   }
   .nav-in {
     height: 3.75rem;
@@ -1539,6 +1568,18 @@ body::-webkit-scrollbar {
   .brand-mark {
     width: 1.75rem;
     height: 1.75rem;
+  }
+}
+
+@media(max-width: 360px) {
+  .d1 {
+    font-size: clamp(1.95rem, 10.6vw, 2.35rem) !important;
+    line-height: 0.94 !important;
+    letter-spacing: -0.03em !important;
+  }
+  .hero .lede {
+    font-size: 0.76rem !important;
+    max-width: 34ch !important;
   }
 }
 
