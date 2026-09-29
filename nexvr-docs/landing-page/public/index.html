@@ -132,8 +132,7 @@ a{color:inherit;text-decoration:none}
    so below the 1280px cap that lands on a constant 13.1vw. The max stops it
    overflowing once the container stops growing. */
 .d1{font-family:var(--display);font-weight:700;font-size:clamp(2.1rem,13.1vw,10.3rem);
-    line-height:.9;letter-spacing:-.04em;margin:0;
-    text-shadow:0 4px 30px rgba(0,0,0,.92),0 1px 4px rgba(0,0,0,.98)}
+    line-height:.9;letter-spacing:-.04em;margin:0}
 .d2{font-family:var(--display);font-weight:700;font-size:clamp(1.95rem,4.2vw,3.25rem);
     line-height:1.02;letter-spacing:-.02em;margin:0 0 1.1rem}
 .d3{font-family:var(--display);font-weight:600;font-size:1.0625rem;
@@ -352,10 +351,6 @@ code{font-family:var(--mono)}
   padding-top:4.25rem;
   padding-bottom:2rem;
   box-sizing:border-box;
-  background: 
-    radial-gradient(ellipse 95% 75% at 50% 40%, rgba(5,5,6,0.45) 0%, rgba(5,5,6,0.78) 65%, var(--void) 100%),
-    linear-gradient(to bottom, rgba(5,5,6,0.8) 0%, rgba(5,5,6,0.2) 25%, rgba(5,5,6,0.35) 60%, var(--void) 100%),
-    url('hero-bg.png') center 28% / cover no-repeat;
 }
 /* Deliberately wider than --maxw: the title bleeds past the body column so it
    reads as the loudest thing on the page. It still lands inside the nav's
@@ -379,23 +374,15 @@ code{font-family:var(--mono)}
   text-align:center;
 }
 .hero-tag{font-family:var(--display);font-size:.7rem;font-weight:600;letter-spacing:.2em;
-          text-transform:uppercase;color:var(--white);display:inline-flex;align-items:center;
-          gap:.6rem;border:1px solid var(--edge);padding:.45rem .85rem;margin-bottom:2.2rem;
-          background:rgba(8,8,11,.75);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+          text-transform:uppercase;color:var(--muted);display:inline-flex;align-items:center;
+          gap:.6rem;border:1px solid var(--edge);padding:.45rem .8rem;margin-bottom:1.4rem;
           cursor:default;transition:border-color .3s,background .3s,transform .3s var(--ease),box-shadow .3s var(--ease)}
-.hero-tag:hover{border-color:var(--edge-hot);background:rgba(220, 20, 60,.1);
-                transform:translateY(-1px);box-shadow:0 4px 18px rgba(220, 20, 60,.2)}
+.hero-tag:hover{border-color:var(--edge-hot);background:rgba(220, 20, 60,.04);
+                transform:translateY(-1px);box-shadow:0 4px 18px rgba(220, 20, 60,.12)}
 .hero-tag b{color:var(--red);font-weight:600;display:inline-block;animation:radar-ping 2.2s cubic-bezier(.4,0,.2,1) infinite}
 @keyframes radar-ping{
   0%,100%{opacity:1;transform:scale(1);filter:drop-shadow(0 0 2px var(--red))}
   50%{opacity:.4;transform:scale(0.85);filter:drop-shadow(0 0 8px var(--red))}
-}
-
-.hero .lede{
-  max-width:58ch;
-  margin:1.4rem auto 0;
-  color:#dcdce0;
-  text-shadow:0 2px 16px rgba(0,0,0,.95),0 1px 3px rgba(0,0,0,.9);
 }
 
 /* stat rail */
