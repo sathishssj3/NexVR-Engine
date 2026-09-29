@@ -151,24 +151,14 @@ a{color:inherit;text-decoration:none}
 code{font-family:var(--mono)}
 
 /* ============================================================
-   SIGNATURE — anaglyph mis-convergence.
-   A red ghost sits behind the white text, offset horizontally,
-   then converges. This is what a wrong-IPD stereo view actually
-   looks like. Display type only, never body copy.
+   Clean solid display typography — red ghost behind titles removed
    ============================================================ */
-.ghost{position:relative;display:block;isolation:isolate}
-.ghost>span{position:relative;z-index:2;display:block}
-.ghost::before{
-  content:attr(data-ghost);position:absolute;inset:0;z-index:1;
-  color:var(--red);opacity:.62;pointer-events:none;
-  transform:translate3d(var(--conv,4px),0,0);
-  transition:transform 1.15s var(--ease),opacity 1.15s var(--ease);
-  will-change:transform;
+.ghost{position:relative;display:block}
+.ghost>span{position:relative;display:block}
+.ghost::before, .ghost.pre::before{
+  display:none !important;
+  content:none !important;
 }
-.ghost.pre::before{transform:translate3d(var(--conv-pre,18px),0,0);opacity:.9}
-/* The hero title runs ~2.5x the size of a section head, so a fixed 4px offset
-   reads as a hairline there. Scale it up to keep the mis-convergence legible. */
-.d1 .ghost{--conv:clamp(3px,.55vw,8px);--conv-pre:clamp(12px,2.4vw,34px)}
 
 /* ---------- nav ---------- */
 .nav{position:fixed;inset:0 0 auto;z-index:60;transition:background .35s,border-color .35s,backdrop-filter .35s}
@@ -1139,12 +1129,10 @@ body::-webkit-scrollbar {
     overflow-wrap: break-word;
   }
   .d1 .ghost {
-    --conv: 2px !important;
-    --conv-pre: 8px !important;
     max-width: 100%;
   }
   .ghost::before {
-    max-width: 100%;
+    display: none !important;
   }
   .split {
     grid-template-columns: 1fr !important;
@@ -1498,8 +1486,7 @@ body::-webkit-scrollbar {
     overflow-wrap: break-word;
   }
   .d1 .ghost {
-    --conv: 2px !important;
-    --conv-pre: 6px !important;
+    max-width: 100%;
   }
   .nav-in {
     height: 3.75rem;
@@ -1519,7 +1506,7 @@ body::-webkit-scrollbar {
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}
   .rv{opacity:1;transform:none}
-  .ghost::before{transform:translate3d(3px,0,0)!important}
+  .ghost::before{display:none!important}
   .hero{min-height:auto}
   .hero-in{position:static;height:auto;padding-block:8rem 4rem}
   .hero-tag b{animation:none!important}
@@ -2433,25 +2420,7 @@ document.querySelectorAll('.rv').forEach((el,i)=>{
   io.observe(el);
 });
 
-/* ---------- signature: converge the anaglyph ghost on load ---------- */
-addEventListener('load', ()=>{
-  setTimeout(()=>document.querySelectorAll('.ghost.pre')
-    .forEach((g,i)=>setTimeout(()=>g.classList.remove('pre'), i*130)), 180);
-});
-const ghostIO = new IntersectionObserver((es)=>{
-  es.forEach(e=>{
-    if(!e.isIntersecting) return;
-    e.target.classList.add('pre');
-    requestAnimationFrame(()=>requestAnimationFrame(()=>e.target.classList.remove('pre')));
-    ghostIO.unobserve(e.target);
-  });
-},{rootMargin:'0px 0px -20% 0px'});
-/* Every section head carrying the signature, including the ones added later —
-   scoped by section so the hero's load-time convergence is not re-triggered. */
-document.querySelectorAll(
-  '#pipeline .ghost, #backends .ghost, #games .ghost, ' +
-  '#engine .ghost, #setup .ghost, #faq .ghost, #get .ghost'
-).forEach(g=>ghostIO.observe(g));
+
 
 /* ---------- pipeline rail: line grows down and touches each box to turn it red ---------- */
 {
