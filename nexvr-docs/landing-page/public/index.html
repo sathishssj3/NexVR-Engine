@@ -340,16 +340,42 @@ code{font-family:var(--mono)}
 .hero .btn-row{justify-content:center}
 
 /* ---------- hero ---------- */
-.hero{min-height:100vh;position:relative;display:grid;align-items:center}
+.hero{
+  min-height:100vh;
+  min-height:100svh;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  padding-top:4.25rem;
+  padding-bottom:2rem;
+  box-sizing:border-box;
+}
 /* Deliberately wider than --maxw: the title bleeds past the body column so it
    reads as the loudest thing on the page. It still lands inside the nav's
    bounds, so nothing looks misaligned. */
-.hero-in{width:100%;max-width:1560px;margin-inline:auto;
-         padding:5.5rem var(--gutter) 4rem;text-align:center}
-.hero-copy{max-width:none}
+.hero-in{
+  width:100%;
+  max-width:1560px;
+  margin-inline:auto;
+  padding:0 var(--gutter);
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+.hero-copy{
+  max-width:none;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+}
 .hero-tag{font-family:var(--display);font-size:.7rem;font-weight:600;letter-spacing:.2em;
           text-transform:uppercase;color:var(--muted);display:inline-flex;align-items:center;
-          gap:.6rem;border:1px solid var(--edge);padding:.45rem .8rem;margin-bottom:1.9rem;
+          gap:.6rem;border:1px solid var(--edge);padding:.45rem .8rem;margin-bottom:1.4rem;
           cursor:default;transition:border-color .3s,background .3s,transform .3s var(--ease),box-shadow .3s var(--ease)}
 .hero-tag:hover{border-color:var(--edge-hot);background:rgba(220, 20, 60,.04);
                 transform:translateY(-1px);box-shadow:0 4px 18px rgba(220, 20, 60,.12)}
@@ -359,10 +385,18 @@ code{font-family:var(--mono)}
   50%{opacity:.4;transform:scale(0.85);filter:drop-shadow(0 0 8px var(--red))}
 }
 
-/* stat rail under the hero copy */
-.rail{display:flex;flex-wrap:wrap;gap:0;justify-content:center;margin:3.5rem auto 0;
-      width:fit-content;border-top:1px solid var(--edge)}
-.rail div{padding:1.15rem clamp(1.25rem,3vw,2.25rem) 0;border-right:1px solid var(--edge);
+/* stat rail */
+.rail-bar{
+  width:100%;
+  max-width:var(--maxw);
+  margin:5rem auto 4rem;
+  padding:0 var(--gutter);
+  display:flex;
+  justify-content:center;
+}
+.rail{display:flex;flex-wrap:wrap;gap:0;justify-content:center;margin:0 auto;
+      width:fit-content;border-top:1px solid var(--edge);border-bottom:1px solid var(--edge)}
+.rail div{padding:1.15rem clamp(1.25rem,3vw,2.25rem);border-right:1px solid var(--edge);
           cursor:default;transition:transform .35s var(--ease),background .35s,border-color .35s}
 .rail div:hover{transform:translateY(-3px);background:rgba(255,255,255,.02)}
 .rail div:last-child{border-right:0}
@@ -374,7 +408,7 @@ code{font-family:var(--mono)}
 .rail div:hover span{color:var(--white)}
 
 @media(max-width:960px){
-  .hero-in{padding-block:7.5rem 4.5rem}
+  .hero{padding-top:4.25rem;padding-bottom:2rem}
 }
 /* Mobile hero and rail layout handled in dedicated mobile stylesheet below */
 
@@ -1301,8 +1335,13 @@ body::-webkit-scrollbar {
   .section {
     padding-block: clamp(3.5rem, 8vw, 5.5rem);
   }
+  .hero {
+    min-height: 100vh;
+    padding-top: 4.25rem;
+    padding-bottom: 1.5rem;
+  }
   .hero-in {
-    padding: 5.5rem var(--gutter) 3.5rem;
+    padding: 0 var(--gutter);
   }
 
   /* Stat Rail Mobile Cockpit */
@@ -1507,8 +1546,6 @@ body::-webkit-scrollbar {
   *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}
   .rv{opacity:1;transform:none}
   .ghost::before{display:none!important}
-  .hero{min-height:auto}
-  .hero-in{position:static;height:auto;padding-block:8rem 4rem}
   .hero-tag b{animation:none!important}
   .acc details[open] .a{animation:none!important}
   .card:hover,.flow>div:hover,.legend>div:hover,.btn:hover{transform:none!important}
@@ -1591,16 +1628,19 @@ body::-webkit-scrollbar {
         <a class="btn btn-primary btn-notify" href="#waitForm"><span>Notify me</span></a>
         <a class="btn" href="#pipeline"><span>See how it works</span></a>
       </div>
-
-      <div class="rail">
-        <div><b class="mono">3</b><span>Graphics APIs</span></div>
-        <div><b class="mono">6</b><span>Shipped profiles</span></div>
-        <div><b class="mono">11.1<small>ms</small></b><span>Frame budget</span></div>
-      </div>
     </div>
 
   </div>
 </header>
+
+<!-- ============ STAT RAIL ============ -->
+<div class="rail-bar">
+  <div class="rail">
+    <div><b class="mono">3</b><span>Graphics APIs</span></div>
+    <div><b class="mono">6</b><span>Shipped profiles</span></div>
+    <div><b class="mono">11.1<small>ms</small></b><span>Frame budget</span></div>
+  </div>
+</div>
 
 <!-- ============ PIPELINE ============ -->
 <section class="section" id="pipeline">
