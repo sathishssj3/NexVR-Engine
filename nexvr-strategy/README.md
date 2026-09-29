@@ -43,6 +43,7 @@
 * [`04-brand/brand-personality.md`](04-brand/brand-personality.md) — Magician + Ruler archetypes and high-tech cockpit design tokens.
 
 ### 6. 📦 Product & Roadmaps
+* [`05-product/surgical-reverse-engineering-and-aob-self-healing-architecture.md`](05-product/surgical-reverse-engineering-and-aob-self-healing-architecture.md) — ⚡ **Surgical Reverse-Engineering & AOB Self-Healing Architecture** (The "Surgical Triad" breaking the brute-force cloud LLM bottleneck: local differential memory probes, x86_64 CPU hardware breakpoint traps (DR0-DR3), 2KB micro-LLM prompts, and 3ms offline self-healing AOB pattern masking).
 * [`05-product/autonomous-cloud-ai-profiler-and-defensible-moat.md`](05-product/autonomous-cloud-ai-profiler-and-defensible-moat.md) — 🧠 **Autonomous Cloud AI Profiler & Defensible Moat** (Qwen-2.5-Coder + Soup CLI, hybrid synthetic dataset, exact $25 training cost, 5-day timeline, and the 5-layer moat against raw AI wrappers).
 * [`05-product/sdk-to-studio-production-roadmap-and-competitive-landscape.md`](05-product/sdk-to-studio-production-roadmap-and-competitive-landscape.md) — 🗺️ **SDK-to-Studio Production Roadmap & Competitive Landscape** (Blue ocean competitive analysis, overcoming studio inaction, and the 4-phase 8-week production roadmap to enterprise launch).
 * [`05-product/future-products-and-google-rd-lifecycle.md`](05-product/future-products-and-google-rd-lifecycle.md) — 🏛️ **Future Products Matrix & Google R&D Lifecycle** (The 7 products beyond injector/SDK, Heilmeier Catechism, TRL 1–9, pre-mortems, RFCs, and 4-tier dogfooding).
