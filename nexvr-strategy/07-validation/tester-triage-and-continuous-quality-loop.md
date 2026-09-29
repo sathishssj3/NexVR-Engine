@@ -145,3 +145,23 @@ When an issue is reported, follow this 5-stage loop:
 * **VIP**: Very Important Person
 * **VR**: Virtual Reality
 * **XInput**: Xbox Input API for Windows
+
+
+---
+
+
+```mermaid
+flowchart TD
+    subgraph Current["Vulnerable Model (Unauthorized DLL Injection)"]
+        A1[Memory Hooking] --> B1[AV Flags & SmartScreen]
+        A1 --> B2[Anti-Cheat Bans]
+        A1 --> B3[Patch Churn & Broken Pointers]
+        A1 --> B4[DMCA & Publisher Lawsuits]
+    end
+
+    subgraph Permanent["The Permanent Unified Architecture"]
+        C1["Layer 1: OpenXR API Layer & Universal SBS"] --> D1["100x TAM (XR Glasses + PCVR)<br/>0 Motion Sickness (Spatial 3D)"]
+        C2["Layer 2: ReShade Model & Heuristic Matrices"] --> D2["No Static Offsets (Linear Algebra Invariants)<br/>Whitelisted Proxy Architecture"]
+        C3["Layer 3: B2B NexVR SDK (nexvr_sdk.h)"] --> D3["0 Anti-Cheat Risk<br/>0 DMCA Exposure<br/>Clean Enterprise Revenue"]
+    end
+```
