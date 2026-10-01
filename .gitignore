@@ -85,6 +85,8 @@ dxc.zip
 
 # ── ML Models & ONNX (large binaries, not in repo) ──────────
 models/
+checkpoints/
+data/*.jsonl
 *.onnx
 *.onnx.data
 *.pt
@@ -113,10 +115,10 @@ agentdb.rvf
 CLAUDE.md
 
 # ── Obsolete / Removed Directories ──────────────────────────
-ai_matrix_classifier/
-ai_pipeline/
-dev/
-test_app/
+/ai_matrix_classifier/
+/ai_pipeline/
+/dev/
+/test_app/
 
 build_baseline/
 Testing/
