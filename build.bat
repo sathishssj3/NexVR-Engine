@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo =======================================================
-echo Building NexVR Engine (Release x64) Monorepo
+echo Building Stereix Engine (Release x64) Monorepo
 echo =======================================================
 
 :: Locate VsDevCmd.bat via vswhere if not already in developer environment

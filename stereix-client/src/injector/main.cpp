@@ -1,5 +1,5 @@
 // ============================================================================
-// main.cpp – Standalone DLL injector for NexVR Engine
+// main.cpp – Standalone DLL injector for Stereix Engine
 // ============================================================================
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -163,7 +163,7 @@ bool InjectDll(DWORD pid, const std::string& dllPath) {
 
     BOOL isWow64 = FALSE;
     if (::IsWow64Process(hProcess, &isWow64) && isWow64) {
-        PrintErr("Target process is 32-bit (x86). NexVR Engine only supports 64-bit (x64) games.");
+        PrintErr("Target process is 32-bit (x86). Stereix Engine only supports 64-bit (x64) games.");
         ::CloseHandle(hProcess);
         return false;
     }
@@ -409,9 +409,10 @@ int main(int argc, char* argv[]) {
     }
 
     // S3.3: Origin Restriction (Environment variable token and parent process check)
-    const char* envToken = std::getenv("NEXVR_AUTH_TOKEN");
+    const char* envToken = std::getenv("STEREIX_AUTH_TOKEN");
+    if (!envToken) envToken = std::getenv("NEXVR_AUTH_TOKEN");
     if (!envToken || std::string(envToken).empty()) {
-        PrintErr("[ERROR] Unauthorized origin. Missing security token. Please launch via the NexVR Engine UI.");
+        PrintErr("[ERROR] Unauthorized origin. Missing security token. Please launch via the Stereix Engine UI.");
         return 13;
     }
 
