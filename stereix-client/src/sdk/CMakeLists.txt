@@ -30,8 +30,8 @@ target_include_directories(nexvr_sdk
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
-# Switches NEXVR_API from dllimport to dllexport. Only ever set here.
-target_compile_definitions(nexvr_sdk PRIVATE NEXVR_SDK_IMPLEMENTATION)
+# Switches NEXVR_API and STEREIX_API from dllimport to dllexport. Only ever set here.
+target_compile_definitions(nexvr_sdk PRIVATE NEXVR_SDK_IMPLEMENTATION STEREIX_SDK_IMPLEMENTATION)
 
 target_link_libraries(nexvr_sdk
     PRIVATE nexvr_warnings
@@ -45,3 +45,14 @@ target_link_libraries(nexvr_sdk
 )
 
 set_target_properties(nexvr_sdk PROPERTIES FOLDER "SDK")
+
+# S1.2: Generate stereix_sdk.dll & stereix_sdk.lib for seamless B2B partner linking
+add_custom_command(TARGET nexvr_sdk POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:nexvr_sdk>"
+        "$<TARGET_FILE_DIR:nexvr_sdk>/stereix_sdk.dll"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_LINKER_FILE:nexvr_sdk>"
+        "$<TARGET_LINKER_FILE_DIR:nexvr_sdk>/stereix_sdk.lib"
+    COMMENT "Generating stereix_sdk.dll and stereix_sdk.lib alias binaries"
+)

@@ -219,6 +219,46 @@ TEST_F(SdkImportsTest, ExportsAllInputAndHapticSymbols) {
     }
 }
 
+TEST_F(SdkImportsTest, ExportsAllStereixSymbols) {
+    const std::vector<std::string> stereixExports = {
+        "Stereix_GetGraphicsRequirements",
+        "Stereix_GetGraphicsRequirementsDX12",
+        "Stereix_InitializeDX11",
+        "Stereix_InitializeDX12",
+        "Stereix_WaitFrame",
+        "Stereix_SubmitFrameDX11",
+        "Stereix_SubmitFrameWithDepthDX11",
+        "Stereix_SupportsDepthSubmission",
+        "Stereix_SubmitFrameDX12",
+        "Stereix_SubmitFrameWithDepthDX12",
+        "Stereix_SyncInput",
+        "Stereix_GetControllerState",
+        "Stereix_TriggerHaptic",
+        "Stereix_StopHaptic",
+        "Stereix_Shutdown",
+        "Stereix_GetLastErrorDetail"
+    };
+
+    for (const auto& sym : stereixExports) {
+        EXPECT_TRUE(pe.exports.contains(sym)) << "Missing Stereix export symbol: " << sym;
+    }
+}
+
+TEST_F(SdkImportsTest, StereixSdkDllAliasBinaryExistsAndMatchesExports) {
+    std::string nexvrPath = FindSdkDll();
+    fs::path p(nexvrPath);
+    fs::path stereixPath = p.parent_path() / "stereix_sdk.dll";
+    ASSERT_TRUE(fs::exists(stereixPath)) << "stereix_sdk.dll alias binary must exist next to nexvr_sdk.dll";
+
+    PeAnalysis stereixPe = AnalyzePeFile(stereixPath.string());
+    ASSERT_TRUE(stereixPe.valid) << "Failed to parse PE headers of stereix_sdk.dll";
+
+    EXPECT_TRUE(stereixPe.exports.contains("Stereix_SubmitFrameDX11"));
+    EXPECT_TRUE(stereixPe.exports.contains("Stereix_SubmitFrameDX12"));
+    EXPECT_TRUE(stereixPe.exports.contains("Stereix_WaitFrame"));
+    EXPECT_TRUE(stereixPe.exports.contains("NexVR_SubmitFrameDX11"));
+}
+
 // ===========================================================================
 // Import Hygiene Tests (Purity & Anti-Cheat Safety)
 // ===========================================================================
