@@ -32,6 +32,7 @@ echo.
 echo [4/4] Deploying to Cloudflare Edge CDN (2-3 seconds)...
 cd stereix-docs\landing-page
 call npx wrangler pages deploy public --project-name=stereix-engine --commit-dirty=true
+call npx wrangler pages deploy public --project-name=nexvr-engine --commit-dirty=true
 cd ..\..
 
 echo.

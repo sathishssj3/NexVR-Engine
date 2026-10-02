@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "wrangler pages dev --kv WAITLIST --d1 ANALYTICS --port 8788",
-    "deploy": "wrangler pages deploy",
+    "deploy": "wrangler pages deploy public --project-name=stereix-engine --commit-dirty=true",
     "waitlist:list": "wrangler kv key list --binding WAITLIST",
     "preview": "wrangler pages dev",
     "db:init": "wrangler d1 execute stereix-analytics --local --file=./schema.sql",
