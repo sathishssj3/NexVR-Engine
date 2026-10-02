@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo ========================================================
-echo   NexVR Engine -- Cloudflare Edge OTA Deployer
+echo   Stereix Engine -- Cloudflare Edge OTA Deployer
 echo   (100%% Free, Zero Egress Fees, Global Edge CDN)
 echo ========================================================
 echo.
@@ -31,13 +31,13 @@ node scripts/sync_assets.js
 echo.
 echo [4/4] Deploying to Cloudflare Edge CDN (2-3 seconds)...
 cd nexvr-docs\landing-page
-call npx wrangler pages deploy public --project-name=nexvr-engine --commit-dirty=true
+call npx wrangler pages deploy public --project-name=stereix-engine --commit-dirty=true
 cd ..\..
 
 echo.
 echo ========================================================
 echo   SUCCESS! Hotfix is LIVE on Cloudflare Edge!
-echo   URL: https://nexvr-engine.pages.dev/updates/manifest.json
+echo   URL: https://stereix-engine.pages.dev/updates/manifest.json
 echo   - 0 Egress Bandwidth Fees
 echo   - Instant 1-second global download for all testers
 echo   - No Git commits or repository bloat

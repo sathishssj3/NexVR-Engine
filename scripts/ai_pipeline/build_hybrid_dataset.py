@@ -28,15 +28,15 @@ def build_dataset(
     struct_count: int = 3500,
     pointer_count: int = 2500,
     negative_count: int = 2000,
-    train_path: str = "data/nexvr_train_cot.jsonl",
-    val_path: str = "data/nexvr_val_cot.jsonl",
+    train_path: str = "data/stereix_train_cot.jsonl",
+    val_path: str = "data/stereix_val_cot.jsonl",
     val_ratio: float = 0.10,
     seed: int = 42
 ):
     random.seed(seed)
     total_requested = struct_count + pointer_count + negative_count
     print("=" * 70)
-    print(f" NexVR Engine: 8,000-Sample Hybrid AI Dataset Generator")
+    print(f" Stereix Engine: 8,000-Sample Hybrid AI Dataset Generator")
     print(f" Target: {total_requested} Total Samples (Train/Val Split = {1.0 - val_ratio:.0%} / {val_ratio:.0%})")
     print("=" * 70)
     
@@ -104,8 +104,8 @@ if __name__ == "__main__":
     parser.add_argument("--structs", type=int, default=3500, help="Number of Component A structs")
     parser.add_argument("--pointers", type=int, default=2500, help="Number of Component B pointer chains")
     parser.add_argument("--negatives", type=int, default=2000, help="Number of Component C hard negatives")
-    parser.add_argument("--train-out", type=str, default="data/nexvr_train_cot.jsonl", help="Train output path")
-    parser.add_argument("--val-out", type=str, default="data/nexvr_val_cot.jsonl", help="Val output path")
+    parser.add_argument("--train-out", type=str, default="data/stereix_train_cot.jsonl", help="Train output path")
+    parser.add_argument("--val-out", type=str, default="data/stereix_val_cot.jsonl", help="Val output path")
     parser.add_argument("--val-ratio", type=float, default=0.10, help="Validation set split ratio")
     
     args = parser.parse_args()

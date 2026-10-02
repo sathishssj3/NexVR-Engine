@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NexVR LinkedIn Banner - Sathish</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      width: 1584px;
+      height: 396px;
+      overflow: hidden;
+      background-color: #050506;
+      background: 
+        /* Vivid Crimson Luminous Aura on right side */
+        radial-gradient(ellipse 70% 120% at 86% 50%, rgba(255, 35, 65, 0.46) 0%, rgba(200, 15, 45, 0.28) 38%, transparent 75%),
+        /* Bright Ambient Red Floor Glow */
+        radial-gradient(ellipse 65% 90% at 45% 105%, rgba(220, 20, 55, 0.25) 0%, transparent 62%),
+        /* Deeper rich charcoal/crimson foundation */
+        linear-gradient(135deg, #16070B 0%, #080507 48%, #030204 100%);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: #F2F2F3;
+      position: relative;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Subtle edge boundary matching landing page --edge */
+    .outer-frame {
+      position: absolute;
+      inset: 14px;
+      border: 1px solid rgba(83, 18, 18, 0.808);
+      border-radius: 4px;
+      pointer-events: none;
+    }
+
+    /* Subtle corner registration markers matching NexVR launcher */
+    .corner-mark {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-color: rgb(150, 36, 60);
+      border-style: solid;
+      border-width: 2px 0 0 2px;
+      pointer-events: none;
+    }
+    .cm-tl { top: 18px; left: 18px; border-width: 1px 0 0 1px; }
+    .cm-tr { top: 18px; right: 18px; border-width: 1px 0 0 1px; transform: rotate(90deg); }
+    .cm-bl { bottom: 18px; left: 18px; border-width: 1px 0 0 1px; transform: rotate(-90deg); }
+    .cm-br { bottom: 18px; right: 18px; border-width: 1px 0 0 1px; transform: rotate(180deg); }
+
+    /* Left avatar clearance zone label (ultra-subtle) */
+    .system-label {
+      position: absolute;
+      bottom: 26px;
+      left: 36px;
+      font-family: 'Chakra Petch', system-ui, sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      color: #b1b1b5;
+      text-transform: uppercase;
+    }
+
+    /* Main Flex Container on the right side */
+    .banner-right-wrapper {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 75px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 28px;
+    }
+
+    /* Text Block: Strictly Right-Aligned */
+    .content-block {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      text-align: right;
+    }
+
+    /* First Name Only: SATHISH in iconic Chakra Petch */
+    .name-heading {
+      font-family: 'Chakra Petch', system-ui, sans-serif;
+      font-size: 74px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      line-height: 1.0;
+      color: #FFFFFF;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    /* Role & Company */
+    .role-line {
+      font-family: 'Chakra Petch', system-ui, sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: #f4f4f4;
+      margin-bottom: 22px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .role-sep {
+      color: #DC143C;
+      font-weight: 700;
+      font-size: 19px;
+    }
+    .company-highlight {
+      color: #FFFFFF;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+    }
+
+    /* Contact & Details Row */
+    .contact-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: #bebdbd;
+      letter-spacing: 0.02em;
+    }
+    .contact-item {
+      color: #bebdbd;
+    }
+    .contact-sep {
+      color: #3A3C46;
+      font-weight: 300;
+    }
+    .contact-link {
+      color: #bebdbd;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    /* Iconic NexVR Vertical Red Bar - Pure Solid Matte (No glow) */
+    .iconic-red-bar {
+      width: 5px;
+      height: 168px;
+      background: linear-gradient(180deg, #FF1A1A 0%, #DC143C 55%, #8B0021 100%);
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <!-- Outer subtle border frame -->
+  <div class="outer-frame"></div>
+
+  <!-- Corner registration accents -->
+  <div class="corner-mark cm-tl"></div>
+  <div class="corner-mark cm-tr"></div>
+  <div class="corner-mark cm-bl"></div>
+  <div class="corner-mark cm-br"></div>
+
+  <!-- Left Bottom Watermark (Safe from profile avatar) -->
+  <div class="system-label">MESMERAN LAB // SPATIAL COMPUTING &amp; AI RUNTIME</div>
+
+  <!-- Right-Aligned Profile Header + Iconic Red Bar -->
+  <div class="banner-right-wrapper">
+    <div class="content-block">
+      <!-- First Name Only -->
+      <h1 class="name-heading">SATHISH</h1>
+
+      <!-- Founder & Systems Architect | Stereix Engine -->
+      <div class="role-line">
+        <span>Founder &amp; Systems Architect</span>
+        <span class="role-sep">|</span>
+        <span class="company-highlight">Mesmeran Lab &bull; Stereix Engine</span>
+      </div>
+
+      <!-- Contact Info & Landing Page Link -->
+      <div class="contact-row">
+        <span class="contact-item">+91 6383349875</span>
+        <span class="contact-sep">|</span>
+        <span class="contact-item">sathish6383349@gmail.com</span>
+        <span class="contact-sep">|</span>
+        <span class="contact-link">stereix-engine.pages.dev</span>
+      </div>
+    </div>
+
+    <!-- Iconic Matte Red Bar on the Right Side -->
+    <div class="iconic-red-bar"></div>
+  </div>
+</body>
+</html>

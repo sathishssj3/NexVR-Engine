@@ -59,10 +59,11 @@ export interface UpdateStatus {
 }
 
 const MANIFEST_URLS = [
+  'https://stereix-engine.pages.dev/updates/manifest.json',
   'https://nexvr-engine.pages.dev/updates/manifest.json',
-  'https://cdn.jsdelivr.net/gh/sathishssj3/NexVR-Engine@main/updates/manifest.json',
-  'https://fastly.jsdelivr.net/gh/sathishssj3/NexVR-Engine@main/updates/manifest.json',
-  'https://gcore.jsdelivr.net/gh/sathishssj3/NexVR-Engine@main/updates/manifest.json',
+  'https://cdn.jsdelivr.net/gh/sathishssj3/Stereix-Engine@main/updates/manifest.json',
+  'https://fastly.jsdelivr.net/gh/sathishssj3/Stereix-Engine@main/updates/manifest.json',
+  'https://raw.githubusercontent.com/sathishssj3/Stereix-Engine/main/updates/manifest.json',
   'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine/main/updates/manifest.json',
   'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine-Releases/main/updates/manifest.json',
 ];

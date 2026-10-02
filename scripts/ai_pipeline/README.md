@@ -29,8 +29,8 @@ python scripts/ai_pipeline/build_hybrid_dataset.py
 ```
 
 ### Outputs Generated in `data/`:
-* `data/nexvr_train_cot.jsonl`: **7,200 verified training samples** (34.3 MB)
-* `data/nexvr_val_cot.jsonl`: **800 verified validation samples** (3.8 MB)
+* `data/stereix_train_cot.jsonl`: **7,200 verified training samples** (34.3 MB)
+* `data/stereix_val_cot.jsonl`: **800 verified validation samples** (3.8 MB)
 * **Pre-Flight Validation**: 100% pass rate, valid JSON schema, strict token bounds (589 to 828 tokens, average 733 tokens), and verified AOB hex byte signatures.
 
 ---

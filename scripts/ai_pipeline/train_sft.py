@@ -56,9 +56,9 @@ model = FastLanguageModel.get_peft_model(
 )
 
 # 5. Load & Filter Dataset (Pre-Flight Guard)
-dataset = load_dataset("json", data_files={"train": "data/nexvr_train_cot.jsonl"})
+dataset = load_dataset("json", data_files={"train": "data/stereix_train_cot.jsonl"})
 train_data = dataset["train"].filter(lambda x: len(tokenizer.encode(x["text"])) <= MAX_SEQ_LENGTH)
-print(f"[NexVR] Verified {len(train_data)} samples within {MAX_SEQ_LENGTH} token limit.")
+print(f"[Stereix Engine] Verified {len(train_data)} samples within {MAX_SEQ_LENGTH} token limit.")
 
 # 6. Response-Only Loss Masking Data Collator
 response_template = "<|im_start|>assistant\n"

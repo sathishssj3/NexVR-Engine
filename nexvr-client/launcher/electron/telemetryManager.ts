@@ -3,7 +3,9 @@ import * as path from 'path';
 import { getAppVersion } from './updateManager';
 
 export const CLOUDFLARE_TELEMETRY_API =
-  process.env.NEXVR_TELEMETRY_API || 'https://nexvr-engine.pages.dev/api/report';
+  process.env.STEREIX_TELEMETRY_API ||
+  process.env.NEXVR_TELEMETRY_API ||
+  'https://stereix-engine.pages.dev/api/report';
 
 export const DEFAULT_DISCORD_WEBHOOK_URL =
   process.env.NEXVR_TELEMETRY_ENDPOINT ||

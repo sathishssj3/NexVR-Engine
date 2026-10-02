@@ -1,4 +1,4 @@
-# NexVR Engine — landing page
+# Stereix Engine — landing page
 
 Static page plus one Cloudflare Pages Function. No build step: `index.html` is
 served as-is, and `functions/api/waitlist.js` becomes `POST /api/waitlist` on

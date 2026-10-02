@@ -374,8 +374,13 @@ jobs:
       run: |
         $ErrorActionPreference = 'Stop'
         $cert = [Security.Cryptography.X509Certificates.X509Certificate2]::new($env:SIGN_CERT_PATH, $env:SIGN_CERT_PASS)
-        foreach ($pattern in @('NexVR-Engine-Setup-*.exe', 'NexVR-Engine-Portable-*.exe')) {
+        foreach ($pattern in @('Stereix-Engine-Setup-*.exe', 'Stereix-Engine-Portable-*.exe')) {
           $files = @(Get-ChildItem -LiteralPath 'nexvr-client/launcher/dist-electron' -Filter $pattern -File)
+          if ($files.Count -eq 0) {
+            # Check fallback to legacy prefix if stereix wasn't produced
+            $legacyPattern = $pattern -replace '^Stereix-', 'NexVR-'
+            $files = @(Get-ChildItem -LiteralPath 'nexvr-client/launcher/dist-electron' -Filter $legacyPattern -File)
+          }
           if ($files.Count -eq 0) { throw "Missing packaged launcher: $pattern" }
           foreach ($file in $files) {
             $signature = Get-AuthenticodeSignature -LiteralPath $file.FullName
@@ -389,15 +394,15 @@ jobs:
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: nexvr-engine-installer
+        name: stereix-engine-installer
         path: |
-          nexvr-client/launcher/dist-electron/NexVR-Engine-Setup-*.exe
-          nexvr-client/launcher/dist-electron/NexVR-Engine-Portable-*.exe
+          nexvr-client/launcher/dist-electron/*-Engine-Setup-*.exe
+          nexvr-client/launcher/dist-electron/*-Engine-Portable-*.exe
 
     - name: Upload to Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: |
-          nexvr-client/launcher/dist-electron/NexVR-Engine-Setup-*.exe
-          nexvr-client/launcher/dist-electron/NexVR-Engine-Portable-*.exe
+          nexvr-client/launcher/dist-electron/*-Engine-Setup-*.exe
+          nexvr-client/launcher/dist-electron/*-Engine-Portable-*.exe

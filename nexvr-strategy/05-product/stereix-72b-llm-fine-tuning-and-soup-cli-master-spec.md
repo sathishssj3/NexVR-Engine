@@ -1,15 +1,15 @@
-# NexVR 72B Frontier LLM Fine-Tuning & Soup CLI Master Specification
+# Stereix 72B Frontier LLM Fine-Tuning & Soup CLI Master Specification
 
 > **Document Status**: Production AI Architecture, Dataset Blueprint & Financial Model  
-> **Last Updated**: September 2026  
+> **Last Updated**: October 2026  
 > **Target Audience**: Machine Learning Engineers, Systems Architects, and Technical Leadership  
-> **Related Code References**: [`nexvr-strategy/05-product/autonomous-cloud-ai-profiler-and-defensible-moat.md`](file:///c:/Users/sathi/.gemini/antigravity/scratch/vr-inject/nexvr-strategy/05-product/autonomous-cloud-ai-profiler-and-defensible-moat.md), [`nexvr-strategy/05-product/surgical-reverse-engineering-and-aob-self-healing-architecture.md`](file:///c:/Users/sathi/.gemini/antigravity/scratch/vr-inject/nexvr-strategy/05-product/surgical-reverse-engineering-and-aob-self-healing-architecture.md), [`include/nexvr_sdk.h`](file:///c:/Users/sathi/.gemini/antigravity/scratch/vr-inject/include/nexvr_sdk.h)
+> **Related Code References**: [`nexvr-strategy/05-product/autonomous-cloud-ai-profiler-and-defensible-moat.md`](file:///c:/Users/sathi/.gemini/antigravity/scratch/vr-inject/nexvr-strategy/05-product/autonomous-cloud-ai-profiler-and-defensible-moat.md), [`nexvr-strategy/05-product/surgical-reverse-engineering-and-aob-self-healing-architecture.md`](file:///c:/Users/sathi/.gemini/antigravity/scratch/vr-inject/nexvr-strategy/05-product/surgical-reverse-engineering-and-aob-self-healing-architecture.md), [`include/stereix_sdk.h`](file:///c:/Users/sathi/.gemini/antigravity/scratch/vr-inject/include/stereix_sdk.h)
 
 ---
 
 ## Executive Summary
 
-This specification outlines the end-to-end engineering pipeline for training, aligning, and deploying NexVR's proprietary **72B / 78B Parameter Reverse-Engineering Model** (**`Qwen-2.5-Coder-72B-NexVR`**).
+This specification outlines the end-to-end engineering pipeline for training, aligning, and deploying Stereix Engine's proprietary **72B / 78B Parameter Reverse-Engineering Model** (**`Qwen-2.5-Coder-72B-Stereix`**).
 
 Rather than relying on generic AI wrappers that hallucinate memory offsets and crash games (`0xC0000005`), this model is a **compiler-aligned specialist**. It ingests 2KB assembly traces captured by CPU hardware breakpoints (`DR0`-`DR3`), traces register dataflow, filters out false-positive shadow/minimap cameras, and generates self-healing Array-of-Bytes (AOB) signature patterns that survive game patches.
 

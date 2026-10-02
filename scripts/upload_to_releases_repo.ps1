@@ -51,7 +51,7 @@ if (-not $targetRelease) {
 $uploadBase = "https://uploads.github.com/repos/$Repo/releases/$($targetRelease.id)/assets"
 
 # Locate setup and portable binaries to upload
-$filesToUpload = Get-ChildItem -Path $ArtifactsDir -Include "NexVR-Engine-Setup-*.exe", "NexVR-Engine-Portable-*.exe" -File -Recurse
+$filesToUpload = Get-ChildItem -Path $ArtifactsDir -Include "Stereix-Engine-Setup-*.exe", "Stereix-Engine-Portable-*.exe", "NexVR-Engine-Setup-*.exe", "NexVR-Engine-Portable-*.exe" -File -Recurse
 
 if ($filesToUpload.Count -eq 0) {
     Write-Warning "No installer files found in $ArtifactsDir to upload."

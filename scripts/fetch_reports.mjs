@@ -16,7 +16,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..');
 
-const API_ENDPOINT = process.env.NEXVR_TELEMETRY_API || 'https://nexvr-engine.pages.dev/api/report';
+const API_ENDPOINT = process.env.STEREIX_TELEMETRY_API || process.env.NEXVR_TELEMETRY_API || 'https://stereix-engine.pages.dev/api/report';
 
 const ADMIN_SECRET = process.env.REPORTS_ADMIN_KEY || process.env.ADMIN_API_KEY;
 if (!ADMIN_SECRET || ADMIN_SECRET.trim().length === 0) {

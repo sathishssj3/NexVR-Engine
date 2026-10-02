@@ -4,12 +4,12 @@
  */
 
 export const DEFAULT_CONFIG = {
-  appName: 'Stereo Engine',
-  companyName: 'Dimension 9',
+  appName: 'Stereix Engine',
+  companyName: 'Mesmeran Lab',
   version: 'v0.1.3',
-  subject: 'Stereo Engine v0.1.3 — Early Access Build',
-  downloadUrl: 'https://nexvr-engine.pages.dev/api/dl',
-  websiteUrl: 'https://nexvr-engine.pages.dev/',
+  subject: 'Stereix Engine v0.1.3 — Early Access Build',
+  downloadUrl: 'https://stereix-engine.pages.dev/api/dl',
+  websiteUrl: 'https://stereix-engine.pages.dev/',
 };
 
 export function buildEmailHtml(recipientEmail, customVersion = null) {

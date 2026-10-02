@@ -26,6 +26,6 @@ const pw = fs.readFileSync(FILE, 'utf8').trim();
 console.log(`
   Admin password:  ${pw}
 
-  Sign in at:      https://nexvr-engine.pages.dev/admin
+  Sign in at:      https://stereix-engine.pages.dev/admin
   Save it somewhere safe, then delete _admin-password.txt
 `);

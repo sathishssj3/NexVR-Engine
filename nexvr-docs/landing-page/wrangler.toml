@@ -1,4 +1,4 @@
-name = "nexvr-engine"
+name = "stereix-engine"
 compatibility_date = "2026-01-01"
 # Only this directory is published. Everything else in the repo -- wrangler.toml,
 # package.json, schema.sql, .dev.vars -- stays off the public origin. Functions

@@ -1,16 +1,16 @@
-# NexVR: A Universal, Real-Time, AI-Driven Stereoscopic Virtual Reality Injection Engine
+# Stereix: A Universal, Real-Time, AI-Driven Stereoscopic Virtual Reality Injection Engine
 
-**Authors:** Sathish SSJ3, DeepMind Antigravity Pair-Programmer  
-**Affiliation:** NexVR Labs  
-**Date:** July 2026  
+**Authors:** Sathish SSJ3, Antigravity Engineering  
+**Affiliation:** Mesmeran Lab  
+**Date:** October 2026  
 
 ---
 
 ## Abstract
 
-Virtual Reality (VR) adoption remains bottlenecked by the lack of high-fidelity, native software content. Porting existing legacy flat-screen (2D) applications to 3D VR is traditionally labor-intensive, requiring manual source-code alterations and graphics pipeline rewrites. This paper introduces **NexVR**, a universal, real-time injection engine that automatically translates DirectX 11, DirectX 12, and Vulkan graphical swapchains into stereoscopic VR output compatible with OpenXR runtimes.
+Virtual Reality (VR) adoption remains bottlenecked by the lack of high-fidelity, native software content. Porting existing legacy flat-screen (2D) applications to 3D VR is traditionally labor-intensive, requiring manual source-code alterations and graphics pipeline rewrites. This paper introduces **Stereix Engine**, a universal, real-time injection engine that automatically translates DirectX 11, DirectX 12, and Vulkan graphical swapchains into stereoscopic VR output compatible with OpenXR runtimes.
 
-We propose a dual-path execution pipeline combining: (1) **Predictive AI Models** running synchronously on the render thread to mask tracking latency (e.g., Gaze Trajectory LSTMs and Comfort Guard MLPs), and (2) **Adaptive AI Models** running asynchronously in the background to handle engine variations (e.g., Spatial-Temporal Memory Transformers for camera matrix classification). Furthermore, we detail a 5-channel Depth-Aware Gated Inpainting model that repairs disocclusion artifacts in real-time. Performance evaluations demonstrate that by combining Dynamic Foveated Rendering and Neural Super Resolution (DLSS/FSR), NexVR satisfies the strict 11.1ms frame budget (90Hz) on consumer-grade graphics hardware.
+We propose a dual-path execution pipeline combining: (1) **Predictive AI Models** running synchronously on the render thread to mask tracking latency (e.g., Gaze Trajectory LSTMs and Comfort Guard MLPs), and (2) **Adaptive AI Models** running asynchronously in the background to handle engine variations (e.g., Spatial-Temporal Memory Transformers for camera matrix classification). Furthermore, we detail a 5-channel Depth-Aware Gated Inpainting model that repairs disocclusion artifacts in real-time. Performance evaluations demonstrate that by combining Dynamic Foveated Rendering and Neural Super Resolution (DLSS/FSR), Stereix Engine satisfies the strict 11.1ms frame budget (90Hz) on consumer-grade graphics hardware.
 
 ---
 
@@ -21,7 +21,7 @@ The virtual reality hardware ecosystem has matured significantly with the releas
 1. **Maintenance Fragility:** They rely on hardcoded static pointer offsets to override game camera matrices. When a game patch is released, these offsets break, requiring manual reverse-engineering.
 2. **Visual Artifacts:** Converting mono views to stereo creates disocclusion gaps (missing pixels behind objects). Basic spatial warping methods smudge pixels, leading to visual discomfort.
 
-NexVR overcomes these limitations by embedding machine learning into the graphical swapchain hook. By utilizing AI-driven memory scanning and gated neural inpainting, NexVR offers a robust, engine-agnostic wrapper that dynamically conforms to any game's memory layouts and visual properties.
+Stereix Engine overcomes these limitations by embedding machine learning into the graphical swapchain hook. By utilizing AI-driven memory scanning and gated neural inpainting, Stereix Engine offers a robust, engine-agnostic wrapper that dynamically conforms to any game's memory layouts and visual properties.
 
 ---
 

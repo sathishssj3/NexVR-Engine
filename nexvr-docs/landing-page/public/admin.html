@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NexVR Engine — Admin</title>
+<title>Stereix Engine — Admin</title>
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#050506">
 <link rel="icon" type="image/png" href="logo.png?v=2">
@@ -14,7 +14,7 @@
 
 <style>
 /* ============================================================
-   NexVR Engine — admin console
+   Stereix Engine — admin console
    Same palette and faces as the landing page, deliberately NOT
    the same composition. This is a tool someone opens every day:
    dense, quiet, scannable. No hero, no display type, no motion
@@ -249,7 +249,7 @@ td.when{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 <!-- ============ LOGIN ============ -->
 <div class="gate" id="gate" hidden>
   <form id="loginForm" novalidate>
-    <div class="mark"><img src="logo.png" alt="" width="256" height="256">NEXVR&nbsp;ADMIN</div>
+    <div class="mark"><img src="logo.png" alt="" width="256" height="256">STEREIX&nbsp;ADMIN</div>
     <label class="label" for="pw">Password</label>
     <div class="pw-wrap">
       <input id="pw" type="password" autocomplete="current-password" required>
@@ -274,7 +274,7 @@ td.when{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
   <header class="bar">
     <div class="mark">
       <img src="logo.png" alt="" width="256" height="256">
-      NEXVR <i>/</i> <span>ADMIN</span>
+      STEREIX <i>/</i> <span>ADMIN</span>
     </div>
     <div class="seg" id="range" role="group" aria-label="Date range">
       <button type="button" data-days="7"  aria-pressed="false">7D</button>
@@ -373,7 +373,7 @@ td.when{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 
               <div style="grid-column: 1 / -1">
                 <label class="label" style="display:block;margin-bottom:.45rem" for="emailSubject">Subject Line</label>
-                <input type="text" id="emailSubject" class="ctrl-input" value="Stereo Engine v0.1.3 — Early Access Build">
+                <input type="text" id="emailSubject" class="ctrl-input" value="Stereix Engine v0.1.3 — Early Access Build">
               </div>
             </div>
 
@@ -1046,7 +1046,7 @@ $('broadcastForm')?.addEventListener('submit', async (e) => {
   const resultBox = $('emailSendResult');
   const recipient = $('emailRecipient').value.trim();
   const version = $('emailVersion').value.trim() || 'v0.1.3';
-  const subject = $('emailSubject').value.trim() || `Stereo Engine ${version} — Early Access Build`;
+  const subject = $('emailSubject').value.trim() || `Stereix Engine ${version} — Early Access Build`;
 
   if (!isBroadcastMode && (!recipient || !recipient.includes('@'))) {
     showResult(resultBox, 'error', 'Please enter a valid recipient email address.');
