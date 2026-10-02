@@ -1,7 +1,7 @@
 {
-  "name": "nexvr-backend",
+  "name": "mesmeran-backend",
   "version": "0.1.0",
-  "description": "NexVR Cloud Services & API Platform",
+  "description": "Mesmeran Lab Cloud Services & Stereix API Platform",
   "private": true,
   "main": "dist/gateway/index.js",
   "scripts": {

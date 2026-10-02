@@ -290,7 +290,7 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
 
     try {
       const appVer = app.getVersion() || '0.1.60';
-      const header = `=== NexVR Engine Session Log [v${appVer}] ===\nGame ID: ${validId}\nStarted: ${new Date().toISOString()}\n==========================================\n`;
+      const header = `=== Stereix Engine Session Log [v${appVer}] ===\nGame ID: ${validId}\nStarted: ${new Date().toISOString()}\n==========================================\n`;
       fs.writeFileSync(currentSessionLogPath, header, 'utf-8');
       fs.writeFileSync(latestSessionLogPath, header, 'utf-8');
     } catch {}
@@ -863,7 +863,7 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
               gameId: validId,
               gameName: targetExeName,
               status: 'started',
-              message: `NexVR Engine successfully injected into ${targetExeName} (PID ${targetPid}).`,
+              message: `Stereix Engine successfully injected into ${targetExeName} (PID ${targetPid}).`,
               config: activeSessionConfig,
               logFilePath: currentSessionLogPath || latestSessionLogPath,
             }).catch(() => {});

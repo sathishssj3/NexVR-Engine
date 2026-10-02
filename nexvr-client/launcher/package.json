@@ -2,8 +2,8 @@
   "name": "launcher",
   "private": true,
   "version": "0.1.99",
-  "description": "Universal VR injection launcher",
-  "author": "NexVR Engine",
+  "description": "Stereix Engine — Universal 6DOF VR injection launcher",
+  "author": "Mesmeran Lab",
   "homepage": "https://discord.gg/FBeGjgK2fd",
   "main": "electron-dist/electron/main.js",
   "scripts": {

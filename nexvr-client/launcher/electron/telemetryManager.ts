@@ -136,7 +136,7 @@ export async function sendDiscordTelemetry(
         embedColor = 0xa855f7; // Purple
       }
 
-      const title = `${statusEmoji} NexVR Engine [v${currentVersion}] — ${payload.gameName || payload.gameId}`;
+      const title = `${statusEmoji} Stereix Engine [v${currentVersion}] — ${payload.gameName || payload.gameId}`;
 
       const fields: Array<{ name: string; value: string; inline?: boolean }> = [
         { name: 'Game ID', value: `\`${payload.gameId}\``, inline: true },
@@ -169,7 +169,7 @@ export async function sendDiscordTelemetry(
         title,
         color: embedColor,
         fields,
-        footer: { text: 'NexVR Engine Automated Telemetry Pipeline' },
+        footer: { text: 'Stereix Engine Automated Telemetry Pipeline' },
         timestamp: new Date().toISOString(),
       };
 
@@ -184,7 +184,7 @@ export async function sendDiscordTelemetry(
         const cappedLog = sanitized.length > 4 * 1024 * 1024 ? sanitized.slice(-4 * 1024 * 1024) : sanitized;
         const formData = new FormData();
         formData.append('payload_json', JSON.stringify({ embeds: [embedObj] }));
-        const logFilename = `nexvr_${payload.gameId}_${Date.now()}.log`;
+        const logFilename = `stereix_${payload.gameId}_${Date.now()}.log`;
         formData.append('files[0]', new Blob([cappedLog], { type: 'text/plain' }), logFilename);
 
         const res = await fetch(webhookUrl, {

@@ -111,7 +111,7 @@ app.use(errorHandler);
 const server = app.listen(config.PORT, () => {
   logger.info(
     { port: config.PORT, env: config.NODE_ENV },
-    `NexVR API Gateway running at http://localhost:${config.PORT}`
+    `Mesmeran API Gateway running at http://localhost:${config.PORT}`
   );
 });
 

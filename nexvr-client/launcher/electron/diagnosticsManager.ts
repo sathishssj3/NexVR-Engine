@@ -113,7 +113,7 @@ ipcMain.handle('log:export', async (event, lines: unknown) => {
   const sanitized = lines.map(sanitize);
 
   const header = [
-    '=== NEXVR ENGINE — SESSION LOG EXPORT ===',
+    '=== STEREIX ENGINE — SESSION LOG EXPORT ===',
     `Exported: ${new Date().toISOString()}`,
     `Lines: ${sanitized.length}`,
     'Note: Paths and PIDs have been redacted for privacy.',
@@ -251,7 +251,7 @@ ipcMain.handle('utils:openLog', async (event, id?: string) => {
   const currentAppVersion = app.getVersion() || '0.1.60';
   fs.writeFileSync(
     defaultLog,
-    `=== NexVR Engine [v${currentAppVersion}] — Diagnostic Log ===\nNo active session recorded yet. Launch any game in VR to begin live telemetry streaming.\n`,
+    `=== Stereix Engine [v${currentAppVersion}] — Diagnostic Log ===\nNo active session recorded yet. Launch any game in VR to begin live telemetry streaming.\n`,
     'utf-8'
   );
   await shell.openPath(defaultLog);
@@ -274,7 +274,7 @@ ipcMain.handle('telemetry:sendReport', async (event, options?: { gameId?: string
     gameId: targetId,
     gameName: activeTargetExeName || targetId,
     status: 'manual_report',
-    message: options?.userNote ? `Tester note: ${options.userNote}` : 'Tester manually submitted diagnostic report from NexVR Launcher.',
+    message: options?.userNote ? `Tester note: ${options.userNote}` : 'Tester manually submitted diagnostic report from Stereix Launcher.',
     logFilePath: fs.existsSync(logPath) ? logPath : undefined,
   });
 });

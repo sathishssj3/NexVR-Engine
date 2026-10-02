@@ -1,8 +1,8 @@
 {
   "engineVersion": "0.1.99",
-  "buildDate": "2026-09-28",
-  "timestamp": 1790602180820,
-  "changelog": "NexVR Engine v0.1.99 — Critical Hotfix: OpenXR Asymmetric FOV Diplopia Elimination with 2D Stereo Convergence Offset, Dual-Eye ImGui Menu Unification, Debounced Analog Stick & D-Pad Gamepad Navigation, and 1-Click Recommended Defaults Reset Action",
+  "buildDate": "2026-10-02",
+  "timestamp": 1790958880140,
+  "changelog": "Stereix Engine v0.1.99 — Critical Hotfix: OpenXR Asymmetric FOV Diplopia Elimination with 2D Stereo Convergence Offset, Dual-Eye ImGui Menu Unification, Debounced Analog Stick & D-Pad Gamepad Navigation, and 1-Click Recommended Defaults Reset Action",
   "features": [
     "P0.1 Virtual Controller Emulation: Full VR motion controller mapping to XInput with bidirectional haptic vibration feedback for native controller-free gameplay",
     "P0.2 Floating Curved World-Space HUD: Eliminates eye strain by projecting 2D UI passes onto an adjustable curved virtual canvas with configurable depth and curvature",
@@ -89,5 +89,5 @@
     "shaders/asw_shader.hlsl": "ae77436c5869e5dcd5175bc0050f3e55f1f9abebd3aed49336867954fcee461c",
     "shaders/depth_reprojection.hlsl": "eb0e672fdaebaea0e1afa542990770b5d7d5044a18156f983623478c9e0541f5"
   },
-  "signature": "b604ee8ab0901827ef9b182ffe9514c84d5b21188c00ec7cff5aebbdf2f06acb155e6662fa6f8623f1e4070deea876347e078fb27a3a06cbe330423b703e300b"
+  "signature": "96d6e7b5c50d6688366c9dbfd727147706daed049cb9aafd8a69d4a74d3c9bf424cc44199e8a1094ae4d942fed4be89931a574c645a97edc3d6bb4a1916ec00a"
 }
