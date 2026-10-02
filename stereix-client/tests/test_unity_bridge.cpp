@@ -165,3 +165,24 @@ TEST_F(UnityBridgeTest, InputAndHapticsNullSessionSafe) {
     EXPECT_EQ(NexVR_Unity_StopHaptic(NEXVR_HAND_RIGHT), NEXVR_ERROR_INVALID_SESSION);
 }
 
+TEST_F(UnityBridgeTest, StereixUnityBridgeEquivalence) {
+    auto dummySession = reinterpret_cast<NexVR_Session>(uintptr_t(0x55554444ULL));
+    Stereix_Unity_Attach(dummySession);
+
+    uint32_t submitted = 10, dropped = 10, failed = 10;
+    int32_t lastResult = -99;
+    Stereix_Unity_GetStats(&submitted, &dropped, &failed, &lastResult);
+
+    EXPECT_EQ(submitted, 0u);
+    EXPECT_EQ(dropped, 0u);
+    EXPECT_EQ(failed, 0u);
+    EXPECT_EQ(lastResult, NEXVR_SUCCESS);
+
+    Stereix_Unity_Detach();
+    EXPECT_EQ(Stereix_Unity_SupportsDepthSubmission(), 0);
+
+    UnityRenderingEvent renderEvent = Stereix_Unity_GetRenderEventFunc();
+    EXPECT_NE(renderEvent, nullptr);
+}
+
+

@@ -1179,7 +1179,7 @@ bool SdkSession::SubmitFrame(ID3D11Texture2D* gameTexture, bool verifyCopy, Fram
         // frames ago. Writing before this returns is a race with the
         // compositor, and it is the reason a copy cannot simply follow acquire.
         XrSwapchainImageWaitInfo imageWait{XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO};
-        imageWait.timeout = XR_INFINITE_DURATION;
+        imageWait.timeout = (m_impl && m_impl->swapchainWaitNanos > 0) ? m_impl->swapchainWaitNanos : 500000000LL;  // Finite timeout, never infinite
         result = xrWaitSwapchainImage(m_impl->swapchain, &imageWait);
         QueryPerformanceCounter(&t3);
         if (XR_FAILED(result)) {
@@ -1457,6 +1457,14 @@ bool SdkSession::SubmitFrameThreaded(uint64_t token, ID3D11Texture2D* gameTextur
     if (m_impl == nullptr || !m_sessionRunning) {
         error = "SubmitFrameThreaded while the session is not running";
         return false;
+    }
+
+    if (m_device) {
+        const HRESULT hrRemoved = m_device->GetDeviceRemovedReason();
+        if (FAILED(hrRemoved)) {
+            error = std::format("D3D11 device removed or reset (reason: 0x{:08X})", static_cast<uint32_t>(hrRemoved));
+            return false;
+        }
     }
 
     // --- Redeem the token --------------------------------------------------
@@ -1857,6 +1865,14 @@ bool SdkSession::SubmitFrameThreadedDX12(uint64_t token, ID3D12Resource* gameTex
         return false;
     }
 
+    if (m_d3d12Device) {
+        const HRESULT hrRemoved = m_d3d12Device->GetDeviceRemovedReason();
+        if (FAILED(hrRemoved)) {
+            error = std::format("D3D12 device removed or reset (reason: 0x{:08X})", static_cast<uint32_t>(hrRemoved));
+            return false;
+        }
+    }
+
     Impl::PendingFrame pending;
     {
         std::lock_guard<std::mutex> lock(m_impl->handoffMutex);
@@ -1980,7 +1996,14 @@ bool SdkSession::SubmitFrameThreadedDX12(uint64_t token, ID3D12Resource* gameTex
 
         if (m_d3d12Fence && m_d3d12Fence->GetCompletedValue() < m_d3d12FenceValue) {
             m_d3d12Fence->SetEventOnCompletion(m_d3d12FenceValue, m_d3d12FenceEvent);
-            WaitForSingleObject(m_d3d12FenceEvent, INFINITE);
+            const DWORD waitRes = WaitForSingleObject(m_d3d12FenceEvent, 2000);
+            if (waitRes == WAIT_TIMEOUT) {
+                const HRESULT removedReason = m_d3d12Device ? m_d3d12Device->GetDeviceRemovedReason() : E_FAIL;
+                error = std::format("D3D12 fence wait timed out after 2000ms (device removed reason: 0x{:08X})",
+                                    static_cast<uint32_t>(removedReason));
+                result_.droppedOnTimeout = true;
+                return false;
+            }
         }
 
         m_d3d12CommandAllocator->Reset();
@@ -2092,7 +2115,13 @@ bool SdkSession::SubmitFrameThreadedDX12(uint64_t token, ID3D12Resource* gameTex
                 m_d3d12FenceValue++;
                 m_d3d12Queue->Signal(m_d3d12Fence.Get(), m_d3d12FenceValue);
                 m_d3d12Fence->SetEventOnCompletion(m_d3d12FenceValue, m_d3d12FenceEvent);
-                WaitForSingleObject(m_d3d12FenceEvent, INFINITE);
+                const DWORD waitRes = WaitForSingleObject(m_d3d12FenceEvent, 2000);
+                if (waitRes == WAIT_TIMEOUT) {
+                    const HRESULT removedReason = m_d3d12Device ? m_d3d12Device->GetDeviceRemovedReason() : E_FAIL;
+                    error = std::format("D3D12 verify readback fence timed out after 2000ms (device removed reason: 0x{:08X})",
+                                        static_cast<uint32_t>(removedReason));
+                    return false;
+                }
 
                 void* pMapped = nullptr;
                 if (SUCCEEDED(readbackBuffer->Map(0, nullptr, &pMapped)) && pMapped != nullptr) {

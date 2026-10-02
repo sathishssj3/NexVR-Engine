@@ -510,4 +510,84 @@ __declspec(dllexport) int __stdcall NexVR_Unity_StopHaptic(NexVR_Hand hand) {
     return NexVR_StopHaptic(session, hand);
 }
 
+// ===========================================================================
+// Stereix Enterprise Unity Bridge C ABI Forwarders
+// ===========================================================================
+
+__declspec(dllexport) UnityRenderingEvent __stdcall Stereix_Unity_GetRenderEventFunc() {
+    return NexVR_Unity_GetRenderEventFunc();
+}
+
+__declspec(dllexport) void __stdcall Stereix_Unity_Attach(NexVR_Session session) {
+    NexVR_Unity_Attach(session);
+}
+
+__declspec(dllexport) void __stdcall Stereix_Unity_Detach() {
+    NexVR_Unity_Detach();
+}
+
+__declspec(dllexport) int __stdcall Stereix_Unity_StageFrameWithDepth(
+    uint64_t token, void* texture, void* depthTexture, float nearZ, float farZ, int depthRange) {
+    return NexVR_Unity_StageFrameWithDepth(token, texture, depthTexture, nearZ, farZ, depthRange);
+}
+
+__declspec(dllexport) int __stdcall Stereix_Unity_StageFrame(uint64_t token, void* texture) {
+    return NexVR_Unity_StageFrame(token, texture);
+}
+
+__declspec(dllexport) int __stdcall Stereix_Unity_StageFrameWithDepthDX12(
+    uint64_t token, void* colorResource, uint32_t colorState,
+    void* depthResource, uint32_t depthState,
+    float nearZ, float farZ, int depthRange) {
+    return NexVR_Unity_StageFrameWithDepthDX12(token, colorResource, colorState, depthResource, depthState, nearZ, farZ, depthRange);
+}
+
+__declspec(dllexport) int __stdcall Stereix_Unity_StageFrameDX12(
+    uint64_t token, void* colorResource, uint32_t colorState) {
+    return NexVR_Unity_StageFrameDX12(token, colorResource, colorState);
+}
+
+__declspec(dllexport) int __stdcall Stereix_Unity_SupportsDepthSubmission() {
+    return NexVR_Unity_SupportsDepthSubmission();
+}
+
+__declspec(dllexport) int __stdcall Stereix_Unity_GetDeviceFromTexture(void* texture, void** outDevice, void** outContext) {
+    return NexVR_Unity_GetDeviceFromTexture(texture, outDevice, outContext);
+}
+
+__declspec(dllexport) void __stdcall Stereix_Unity_ReleaseDeviceHandles(void* device, void* context) {
+    NexVR_Unity_ReleaseDeviceHandles(device, context);
+}
+
+__declspec(dllexport) int __stdcall Stereix_Unity_GetDeviceFromResourceDX12(void* resource, void** outDevice) {
+    return NexVR_Unity_GetDeviceFromResourceDX12(resource, outDevice);
+}
+
+__declspec(dllexport) void __stdcall Stereix_Unity_ReleaseDeviceHandleDX12(void* device) {
+    NexVR_Unity_ReleaseDeviceHandleDX12(device);
+}
+
+__declspec(dllexport) void __stdcall Stereix_Unity_GetStats(uint32_t* submitted, uint32_t* dropped,
+                                                           uint32_t* failed, int32_t* lastResult) {
+    NexVR_Unity_GetStats(submitted, dropped, failed, lastResult);
+}
+
+__declspec(dllexport) int __stdcall Stereix_Unity_SyncInput() {
+    return NexVR_Unity_SyncInput();
+}
+
+__declspec(dllexport) int __stdcall Stereix_Unity_GetControllerState(
+    NexVR_Hand hand, NexVR_ControllerState* outState) {
+    return NexVR_Unity_GetControllerState(hand, outState);
+}
+
+__declspec(dllexport) int __stdcall Stereix_Unity_TriggerHaptic(
+    NexVR_Hand hand, const NexVR_HapticFeedback* haptic) {
+    return NexVR_Unity_TriggerHaptic(hand, haptic);
+}
+
+__declspec(dllexport) int __stdcall Stereix_Unity_StopHaptic(NexVR_Hand hand) {
+    return NexVR_Unity_StopHaptic(hand);
+}
+
 }  // extern "C"

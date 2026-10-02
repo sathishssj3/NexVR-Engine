@@ -150,6 +150,44 @@ NEXVR_UNREAL_API int __stdcall NexVR_Unreal_TriggerHaptic(int hand, float durati
  */
 NEXVR_UNREAL_API int __stdcall NexVR_Unreal_StopHaptic(int hand);
 
+// ===========================================================================
+// Stereix Enterprise Unreal Bridge C ABI Exports
+// ===========================================================================
+#define STEREIX_UNREAL_API NEXVR_UNREAL_API
+
+STEREIX_UNREAL_API void __stdcall Stereix_Unreal_Attach(NexVR_Session session);
+STEREIX_UNREAL_API void __stdcall Stereix_Unreal_Detach();
+
+STEREIX_UNREAL_API int __stdcall Stereix_Unreal_StageFrameWithDepth(
+    uint64_t token, void* colorTexture, void* depthTexture, float nearZ, float farZ, int depthRange);
+STEREIX_UNREAL_API int __stdcall Stereix_Unreal_StageFrame(uint64_t token, void* colorTexture);
+
+STEREIX_UNREAL_API int __stdcall Stereix_Unreal_StageFrameWithDepthDX12(
+    uint64_t token, void* colorResource, uint32_t colorState,
+    void* depthResource, uint32_t depthState,
+    float nearZ, float farZ, int depthRange);
+STEREIX_UNREAL_API int __stdcall Stereix_Unreal_StageFrameDX12(
+    uint64_t token, void* colorResource, uint32_t colorState);
+
+STEREIX_UNREAL_API void __stdcall Stereix_Unreal_ProcessRenderCommand(int slot);
+STEREIX_UNREAL_API int __stdcall Stereix_Unreal_SupportsDepthSubmission();
+
+STEREIX_UNREAL_API int __stdcall Stereix_Unreal_GetDeviceFromTexture(
+    void* texture, void** outDevice, void** outContext);
+STEREIX_UNREAL_API void __stdcall Stereix_Unreal_ReleaseDeviceHandles(void* device, void* context);
+
+STEREIX_UNREAL_API int __stdcall Stereix_Unreal_GetDeviceFromResourceDX12(
+    void* resource, void** outDevice);
+STEREIX_UNREAL_API void __stdcall Stereix_Unreal_ReleaseDeviceHandleDX12(void* device);
+
+STEREIX_UNREAL_API void __stdcall Stereix_Unreal_GetStats(
+    uint32_t* submitted, uint32_t* dropped, uint32_t* failed, int32_t* lastResult);
+
+STEREIX_UNREAL_API int __stdcall Stereix_Unreal_SyncInput();
+STEREIX_UNREAL_API int __stdcall Stereix_Unreal_GetControllerState(int hand, NexVR_ControllerState* outState);
+STEREIX_UNREAL_API int __stdcall Stereix_Unreal_TriggerHaptic(int hand, float durationMs, float frequencyHz, float amplitude);
+STEREIX_UNREAL_API int __stdcall Stereix_Unreal_StopHaptic(int hand);
+
 #ifdef __cplusplus
 }
 #endif

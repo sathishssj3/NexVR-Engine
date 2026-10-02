@@ -151,3 +151,21 @@ TEST_F(UnrealBridgeTest, InputAndHapticsNullSessionSafe) {
     EXPECT_EQ(NexVR_Unreal_StopHaptic(0), 0);
 }
 
+TEST_F(UnrealBridgeTest, StereixUnrealBridgeEquivalence) {
+    auto dummySession = reinterpret_cast<NexVR_Session>(uintptr_t(0x66665555ULL));
+    Stereix_Unreal_Attach(dummySession);
+
+    uint32_t submitted = 10, dropped = 10, failed = 10;
+    int32_t lastResult = -99;
+    Stereix_Unreal_GetStats(&submitted, &dropped, &failed, &lastResult);
+
+    EXPECT_EQ(submitted, 0u);
+    EXPECT_EQ(dropped, 0u);
+    EXPECT_EQ(failed, 0u);
+    EXPECT_EQ(lastResult, NEXVR_SUCCESS);
+
+    Stereix_Unreal_Detach();
+    EXPECT_EQ(Stereix_Unreal_SupportsDepthSubmission(), 0);
+}
+
+
