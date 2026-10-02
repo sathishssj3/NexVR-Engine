@@ -339,9 +339,9 @@ async function sendEmail(request, env) {
   }
 
   const fromEmail = (body.fromEmail || env.FROM_EMAIL || 'onboarding@resend.dev').trim();
-  const fromName = 'Stereo Engine';
+  const fromName = 'Stereix Engine';
   const version = (body.version || 'v0.1.3').trim();
-  const subject = (body.subject || `Stereo Engine ${version} — Early Access Build`).trim();
+  const subject = (body.subject || `Stereix Engine ${version} — Early Access Build`).trim();
   const isBroadcast = Boolean(body.isBroadcast);
   const recipient = (body.recipient || '').trim();
 

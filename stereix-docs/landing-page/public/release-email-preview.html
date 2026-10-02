@@ -1,92 +1,9 @@
-#!/usr/bin/env node
-/**
- * Release Broadcast System — Stereix Engine
- * 
- * Usage:
- *   node scripts/send-release-broadcast.mjs --preview
- *   node scripts/send-release-broadcast.mjs --dry-run
- *   node scripts/send-release-broadcast.mjs --test-to=you@gmail.com
- *   node scripts/send-release-broadcast.mjs --send
- */
-
-import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const rootDir = path.resolve(__dirname, '..');
-
-// Load .env if present
-const envPath = path.join(rootDir, '.env');
-if (fs.existsSync(envPath)) {
-  const envLines = fs.readFileSync(envPath, 'utf8').split('\n');
-  for (const line of envLines) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
-    const match = trimmed.match(/^([\w.-]+)\s*=\s*(.*)?$/);
-    if (match) {
-      const key = match[1];
-      let value = (match[2] || '').trim();
-      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-        value = value.slice(1, -1);
-      }
-      if (!process.env[key]) process.env[key] = value;
-    }
-  }
-}
-
-const isPreview = process.argv.includes('--preview');
-const isDryRun = process.argv.includes('--dry-run');
-const isSend = process.argv.includes('--send');
-const testToArg = process.argv.find(arg => arg.startsWith('--test-to='));
-const testArg = process.argv.includes('--test');
-const apiKeyArg = process.argv.find(arg => arg.startsWith('--api-key='));
-
-let testEmail = testToArg ? testToArg.split('=')[1].trim() : null;
-const cliApiKey = apiKeyArg ? apiKeyArg.split('=')[1].trim() : null;
-const effectiveApiKey = cliApiKey || process.env.RESEND_API_KEY;
-
-// Configuration
-const CONFIG = {
-  appName: 'Stereix Engine',
-  companyName: 'Mesmeran Lab',
-  version: 'v0.1.98',
-  subject: 'Stereix Engine v0.1.98 — Public Release Now Live',
-  fromEmail: process.env.FROM_EMAIL || 'onboarding@resend.dev',
-  fromName: 'Stereix Engine',
-  downloadUrl: 'https://stereix-engine.pages.dev/api/dl',
-  websiteUrl: 'https://stereix-engine.pages.dev/',
-};
-
-function getSubscribers() {
-  const jsonPath = path.join(rootDir, 'waitlist-subscribers.json');
-  if (fs.existsSync(jsonPath)) {
-    return JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-  }
-  
-  console.log('Exporting waitlist from Cloudflare KV...');
-  execSync('node scripts/export-waitlist.mjs', { cwd: rootDir, stdio: 'inherit' });
-  return JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-}
-
-/**
- * 1:1 Landing Page Aesthetic HTML Email Template
- * - Uses Chakra Petch display font + Inter body font
- * - Clean "STEREIX ENGINE" wordmark (NO logo icon)
- * - Symmetrical crimson red wings
- * - Cockpit 3-column instrument stat rail (3 APIs | 6 Profiles | 11.1ms Budget)
- * - Anaglyph stereo red shadow title
- * - Landing-page style Founder Pass & Tagpills
- */
-function buildEmailHtml(recipientEmail) {
-  return `<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${CONFIG.appName} is Available</title>
+  <title>Stereix Engine is Available</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -383,7 +300,7 @@ function buildEmailHtml(recipientEmail) {
             <td align="center" style="padding: 26px 24px 22px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); background-color: #08080B;">
               <div class="header-brand" style="font-family: 'Chakra Petch', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 0.24em; color: #FFFFFF; text-transform: uppercase;">
                 <span style="color: #DC143C; font-weight: 400; margin-right: 8px;">—</span>
-                ${CONFIG.appName.toUpperCase()}
+                STEREIX ENGINE
                 <span style="color: #DC143C; font-weight: 400; margin-left: 8px;">—</span>
               </div>
             </td>
@@ -396,7 +313,7 @@ function buildEmailHtml(recipientEmail) {
               <!-- Eyebrow with Symmetrical Accent Lines -->
               <div style="font-family: 'Chakra Petch', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.22em; color: #7A7A80; text-transform: uppercase; margin-bottom: 20px;">
                 <span style="color: #DC143C; margin-right: 6px;">—</span>
-                OFFICIAL ENGINE LAUNCH · ${CONFIG.version}
+                OFFICIAL ENGINE LAUNCH · v0.1.3
                 <span style="color: #DC143C; margin-left: 6px;">—</span>
               </div>
 
@@ -407,15 +324,15 @@ function buildEmailHtml(recipientEmail) {
               </h1>
 
               <p style="font-size: 15px; line-height: 1.65; color: #7A7A80; margin: 0 auto 30px; max-width: 470px;">
-                Turn your entire flat PC library into immersive 6DOF VR with a single click. <strong style="color: #FFFFFF;">${CONFIG.appName}</strong> hooks the graphics pipeline while your game runs, reconstructs real-time stereo depth, and hands it straight to your OpenXR headset.
+                Turn your entire flat PC library into immersive 6DOF VR with a single click. <strong style="color: #FFFFFF;">Stereix Engine</strong> hooks the graphics pipeline while your game runs, reconstructs real-time stereo depth, and hands it straight to your OpenXR headset.
               </p>
 
               <!-- Primary CTA Button (Clean, Refined, High-Tech Animations) -->
               <table role="presentation" border="0" cellspacing="0" cellpadding="0" align="center">
                 <tr>
                   <td align="center" class="btn-cta" style="background-color: #DC143C; border: 1px solid #DC143C; border-radius: 2px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);">
-                    <a href="${CONFIG.downloadUrl}" target="_blank" class="btn-link" style="font-family: 'Chakra Petch', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #FFFFFF !important; text-decoration: none; padding: 15px 36px; display: inline-block;">
-                      <font color="#FFFFFF" style="color: #FFFFFF !important;"><span style="color: #FFFFFF !important;">DOWNLOAD ${CONFIG.appName.toUpperCase()} (${CONFIG.version}) <span class="btn-arrow">↓</span></span></font>
+                    <a href="https://stereix-engine.pages.dev/api/dl" target="_blank" class="btn-link" style="font-family: 'Chakra Petch', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #FFFFFF !important; text-decoration: none; padding: 15px 36px; display: inline-block;">
+                      <font color="#FFFFFF" style="color: #FFFFFF !important;"><span style="color: #FFFFFF !important;">DOWNLOAD STEREIX ENGINE (v0.1.3) <span class="btn-arrow">↓</span></span></font>
                     </a>
                   </td>
                 </tr>
@@ -487,7 +404,7 @@ function buildEmailHtml(recipientEmail) {
                       </tr>
                       <tr>
                         <td colspan="2" style="font-size: 12px; color: #8A8A92; padding-top: 6px; line-height: 1.5;">
-                          Your priority pass unlocks immediate Tier 1 engine binaries, opt-in privacy-respecting diagnostics, and direct access to all shipped engine profiles.
+                          Your priority pass unlocks immediate Tier 1 engine binaries, zero telemetry tracking, and direct access to all shipped engine profiles.
                         </td>
                       </tr>
                     </table>
@@ -602,22 +519,22 @@ function buildEmailHtml(recipientEmail) {
               <!-- Symmetrical Brand Header -->
               <div style="font-family: 'Chakra Petch', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #FFFFFF; margin-bottom: 16px;">
                 <span style="color: #DC143C; font-weight: 400; margin-right: 8px;">—</span>
-                ${CONFIG.appName.toUpperCase()}
+                STEREIX ENGINE
                 <span style="color: #DC143C; font-weight: 400; margin-left: 8px;">—</span>
               </div>
 
               <!-- Recipient Notice with Styled Monospace Chip (Prevents Gmail Blue Link) -->
               <div style="font-size: 11px; line-height: 1.8; color: #7A7A80; margin-bottom: 18px;">
-                Sent to <a href="mailto:${recipientEmail}" class="email-chip" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; font-weight: 600; color: #DC143C !important; background-color: rgba(220, 20, 60, 0.1); border: 1px solid rgba(220, 20, 60, 0.4); padding: 3px 9px; border-radius: 3px; text-decoration: none !important; display: inline-block; letter-spacing: 0.02em;"><font color="#DC143C" style="color: #DC143C !important;">${recipientEmail}</font></a> because you joined early access.
+                Sent to <a href="mailto:customer@example.com" class="email-chip" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; font-weight: 600; color: #DC143C !important; background-color: rgba(220, 20, 60, 0.1); border: 1px solid rgba(220, 20, 60, 0.4); padding: 3px 9px; border-radius: 3px; text-decoration: none !important; display: inline-block; letter-spacing: 0.02em;"><font color="#DC143C" style="color: #DC143C !important;">customer@example.com</font></a> because you joined early access.
               </div>
 
               <!-- Nav Links in Clean Pill Style (No Underlines) -->
               <div style="font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 18px;">
-                <a href="${CONFIG.websiteUrl}" class="footer-link footer-nav-link" style="color: #8A8A92 !important; text-decoration: none; padding: 4px 10px;"><font color="#8A8A92" style="color: #8A8A92 !important;">PORTAL</font></a>
+                <a href="https://stereix-engine.pages.dev/" class="footer-link footer-nav-link" style="color: #8A8A92 !important; text-decoration: none; padding: 4px 10px;"><font color="#8A8A92" style="color: #8A8A92 !important;">PORTAL</font></a>
                 <span style="color: rgba(255, 255, 255, 0.15);">·</span>
-                <a href="${CONFIG.websiteUrl}#faq" class="footer-link footer-nav-link" style="color: #8A8A92 !important; text-decoration: none; padding: 4px 10px;"><font color="#8A8A92" style="color: #8A8A92 !important;">TROUBLESHOOTING</font></a>
+                <a href="https://stereix-engine.pages.dev/#faq" class="footer-link footer-nav-link" style="color: #8A8A92 !important; text-decoration: none; padding: 4px 10px;"><font color="#8A8A92" style="color: #8A8A92 !important;">TROUBLESHOOTING</font></a>
                 <span style="color: rgba(255, 255, 255, 0.15);">·</span>
-                <a href="${CONFIG.downloadUrl}" class="footer-link footer-download" style="color: #DC143C !important; text-decoration: none; padding: 4px 10px; font-weight: 700;"><font color="#DC143C" style="color: #DC143C !important;"><span style="color: #DC143C !important;">DOWNLOAD (${CONFIG.version.toUpperCase()})</span></font></a>
+                <a href="https://stereix-engine.pages.dev/api/dl" class="footer-link footer-download" style="color: #DC143C !important; text-decoration: none; padding: 4px 10px; font-weight: 700;"><font color="#DC143C" style="color: #DC143C !important;"><span style="color: #DC143C !important;">DOWNLOAD (V0.1.3)</span></font></a>
               </div>
 
               <!-- Subtle Center Divider -->
@@ -625,8 +542,8 @@ function buildEmailHtml(recipientEmail) {
 
               <!-- Copyright & Anti-Spam Compliance -->
               <div style="font-size: 10px; line-height: 1.6; color: #5C5C64; letter-spacing: 0.03em;">
-                Single-player universal VR injector · © 2026 ${CONFIG.companyName} · Bengaluru, KA / Global<br>
-                Early access notification for registered waitlist · <a href="${CONFIG.websiteUrl}#unsubscribe" class="footer-link" style="color: #7A7A80; text-decoration: underline;">Unsubscribe</a>
+                Single-player universal VR injector · © 2026 Dimension 9 · Bengaluru, KA / Global<br>
+                Early access notification for registered waitlist · <a href="https://stereix-engine.pages.dev/#unsubscribe" class="footer-link" style="color: #7A7A80; text-decoration: underline;">Unsubscribe</a>
               </div>
 
             </td>
@@ -639,197 +556,4 @@ function buildEmailHtml(recipientEmail) {
   </table>
 
 </body>
-</html>`;
-}
-
-function buildPlainText(recipientEmail) {
-  return `STEREIX ENGINE — Official Engine Launch ${CONFIG.version}
-
-ONE CLICK. ANY GAME IN VR.
-Turn your entire flat PC library into immersive 6DOF VR with a single click. Stereix Engine hooks the graphics pipeline while your game runs, reconstructs real-time stereo depth, and hands it straight to your OpenXR headset.
-
-Download Stereix Engine (${CONFIG.version}):
-${CONFIG.downloadUrl}
-
-Compatibility: Windows 10 / 11 · 64-bit · OpenXR Compatible
-Graphics APIs: 3 (DirectX 11, DirectX 12, Vulkan)
-Shipped Profiles: 6
-Frame Budget: 11.1ms
-
-Your Founder Access Pass:
-Code: STEREIX-FOUNDER-#8492
-Status: Priority Allocated (Tier 1 engine binaries, opt-in privacy-respecting diagnostics)
-
-Tested & Tuned Profiles:
-- Cyberpunk 2077 (REDengine 4 · DX12)
-- Elden Ring (FromSoftware · DX12)
-- Sekiro: Shadows Die Twice (FromSoftware · DX11)
-- Hogwarts Legacy (Unreal Engine 4 · DX12)
-- Atomic Heart (Unreal Engine 4 · DX12)
-- Palworld (Unreal Engine 5 · DX12)
-
-Quick Start in 3 Steps:
-1. Extract the zip to any folder.
-2. Launch your OpenXR runtime (Meta Quest Link, SteamVR, or Virtual Desktop).
-3. Start your game normally, then attach via CLI: vr-inject-cli.exe --attach
-
-Portal: ${CONFIG.websiteUrl}
-Troubleshooting: ${CONFIG.websiteUrl}#faq
-
-Sent to ${recipientEmail} because you joined early access.
-Single-player universal VR injector. © 2026 ${CONFIG.companyName}.`;
-}
-
-async function main() {
-  console.log(`\n======================================================`);
-  console.log(`   ${CONFIG.appName.toUpperCase()} — Automated Release Broadcast`);
-  console.log(`======================================================\n`);
-
-  // Preview Mode
-  if (isPreview) {
-    const previewPath = path.join(rootDir, 'release-email-preview.html');
-    fs.writeFileSync(previewPath, buildEmailHtml('customer@example.com'), 'utf8');
-    console.log(`[SUCCESS] Landing-page style HTML email preview generated at:\n  ${previewPath}\n`);
-    console.log(`Open this file in your browser to inspect the design!`);
-    return;
-  }
-
-  // Single Test Send Mode
-  if (testEmail || testArg) {
-    if (!testEmail) {
-      const subscribers = getSubscribers();
-      if (subscribers.length > 0) {
-        testEmail = subscribers[0].email;
-        console.log(`No --test-to provided. Defaulting to first registered subscriber: ${testEmail}`);
-      } else {
-        console.error(`Please provide an email to test: --test-to=you@gmail.com`);
-        process.exit(1);
-      }
-    }
-
-    console.log(`[TEST MODE] Sending test release email to: ${testEmail}`);
-    const apiKey = effectiveApiKey;
-    if (!apiKey) {
-      console.error(`\n[ERROR] Resend API Key is required to send real emails.`);
-      console.log(`\nHOW TO GET YOUR FREE API KEY (takes 1 minute):`);
-      console.log(`  1. Go to https://resend.com and sign up with ${testEmail}`);
-      console.log(`  2. Click "API Keys" -> "Create API Key" (starts with "re_")`);
-      console.log(`  3. Run with your key:`);
-      console.log(`     npm run broadcast:test -- --test-to=${testEmail} --api-key=re_your_api_key`);
-      console.log(`     OR set it in your .env file: RESEND_API_KEY=re_your_api_key\n`);
-      process.exit(1);
-    }
-
-    try {
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: `${CONFIG.fromName} <${CONFIG.fromEmail}>`,
-          to: [testEmail],
-          subject: CONFIG.subject,
-          html: buildEmailHtml(testEmail),
-          text: buildPlainText(testEmail),
-          headers: {
-            'List-Unsubscribe': `<mailto:unsubscribe@resend.dev?subject=unsubscribe>, <${CONFIG.websiteUrl}#unsubscribe>`,
-            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-          },
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        console.log(`\n======================================================`);
-        console.log(`[SUCCESS] Test email successfully delivered to ${testEmail}!`);
-        console.log(`Resend Message ID: ${data.id}`);
-        console.log(`Check your inbox at ${testEmail} to inspect the live email.`);
-        console.log(`======================================================\n`);
-      } else {
-        const errText = await res.text();
-        console.error(`\n[FAILED] Resend API error: ${errText}`);
-        if (errText.includes('testing emails') || errText.includes('only send testing')) {
-          console.log(`\n[TIP] On Resend's free tier with 'onboarding@resend.dev', you can send test emails to the exact email address you signed up with at resend.com.`);
-        }
-      }
-    } catch (err) {
-      console.error(`\n[ERROR] Network error:`, err.message);
-    }
-    return;
-  }
-
-  const subscribers = getSubscribers();
-  console.log(`Total waitlist customers registered: ${subscribers.length}`);
-
-  // Dry-Run Mode (Default safe mode)
-  if (isDryRun || !isSend) {
-    console.log(`\n[DRY RUN SAFE MODE] No emails were sent.`);
-    console.log(`The following ${subscribers.length} customer(s) will receive the release email:\n`);
-    subscribers.forEach((s, idx) => console.log(`  ${idx + 1}. ${s.email} (${s.country})`));
-    console.log(`\nNext Steps:`);
-    console.log(`  • Preview HTML in browser:     npm run broadcast:preview`);
-    console.log(`  • Send test email to yourself: npm run broadcast:test -- --test-to=${subscribers[0]?.email || 'your@email.com'}`);
-    console.log(`  • Broadcast to all customers:  npm run broadcast:send\n`);
-    return;
-  }
-
-  // Full Live Broadcast Mode
-  const apiKey = effectiveApiKey;
-  if (!apiKey) {
-    console.error(`\n[ERROR] RESEND_API_KEY environment variable is required.`);
-    console.log(`Get a free API key at https://resend.com (3,000 free emails/month).`);
-    console.log(`Then set it in PowerShell:`);
-    console.log(`  $env:RESEND_API_KEY="re_your_api_key"`);
-    console.log(`  npm run broadcast:send\n`);
-    process.exit(1);
-  }
-
-  console.log(`\nInitiating live release broadcast to all ${subscribers.length} customers...\n`);
-
-  let sent = 0;
-  let failed = 0;
-
-  for (const sub of subscribers) {
-    process.stdout.write(`Sending to ${sub.email}... `);
-    try {
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: `${CONFIG.fromName} <${CONFIG.fromEmail}>`,
-          to: [sub.email],
-          subject: CONFIG.subject,
-          html: buildEmailHtml(sub.email),
-          text: buildPlainText(sub.email),
-          headers: {
-            'List-Unsubscribe': `<mailto:unsubscribe@resend.dev?subject=unsubscribe>, <${CONFIG.websiteUrl}#unsubscribe>`,
-            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-          },
-        }),
-      });
-
-      if (res.ok) {
-        console.log(`✓ Delivered`);
-        sent++;
-      } else {
-        const errText = await res.text();
-        console.log(`✗ Error: ${errText}`);
-        failed++;
-      }
-    } catch (err) {
-      console.log(`✗ Failed: ${err.message}`);
-      failed++;
-    }
-  }
-
-  console.log(`\n======================================================`);
-  console.log(`Broadcast Complete: ${sent} delivered, ${failed} failed.`);
-  console.log(`======================================================\n`);
-}
-
-main();
+</html>

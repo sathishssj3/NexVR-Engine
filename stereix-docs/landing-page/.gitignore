@@ -22,4 +22,5 @@ waitlist-subscribers*.json
 *.csv
 *.sql
 release-email-preview.html
+!public/release-email-preview.html
 

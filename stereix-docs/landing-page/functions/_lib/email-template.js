@@ -1,5 +1,5 @@
 /**
- * Release Email Template Builder for Stereo Engine
+ * Release Email Template Builder for Stereix Engine
  * Shared across Admin UI API and CLI Broadcast script.
  */
 
@@ -316,7 +316,7 @@ export function buildEmailHtml(recipientEmail, customVersion = null) {
             <td class="laser-accent" style="height: 2px; background-color: #DC143C;"></td>
           </tr>
 
-          <!-- Minimal Header: ONLY "STEREO ENGINE" (No logo icon) -->
+          <!-- Minimal Header: ONLY "STEREIX ENGINE" (No logo icon) -->
           <tr>
             <td align="center" style="padding: 26px 24px 22px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); background-color: #08080B;">
               <div class="header-brand" style="font-family: 'Chakra Petch', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 0.24em; color: #FFFFFF; text-transform: uppercase;">
@@ -419,7 +419,7 @@ export function buildEmailHtml(recipientEmail, customVersion = null) {
                       <tr>
                         <td colspan="2" style="padding-top: 10px;">
                           <div style="font-family: ui-monospace, monospace; font-size: 16px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.08em;">
-                            STEREO-FOUNDER-#8492
+                            STEREIX-FOUNDER-#8492
                           </div>
                         </td>
                       </tr>
@@ -595,7 +595,7 @@ Shipped Profiles: 6
 Frame Budget: 11.1ms
 
 Your Founder Access Pass:
-Code: STEREO-FOUNDER-#8492
+Code: STEREIX-FOUNDER-#8492
 Status: Priority Allocated (Tier 1 engine binaries, opt-in privacy-respecting diagnostics)
 
 Tested & Tuned Profiles:
