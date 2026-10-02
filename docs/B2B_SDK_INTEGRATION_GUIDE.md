@@ -1,9 +1,9 @@
-# NexVR B2B SDK — Integration Guide
+# Stereix B2B SDK — Integration Guide
 
-**Version:** 0.3.0 · DirectX 12 & DirectX 11 · Windows x64
-**Audience:** the engineer wiring NexVR into an engine
+**Version:** 0.3.0 · DirectX 12, DirectX 11 & Vulkan · Windows x64
+**Audience:** the engineer wiring Stereix into an engine
 
-> For the Direct3D 12 Native SDK Path specifications, barrier lifecycles, and Unreal Engine 5 integration details, see [docs/B2B_DX12_INTEGRATION_PLAN.md](file:///c:/Users/sathi/.gemini/antigravity/scratch/vr-inject/docs/B2B_DX12_INTEGRATION_PLAN.md).
+> For the Direct3D 12 Native SDK Path specifications, barrier lifecycles, and Unreal Engine 5 integration details, see [docs/B2B_DX12_INTEGRATION_PLAN.md](file:///c:/Users/sathi/.gemini/antigravity/scratch/Stereix-Engine/docs/B2B_DX12_INTEGRATION_PLAN.md).
 
 ---
 
@@ -13,7 +13,7 @@ This guide leads with the four things that will cost you a day if you discover t
 
 | # | Constraint | What it looks like when you get it wrong |
 |---|---|---|
-| 1 | The runtime picks the GPU | Init refuses with `NEXVR_ERROR_WRONG_ADAPTER`, and no code change fixes it |
+| 1 | The runtime picks the GPU | Init refuses with `STEREIX_ERROR_WRONG_ADAPTER`, and no code change fixes it |
 | 2 | We enable `ID3D11Multithread` on your device | A lock appears in your context hot path |
 | 3 | You must declare your colour space | The image renders, and looks wrong |
 | 4 | `ClearState()` before you release | A D3D11 leak report that blames us |
@@ -25,41 +25,44 @@ The SDK is built so that #1, #3 and #4 fail loudly at initialization rather than
 ## 1. The shape of an integration
 
 ```c
+#include "stereix_sdk.h"
+
 // ── Startup, BEFORE your renderer creates its D3D11 device ──────────────
-NexVR_GraphicsRequirements requirements = { sizeof(requirements) };
-NexVR_GetGraphicsRequirements(&requirements);
+Stereix_GraphicsRequirements requirements = { sizeof(requirements) };
+Stereix_GetGraphicsRequirements(&requirements);
 
 //   → create your device on requirements.adapterLuid
 //   → create your VR render target at
 //     requirements.requiredTextureWidth × requiredTextureHeight
 
 // ── Once, after the device and target exist ─────────────────────────────
-NexVR_InitializeDX11Info info = { sizeof(info) };
+Stereix_InitializeDX11Info info = { sizeof(info) };
 info.device               = yourDevice;
 info.immediateContext     = yourImmediateContext;
 info.representativeTarget = yourVrRenderTarget;
-info.colorSpace           = NEXVR_COLOR_SPACE_SRGB_ENCODED;  // or _LINEAR
-NexVR_InitializeDX11(&info, &session);
+info.colorSpace           = STEREIX_COLOR_SPACE_SRGB_ENCODED;  // or _LINEAR
+Stereix_Session session   = NULL;
+Stereix_InitializeDX11(&info, &session);
 
 // ── Per frame ───────────────────────────────────────────────────────────
 // GAME / SIMULATION THREAD
-NexVR_FrameState frame = { sizeof(frame) };
-NexVR_WaitFrame(session, &frame);      // blocks ~one display interval
+Stereix_FrameState frame = { sizeof(frame) };
+Stereix_WaitFrame(session, &frame);      // blocks ~one display interval
 //   → apply frame.views[] to your cameras
 //   → render your scene into the VR render target
 
 // RENDER THREAD (the thread that owns the immediate context)
 // Color-only submission:
-NexVR_SubmitFrameDX11(session, frame.token, yourVrRenderTarget);
+Stereix_SubmitFrameDX11(session, frame.token, yourVrRenderTarget);
 
 // Or submit with depth (optional, for positional timewarp & occlusion):
-// NexVR_DepthInfoDX11 depth = { sizeof(depth) };
+// Stereix_DepthInfoDX11 depth = { sizeof(depth) };
 // depth.depthTexture = yourDepthTexture;
-// depth.nearZ = 0.05f; depth.farZ = 1000.0f; depth.range = NEXVR_DEPTH_RANGE_REVERSED;
-// NexVR_SubmitFrameWithDepthDX11(session, frame.token, yourVrRenderTarget, &depth);
+// depth.nearZ = 0.05f; depth.farZ = 1000.0f; depth.range = STEREIX_DEPTH_RANGE_REVERSED;
+// Stereix_SubmitFrameWithDepthDX11(session, frame.token, yourVrRenderTarget, &depth);
 
 // ── Shutdown ────────────────────────────────────────────────────────────
-NexVR_Shutdown(session);
+Stereix_Shutdown(session);
 ```
 
 Every call returns a `NexVR_Result`. Check with `NEXVR_SUCCEEDED` / `NEXVR_FAILED`, **not** `== NEXVR_SUCCESS` — a dropped frame is a positive value and treating it as fatal will tear down a working session.
