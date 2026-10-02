@@ -1,5 +1,5 @@
 """
-NexVR Engine - Hybrid Dataset Component B: Pointer Chain Generator
+Stereix Engine - Hybrid Dataset Component B: Pointer Chain Generator
 Models real-world multi-level pointer chains from commercial game binaries and Cheat Engine tables.
 Covers Unreal Engine (UWorld -> GameInstance -> PlayerController -> CameraManager),
 Unity IL2CPP (GameAssembly.dll static class -> TypeInfo -> Transform), and Custom Engines.

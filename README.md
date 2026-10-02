@@ -3,7 +3,7 @@
 <p align="center">
   <img src="assets/logo.png" width="300" style="border-radius: 50%;" alt="Stereix Engine Logo">
   <br><br>
-  <a href="https://github.com/sathishssj3/NexVR-Engine/actions/workflows/release.yml"><img src="https://github.com/sathishssj3/NexVR-Engine/actions/workflows/release.yml/badge.svg?branch=main" alt="CI Status"></a>
+  <a href="https://github.com/sathishssj3/Stereix-Engine/actions/workflows/release.yml"><img src="https://github.com/sathishssj3/Stereix-Engine/actions/workflows/release.yml/badge.svg?branch=main" alt="CI Status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Proprietary-red?style=flat-square" alt="License"></a>
 </p>
 
@@ -35,33 +35,33 @@ Project context, current roadmap, and prior audit decisions are tracked in [docs
 
 ## 🏗️ Monorepo Architecture
 
-NexVR is organized as an enterprise monorepo:
+Stereix is organized as an enterprise monorepo:
 
 ```text
-NexVR-Engine/
-├── nexvr-client/         # 🎮 Windows Native C++ Engine, OpenXR Layer & Electron Launcher
-│   ├── src/              # C++ Direct3D 11/12, Vulkan & OpenXR hooks
-│   ├── shaders/          # Compute shaders (stereo warp, depth reprojection)
-│   └── launcher/         # Electron/React desktop app
-├── nexvr-backend/        # ☁️ Cloud Microservices Platform (Node.js/TypeScript)
-│   ├── src/gateway/      # API Gateway (Rate limiting, routing)
-│   ├── src/services/     # Auth, User, Game, Profile, Update, Telemetry
-│   └── prisma/           # PostgreSQL schema & migrations
-├── nexvr-infrastructure/ # 🌐 AWS Cloud Infrastructure (Terraform)
-│   ├── modules/          # VPC, EKS, ECR, Aurora Postgres, Redis, S3, CloudFront, WAF
-│   └── environments/     # Production & Staging root configurations
-├── nexvr-deployment/     # ☸️ Kubernetes, Helm, Argo CD & Monitoring
-│   ├── helm/             # Production Helm charts
-│   ├── argocd/           # GitOps application manifests
-│   └── monitoring/       # Prometheus rules & Grafana dashboards
-└── nexvr-docs/           # 📚 System Architecture & DevOps Playbooks
+Stereix-Engine/
+├── stereix-client/         # 🎮 Windows Native C++ Engine, OpenXR Layer & Electron Launcher
+│   ├── src/                # C++ Direct3D 11/12, Vulkan & OpenXR hooks
+│   ├── shaders/            # Compute shaders (stereo warp, depth reprojection)
+│   └── launcher/           # Electron/React desktop app
+├── stereix-backend/        # ☁️ Cloud Microservices Platform (Node.js/TypeScript)
+│   ├── src/gateway/        # API Gateway (Rate limiting, routing)
+│   ├── src/services/       # Auth, User, Game, Profile, Update, Telemetry
+│   └── prisma/             # PostgreSQL schema & migrations
+├── stereix-infrastructure/ # 🌐 AWS Cloud Infrastructure (Terraform)
+│   ├── modules/            # VPC, EKS, ECR, Aurora Postgres, Redis, S3, CloudFront, WAF
+│   └── environments/       # Production & Staging root configurations
+├── stereix-deployment/     # ☸️ Kubernetes, Helm, Argo CD & Monitoring
+│   ├── helm/               # Production Helm charts
+│   ├── argocd/             # GitOps application manifests
+│   └── monitoring/         # Prometheus rules & Grafana dashboards
+└── stereix-docs/           # 📚 System Architecture & DevOps Playbooks
 ```
 
 ---
 
 ## 🛠️ Building from Source
 
-### Native Windows Client (`nexvr-client`)
+### Native Windows Client (`stereix-client`)
 
 ```bash
 # 1. Build C++ Engine (Release x64) from repo root
@@ -69,16 +69,16 @@ cmake -B build -S . -A x64
 cmake --build build --config Release
 
 # 2. Build and launch the Electron desktop app
-cd nexvr-client/launcher
+cd stereix-client/launcher
 npm install
 npm run dev
 ```
 
-### Cloud Services (`nexvr-backend`)
+### Cloud Services (`stereix-backend`)
 
 ```bash
 # 1. Start local PostgreSQL, Redis, and LocalStack
-cd nexvr-backend
+cd stereix-backend
 npm run docker:up
 
 # 2. Run database migrations & start API Gateway
@@ -113,15 +113,15 @@ The NSIS installer will be generated in `launcher/dist-electron/`.
 
 We welcome community contributions! You can add support for new games without writing a single line of C++ code by creating a profile in [`profiles/`](profiles/):
 - **Adding a Game**: See the [3-minute game profile guide](CONTRIBUTING.md#-how-to-add-a-new-game-profile-in-3-minutes).
-- **Subsystem Architecture**: Read the subsystem guides in [`nexvr-client/src/core/`](nexvr-client/src/core/README.md), [`nexvr-client/src/hooks/`](nexvr-client/src/hooks/README.md), and [`nexvr-docs/architecture/`](nexvr-docs/architecture/system-overview.md).
-- **Enterprise Documentation**: Browse full guides in [`nexvr-docs/`](nexvr-docs/).
+- **Subsystem Architecture**: Read the subsystem guides in [`stereix-client/src/core/`](stereix-client/src/core/README.md), [`stereix-client/src/hooks/`](stereix-client/src/hooks/README.md), and [`stereix-docs/architecture/`](stereix-docs/architecture/system-overview.md).
+- **Enterprise Documentation**: Browse full guides in [`stereix-docs/`](stereix-docs/).
 
 ---
 
 ## 📄 License
 
 This project is licensed under the [Proprietary Software License Agreement](LICENSE). All rights reserved.
-For enterprise licensing, commercial game integrations, and studio partnerships, please see [NexVR B2B Integration Guide](docs/B2B_SDK_INTEGRATION_GUIDE.md).
+For enterprise licensing, commercial game integrations, and studio partnerships, please see [Stereix B2B Integration Guide](docs/B2B_SDK_INTEGRATION_GUIDE.md).
 
 ---
 

@@ -1,5 +1,5 @@
 """
-NexVR Engine - Model Soup Weight Merging CLI
+Stereix Engine - Model Soup Weight Merging CLI
 Merges multiple fine-tuned LoRA adapter checkpoints using TIES (Trimming, Elect Sign, and Merge)
 or uniform Model Soup weight averaging.
 Cancels out individual adapter hallucinations without retraining.
@@ -43,7 +43,7 @@ def ties_merge(adapters: list, weights: list = None):
 
 def run_soup(base_model_id: str, adapter_dirs: list, output_dir: str, method: str = "ties"):
     print("=" * 70)
-    print(" NexVR Engine: Model Soup Weight Merger")
+    print(" Stereix Engine: Model Soup Weight Merger")
     print(f" Merging {len(adapter_dirs)} adapters using '{method.upper()}' algorithm")
     print("=" * 70)
     
@@ -85,7 +85,7 @@ def run_soup(base_model_id: str, adapter_dirs: list, output_dir: str, method: st
     print(f"[SUCCESS] Unified Model Soup saved to: {output_dir}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="NexVR Model Soup CLI")
+    parser = argparse.ArgumentParser(description="Stereix Model Soup CLI")
     parser.add_argument("--base", type=str, default="Qwen/Qwen2.5-Coder-72B-Instruct", help="Base model identifier")
     parser.add_argument("--adapters", nargs="+", required=True, help="List of adapter checkpoint paths to merge")
     parser.add_argument("--output", type=str, required=True, help="Target directory for merged model")

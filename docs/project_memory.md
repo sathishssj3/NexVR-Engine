@@ -1,10 +1,10 @@
-# NexVR Engine Project Memory
+# Stereix Engine Project Memory
 
-This document is the repo-local project memory for NexVR Engine. Use it as the first source of context before editing, adding features, or planning roadmap work.
+This document is the repo-local project memory for Stereix Engine. Use it as the first source of context before editing, adding features, or planning roadmap work.
 
 ## 1. Project Mission And Core Technology
 
-NexVR Engine is a universal virtual reality injection layer that transforms flat-screen PC games into native, stereoscopic 3D VR experiences. It hooks DirectX 11, DirectX 12, and Vulkan render swapchains, converts mono outputs to stereo views with custom IPD, and projects them to OpenXR headsets.
+Stereix Engine is a universal virtual reality injection layer that transforms flat-screen PC games into native, stereoscopic 3D VR experiences. It hooks DirectX 11, DirectX 12, and Vulkan render swapchains, converts mono outputs to stereo views with custom IPD, and projects them to OpenXR headsets.
 
 Core stack:
 
@@ -35,7 +35,7 @@ The codebase has already gone through a stability pass. Preserve these fixes whe
 - BUG-14, DX12 Map/Unmap worker contention: never hook `ID3D12Resource::Map` / `Unmap` in universal depth mode to prevent worker thread lock contention and `DXGI_ERROR_INVALID_CALL` device removals.
 - BUG-15, OpenXR subImage stack corruption: `XrCompositionLayerProjectionView` subImage structs must explicitly zero-initialize `.imageArrayIndex = 0` and `.imageRect.offset = {0, 0}` to prevent `XR_ERROR_SWAPCHAIN_RECT_INVALID`.
 - BUG-17, Color space double-gamma: Game swapchain backbuffers are already tone-mapped and gamma-corrected (sRGB) by the engine. Never apply artificial `pow(c, 2.2f)` squaring in `stereo_reprojection.hlsl` or `tonemap.hlsl`, as this causes severe double-gamma crushing (fog, sky, and scenery drop to pitch black).
-- BUG-19, OTA dependency shadowing: In `injectionManager.ts`, local build outputs (`build/bin`) must always take precedence over `%APPDATA%\NexVR-Dev\updates\` during development (`!app.isPackaged`) and when the local binary is newer than the cached OTA download. Otherwise stale hotfixes silently overwrite fresh developer builds.
+- BUG-19, OTA dependency shadowing: In `injectionManager.ts`, local build outputs (`build/bin`) must always take precedence over `%APPDATA%\Stereix-Dev\updates\` during development (`!app.isPackaged`) and when the local binary is newer than the cached OTA download. Otherwise stale hotfixes silently overwrite fresh developer builds.
 - DEAD-05, DllMain deadlock: DLL detach cleanup should use bounded waits to reduce loader-lock risk.
 - QUAL-01, injector duplication: use the unified injector in `src/injector/main.cpp`; do not reintroduce redundant injector implementations under `tools/`.
 - QUAL-04, hardcoded launcher logic: avoid game-specific hardcoded icon exceptions in `libraryManager.ts`.
@@ -136,37 +136,37 @@ The following fixes ensure all games (DX11, DX12, Vulkan) correctly display in V
 - **Rule**: Never introduce hardcoded game names or broad filename heuristics into core engine detection. Each game must be isolated by its own profile and directory structure. Centralized config loading must occur during early runtime before any graphics hooks execute.
 
 ### BUG-17: Per-Game sRGB Tonemapping & Cross-Game Contrast Isolation
-- **Files**: `nexvr-client/shaders/stereo_reprojection.hlsl`, `nexvr-client/src/rendering/dx12/dx12_stereo_resource_manager.h`, `nexvr-client/src/rendering/dx12/dx12_stereo_resource_manager.cpp`, `nexvr-client/src/rendering/stereo/stereo_renderer.h`, `nexvr-client/src/rendering/stereo/stereo_renderer.cpp`, `nexvr-client/src/rendering/vulkan/vulkan_graphics_backend.cpp`
+- **Files**: `Stereix-client/shaders/stereo_reprojection.hlsl`, `Stereix-client/src/rendering/dx12/dx12_stereo_resource_manager.h`, `Stereix-client/src/rendering/dx12/dx12_stereo_resource_manager.cpp`, `Stereix-client/src/rendering/stereo/stereo_renderer.h`, `Stereix-client/src/rendering/stereo/stereo_renderer.cpp`, `Stereix-client/src/rendering/vulkan/vulkan_graphics_backend.cpp`
 - **Problem**: DX11 games like *Sekiro* output an already-gamma-compressed sRGB swapchain backbuffer, where applying `pow(c, 2.2f)` caused double-gamma crushing (pitch black scenery/trees). Conversely, DX12 / Unreal Engine 4 titles like *Hogwarts Legacy* output linear / HDR UNORM surfaces, where omitting gamma correction resulted in washed-out, milky, low-contrast visuals in the VR headset compared to the desktop window. Hardcoding either behavior globally in shaders regresses one title when fixing the other.
 - **Fix**: Replaced hardcoded shader math with dynamic constant buffer control. Replaced padding at offset 252 of `cbuffer StereoConstants` with `uint SrgbCorrection;`. Compute shader `stereo_reprojection.hlsl` applies `pow(max(c, 0.0f), 2.2f)` conditionally only when `SrgbCorrection != 0`. The DX12, DX11, and Vulkan backends dynamically populate this flag each frame from `SubsystemContext::Get().GetConfig()->GetConfig().srgbCorrection`, which is driven directly by per-game profiles (`814380_sekiro.json: false`, `990080_hogwarts_legacy.json: true`) and controllable in real time via the in-headset ImGui overlay.
 - **Rule**: Never globally hardcode color-space or gamma transformations in compute/pixel shaders. Color curves must be dynamically governed via constant buffers backed by per-game profile metadata (`srgbCorrection`), ensuring complete isolation and zero regressions across titles.
 
 ### BUG-19: Launcher OTA Dependency Shadowing Local Builds
-- **Files**: `nexvr-client/launcher/electron/injectionManager.ts`
-- **Problem**: In development mode (`npm run dev`), the launcher unconditionally prioritized cached OTA binaries from `%APPDATA%\NexVR-Dev\updates\` over newly compiled binaries in `build/bin/`. As a result, when testing new engine builds, the CLI or launcher overwrote the game folder with stale binaries from the update cache, rendering local compiler fixes completely ineffective.
+- **Files**: `Stereix-client/launcher/electron/injectionManager.ts`
+- **Problem**: In development mode (`npm run dev`), the launcher unconditionally prioritized cached OTA binaries from `%APPDATA%\Stereix-Dev\updates\` over newly compiled binaries in `build/bin/`. As a result, when testing new engine builds, the CLI or launcher overwrote the game folder with stale binaries from the update cache, rendering local compiler fixes completely ineffective.
 - **Fix**: Added `pickPreferredAsset()` helper ensuring that in development mode (`!app.isPackaged`), `canonicalBinSourceDir` (`build/bin/`) ALWAYS takes precedence over OTA caches. In packaged mode, the binary with the newer `mtimeMs` is selected. `copySources` also orders `canonicalBinSourceDir` first during dev mode.
 - **Rule**: In development mode, local build artifacts must always take precedence over downloaded OTA cache files.
 
 ### BUG-20: Launcher OTA Cache Invalidation, Shader Distribution & Cross-Game Contamination
-- **Files**: `nexvr-client/launcher/electron/updateManager.ts`, `nexvr-client/launcher/electron/injectionManager.ts`, `updates/manifest.json`, `.github/workflows/package-setup.yml`
+- **Files**: `Stereix-client/launcher/electron/updateManager.ts`, `Stereix-client/launcher/electron/injectionManager.ts`, `updates/manifest.json`, `.github/workflows/package-setup.yml`
 - **Problem**: Upgraded or newly installed launchers failed to run Sekiro in VR and caused graphics issues in Hogwarts Legacy due to three compounding defects: (1) `pickPreferredAsset()` relied on raw file `mtimeMs`, causing stale downloaded OTA files in `%APPDATA%` to shadow fresh bundled files in newly installed release packages; (2) `updates/manifest.json` omitted compute shaders (`shaders/stereo_reprojection.hlsl`), leaving OTA updates without critical shader fixes; (3) `injectionManager.ts` wrote a global `%APPDATA%\updates\vrinject.json` and didn't enforce `srgbCorrection` / `depthSubmission` profile invariants over existing game directory configs, causing Sekiro to retain broken depth submission and cross-contaminating settings between games.
 - **Fix**: Implemented `purgeStaleOtaCacheIfAppNewer()` and version-aware asset resolution in `pickPreferredAsset()`. Added all compute shaders to `updates/manifest.json`. Enforced `srgbCorrection` and `depthSubmission` invariants when merging game configs and eliminated the global `stageCfg` write. Updated CI/CD workflow to dynamically compute release tags (`v0.1.10`) from `package.json`.
 - **Rule**: Packaged launchers must prioritize bundled assets over older cached OTA files, shaders must be distributed with OTA updates, and per-game configs must never cross-contaminate via shared global staging files.
 
 ### BUG-21: Universal Native Game Lighting & Prevention of Double-Gamma Crush Across Titles
-- **Files**: `nexvr-client/src/core/config_manager.h`, `nexvr-client/src/core/config_manager.cpp`, `nexvr-client/src/core/overlay_manager.cpp`, `nexvr-client/launcher/electron/injectionManager.ts`, `updates/profiles/*.json`, `nexvr-client/profiles/*.json`
+- **Files**: `Stereix-client/src/core/config_manager.h`, `Stereix-client/src/core/config_manager.cpp`, `Stereix-client/src/core/overlay_manager.cpp`, `Stereix-client/launcher/electron/injectionManager.ts`, `updates/profiles/*.json`, `Stereix-client/profiles/*.json`
 - **Problem**: In games such as *Hogwarts Legacy* (DX12/UE4), the VR headset displayed crushed shadows, dark walls, and pitch-black interiors compared to the monitor. This was caused by `srgbCorrection: true` triggering `pow(c, 2.2f)` in `stereo_reprojection.hlsl`. Because modern game backbuffers (both DX11 and DX12) are already tone-mapped and gamma-encoded by game engines for desktop presentation, applying `pow(c, 2.2f)` a second time effectively squares the gamma curve ($0.5^{2.2} \approx 0.217$), plunging midtones and shadows into total blackness. Furthermore, `srgbCorrection` previously defaulted to `true` across schemas and C++ config managers, causing any newly injected or unprofiled game to suffer from identical crushing.
 - **Fix**: Completely removed `pow(c, 2.2f)` from `stereo_reprojection.hlsl` so compute shaders always pass through untouched game backbuffer pixels directly to OpenXR swapchains without double-gamma squaring. Changed the system-wide default for `srgbCorrection` to `false` in `ConfigManager`, schemas, and overlay reset handlers. Updated all curated profiles (`990080_hogwarts_legacy.json`, `668580_atomic_heart.json`, `1623730_palworld.json`, `1245620_elden_ring.json`, `1110910_mortal_shell.json`, `meccha_chameleon.json`, `814380_sekiro.json`) to `srgbCorrection: false`. Added a hardened launcher fallback in `injectionManager.ts` for Hogwarts Legacy (`Phoenix` / `HogwartsLegacy`). Bumped engine and launcher to `v0.1.11` with semver-aware hotfix detection in `updateManager.ts`.
 - **Rule**: Universal default for `srgbCorrection` must remain `false`. Games output already-tonemapped sRGB frames; compute shaders must never artificially apply exponential gamma curves (`pow(c, 2.2)`) unless specifically requested by an opt-in user toggle. All fixes must bump the version number before release.
 
 ### BUG-22: Camera Lock Hysteresis & Temporal Score Decay Prevention
-- **Files**: `nexvr-client/src/memory_scanner/camera_delta_tracker.cpp`, `nexvr-client/src/core/frame_coordinator.cpp`
+- **Files**: `Stereix-client/src/memory_scanner/camera_delta_tracker.cpp`, `Stereix-client/src/core/frame_coordinator.cpp`
 - **Problem**: In games like *Mortal Shell* and *Sekiro*, standing idle or walking with keyboard WASD without mouse movement caused `inputMotionEnergy` to drop to zero. The tracker penalized camera translation without mouse turn, decaying `m_lockedConfidence` to 0.0f within ~220 ms and dropping the camera lock. This caused violent flickering between 3D stereo reprojection and 2D flat mode. Additionally, uninitialized stack matrices and square 1:1 shadow cascade projection bindings caused warped FOVs and pinhole zooms.
 - **Fix**: Implemented lock retention hysteresis in `CameraDeltaTracker` preserving established orthonormal camera locks at >=90% confidence during idle/WASD movement. Separated 3x3 rotation deltas from row-3 translation deltas. Added aspect ratio validation ($1.25 < \text{aspect} < 2.8$) rejecting square shadow cascades. Ensured clean, zero-initialized Left-Handed Reverse-Z 16:9 perspective fallback matrices in `FrameCoordinator`.
 - **Rule**: Established camera locks must never be dropped purely due to lack of mouse movement. Projection candidate validation must filter out square shadow cascades and reflection probes.
 
 ### BUG-23: Desktop 60 Hz VSync Decoupling from 90 Hz OpenXR Compositor
-- **Files**: `nexvr-client/src/hooks/dx11_hook.cpp`
+- **Files**: `Stereix-client/src/hooks/dx11_hook.cpp`
 - **Problem**: When games ran with desktop VSync enabled on a 60 Hz monitor, DX11 `Present(1, ...)` put the render thread to sleep until the 16.6 ms desktop v-blank. OpenXR / SteamVR running at 90 Hz (11.1 ms) missed submission deadlines on every frame, resulting in a solid purple/magenta reprojection dropped-frame wall in the SteamVR GPU performance graph despite low GPU render times (<1.5 ms).
 - **Fix**: Decoupled desktop presentation by checking `FrameCoordinator::IsOpenXRReady()`. When an OpenXR VR session is presenting, `effectiveSyncInterval = 0` is passed to desktop `Present()`, allowing the game loop to present immediately and feed the OpenXR compositor at the full 90/120 Hz cadence without dropped frames.
 - **Rule**: When VR injection is presenting to OpenXR, desktop swapchains must never sleep on desktop monitor v-blank intervals.
@@ -174,14 +174,14 @@ The following fixes ensure all games (DX11, DX12, Vulkan) correctly display in V
 
 ## 7. Anti-Cheat & AV Posture Tier List
 
-Because NexVR relies on `CreateRemoteThread` and `LoadLibrary` to inject into arbitrary game processes, its behavior is fundamentally indistinguishable from techniques flagged by Anti-Virus (AV) heuristics and Anti-Cheat (AC) software. This is the standard approach for universal VR injectors and cannot be fundamentally changed. The following tier list defines our official compatibility and support posture:
+Because Stereix relies on `CreateRemoteThread` and `LoadLibrary` to inject into arbitrary game processes, its behavior is fundamentally indistinguishable from techniques flagged by Anti-Virus (AV) heuristics and Anti-Cheat (AC) software. This is the standard approach for universal VR injectors and cannot be fundamentally changed. The following tier list defines our official compatibility and support posture:
 
 - **Tier 1: Single-Player / No Anti-Cheat (Fully Supported)**
-  Games without active anti-cheat solutions. NexVR operates freely. Users may occasionally need to whitelist `vrinject.dll` and `vr-inject-cli.exe` in Windows Defender or third-party AVs due to heuristic flagging.
+  Games without active anti-cheat solutions. Stereix operates freely. Users may occasionally need to whitelist `vrinject.dll` and `vr-inject-cli.exe` in Windows Defender or third-party AVs due to heuristic flagging.
 - **Tier 2: Light Anti-Cheat / Mod-Friendly (Supported Offline)**
-  Games with passive protections or official offline modes (e.g., Elden Ring with EAC disabled). Users MUST explicitly disable the anti-cheat or launch in offline mode before injecting. NexVR will not attempt to hide from active scans.
+  Games with passive protections or official offline modes (e.g., Elden Ring with EAC disabled). Users MUST explicitly disable the anti-cheat or launch in offline mode before injecting. Stereix will not attempt to hide from active scans.
 - **Tier 3: Strict Anti-Cheat (Unsupported / Blacklisted)**
-  Competitive multiplayer titles using kernel-level or strict user-mode anti-cheat (e.g., Vanguard, BattlEye, active EAC, Ricochet). NexVR will NOT attempt to bypass these systems. Injection will fail, and attempting to force it may result in permanent account bans. NexVR should never be marketed for or used with these titles.
+  Competitive multiplayer titles using kernel-level or strict user-mode anti-cheat (e.g., Vanguard, BattlEye, active EAC, Ricochet). Stereix will NOT attempt to bypass these systems. Injection will fail, and attempting to force it may result in permanent account bans. Stereix should never be marketed for or used with these titles.
 
 ## 8. Cross-Backend In-Headset ImGui VR Overlay Architecture
 
@@ -194,7 +194,7 @@ The In-Headset ImGui VR Overlay dashboard is implemented across all supported gr
 ## 9. Pre-Beta Governance, Safety & Telemetry Architecture
 
 ### QUAL-07: First-Launch Closed Beta Legal, Anti-Cheat & Safety Modal
-- **Files**: `nexvr-client/launcher/src/components/LegalModal.tsx`, `nexvr-client/launcher/src/App.tsx`, `nexvr-client/launcher/src/components/AboutPanel.tsx`
+- **Files**: `Stereix-client/launcher/src/components/LegalModal.tsx`, `Stereix-client/launcher/src/App.tsx`, `Stereix-client/launcher/src/components/AboutPanel.tsx`
 - **Purpose**: Protects project maintainers and beta testers with mandatory first-run agreements:
   1. *Single-Player Only & Zero Anti-Cheat Liability*: Explicitly informs users that injecting into multiplayer titles protected by kernel anti-cheat is prohibited and that maintainers bear zero liability for bans.
   2. *VR Health & Epilepsy Advisory*: Informs users of vestibular mismatch risks, motion sensitivity, and 15-minute break recommendations.
@@ -202,7 +202,7 @@ The In-Headset ImGui VR Overlay dashboard is implemented across all supported gr
   4. *As-Is Closed Beta*: Warns testers to back up saved game data prior to testing.
 
 ### FEAT-09: Automated Dual Telemetry & Bug Reporting System (Cloudflare Edge KV + Discord)
-- **Files**: `nexvr-docs/landing-page/functions/api/report.js`, `nexvr-client/launcher/electron/telemetryManager.ts`, `nexvr-client/launcher/src/components/ReportBugModal.tsx`, `scripts/fetch_reports.mjs`
+- **Files**: `Stereix-docs/landing-page/functions/api/report.js`, `Stereix-client/launcher/electron/telemetryManager.ts`, `Stereix-client/launcher/src/components/ReportBugModal.tsx`, `scripts/fetch_reports.mjs`
 - **Architecture**:
   - **Client Launcher**: Provides a 1-click "REPORT ISSUE" modal in `AboutPanel` and auto-uploader in `SessionLog`. Sanitizes all PII before transmission by replacing Windows username paths (`C:\Users\[USER]\`) and private local IP addresses.
   - **Cloudflare Edge Endpoint (`/api/report`)**: Stores full reports with 30-day TTL in Cloudflare KV, updates a fast ring-buffer index (`REPORTS_INDEX`), and forwards a rich Discord embed to `#beta-feedback` if configured.

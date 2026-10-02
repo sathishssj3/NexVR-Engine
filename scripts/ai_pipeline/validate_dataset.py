@@ -1,5 +1,5 @@
 """
-NexVR Engine - Hybrid Dataset Component E: Pre-Flight Dataset Validator
+Stereix Engine - Hybrid Dataset Component E: Pre-Flight Dataset Validator
 Verifies dataset integrity before hitting the GPU:
 - Hard token length check (<= 4096 tokens)
 - Valid JSON schema parsing for all targets

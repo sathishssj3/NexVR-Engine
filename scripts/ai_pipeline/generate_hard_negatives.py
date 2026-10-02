@@ -1,5 +1,5 @@
 """
-NexVR Engine - Hybrid Dataset Component C: Hard Negative Mining Generator
+Stereix Engine - Hybrid Dataset Component C: Hard Negative Mining Generator
 Synthesizes assembly traces and memory snapshots of non-player cameras:
 - Cascaded Shadow Map (CSM) directional sun frustums
 - Planar water / mirror reflection passes

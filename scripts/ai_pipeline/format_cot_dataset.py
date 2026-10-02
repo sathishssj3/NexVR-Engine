@@ -1,5 +1,5 @@
 """
-NexVR Engine - Hybrid Dataset Component D: Chain-of-Thought (CoT) Formatter
+Stereix Engine - Hybrid Dataset Component D: Chain-of-Thought (CoT) Formatter
 Assembles raw sample data into production ChatML format with <reasoning> blocks
 and target JSON, formatted for Unsloth / TRL SFTTrainer with response-only loss masking.
 """
@@ -8,7 +8,7 @@ import json
 from typing import Dict, Any, List
 
 SYSTEM_PROMPT = (
-    "You are NexVR's frontier reverse-engineering specialist. Your task is to analyze assembly traces, "
+    "You are Stereix's frontier reverse-engineering specialist. Your task is to analyze assembly traces, "
     "memory dumps, and register dataflow to detect 3D camera structures, view/projection matrices, "
     "player positions, and generate self-healing Array-of-Bytes (AOB) signatures."
 )

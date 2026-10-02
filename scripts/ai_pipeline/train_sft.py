@@ -1,5 +1,5 @@
 """
-NexVR Engine - 72B Reverse-Engineering Model Training Harness
+Stereix Engine - 72B Reverse-Engineering Model Training Harness
 Hardware: 1x NVIDIA H100 (80GB SXM5 / PCIe)
 Framework: Unsloth AI + PyTorch 2.4 + FlashAttention-2
 """
@@ -37,7 +37,7 @@ custom_tokens = [
 ]
 num_added = tokenizer.add_special_tokens({"additional_special_tokens": custom_tokens})
 model.resize_token_embeddings(len(tokenizer))
-print(f"[NexVR] Added {num_added} custom domain tokens. New vocab size: {len(tokenizer)}")
+print(f"[Stereix] Added {num_added} custom domain tokens. New vocab size: {len(tokenizer)}")
 
 # 4. Attach All-Linear LoRA Adapters (Including Token Embeddings)
 model = FastLanguageModel.get_peft_model(
@@ -70,7 +70,7 @@ collator = DataCollatorForCompletionOnlyLM(
 
 # 7. Training Arguments with NEFTune & Paged 8-Bit AdamW
 training_args = TrainingArguments(
-    output_dir="checkpoints/qwen_72b_nexvr_sft",
+    output_dir="checkpoints/qwen_72b_stereix_sft",
     per_device_train_batch_size=2,
     gradient_accumulation_steps=16,  # Effective Batch Size = 32
     warmup_ratio=0.05,
@@ -104,10 +104,10 @@ trainer = SFTTrainer(
     args=training_args,
 )
 
-print("[NexVR] Starting Qwen-2.5-Coder-72B Fine-Tuning Run...")
+print("[Stereix] Starting Qwen-2.5-Coder-72B Fine-Tuning Run...")
 trainer.train()
 
 # 9. Save LoRA Adapter & Tokenizer
-model.save_pretrained("checkpoints/qwen_72b_nexvr_adapter")
-tokenizer.save_pretrained("checkpoints/qwen_72b_nexvr_adapter")
-print("[NexVR] Training complete. Adapter saved to checkpoints/qwen_72b_nexvr_adapter.")
+model.save_pretrained("checkpoints/qwen_72b_stereix_adapter")
+tokenizer.save_pretrained("checkpoints/qwen_72b_stereix_adapter")
+print("[Stereix] Training complete. Adapter saved to checkpoints/qwen_72b_stereix_adapter.")

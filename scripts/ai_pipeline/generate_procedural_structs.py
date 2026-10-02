@@ -1,5 +1,5 @@
 """
-NexVR Engine - Hybrid Dataset Component A: Procedural C++ Struct Generator
+Stereix Engine - Hybrid Dataset Component A: Procedural C++ Struct Generator
 Generates realistic C++ camera, view, and transform structures with disassembly traces,
 register dataflow, PDB-like ground truth offsets, and resilient AOB signatures.
 """

@@ -1,5 +1,5 @@
 """
-NexVR Engine - Master Hybrid Dataset Builder
+Stereix Engine - Master Hybrid Dataset Builder
 Orchestrates:
 - Component A: 3,500 Procedural C++ Structs
 - Component B: 2,500 Real Game Pointer Chains
@@ -7,8 +7,8 @@ Orchestrates:
 - Component D: ChatML CoT Formatter (<reasoning> blocks)
 - Component E: Automated Pre-Flight Validation
 Produces production-ready:
-  data/nexvr_train_cot.jsonl (7,200 samples)
-  data/nexvr_val_cot.jsonl   (800 samples)
+  data/stereix_train_cot.jsonl (7,200 samples)
+  data/stereix_val_cot.jsonl   (800 samples)
 """
 
 import os
@@ -100,7 +100,7 @@ def build_dataset(
         sys.exit(1)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="NexVR Hybrid Dataset Builder")
+    parser = argparse.ArgumentParser(description="Stereix Hybrid Dataset Builder")
     parser.add_argument("--structs", type=int, default=3500, help="Number of Component A structs")
     parser.add_argument("--pointers", type=int, default=2500, help="Number of Component B pointer chains")
     parser.add_argument("--negatives", type=int, default=2000, help="Number of Component C hard negatives")

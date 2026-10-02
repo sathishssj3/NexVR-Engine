@@ -1,6 +1,6 @@
-# NexVR 72B Reverse-Engineering AI Pipeline
+# Stereix 72B Reverse-Engineering AI Pipeline
 
-End-to-end automated pipeline for training, aligning, and deploying NexVR's proprietary **72B parameter compiler-aligned AI brain** (`Qwen-2.5-Coder-72B-NexVR`).
+End-to-end automated pipeline for training, aligning, and deploying Stereix's proprietary **72B parameter compiler-aligned AI brain** (`Qwen-2.5-Coder-72B-Stereix`).
 
 ---
 
@@ -44,7 +44,7 @@ python scripts/ai_pipeline/train_sft.py
 ```
 * **Duration**: ~6.5 hours
 * **Cost**: ~$16.18 ($2.49/hr on RunPod)
-* **Output**: `checkpoints/qwen_72b_nexvr_adapter/`
+* **Output**: `checkpoints/qwen_72b_stereix_adapter/`
 
 ---
 
@@ -54,8 +54,8 @@ Merge top checkpoint weights to eliminate hallucinations via mathematical noise 
 ```bash
 python scripts/ai_pipeline/soup_merge.py \
   --base Qwen/Qwen2.5-Coder-72B-Instruct \
-  --adapters checkpoints/qwen_72b_nexvr_sft/checkpoint-800 checkpoints/qwen_72b_nexvr_sft/checkpoint-1000 checkpoints/qwen_72b_nexvr_sft/checkpoint-1200 \
-  --output checkpoints/qwen_72b_nexvr_soup \
+  --adapters checkpoints/qwen_72b_stereix_sft/checkpoint-800 checkpoints/qwen_72b_stereix_sft/checkpoint-1000 checkpoints/qwen_72b_stereix_sft/checkpoint-1200 \
+  --output checkpoints/qwen_72b_stereix_soup \
   --method ties
 ```
 * **Duration**: 2–3 minutes on CPU/RAM
@@ -68,7 +68,7 @@ python scripts/ai_pipeline/soup_merge.py \
 Export for ultra-fast serverless cloud inference (2.2 seconds per profile):
 ```bash
 python scripts/ai_pipeline/quantize_model.py \
-  --model checkpoints/qwen_72b_nexvr_soup \
-  --output models/qwen_72b_nexvr_awq \
+  --model checkpoints/qwen_72b_stereix_soup \
+  --output models/qwen_72b_stereix_awq \
   --format awq
 ```
