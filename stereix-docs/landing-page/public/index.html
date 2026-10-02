@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#050506">
 <link rel="canonical" href="https://stereix-engine.pages.dev/">
 
-<!-- NexVR Engine Brand Logo -->
+<!-- Stereix Engine Brand Logo -->
 <link rel="icon" type="image/png" sizes="32x32" href="logo.png?v=2">
 <link rel="shortcut icon" type="image/x-icon" href="favicon.ico?v=2">
 <link rel="apple-touch-icon" sizes="180x180" href="logo.png?v=2">
@@ -170,15 +170,11 @@ code{font-family:var(--mono)}
   border-bottom:1px solid var(--edge);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
 }
-.brand{font-family:var(--display);font-weight:700;letter-spacing:.02em;font-size:.95rem;
-       display:flex;align-items:center;gap:.6rem;margin-right:auto;transition:color .25s}
-/* The asset is a black rounded square, so it is clipped to a circle — the same
-   way the repo README presents it. alt="" because the adjacent text already
-   names the brand. */
-.brand-mark{width:2.15rem;height:2.15rem;border-radius:50%;flex:none;
-            display:block;object-fit:cover;
-            transition:transform .45s var(--ease),filter .45s var(--ease)}
-.brand:hover .brand-mark{transform:rotate(8deg) scale(1.08);filter:drop-shadow(0 0 10px rgba(220, 20, 60,.5))}
+.brand{font-family:var(--display);font-weight:800;letter-spacing:.08em;font-size:1.05rem;
+       text-transform:uppercase;display:flex;align-items:center;gap:.6rem;margin-right:auto;
+       transition:color .25s, text-shadow .25s}
+.brand:hover{color:var(--white);text-shadow:0 0 16px rgba(220, 20, 60,.45)}
+.brand-mark{display:none !important}
 .nav-links{display:flex;gap:1.65rem;list-style:none;margin:0;padding:0}
 .nav-links a{font-family:var(--display);font-size:.75rem;font-weight:600;letter-spacing:.14em;
              text-transform:uppercase;color:var(--muted);position:relative;padding-block:.35rem;
@@ -1595,7 +1591,7 @@ body::-webkit-scrollbar {
 </head>
 <body>
 
-<!-- ============ NEXVR PRECISION TELEMETRY CUSTOM SCROLLBAR ============ -->
+<!-- ============ STEREIX PRECISION TELEMETRY CUSTOM SCROLLBAR ============ -->
 <div id="nexvrScrollbar" class="nexvr-telemetry-scrollbar" aria-label="Page Telemetry Navigation">
   <div class="nexvr-scroll-track" id="nexvrScrollTrack">
     <div class="nexvr-scroll-rail">
@@ -1613,7 +1609,7 @@ body::-webkit-scrollbar {
 </div>
 <nav class="nav" id="nav">
   <div class="nav-in">
-    <a class="brand" href="#top" aria-label="Stereix Engine — Return to top"><img class="brand-mark" src="logo.png" alt="Stereix Engine Logo" width="256" height="256">STEREIX&nbsp;ENGINE</a>
+    <a class="brand" href="#top" aria-label="Stereix Engine — Return to top">STEREIX&nbsp;ENGINE</a>
     <ul class="nav-links">
       <li><a href="#pipeline">Pipeline</a></li>
       <li><a href="#backends">Backends</a></li>
@@ -2343,7 +2339,7 @@ body::-webkit-scrollbar {
   <div class="wrap">
     <div class="foot-grid">
       <div>
-        <a class="brand" href="#top" aria-label="NexVR Engine — Return to top" style="margin-bottom:1.1rem"><img class="brand-mark" src="logo.png" alt="NexVR Engine Logo" width="256" height="256" loading="lazy" decoding="async"><span>NEXVR&nbsp;ENGINE</span></a>
+        <a class="brand" href="#top" aria-label="Stereix Engine — Return to top" style="margin-bottom:1.1rem"><span>STEREIX&nbsp;ENGINE</span></a>
         <p class="small" style="margin:0;max-width:32ch">
           Universal 6DOF VR injector for PC games that were never built for a headset.
         </p>
@@ -2706,7 +2702,7 @@ document.querySelectorAll('.btn-notify, a[href="#waitForm"], a[href="#waitEmail"
 
 
 /* ============================================================
-   NEXVR ENGINE — INTERACTIVE FRAME BUDGET CALCULATOR
+   STEREIX ENGINE — INTERACTIVE FRAME BUDGET CALCULATOR
    ============================================================ */
 {
   const rateList = document.getElementById('rateSelector');
@@ -2728,7 +2724,7 @@ document.querySelectorAll('.btn-notify, a[href="#waitForm"], a[href="#waitEmail"
 
         budgetDisplay.innerHTML = `${ms}<em>ms</em>`;
         if (budgetExplainer) {
-          budgetExplainer.innerHTML = `At ${hz}&nbsp;Hz a frame is 1000&nbsp;÷&nbsp;${hz} = <strong>${ms} milliseconds</strong> wide. Every stage above runs inside that window. NexVR requires only ${engineOverhead}ms, leaving <strong>${headroom}ms</strong> pure rendering headroom for the game engine.`;
+          budgetExplainer.innerHTML = `At ${hz}&nbsp;Hz a frame is 1000&nbsp;÷&nbsp;${hz} = <strong>${ms} milliseconds</strong> wide. Every stage above runs inside that window. Stereix requires only ${engineOverhead}ms, leaving <strong>${headroom}ms</strong> pure rendering headroom for the game engine.`;
         }
         gameHeadroomNum.textContent = headroom;
       };
@@ -2745,7 +2741,7 @@ document.querySelectorAll('.btn-notify, a[href="#waitForm"], a[href="#waitEmail"
 }
 
 /* ============================================================
-   NEXVR ENGINE — INTERACTIVE PROFILE SWITCHER & 1-CLICK COPY
+   STEREIX ENGINE — INTERACTIVE PROFILE SWITCHER & 1-CLICK COPY
    ============================================================ */
 {
   const PROFILES_DATA = {
@@ -2838,7 +2834,7 @@ document.querySelectorAll('.btn-notify, a[href="#waitForm"], a[href="#waitEmail"
 }
 
 /* ============================================================
-   NEXVR ENGINE — PRECISION TELEMETRY CUSTOM SCROLLBAR SCRIPT
+   STEREIX ENGINE — PRECISION TELEMETRY CUSTOM SCROLLBAR SCRIPT
    ============================================================ */
 {
   const scrollbar = document.getElementById('nexvrScrollbar');

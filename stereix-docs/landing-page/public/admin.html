@@ -249,7 +249,7 @@ td.when{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 <!-- ============ LOGIN ============ -->
 <div class="gate" id="gate" hidden>
   <form id="loginForm" novalidate>
-    <div class="mark"><img src="logo.png" alt="" width="256" height="256">STEREIX&nbsp;ADMIN</div>
+    <div class="mark">STEREIX&nbsp;ADMIN</div>
     <label class="label" for="pw">Password</label>
     <div class="pw-wrap">
       <input id="pw" type="password" autocomplete="current-password" required>
@@ -273,7 +273,6 @@ td.when{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 <div id="app" hidden>
   <header class="bar">
     <div class="mark">
-      <img src="logo.png" alt="" width="256" height="256">
       STEREIX <i>/</i> <span>ADMIN</span>
     </div>
     <div class="seg" id="range" role="group" aria-label="Date range">
@@ -666,9 +665,9 @@ function setupNotice(note) {
   return `<div class="setup">
     <h2>Analytics storage is not connected</h2>
     <p>${esc(note || 'The ANALYTICS D1 binding is missing.')} Waitlist numbers below still work — they come from KV. Run these once, then redeploy:</p>
-    <pre><b>wrangler d1 create</b> nexvr-analytics
+    <pre><b>wrangler d1 create</b> stereix-analytics
 <span style="color:#5C5C64"># paste the printed database_id into wrangler.toml</span>
-<b>wrangler d1 execute</b> nexvr-analytics --remote --file=./schema.sql
+<b>wrangler d1 execute</b> stereix-analytics --remote --file=./schema.sql
 <b>wrangler pages deploy</b> .</pre></div>`;
 }
 

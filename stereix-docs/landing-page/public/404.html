@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>404 — Memory Detour Fault | NexVR Engine</title>
-<meta name="description" content="Status 0xC000000E: Hook detour target unmapped. The requested page or render target does not exist in the active NexVR Engine runtime.">
+<title>404 — Memory Detour Fault | Stereix Engine</title>
+<meta name="description" content="Status 0xC000000E: Hook detour target unmapped. The requested page or render target does not exist in the active Stereix Engine runtime.">
 <meta name="theme-color" content="#050506">
 
 <!-- Brand Favicons -->
@@ -107,21 +107,19 @@ a {
   align-items: center;
   gap: 0.75rem;
   font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 0.95rem;
-  letter-spacing: 0.04em;
-  transition: transform 0.2s var(--ease);
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: transform 0.2s var(--ease), color 0.2s, text-shadow 0.2s;
 }
 .brand:hover {
   transform: scale(1.02);
+  color: var(--white);
+  text-shadow: 0 0 16px rgba(220, 20, 60, 0.45);
 }
 .brand-mark {
-  width: 2.15rem;
-  height: 2.15rem;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1px solid var(--edge);
-  box-shadow: 0 0 12px rgba(220, 20, 60, 0.25);
+  display: none !important;
 }
 
 .nav-right {
@@ -485,9 +483,8 @@ a {
 <body>
 
 <nav class="nav">
-  <a class="brand" href="/" aria-label="NexVR Engine — Return to Home">
-    <img class="brand-mark" src="logo.png" alt="NexVR Logo" width="34" height="34">
-    <span>NEXVR ENGINE</span>
+  <a class="brand" href="/" aria-label="Stereix Engine — Return to Home">
+    <span>STEREIX ENGINE</span>
   </a>
   <div class="nav-right">
     <div class="nav-status">
@@ -511,7 +508,7 @@ a {
   <h2 class="subhead">Memory Address Not Found</h2>
   
   <p class="desc">
-    The render target, detour hook, or page route you requested has been unmapped or does not exist in the active NexVR Engine runtime.
+    The render target, detour hook, or page route you requested has been unmapped or does not exist in the active Stereix Engine runtime.
   </p>
 
   <!-- Diagnostic Memory Dump Box -->
@@ -559,7 +556,7 @@ a {
         <div class="card-title">Setup & Guide</div>
         <div class="card-desc">OpenXR runtime setup, GPU compatibility & launcher flow.</div>
       </a>
-      <a class="nav-card" href="https://github.com/sathishssj3/NexVR-Engine/discussions" target="_blank" rel="noopener">
+      <a class="nav-card" href="https://github.com/sathishssj3/Stereix-Engine/discussions" target="_blank" rel="noopener">
         <div class="card-icon">💬</div>
         <div class="card-title">Discussions</div>
         <div class="card-desc">Community support, profile sharing & feedback.</div>
@@ -569,11 +566,11 @@ a {
 </main>
 
 <footer class="foot">
-  <span>© <span id="year">2026</span> NexVR Lab. All rights reserved.</span>
+  <span>© <span id="year">2026</span> Mesmeran Lab. All rights reserved.</span>
   <div class="foot-links">
-    <a href="https://github.com/sathishssj3/NexVR-Engine" target="_blank" rel="noopener">GitHub</a>
-    <a href="https://github.com/sathishssj3/NexVR-Engine/issues" target="_blank" rel="noopener">Report Issue</a>
-    <a href="mailto:support@nexvr.dev">support@nexvr.dev</a>
+    <a href="https://github.com/sathishssj3/Stereix-Engine" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://github.com/sathishssj3/Stereix-Engine/issues" target="_blank" rel="noopener">Report Issue</a>
+    <a href="mailto:contact@mesmeran.com">contact@mesmeran.com</a>
   </div>
 </footer>
 
