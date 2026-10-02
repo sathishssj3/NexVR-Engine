@@ -8,6 +8,8 @@ export const CLOUDFLARE_TELEMETRY_API =
   'https://stereix-engine.pages.dev/api/report';
 
 export const DEFAULT_DISCORD_WEBHOOK_URL =
+  process.env.STEREIX_TELEMETRY_ENDPOINT ||
+  process.env.STEREIX_DISCORD_WEBHOOK ||
   process.env.NEXVR_TELEMETRY_ENDPOINT ||
   process.env.NEXVR_DISCORD_WEBHOOK ||
   '';

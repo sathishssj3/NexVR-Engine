@@ -102,7 +102,7 @@ export async function checkOpenXrRuntime(): Promise<SystemCheckItem> {
     fixAction: {
       label: 'Open OpenXR Troubleshooting Guide (Free)',
       actionId: 'guide_openxr',
-      url: 'https://github.com/sathishssj3/NexVR-Engine/blob/main/docs/BETA_TESTING_GUIDE.md'
+      url: 'https://github.com/sathishssj3/Stereix-Engine/blob/main/docs/BETA_TESTING_GUIDE.md'
     }
   };
 }
@@ -320,7 +320,7 @@ ipcMain.handle('doctor:applyFix', async (event, actionId: string) => {
   }
 
   if (actionId === 'guide_openxr') {
-    await shell.openExternal('https://github.com/sathishssj3/NexVR-Engine/blob/main/docs/BETA_TESTING_GUIDE.md');
+    await shell.openExternal('https://github.com/sathishssj3/Stereix-Engine/blob/main/docs/BETA_TESTING_GUIDE.md');
     return { success: true, message: 'Opened free OpenXR headset setup guide.' };
   }
 

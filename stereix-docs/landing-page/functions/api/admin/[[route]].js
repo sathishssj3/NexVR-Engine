@@ -20,7 +20,7 @@ import {
 import { buildEmailHtml, buildPlainText, DEFAULT_CONFIG } from '../../_lib/email-template.js';
 
 const RANGES = new Set([7, 30, 90]);
-const GITHUB_REPO = 'sathishssj3/NexVR-Engine-Releases';
+const GITHUB_REPO = 'sathishssj3/Stereix-Engine-Releases';
 
 export async function onRequest(ctx) {
   const { request, env, params } = ctx;
@@ -254,7 +254,7 @@ async function waitlistCsv(env) {
   return new Response(body, {
     headers: {
       'content-type': 'text/csv; charset=utf-8',
-      'content-disposition': `attachment; filename="nexvr-waitlist-${new Date().toISOString().slice(0, 10)}.csv"`,
+      'content-disposition': `attachment; filename="stereix-waitlist-${new Date().toISOString().slice(0, 10)}.csv"`,
       'cache-control': 'no-store',
     },
   });
@@ -473,7 +473,7 @@ async function githubDownloads(env) {
   }
   try {
     const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=20`, {
-      headers: { accept: 'application/vnd.github+json', 'user-agent': 'nexvr-admin' },
+      headers: { accept: 'application/vnd.github+json', 'user-agent': 'stereix-admin' },
     });
     if (!res.ok) throw new Error(`GitHub responded ${res.status}`);
 

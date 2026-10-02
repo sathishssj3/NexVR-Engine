@@ -8,10 +8,10 @@ import { assertTrustedIpcSender, resolveWithinRoot } from './utils';
 const isDev = !app.isPackaged;
 if (isDev) {
   // Isolate development session data from installed/packaged app to prevent singleton lock conflicts (Error code: 32)
-  app.setPath('userData', path.join(app.getPath('appData'), 'NexVR-Dev'));
+  app.setPath('userData', path.join(app.getPath('appData'), 'Stereix-Dev'));
 } else {
   // Production gets its own clean, dedicated userData directory
-  app.setPath('userData', path.join(app.getPath('appData'), 'NexVR Engine'));
+  app.setPath('userData', path.join(app.getPath('appData'), 'Stereix Engine'));
 }
 
 // Enforce single instance lock to prevent cache collisions and multiple windows
@@ -35,20 +35,33 @@ app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
 app.commandLine.appendSwitch('no-sandbox');
 
 // Initialize core authorization token for DLL injector validation
-const NEXVR_AUTH_TOKEN = crypto.randomUUID();
-process.env.NEXVR_AUTH_TOKEN = NEXVR_AUTH_TOKEN;
+const STEREIX_AUTH_TOKEN = crypto.randomUUID();
+process.env.STEREIX_AUTH_TOKEN = STEREIX_AUTH_TOKEN;
+process.env.NEXVR_AUTH_TOKEN = STEREIX_AUTH_TOKEN; // legacy fallback
 
-// Register the custom app scheme for sandboxed context assets loading
-protocol.registerSchemesAsPrivileged([{
-  scheme: 'nexvr',
-  privileges: {
-    standard: true,
-    secure: true,
-    supportFetchAPI: true,
-    corsEnabled: true,
-    bypassCSP: false,
-  }
-}]);
+// Register custom app schemes for sandboxed context assets loading
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'stereix',
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+      bypassCSP: false,
+    },
+  },
+  {
+    scheme: 'nexvr',
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+      bypassCSP: false,
+    },
+  },
+]);
 
 process.on('uncaughtException', (err) => {
   dialog.showErrorBox('Uncaught Exception', err.stack || err.message || String(err));
@@ -147,7 +160,7 @@ function createWindow() {
     mainWindow.webContents.openDevTools();
   } else {
     const indexPath = path.join(__dirname, '..', '..', 'frontend-dist', 'index.html');
-    mainWindow.loadURL('nexvr://app/index.html').catch(err => {
+    mainWindow.loadURL('stereix://app/index.html').catch(err => {
       console.warn('[LOAD] Custom protocol load failed, falling back to direct loadFile:', err);
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.loadFile(indexPath).catch(fileErr => {
@@ -160,7 +173,7 @@ function createWindow() {
   }
 
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    if (!isDev && !url.startsWith('nexvr://app/') && !url.startsWith('file://')) {
+    if (!isDev && !url.startsWith('stereix://app/') && !url.startsWith('nexvr://app/') && !url.startsWith('file://')) {
       event.preventDefault();
       console.log(`[SECURITY] Blocked navigation to: ${url}`);
     }
@@ -174,7 +187,7 @@ function createWindow() {
 app.whenReady().then(() => {
   const frontendDir = path.join(__dirname, '..', '..', 'frontend-dist');
 
-  protocol.handle('nexvr', async (request) => {
+  const handleAppAsset = async (request: Request) => {
     const url = new URL(request.url);
     if (url.hostname !== 'app' || request.method !== 'GET') {
       return new Response('Forbidden', { status: 403 });
@@ -198,10 +211,13 @@ app.whenReady().then(() => {
         });
       }
     } catch (err: any) {
-      console.error('[nexvr://] Failed to serve requested asset:', err.message);
+      console.error('[asset://] Failed to serve requested asset:', err.message);
       return new Response('Not Found', { status: 404, headers: { 'Content-Type': 'text/plain' } });
     }
-  });
+  };
+
+  protocol.handle('stereix', handleAppAsset);
+  protocol.handle('nexvr', handleAppAsset);
 
   createWindow();
 

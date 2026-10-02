@@ -1,7 +1,7 @@
 param (
     [string]$Token,
-    [string]$Tag = "v0.1.11",
-    [string]$Repo = "sathishssj3/NexVR-Engine-Releases",
+    [string]$Tag = "v0.1.99",
+    [string]$Repo = "sathishssj3/Stereix-Engine-Releases",
     [string]$ArtifactsDir = "launcher\dist-electron"
 )
 
@@ -25,7 +25,7 @@ if (-not $Token) {
 $headers = @{
     "Authorization" = "Bearer $Token"
     "Accept"        = "application/vnd.github.v3+json"
-    "User-Agent"    = "NexVR-Release-Uploader"
+    "User-Agent"    = "Stereix-Release-Uploader"
 }
 
 Write-Host ">>> Querying releases for $Repo..."
@@ -36,8 +36,8 @@ if (-not $targetRelease) {
     Write-Host ">>> Release with tag '$Tag' not found. Creating it..."
     $createBody = @{
         tag_name         = $Tag
-        name             = "NexVR Engine $Tag"
-        body             = "Automated release build of NexVR Engine ($Tag)."
+        name             = "Stereix Engine $Tag"
+        body             = "Automated release build of Stereix Engine ($Tag)."
         draft            = $false
         prerelease       = $false
     } | ConvertTo-Json

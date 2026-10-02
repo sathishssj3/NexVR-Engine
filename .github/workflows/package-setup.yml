@@ -9,7 +9,7 @@ on:
         default: 'v0.1.0'
         type: string
       publish_to_releases_repo:
-        description: 'Publish Setup.exe to sathishssj3/NexVR-Engine-Releases'
+        description: 'Publish Setup.exe to sathishssj3/Stereix-Engine-Releases'
         required: false
         default: true
         type: boolean
@@ -20,7 +20,6 @@ on:
       - 'main'
     paths-ignore:
       - 'stereix-docs/**'
-      - 'nexvr-docs/**'
       - 'docs/**'
       - '*.md'
 
@@ -83,7 +82,7 @@ jobs:
         shell: pwsh
         run: |
           pip install onnx
-          $clientDir = if (Test-Path stereix-client) { 'stereix-client' } else { 'nexvr-client' }
+          $clientDir = 'stereix-client'
           if (-not (Test-Path "$clientDir/models")) { mkdir "$clientDir/models" }
           python "$clientDir/generate_dummy_onnx.py"
           Copy-Item "$clientDir/models/dummy.onnx" "$clientDir/models/depth_inpainter.onnx"
@@ -180,6 +179,6 @@ jobs:
             Write-Host "No RELEASES_REPO_TOKEN secret found. Skipping cross-repo release upload."
             exit 0
           }
-          $tagToUse = if ($env:TAG) { $env:TAG } else { "v0.1.10" }
-          $scriptPath = if (Test-Path ./stereix-client/scripts/upload_to_releases_repo.ps1) { "./stereix-client/scripts/upload_to_releases_repo.ps1" } elseif (Test-Path ./scripts/upload_to_releases_repo.ps1) { "./scripts/upload_to_releases_repo.ps1" } else { "./nexvr-client/scripts/upload_to_releases_repo.ps1" }
+          $tagToUse = if ($env:TAG) { $env:TAG } else { "v0.1.99" }
+          $scriptPath = if (Test-Path ./stereix-client/scripts/upload_to_releases_repo.ps1) { "./stereix-client/scripts/upload_to_releases_repo.ps1" } else { "./scripts/upload_to_releases_repo.ps1" }
           & $scriptPath -Token $env:GH_TOKEN -Tag $tagToUse

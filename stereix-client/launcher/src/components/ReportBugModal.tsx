@@ -94,7 +94,7 @@ export function ReportBugModal({
 
   const handleCopyDiscordFormat = async () => {
     const summary = [
-      `### NexVR Beta Report [v0.1.90]`,
+      `### Stereix Beta Report [v0.1.99]`,
       `- **Game**: ${activeGameName || activeGameId || 'General Launcher'}`,
       `- **Report ID**: ${submitResult?.reportId || 'Manual'}`,
       `- **Note**: ${note.trim() || 'No note provided'}`,

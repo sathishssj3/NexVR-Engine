@@ -15,7 +15,7 @@
 
 import { record } from '../_lib/analytics.js';
 
-const REPO = 'https://github.com/sathishssj3/NexVR-Engine-Releases';
+const REPO = 'https://github.com/sathishssj3/Stereix-Engine-Releases';
 
 const TARGETS = {
   installer: `${REPO}/releases/latest`,

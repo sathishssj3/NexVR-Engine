@@ -8,14 +8,12 @@ on:
       - 'v*'
     paths-ignore:
       - 'stereix-docs/**'
-      - 'nexvr-docs/**'
       - 'docs/**'
       - '*.md'
   pull_request:
     branches: [ "main" ]
     paths-ignore:
       - 'stereix-docs/**'
-      - 'nexvr-docs/**'
       - 'docs/**'
       - '*.md'
   workflow_dispatch:
@@ -402,8 +400,6 @@ jobs:
         path: |
           stereix-client/launcher/dist-electron/*-Engine-Setup-*.exe
           stereix-client/launcher/dist-electron/*-Engine-Portable-*.exe
-          nexvr-client/launcher/dist-electron/*-Engine-Setup-*.exe
-          nexvr-client/launcher/dist-electron/*-Engine-Portable-*.exe
 
     - name: Upload to Release
       uses: softprops/action-gh-release@v1
@@ -412,5 +408,3 @@ jobs:
         files: |
           stereix-client/launcher/dist-electron/*-Engine-Setup-*.exe
           stereix-client/launcher/dist-electron/*-Engine-Portable-*.exe
-          nexvr-client/launcher/dist-electron/*-Engine-Setup-*.exe
-          nexvr-client/launcher/dist-electron/*-Engine-Portable-*.exe

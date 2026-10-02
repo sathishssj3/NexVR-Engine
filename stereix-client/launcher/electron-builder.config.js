@@ -1,5 +1,5 @@
 module.exports = {
-  appId:       'dev.nexvr.engine',
+  appId:       'dev.stereix.engine',
   productName: 'Stereix Engine',
   copyright:   'Copyright © 2026 Mesmeran Lab',
   asar:        true,
@@ -80,7 +80,7 @@ module.exports = {
   publish: {
     provider: 'github',
     owner: 'sathishssj3',
-    repo: 'NexVR-Engine',
+    repo: 'Stereix-Engine',
     releaseType: 'release',
   },
 };

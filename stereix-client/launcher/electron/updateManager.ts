@@ -60,16 +60,17 @@ export interface UpdateStatus {
 
 const MANIFEST_URLS = [
   'https://stereix-engine.pages.dev/updates/manifest.json',
-  'https://nexvr-engine.pages.dev/updates/manifest.json',
+  'https://raw.githubusercontent.com/sathishssj3/Stereix-Engine/main/updates/manifest.json',
+  'https://raw.githubusercontent.com/sathishssj3/Stereix-Engine-Releases/main/updates/manifest.json',
   'https://cdn.jsdelivr.net/gh/sathishssj3/Stereix-Engine@main/updates/manifest.json',
   'https://fastly.jsdelivr.net/gh/sathishssj3/Stereix-Engine@main/updates/manifest.json',
-  'https://raw.githubusercontent.com/sathishssj3/Stereix-Engine/main/updates/manifest.json',
+  'https://nexvr-engine.pages.dev/updates/manifest.json',
   'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine/main/updates/manifest.json',
   'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine-Releases/main/updates/manifest.json',
 ];
 
 export function getUpdatesDir(): string {
-  const userData = app?.getPath ? app.getPath('userData') : path.join(process.env.APPDATA || process.cwd(), 'NexVR Engine');
+  const userData = app?.getPath ? app.getPath('userData') : path.join(process.env.APPDATA || process.cwd(), 'Stereix Engine');
   const dir = path.join(userData, 'updates');
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -194,7 +195,7 @@ async function fetchWithTimeout(url: string, timeoutMs = 8000): Promise<Response
     const res = await fetch(cacheBustedUrl, {
       cache: 'no-store',
       headers: {
-        'User-Agent': 'NexVR-Launcher',
+        'User-Agent': 'Stereix-Launcher',
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
       },
@@ -349,9 +350,12 @@ export async function checkForEngineHotfix(): Promise<UpdateStatus> {
 
       const candidateBases = [
         baseUrl,
+        'https://cdn.jsdelivr.net/gh/sathishssj3/Stereix-Engine@main/updates/',
+        'https://fastly.jsdelivr.net/gh/sathishssj3/Stereix-Engine@main/updates/',
+        'https://raw.githubusercontent.com/sathishssj3/Stereix-Engine/main/updates/',
+        'https://raw.githubusercontent.com/sathishssj3/Stereix-Engine-Releases/main/updates/',
         'https://cdn.jsdelivr.net/gh/sathishssj3/NexVR-Engine@main/updates/',
         'https://fastly.jsdelivr.net/gh/sathishssj3/NexVR-Engine@main/updates/',
-        'https://gcore.jsdelivr.net/gh/sathishssj3/NexVR-Engine@main/updates/',
         'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine/main/updates/',
         'https://raw.githubusercontent.com/sathishssj3/NexVR-Engine-Releases/main/updates/',
       ];

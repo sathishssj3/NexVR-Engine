@@ -153,10 +153,10 @@ export async function onRequestPost({ request, env }) {
       const discordPayload = {
         embeds: [
           {
-            title: `${statusEmoji} NexVR Beta Report [${report.id}]`,
+            title: `${statusEmoji} Stereix Beta Report [${report.id}]`,
             color: embedColor,
             fields,
-            footer: { text: `Reported from ${report.country} · NexVR Telemetry` },
+            footer: { text: `Reported from ${report.country} · Stereix Telemetry` },
             timestamp: new Date(timestamp).toISOString(),
           },
         ],
