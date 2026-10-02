@@ -26,7 +26,7 @@ export function AboutPanel({
 
   const handleCopyDiagnostics = async () => {
     const diagText = [
-      `NexVR Engine ${currentVer}`,
+      `Stereix Engine ${currentVer}`,
       `Platform: Windows x64 (MSVC 2022+)`,
       `Hook Engine: MinHook Detours (DX11 / DX12 / Vulkan)`,
       `Spatial Compositor: OpenXR 1.0.34`,
@@ -105,7 +105,7 @@ export function AboutPanel({
             color: '#FFF',
             textAlign: 'center'
           }}>
-            NEXVR ENGINE
+            STEREIX ENGINE
           </h1>
 
           {/* Subtitle & Description */}
@@ -353,7 +353,7 @@ export function AboutPanel({
               </span>
             </div>
             <p style={{ color: 'var(--ag-text-dim)', fontSize: 11, lineHeight: '1.45', margin: 0 }}>
-              Because NexVR attaches directly to game graphics swapchains via memory detours, Windows Defender may flag an injection false-positive. Add this folder to Defender exclusions for uninterrupted play.
+              Because Stereix Engine attaches directly to game graphics swapchains via memory detours, Windows Defender may flag an injection false-positive. Add this folder to Defender exclusions for uninterrupted play.
             </p>
             <div style={{ display: 'flex', gap: 8, marginTop: 3 }}>
               <button
@@ -475,9 +475,9 @@ export function AboutPanel({
           maxWidth: 680,
           lineHeight: '1.6'
         }}>
-          <div>© 2026 sathishssj3 · NexVR Engine · All Rights Reserved</div>
+          <div>© 2026 Mesmeran Lab · Stereix Engine · All Rights Reserved</div>
           <div style={{ marginTop: 6, fontSize: 10, color: 'var(--ag-text-muted)', fontFamily: 'var(--ag-font-ui)' }}>
-            NexVR Engine is an independent community spatial modding project. All game titles, registered trademarks, and publisher logos are the exclusive property of their respective copyright holders.
+            Stereix Engine is an independent spatial computing runtime developed by Mesmeran Lab. All game titles, registered trademarks, and publisher logos are the exclusive property of their respective copyright holders.
           </div>
         </div>
       </div>

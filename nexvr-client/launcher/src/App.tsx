@@ -325,7 +325,7 @@ export default function App() {
       setModalState({
         isOpen: true,
         title: 'ANTI-CHEAT SAFETY NOTICE',
-        description: `Injecting custom DLLs into multiplayer games protected by Anti-Cheat software (e.g., Easy Anti-Cheat, BattlEye, Vanguard) is strictly prohibited and can result in permanent account bans.\n\nNexVR Engine explicitly refuses to inject when these systems are detected, but the risk remains with online multiplayer titles.\n\nBy proceeding, you acknowledge this risk and agree to only use NexVR Engine with single-player or unprotected titles.`,
+        description: `Injecting custom DLLs into multiplayer games protected by Anti-Cheat software (e.g., Easy Anti-Cheat, BattlEye, Vanguard) is strictly prohibited and can result in permanent account bans.\n\nStereix Engine explicitly refuses to inject when these systems are detected, but the risk remains with online multiplayer titles.\n\nBy proceeding, you acknowledge this risk and agree to only use Stereix Engine with single-player or unprotected titles.`,
         confirmText: 'ACCEPT & CONTINUE',
         cancelText: 'CANCEL',
         variant: 'warning',
@@ -474,7 +474,7 @@ export default function App() {
             fontFamily: 'var(--ag-font-display)',
             fontWeight: 700
           }}>
-            NEXVR ENGINE
+            STEREIX ENGINE
           </strong>
           <span style={{ 
             marginLeft: 8, marginRight: 16, 

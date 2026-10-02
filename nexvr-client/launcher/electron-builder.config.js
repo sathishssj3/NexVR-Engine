@@ -1,7 +1,7 @@
 module.exports = {
   appId:       'dev.nexvr.engine',
-  productName: 'NexVR Engine',
-  copyright:   'Copyright © 2026 NexVR Engine',
+  productName: 'Stereix Engine',
+  copyright:   'Copyright © 2026 Mesmeran Lab',
   asar:        true,
 
   directories: {
@@ -19,7 +19,7 @@ module.exports = {
   win: {
     icon: 'assets/icon.ico',
     signtoolOptions: {
-      publisherName: 'NexVR Engine'
+      publisherName: 'Mesmeran Lab'
     },
     target: [
       { target: 'nsis', arch: ['x64'] },
@@ -38,12 +38,12 @@ module.exports = {
     installerHeaderIcon: 'assets/icon.ico',
     createDesktopShortcut: true,
     createStartMenuShortcut: true,
-    shortcutName: 'NexVR Engine',
-    artifactName: 'NexVR-Engine-Setup-${version}.${ext}',
+    shortcutName: 'Stereix Engine',
+    artifactName: 'Stereix-Engine-Setup-${version}.${ext}',
   },
 
   portable: {
-    artifactName: 'NexVR-Engine-Portable-${version}.${ext}',
+    artifactName: 'Stereix-Engine-Portable-${version}.${ext}',
   },
 
   extraResources: [

@@ -1,18 +1,18 @@
-# NexVR Engine
+# Stereix Engine
 
 <p align="center">
-  <img src="assets/logo.png" width="300" style="border-radius: 50%;" alt="NexVR Engine Logo">
+  <img src="assets/logo.png" width="300" style="border-radius: 50%;" alt="Stereix Engine Logo">
   <br><br>
   <a href="https://github.com/sathishssj3/NexVR-Engine/actions/workflows/release.yml"><img src="https://github.com/sathishssj3/NexVR-Engine/actions/workflows/release.yml/badge.svg?branch=main" alt="CI Status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Proprietary-red?style=flat-square" alt="License"></a>
 </p>
 
-> **Universal VR Injector** — Brings native OpenXR stereo rendering to flat-screen PC games by hooking into DX11, DX12, and Vulkan render pipelines.
+> **Autonomous Real-Time 6DOF VR Injection Engine & Spatial AI Runtime** by **Mesmeran Lab** — Brings native OpenXR stereo rendering to flat-screen PC games by hooking into DX11, DX12, and Vulkan render pipelines.
 
-NexVR Engine intercepts a game's graphics pipeline in real time, converts its mono output into stereoscopic VR frames, and submits them directly to your headset via OpenXR. It ships as an Electron/React launcher with a robust C++ injection engine underneath.
+Stereix Engine intercepts a game's graphics pipeline in real time, converts its mono output into stereoscopic VR frames, and submits them directly to your headset via OpenXR. It ships as an Electron/React launcher with a robust C++ injection engine underneath.
 
 > [!CAUTION]
-> **Account Ban Risk**: Injecting into multiplayer games protected by Anti-Cheat software (e.g., Easy Anti-Cheat, BattlEye, Vanguard) is strictly prohibited and can result in permanent account bans. NexVR Engine explicitly refuses to inject when these systems are detected. Use this tool only with single-player or unprotected titles.
+> **Account Ban Risk**: Injecting into multiplayer games protected by Anti-Cheat software (e.g., Easy Anti-Cheat, BattlEye, Vanguard) is strictly prohibited and can result in permanent account bans. Stereix Engine explicitly refuses to inject when these systems are detected. Use this tool only with single-player or unprotected titles.
 
 Project context, current roadmap, and prior audit decisions are tracked in [docs/project_memory.md](docs/project_memory.md). Read that file before making architectural or feature changes.
 

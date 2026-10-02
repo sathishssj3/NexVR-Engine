@@ -100,7 +100,7 @@ export function LegalModal({
               letterSpacing: '0.04em'
             }}
           >
-            NexVR Engine v0.1.99 · Confidential Testing Guidelines
+            Stereix Engine v0.1.99 · Confidential Testing Guidelines
           </p>
         </div>
 
@@ -151,10 +151,10 @@ export function LegalModal({
               1. SINGLE-PLAYER ONLY & ZERO ANTI-CHEAT LIABILITY
             </div>
             <div style={{ fontSize: 12, lineHeight: 1.55, color: '#A0A3B1', fontFamily: 'var(--ag-font-ui)' }}>
-              NexVR Engine is intended strictly for single-player, mod-friendly, and offline gameplay. Injecting memory detours into competitive multiplayer games protected by Anti-Cheat systems (such as Easy Anti-Cheat, BattlEye, Riot Vanguard, or Ricochet) is strictly prohibited. Although the launcher contains automatic tripwires that refuse injection when anti-cheat signatures are detected, the user assumes sole responsibility for complying with each game's End User License Agreement.
+              Stereix Engine is intended strictly for single-player, mod-friendly, and offline gameplay. Injecting memory detours into competitive multiplayer games protected by Anti-Cheat systems (such as Easy Anti-Cheat, BattlEye, Riot Vanguard, or Ricochet) is strictly prohibited. Although the launcher contains automatic tripwires that refuse injection when anti-cheat signatures are detected, the user assumes sole responsibility for complying with each game's End User License Agreement.
               <br /><br />
               <strong style={{ color: '#FFF' }}>
-                Under no circumstances shall the developers of NexVR Engine be held liable for game account bans, suspensions, matchmaking restrictions, or loss of digital purchases.
+                Under no circumstances shall the developers of Stereix Engine be held liable for game account bans, suspensions, matchmaking restrictions, or loss of digital purchases.
               </strong>
             </div>
           </div>
@@ -233,7 +233,7 @@ export function LegalModal({
               3. TRADEMARKS & NON-AFFILIATION DISCLAIMER
             </div>
             <div style={{ fontSize: 12, lineHeight: 1.55, color: '#A0A3B1', fontFamily: 'var(--ag-font-ui)' }}>
-              NexVR Engine is an independent, community-driven spatial modding runtime. All trademarks, registered game titles, and publisher logos (including but not limited to <em>Sekiro: Shadows Die Twice, Elden Ring, Mortal Shell, Cyberpunk 2077, Hogwarts Legacy, FromSoftware, Bandai Namco, Epic Games, Unreal Engine, Valve, SteamVR, Meta Quest</em>) remain the exclusive property of their respective copyright holders. Mention of any game or trademark does not imply affiliation, sponsorship, or endorsement.
+              Stereix Engine is an independent, community-driven spatial modding runtime. All trademarks, registered game titles, and publisher logos (including but not limited to <em>Sekiro: Shadows Die Twice, Elden Ring, Mortal Shell, Cyberpunk 2077, Hogwarts Legacy, FromSoftware, Bandai Namco, Epic Games, Unreal Engine, Valve, SteamVR, Meta Quest</em>) remain the exclusive property of their respective copyright holders. Mention of any game or trademark does not imply affiliation, sponsorship, or endorsement.
             </div>
           </div>
 
@@ -309,7 +309,7 @@ export function LegalModal({
               5. PRIVACY & SANITIZED OPT-IN DIAGNOSTICS
             </div>
             <div style={{ fontSize: 12, lineHeight: 1.55, color: '#A0A3B1', fontFamily: 'var(--ag-font-ui)' }}>
-              NexVR Engine processes graphics swapchains and stereo reprojection locally on your PC. Automated crash reporting and diagnostic telemetry are opt-in and disabled by default. If enabled or when manually submitting an issue, all Windows user directories (<code>C:\Users\[USER]\</code>) and IP addresses are sanitized prior to transmission. You can modify your diagnostic preferences anytime in Settings.
+              Stereix Engine processes graphics swapchains and stereo reprojection locally on your PC. Automated crash reporting and diagnostic telemetry are opt-in and disabled by default. If enabled or when manually submitting an issue, all Windows user directories (<code>C:\Users\[USER]\</code>) and IP addresses are sanitized prior to transmission. You can modify your diagnostic preferences anytime in Settings.
             </div>
           </div>
         </div>
@@ -350,7 +350,7 @@ export function LegalModal({
                 }}
               />
               <span>
-                I agree to use NexVR only with single-player/offline titles and acknowledge developers bear zero liability for online account bans.
+                I agree to use Stereix Engine only with single-player/offline titles and acknowledge developers bear zero liability for online account bans.
               </span>
             </label>
 

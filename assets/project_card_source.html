@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NexVR SDK Project Card</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 1200px;
+      height: 675px;
+      overflow: hidden;
+      background: radial-gradient(circle at 80% 20%, rgba(220, 20, 60, 0.22) 0%, transparent 60%),
+                  radial-gradient(circle at 20% 80%, rgba(139, 0, 33, 0.15) 0%, transparent 50%),
+                  #050506;
+      font-family: 'Inter', system-ui, sans-serif;
+      color: #F2F2F3;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 60px;
+      position: relative;
+    }
+    .outer-border {
+      position: absolute;
+      inset: 20px;
+      border: 1px solid rgba(83, 18, 18, 0.8);
+      border-radius: 6px;
+      pointer-events: none;
+    }
+    .top-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      color: #8E92A4;
+    }
+    .tag {
+      background: rgba(220, 20, 60, 0.15);
+      border: 1px solid #DC143C;
+      color: #FFFFFF;
+      padding: 6px 14px;
+      border-radius: 4px;
+    }
+    .hero-text {
+      margin-top: 40px;
+    }
+    .hero-title {
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 72px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: #FFFFFF;
+      line-height: 1.05;
+      margin-bottom: 16px;
+    }
+    .hero-sub {
+      font-size: 22px;
+      color: #A0A3B1;
+      max-width: 800px;
+      line-height: 1.5;
+    }
+    .bottom-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 24px;
+    }
+    .badges {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .badge {
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      background: #111116;
+      border: 1px solid #2C2D35;
+      padding: 6px 14px;
+      border-radius: 4px;
+      color: #F2F2F3;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+    .badge.red {
+      border-color: #DC143C;
+      color: #FFFFFF;
+      background: rgba(220, 20, 60, 0.12);
+    }
+    .url {
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 15px;
+      color: #DC143C;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+      margin-left: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="outer-border"></div>
+  <div class="top-meta">
+    <span class="tag">MESMERAN LAB // SPATIAL COMPUTING</span>
+    <span>RUNTIME ID: STEREIX-CORE-V2</span>
+  </div>
+  <div class="hero-text">
+    <h1 class="hero-title">STEREIX ENGINE</h1>
+    <p class="hero-sub">Autonomous Real-Time 6DOF VR Injection Engine &amp; Spatial AI Runtime. Low-level graphics pipeline hooks across DirectX 11/12 and Vulkan with sub-millisecond AI reprojection.</p>
+  </div>
+  <div class="bottom-bar">
+    <div class="badges">
+      <span class="badge red">C++20</span>
+      <span class="badge">OPENXR 1.0</span>
+      <span class="badge">DIRECTX 11/12 &amp; VULKAN</span>
+      <span class="badge">STEREIX-72B</span>
+      <span class="badge">&lt; 1.5MS LATENCY</span>
+    </div>
+    <div class="url">nexvr-engine.pages.dev</div>
+  </div>
+</body>
+</html>

@@ -130,7 +130,7 @@ export function SettingsView({
         } else if (res.hasUpdate) {
           setFeedbackMsg(`Update v${res.version} downloaded successfully.`);
         } else {
-          setFeedbackMsg('Your NexVR Engine launcher is up to date.');
+          setFeedbackMsg('Your Stereix Engine launcher is up to date.');
         }
       }
     } catch (e: any) {
@@ -294,7 +294,7 @@ export function SettingsView({
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
                   <span style={{ fontSize: 17, fontWeight: 700, color: '#FFF', fontFamily: 'var(--ag-font-display)', letterSpacing: '0.03em' }}>
-                    NexVR Engine {activeVersion}
+                    Stereix Engine {activeVersion}
                   </span>
                   <span style={{
                     width: 3.5,
