@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+early_access: false
+tone_instructions: "You are reviewing Stereix Engine, an autonomous real-time 6DOF VR injection engine and spatial AI platform. Focus on C++ memory safety, graphics API hook stability (Direct3D 11/12 and Vulkan), OpenXR frame synchronization, security barriers (preventing anti-cheat bans and unauthorized IPC), and clean TypeScript practices. Avoid nitpicking trivial styling."
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - "main"
+
+  path_filters:
+    - "!build/**"
+    - "!stereix-client/build/**"
+    - "!stereix-client/launcher/dist-electron/**"
+    - "!stereix-client/launcher/frontend-dist/**"
+    - "!stereix-client/launcher/electron-dist/**"
+    - "!stereix-backend/dist/**"
+    - "!**/node_modules/**"
+    - "!data/**"
+    - "!*.jsonl"
+    - "!*.onnx"
+    - "!*.onnx.data"
+    - "!*.exe"
+    - "!*.dll"
+    - "!*.lib"
+    - "!*.pdb"
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  opt_out: false
