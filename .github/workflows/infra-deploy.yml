@@ -4,12 +4,12 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - 'nexvr-infrastructure/**'
+      - 'stereix-infrastructure/**'
       - '.github/workflows/infra-deploy.yml'
   pull_request:
     branches: [ "main" ]
     paths:
-      - 'nexvr-infrastructure/**'
+      - 'stereix-infrastructure/**'
       - '.github/workflows/infra-deploy.yml'
 
 jobs:
@@ -27,5 +27,5 @@ jobs:
           terraform_version: 1.7.5
 
       - name: Terraform Format Check
-        working-directory: ./nexvr-infrastructure/terraform
+        working-directory: ./stereix-infrastructure/terraform
         run: terraform fmt -check -recursive

@@ -21,7 +21,11 @@ try:
         opset.version = 13
         onnx.save(model, os.path.join(dest_dir, f'{name}.onnx'))
 
-    for target_dir in ['models', os.path.join('nexvr-client', 'models')]:
+    target_dirs = ['models']
+    for client_name in ['stereix-client', 'nexvr-client']:
+        if os.path.exists(client_name):
+            target_dirs.append(os.path.join(client_name, 'models'))
+    for target_dir in target_dirs:
         generate_dummy(target_dir, 'dummy', [1, 4, 256, 256])
         generate_dummy(target_dir, 'dummy_ui', [1, 3, 640, 640])
         # Also copy canonical filenames
@@ -29,6 +33,6 @@ try:
         dummy_ui_path = os.path.join(target_dir, 'dummy_ui.onnx')
         shutil.copyfile(dummy_path, os.path.join(target_dir, 'depth_inpainter.onnx'))
         shutil.copyfile(dummy_ui_path, os.path.join(target_dir, 'ui_synthesizer.onnx'))
-    print("Successfully generated dummy models for both root and nexvr-client.")
+    print("Successfully generated dummy models for both root and client.")
 except ImportError:
     print("Warning: onnx package not installed. Skipping dummy model generation.")

@@ -4,14 +4,14 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - 'nexvr-backend/**'
-      - 'nexvr-deployment/**'
+      - 'stereix-backend/**'
+      - 'stereix-deployment/**'
       - '.github/workflows/backend-ci.yml'
   pull_request:
     branches: [ "main" ]
     paths:
-      - 'nexvr-backend/**'
-      - 'nexvr-deployment/**'
+      - 'stereix-backend/**'
+      - 'stereix-deployment/**'
       - '.github/workflows/backend-ci.yml'
 
 jobs:
@@ -29,15 +29,15 @@ jobs:
           node-version: '22'
 
       - name: Install Dependencies
-        working-directory: ./nexvr-backend
+        working-directory: ./stereix-backend
         run: npm install
 
       - name: Prisma Generate
-        working-directory: ./nexvr-backend
+        working-directory: ./stereix-backend
         run: npx prisma generate
 
       - name: Compile TypeScript
-        working-directory: ./nexvr-backend
+        working-directory: ./stereix-backend
         run: npm run build
 
   docker-build:
@@ -55,8 +55,8 @@ jobs:
       - name: Build Docker Image
         uses: docker/build-push-action@v5
         with:
-          context: ./nexvr-backend
-          file: ./nexvr-backend/Dockerfile
+          context: ./stereix-backend
+          file: ./stereix-backend/Dockerfile
           push: false
-          tags: nexvr-backend:test
+          tags: stereix-backend:test
           load: true

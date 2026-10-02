@@ -3,7 +3,11 @@ project(StereixEngine LANGUAGES C CXX)
 
 # -----------------------------------------------------------------------------
 # Stereix Engine Monorepo Root CMake Orchestrator
-# Directs compilation to nexvr-client while preserving root build layout
+# Directs compilation to stereix-client while preserving root build layout
 # -----------------------------------------------------------------------------
 enable_testing()
-add_subdirectory(nexvr-client)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/stereix-client")
+    add_subdirectory(stereix-client)
+else()
+    add_subdirectory(nexvr-client)
+endif()

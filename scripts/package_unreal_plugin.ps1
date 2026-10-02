@@ -11,15 +11,17 @@ $RepoRoot = (Get-Item $PSScriptRoot).Parent.FullName
 Set-Location $RepoRoot
 
 $BuildBinDir = Join-Path $RepoRoot 'build\bin'
-$AdapterSrcDir = if (Test-Path (Join-Path $RepoRoot 'src\adapters\unreal')) {
+$AdapterSrcDir = if (Test-Path (Join-Path $RepoRoot 'stereix-client\src\adapters\unreal')) {
+    Join-Path $RepoRoot 'stereix-client\src\adapters\unreal'
+} elseif (Test-Path (Join-Path $RepoRoot 'src\adapters\unreal')) {
     Join-Path $RepoRoot 'src\adapters\unreal'
 } else {
     Join-Path $RepoRoot 'nexvr-client\src\adapters\unreal'
 }
 $IncludeDir = Join-Path $RepoRoot 'include'
 $DistDir = Join-Path $RepoRoot $OutputDir
-$StagingDir = Join-Path $DistDir 'staging\NexVR'
-$ZipName = 'NexVR_Unreal_Marketplace_Plugin_' + $Version + '.zip'
+$StagingDir = Join-Path $DistDir 'staging\Stereix'
+$ZipName = 'Stereix_Unreal_Marketplace_Plugin_' + $Version + '.zip'
 $ZipPath = Join-Path $DistDir $ZipName
 
 Write-Host '==========================================================' -ForegroundColor Cyan
@@ -52,24 +54,31 @@ New-Item -ItemType Directory -Force -Path $StagingDir | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $StagingDir 'Config') | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $StagingDir 'Resources') | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $StagingDir 'Binaries\Win64') | Out-Null
-New-Item -ItemType Directory -Force -Path (Join-Path $StagingDir 'Source\NexVR') | Out-Null
-New-Item -ItemType Directory -Force -Path (Join-Path $StagingDir 'Source\ThirdParty\NexVR\include') | Out-Null
+New-Item -ItemType Directory -Force -Path (Join-Path $StagingDir 'Source\Stereix') | Out-Null
+New-Item -ItemType Directory -Force -Path (Join-Path $StagingDir 'Source\ThirdParty\Stereix\include') | Out-Null
 
 # 3. Copy files to staging
 Write-Host '[3/5] Copying plugin sources, metadata, and binaries...' -ForegroundColor Yellow
 
 # Plugin descriptors and docs
-Copy-Item (Join-Path $AdapterSrcDir 'NexVR.uplugin') $StagingDir
+$pluginDesc = if (Test-Path (Join-Path $AdapterSrcDir 'Stereix.uplugin')) { 'Stereix.uplugin' } else { 'NexVR.uplugin' }
+Copy-Item (Join-Path $AdapterSrcDir $pluginDesc) $StagingDir
 Copy-Item (Join-Path $AdapterSrcDir 'README.md') $StagingDir
 Copy-Item (Join-Path $AdapterSrcDir 'Config\FilterPlugin.ini') (Join-Path $StagingDir 'Config')
 Copy-Item (Join-Path $AdapterSrcDir 'Resources\Icon128.png') (Join-Path $StagingDir 'Resources')
 
 # Module source
-Copy-Item -Recurse -Force (Join-Path $AdapterSrcDir 'Source\NexVR\*') (Join-Path $StagingDir 'Source\NexVR')
+$srcModuleDir = if (Test-Path (Join-Path $AdapterSrcDir 'Source\Stereix')) { 'Source\Stereix' } else { 'Source\NexVR' }
+Copy-Item -Recurse -Force (Join-Path $AdapterSrcDir "$srcModuleDir\*") (Join-Path $StagingDir 'Source\Stereix')
 
 # Headers
-Copy-Item (Join-Path $IncludeDir 'nexvr_sdk.h') (Join-Path $StagingDir 'Source\ThirdParty\NexVR\include')
-Copy-Item (Join-Path $AdapterSrcDir 'nexvr_unreal_bridge.h') (Join-Path $StagingDir 'Source\ThirdParty\NexVR\include')
+if (Test-Path (Join-Path $IncludeDir 'stereix_sdk.h')) {
+    Copy-Item (Join-Path $IncludeDir 'stereix_sdk.h') (Join-Path $StagingDir 'Source\ThirdParty\Stereix\include')
+}
+if (Test-Path (Join-Path $IncludeDir 'nexvr_sdk.h')) {
+    Copy-Item (Join-Path $IncludeDir 'nexvr_sdk.h') (Join-Path $StagingDir 'Source\ThirdParty\Stereix\include')
+}
+Copy-Item (Join-Path $AdapterSrcDir 'nexvr_unreal_bridge.h') (Join-Path $StagingDir 'Source\ThirdParty\Stereix\include')
 
 # Binaries
 foreach ($bin in $RequiredBinaries) {

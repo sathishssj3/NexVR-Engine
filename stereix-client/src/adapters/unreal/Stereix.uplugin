@@ -2,11 +2,11 @@
 	"FileVersion": 3,
 	"Version": 1,
 	"VersionName": "0.2.2",
-	"FriendlyName": "NexVR Engine B2B Adapter",
+	"FriendlyName": "Stereix Engine B2B Adapter",
 	"Description": "Universal VR injection and stereo reprojection adapter for Unreal Engine 4 and 5 with hardware depth buffer submission.",
 	"Category": "Virtual Reality",
-	"CreatedBy": "NexVR Lab",
-	"CreatedByURL": "https://github.com/sathishssj3/NexVR-Lab",
+	"CreatedBy": "Mesmeran Lab",
+	"CreatedByURL": "https://github.com/sathishssj3/Stereix-Engine",
 	"DocsURL": "",
 	"MarketplaceURL": "",
 	"SupportURL": "",
@@ -16,7 +16,7 @@
 	"Installed": false,
 	"Modules": [
 		{
-			"Name": "NexVR",
+			"Name": "Stereix",
 			"Type": "Runtime",
 			"LoadingPhase": "PostConfigInit",
 			"PlatformAllowList": [

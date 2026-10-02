@@ -15,7 +15,7 @@ $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RootDir = Split-Path -Parent $ScriptDir
 $BinDir = Join-Path $RootDir "build\bin"
-$LauncherDir = Join-Path $RootDir "nexvr-client\launcher"
+$LauncherDir = if (Test-Path (Join-Path $RootDir "stereix-client\launcher")) { Join-Path $RootDir "stereix-client\launcher" } else { Join-Path $RootDir "nexvr-client\launcher" }
 
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host "   NEXVR ENGINE - CLEAN MACHINE PARITY VERIFICATION        " -ForegroundColor Cyan

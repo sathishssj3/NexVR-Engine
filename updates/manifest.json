@@ -1,7 +1,7 @@
 {
   "engineVersion": "0.1.99",
   "buildDate": "2026-10-02",
-  "timestamp": 1790958880140,
+  "timestamp": 1790961703805,
   "changelog": "Stereix Engine v0.1.99 — Critical Hotfix: OpenXR Asymmetric FOV Diplopia Elimination with 2D Stereo Convergence Offset, Dual-Eye ImGui Menu Unification, Debounced Analog Stick & D-Pad Gamepad Navigation, and 1-Click Recommended Defaults Reset Action",
   "features": [
     "P0.1 Virtual Controller Emulation: Full VR motion controller mapping to XInput with bidirectional haptic vibration feedback for native controller-free gameplay",
@@ -89,5 +89,5 @@
     "shaders/asw_shader.hlsl": "ae77436c5869e5dcd5175bc0050f3e55f1f9abebd3aed49336867954fcee461c",
     "shaders/depth_reprojection.hlsl": "eb0e672fdaebaea0e1afa542990770b5d7d5044a18156f983623478c9e0541f5"
   },
-  "signature": "96d6e7b5c50d6688366c9dbfd727147706daed049cb9aafd8a69d4a74d3c9bf424cc44199e8a1094ae4d942fed4be89931a574c645a97edc3d6bb4a1916ec00a"
+  "signature": "aa8f7a82f43e791ed78209e8b4c2b8130a0b325590b1aa4ba6693038b7ac23aac0e4ebf2cc7c759cc8df4c4a3559b11d9d8b3205de834910607353cd17f81d00"
 }

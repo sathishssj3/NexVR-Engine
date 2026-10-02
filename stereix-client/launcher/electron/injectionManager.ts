@@ -347,6 +347,7 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     const shadersSource = candidateShaderDirs.find((d) => fs.existsSync(d)) || resolveWithinRoot(canonicalBinSourceDir, 'shaders');
     const candidateModelDirs = [
       resolveWithinRoot(canonicalBinSourceDir, 'models'),
+      path.resolve(__dirname, '../../../../stereix-client/models'),
       path.resolve(__dirname, '../../../../nexvr-client/models'),
       path.resolve(__dirname, '../../../../models'),
       path.resolve(__dirname, '../../../models'),
@@ -492,6 +493,7 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
       let baseProfile: Record<string, any> = {};
 
       const localProfileDirs = [
+        path.resolve(__dirname, '../../../../stereix-client/profiles'),
         path.resolve(__dirname, '../../../../nexvr-client/profiles'),
         path.resolve(__dirname, '../../../../profiles'),
         path.resolve(__dirname, '../../../profiles'),

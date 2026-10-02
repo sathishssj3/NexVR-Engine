@@ -7,12 +7,14 @@ on:
     tags:
       - 'v*'
     paths-ignore:
+      - 'stereix-docs/**'
       - 'nexvr-docs/**'
       - 'docs/**'
       - '*.md'
   pull_request:
     branches: [ "main" ]
     paths-ignore:
+      - 'stereix-docs/**'
       - 'nexvr-docs/**'
       - 'docs/**'
       - '*.md'
@@ -165,8 +167,8 @@ jobs:
           --suppress=toomanyconfigs `
           --suppress=normalCheckLevelMaxBranches `
           --inline-suppr `
-          -I nexvr-client/src -I src `
-          $(if (Test-Path nexvr-client/src) { "nexvr-client/src/" } else { "src/" }) 2>&1
+          -I stereix-client/src -I nexvr-client/src -I src `
+          $(if (Test-Path stereix-client/src) { "stereix-client/src/" } elseif (Test-Path nexvr-client/src) { "nexvr-client/src/" } else { "src/" }) 2>&1
         $code = $LASTEXITCODE
         if ($code -ne 0) {
           Write-Host "::warning::Cppcheck exited with code $code (non-fatal, CodeQL is primary analyzer)"
@@ -212,17 +214,17 @@ jobs:
         node-version: '22'
         cache: 'npm'
         cache-dependency-path: |
-          nexvr-client/launcher/package-lock.json
-          nexvr-backend/package-lock.json
+          stereix-client/launcher/package-lock.json
+          stereix-backend/package-lock.json
 
     - name: Run Launcher CI Checks
-      working-directory: nexvr-client/launcher
+      working-directory: stereix-client/launcher
       run: |
         npm install
         npm run test:ci
 
     - name: Run Backend Test Suite
-      working-directory: nexvr-backend
+      working-directory: stereix-backend
       run: |
         npm install
         npm test
@@ -330,7 +332,8 @@ jobs:
         foreach ($name in @('depth_inpainter.onnx', 'ui_synthesizer.onnx')) {
           if (-not $expected.ContainsKey($name)) { throw "Missing approved model hash: $name" }
         }
-        $modelDir = (Resolve-Path -LiteralPath 'nexvr-client/models').Path
+        $clientDir = if (Test-Path 'stereix-client') { 'stereix-client' } else { 'nexvr-client' }
+        $modelDir = (Resolve-Path -LiteralPath "$clientDir/models").Path
         $files = @(Get-ChildItem -LiteralPath $modelDir -File -Recurse | Where-Object { $_.Name -match '\.onnx(\.data)?$' })
         if ($files.Count -ne $expected.Count) { throw "Every packaged ONNX model must have an approved hash." }
         foreach ($file in $files) {
@@ -351,21 +354,21 @@ jobs:
       with:
         node-version: '22'
         cache: 'npm'
-        cache-dependency-path: 'nexvr-client/launcher/package-lock.json'
+        cache-dependency-path: 'stereix-client/launcher/package-lock.json'
 
     - name: Install Launcher Dependencies
-      working-directory: ./nexvr-client/launcher
+      working-directory: ./stereix-client/launcher
       run: npm install
 
     - name: Link Build Output for Launcher Packaging
       shell: pwsh
       run: |
-        if (-not (Test-Path nexvr-client/build)) {
-          cmd /c mklink /J "nexvr-client\build" "build"
+        if (-not (Test-Path stereix-client/build)) {
+          cmd /c mklink /J "stereix-client\build" "build"
         }
 
     - name: Build and Package Electron App
-      working-directory: ./nexvr-client/launcher
+      working-directory: ./stereix-client/launcher
       # This triggers vite build, tsc, and electron-builder
       run: npm run pack
 
@@ -375,11 +378,12 @@ jobs:
         $ErrorActionPreference = 'Stop'
         $cert = [Security.Cryptography.X509Certificates.X509Certificate2]::new($env:SIGN_CERT_PATH, $env:SIGN_CERT_PASS)
         foreach ($pattern in @('Stereix-Engine-Setup-*.exe', 'Stereix-Engine-Portable-*.exe')) {
-          $files = @(Get-ChildItem -LiteralPath 'nexvr-client/launcher/dist-electron' -Filter $pattern -File)
+          $distDir = if (Test-Path 'stereix-client/launcher/dist-electron') { 'stereix-client/launcher/dist-electron' } else { 'nexvr-client/launcher/dist-electron' }
+          $files = @(Get-ChildItem -LiteralPath $distDir -Filter $pattern -File)
           if ($files.Count -eq 0) {
             # Check fallback to legacy prefix if stereix wasn't produced
             $legacyPattern = $pattern -replace '^Stereix-', 'NexVR-'
-            $files = @(Get-ChildItem -LiteralPath 'nexvr-client/launcher/dist-electron' -Filter $legacyPattern -File)
+            $files = @(Get-ChildItem -LiteralPath $distDir -Filter $legacyPattern -File)
           }
           if ($files.Count -eq 0) { throw "Missing packaged launcher: $pattern" }
           foreach ($file in $files) {
@@ -396,6 +400,8 @@ jobs:
       with:
         name: stereix-engine-installer
         path: |
+          stereix-client/launcher/dist-electron/*-Engine-Setup-*.exe
+          stereix-client/launcher/dist-electron/*-Engine-Portable-*.exe
           nexvr-client/launcher/dist-electron/*-Engine-Setup-*.exe
           nexvr-client/launcher/dist-electron/*-Engine-Portable-*.exe
 
@@ -404,5 +410,7 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: |
+          stereix-client/launcher/dist-electron/*-Engine-Setup-*.exe
+          stereix-client/launcher/dist-electron/*-Engine-Portable-*.exe
           nexvr-client/launcher/dist-electron/*-Engine-Setup-*.exe
           nexvr-client/launcher/dist-electron/*-Engine-Portable-*.exe

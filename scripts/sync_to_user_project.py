@@ -31,7 +31,8 @@ def sync_file(src, dst, label=None):
 sync_file(os.path.join(src_root, "include", "nexvr_sdk.h"), os.path.join(dst_root, "include", "nexvr_sdk.h"), "include/nexvr_sdk.h")
 
 # 2. SDK Source
-sdk_src = os.path.join(src_root, "nexvr-client", "src", "sdk")
+client_dir = "stereix-client" if os.path.exists(os.path.join(src_root, "stereix-client")) else "nexvr-client"
+sdk_src = os.path.join(src_root, client_dir, "src", "sdk")
 for root, dirs, files in os.walk(sdk_src):
     for f in files:
         s = os.path.join(root, f)
@@ -40,7 +41,7 @@ for root, dirs, files in os.walk(sdk_src):
         sync_file(s, d)
 
 # 3. Adapters (Unreal and Unity)
-adapters_src = os.path.join(src_root, "nexvr-client", "src", "adapters")
+adapters_src = os.path.join(src_root, client_dir, "src", "adapters")
 for root, dirs, files in os.walk(adapters_src):
     for f in files:
         s = os.path.join(root, f)
@@ -49,7 +50,7 @@ for root, dirs, files in os.walk(adapters_src):
         sync_file(s, d)
 
 # 4. Tests
-tests_src = os.path.join(src_root, "nexvr-client", "tests")
+tests_src = os.path.join(src_root, client_dir, "tests")
 sdk_tests = [
     "test_sdk_validation.cpp",
     "test_sdk_imports.cpp",

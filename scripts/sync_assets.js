@@ -9,10 +9,15 @@ const path = require('path');
 const crypto = require('crypto');
 
 const rootDir = path.resolve(__dirname, '..');
-const clientDir = path.join(rootDir, 'nexvr-client');
+const clientDir = fs.existsSync(path.join(rootDir, 'stereix-client'))
+  ? path.join(rootDir, 'stereix-client')
+  : path.join(rootDir, 'nexvr-client');
+const docsDir = fs.existsSync(path.join(rootDir, 'stereix-docs'))
+  ? path.join(rootDir, 'stereix-docs')
+  : path.join(rootDir, 'nexvr-docs');
 const launcherPkgFile = path.join(clientDir, 'launcher', 'package.json');
 const manifestFile = path.join(rootDir, 'updates', 'manifest.json');
-const docsManifestFile = path.join(rootDir, 'nexvr-docs', 'landing-page', 'public', 'updates', 'manifest.json');
+const docsManifestFile = path.join(docsDir, 'landing-page', 'public', 'updates', 'manifest.json');
 
 console.log('=== NexVR Engine Asset Synchronization Pipeline ===');
 
@@ -31,7 +36,7 @@ console.log(`[+] Current Engine Version: v${currentVersion}`);
 // 1.5 Synchronize native build binaries if present
 const binDir = path.join(rootDir, 'build', 'bin');
 const updatesDir = path.join(rootDir, 'updates');
-const docsUpdatesDir = path.join(rootDir, 'nexvr-docs', 'landing-page', 'public', 'updates');
+const docsUpdatesDir = path.join(docsDir, 'landing-page', 'public', 'updates');
 const appDataUpdatesDir = process.env.APPDATA ? path.join(process.env.APPDATA, 'NexVR Engine', 'updates') : null;
 
 if (fs.existsSync(binDir)) {
@@ -61,7 +66,7 @@ const shaderDestinations = [
   path.join(rootDir, 'updates', 'shaders'),
   path.join(rootDir, 'build', 'bin', 'shaders'),
   path.join(rootDir, 'build', 'bin', 'vrinject_shaders'),
-  path.join(rootDir, 'nexvr-docs', 'landing-page', 'public', 'updates', 'shaders'),
+  path.join(docsDir, 'landing-page', 'public', 'updates', 'shaders'),
   ...(appDataUpdatesDir ? [path.join(appDataUpdatesDir, 'shaders')] : []),
 ];
 
@@ -88,7 +93,7 @@ const appDataProfiles = path.join(
 );
 const profileDestinations = [
   path.join(rootDir, 'updates', 'profiles'),
-  path.join(rootDir, 'nexvr-docs', 'landing-page', 'public', 'updates', 'profiles'),
+  path.join(docsDir, 'landing-page', 'public', 'updates', 'profiles'),
   ...(process.env.APPDATA ? [appDataProfiles] : []),
 ];
 

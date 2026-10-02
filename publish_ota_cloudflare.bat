@@ -18,11 +18,11 @@ if %errorlevel% neq 0 (
 
 echo.
 echo [2/4] Syncing binaries to Cloudflare distribution staging...
-if not exist "nexvr-docs\landing-page\public\updates" mkdir "nexvr-docs\landing-page\public\updates"
+if not exist "stereix-docs\landing-page\public\updates" mkdir "stereix-docs\landing-page\public\updates"
 copy /y "build\bin\vrinject.dll" "updates\vrinject.dll" >nul
 copy /y "build\bin\vr-inject-cli.exe" "updates\vr-inject-cli.exe" >nul
-copy /y "build\bin\vrinject.dll" "nexvr-docs\landing-page\public\updates\vrinject.dll" >nul
-copy /y "build\bin\vr-inject-cli.exe" "nexvr-docs\landing-page\public\updates\vr-inject-cli.exe" >nul
+copy /y "build\bin\vrinject.dll" "stereix-docs\landing-page\public\updates\vrinject.dll" >nul
+copy /y "build\bin\vr-inject-cli.exe" "stereix-docs\landing-page\public\updates\vr-inject-cli.exe" >nul
 
 echo.
 echo [3/4] Recomputing SHA-256 cryptographic hashes and syncing assets...
@@ -30,7 +30,7 @@ node scripts/sync_assets.js
 
 echo.
 echo [4/4] Deploying to Cloudflare Edge CDN (2-3 seconds)...
-cd nexvr-docs\landing-page
+cd stereix-docs\landing-page
 call npx wrangler pages deploy public --project-name=stereix-engine --commit-dirty=true
 cd ..\..
 

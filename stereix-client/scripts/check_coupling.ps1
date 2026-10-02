@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$budgetFile = if (Test-Path "docs\coupling_budget.txt") { "docs\coupling_budget.txt" } elseif (Test-Path "..\docs\coupling_budget.txt") { "..\docs\coupling_budget.txt" } elseif (Test-Path "nexvr-docs\docs\coupling_budget.txt") { "nexvr-docs\docs\coupling_budget.txt" } else { "docs\coupling_budget.txt" }
+$budgetFile = if (Test-Path "docs\coupling_budget.txt") { "docs\coupling_budget.txt" } elseif (Test-Path "..\docs\coupling_budget.txt") { "..\docs\coupling_budget.txt" } elseif (Test-Path "stereix-docs\docs\coupling_budget.txt") { "stereix-docs\docs\coupling_budget.txt" } elseif (Test-Path "nexvr-docs\docs\coupling_budget.txt") { "nexvr-docs\docs\coupling_budget.txt" } else { "docs\coupling_budget.txt" }
 if (-not (Test-Path $budgetFile)) {
     Write-Error "Budget file not found: $budgetFile"
     exit 1
@@ -13,8 +13,8 @@ Get-Content $budgetFile | ForEach-Object {
     }
 }
 
-$srcDir = if (Test-Path "nexvr-client\src") { "nexvr-client\src" } elseif (Test-Path "src") { "src" } else { "..\src" }
-$testsDir = if (Test-Path "nexvr-client\tests") { "nexvr-client\tests" } elseif (Test-Path "tests") { "tests" } else { "..\tests" }
+$srcDir = if (Test-Path "stereix-client\src") { "stereix-client\src" } elseif (Test-Path "nexvr-client\src") { "nexvr-client\src" } elseif (Test-Path "src") { "src" } else { "..\src" }
+$testsDir = if (Test-Path "stereix-client\tests") { "stereix-client\tests" } elseif (Test-Path "nexvr-client\tests") { "nexvr-client\tests" } elseif (Test-Path "tests") { "tests" } else { "..\tests" }
 
 $failed = $false
 
@@ -55,6 +55,11 @@ if ($test_sources -lt $budget["test_sources"]) {
 }
 
 $ctest_out = (ctest --test-dir build -N 2>$null | Select-Object -Last 1)
+if ($ctest_out -notmatch 'Total Tests:\s*([1-9]\d*)' -and (Test-Path "build\stereix-client")) {
+    $ctest_out = (ctest --test-dir "build\stereix-client" -N 2>$null | Select-Object -Last 1)
+} elseif ($ctest_out -notmatch 'Total Tests:\s*([1-9]\d*)' -and (Test-Path "build\nexvr-client")) {
+    $ctest_out = (ctest --test-dir "build\nexvr-client" -N 2>$null | Select-Object -Last 1)
+}
 if ($ctest_out -match 'Total Tests:\s*(\d+)') {
     $test_registered = [int]$matches[1]
     if ($test_registered -lt $budget["test_registered"]) {

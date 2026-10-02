@@ -222,6 +222,7 @@ function loadProfilesFromDisk(): Record<string, Partial<VRConfig>> {
 
     // Check root profiles directory (development, packaged resources, OTA updates, and custom user profiles)
     const localDirs = [
+      path.resolve(__dirname, '../../../../stereix-client/profiles'),
       path.resolve(__dirname, '../../../../nexvr-client/profiles'),
       path.resolve(__dirname, '../../../profiles'),
       path.resolve(__dirname, '../../profiles'),

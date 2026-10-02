@@ -7,9 +7,9 @@ using System;
 using System.IO;
 using UnrealBuildTool;
 
-public class NexVR : ModuleRules
+public class Stereix : ModuleRules
 {
-    public NexVR(ReadOnlyTargetRules Target) : base(Target)
+    public Stereix(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
@@ -22,6 +22,7 @@ public class NexVR : ModuleRules
         PrivateIncludePaths.AddRange(
             new string[] {
                 Path.Combine(ModuleDirectory, "Private"),
+                Path.Combine(PluginDirectory, "Source", "ThirdParty", "Stereix", "include"),
                 Path.Combine(PluginDirectory, "Source", "ThirdParty", "NexVR", "include")
             }
         );
