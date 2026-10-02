@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.25)
-project(NexVREngine LANGUAGES C CXX)
+project(StereixEngine LANGUAGES C CXX)
 
 # -----------------------------------------------------------------------------
-# NexVR Monorepo Root CMake Orchestrator
+# Stereix Engine Monorepo Root CMake Orchestrator
 # Directs compilation to nexvr-client while preserving root build layout
 # -----------------------------------------------------------------------------
 enable_testing()
