@@ -39,7 +39,11 @@ uint8_t* PointerChainResolver::ResolveRIP(uint8_t* instructionAddress, uint32_t 
         return nullptr;
     }
 
-    int32_t offset = *reinterpret_cast<int32_t*>(readPtr);
+    int32_t offset = 0;
+    if (!seh::SafeReadMemory(readPtr, &offset, sizeof(offset))) {
+        LOG_DEBUG("PointerChainResolver: SafeReadMemory failed for RIP offset at %p, skipping.", readPtr);
+        return nullptr;
+    }
     return instructionAddress + instructionSize + offset;
 }
 
@@ -126,7 +130,7 @@ std::string PointerChainResolver::GetCachePath() const {
         std::filesystem::create_directories(dir, ec);
         return dir + "\\camera_cache.json";
     }
-    return "camera_cache.json";
+    return ""; // L-7: Do not write to game CWD; cache unavailable if AppData fails
 }
 
 bool PointerChainResolver::SaveCache(const std::string& exeName, const PointerChain& chain) {

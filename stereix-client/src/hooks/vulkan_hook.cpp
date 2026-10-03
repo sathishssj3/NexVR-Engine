@@ -39,6 +39,18 @@ static PFN_vkQueuePresentKHR True_vkQueuePresentKHR_Direct = nullptr;
 static PFN_vkQueueSubmit True_vkQueueSubmit_Direct = nullptr;
 static std::atomic<bool> s_lateHooksInstalled{false};
 
+// M-7: Tracked MinHook targets for exported functions
+static PFN_vkCreateSwapchainKHR s_realCreateSwapchain = nullptr;
+static PFN_vkQueuePresentKHR s_realQueuePresent = nullptr;
+static PFN_vkQueueSubmit s_realQueueSubmit = nullptr;
+
+template<typename T>
+static T GetLoaderExport(const char* name) {
+    static HMODULE s_hVulkan = GetModuleHandleA("vulkan-1.dll");
+    if (!s_hVulkan) s_hVulkan = GetModuleHandleA("vulkan-1.dll");
+    return s_hVulkan ? reinterpret_cast<T>(GetProcAddress(s_hVulkan, name)) : nullptr;
+}
+
 static VkInstance g_vulkanInstance = nullptr;
 
 VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkCreateInstance(
@@ -488,28 +500,19 @@ VKAPI_ATTR void VKAPI_CALL Hooked_vkCmdBindDescriptorSets(
     uint32_t dynamicOffsetCount,
     const uint32_t* pDynamicOffsets)
 {
-    VulkanCameraExtractor::Get().OnBindDescriptorSets(
-        commandBuffer, pipelineBindPoint, layout, firstSet, 
-        descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
+    try {
+        VulkanCameraExtractor::Get().OnBindDescriptorSets(
+            commandBuffer, pipelineBindPoint, layout, firstSet, 
+            descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
+    } catch (...) {}
 
-    // We don't have CmdBindDescriptorSets in the dispatch table, we need to add it, but since this is just observing,
-    // we need to call the original. 
-    // Wait, since we are hooking it, we MUST call the original. We will assume the dispatch table has it.
-    // Let's get the device from somewhere, or use instance table if it's there. 
-    // Wait, vkCmdBindDescriptorSets requires a dispatch table keyed by VkCommandBuffer or VkDevice.
-    // In Vulkan, dispatchable objects (Instance, PhysicalDevice, Device, Queue, CommandBuffer) all have a dispatch pointer as their first sizeof(void*).
-    // The loader provides this. So we actually need to look up the dispatch table using the CommandBuffer.
-    
-    // For this prototype, we'll assume we can get the device dispatch table, or we just rely on standard layer mechanisms.
-    // If we can't easily get it here without tracking CommandBuffers -> Device, we should just track it.
-    // Let's just track it or assume the global dispatch table will find it.
-    
-    // In reality, to call the original we need the correct pointer.
-    // Let's assume we have it in DeviceDispatchTable and we can find the device.
-    // For now, since we aren't running a full game in the test, we'll just check if we have ANY device.
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(VulkanQueueManager::Get().GetDevice());
     if (dt && dt->CmdBindDescriptorSets) {
         dt->CmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
+    } else {
+        auto pfn = GetLoaderExport<PFN_vkCmdBindDescriptorSets>("vkCmdBindDescriptorSets");
+        if (pfn) pfn(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
+        else LOG_ERROR("Hooked_vkCmdBindDescriptorSets: Neither device dispatch nor loader export available!");
     }
 }
 
@@ -518,63 +521,111 @@ VKAPI_ATTR void VKAPI_CALL Hooked_vkCmdExecuteCommands(
     uint32_t commandBufferCount,
     const VkCommandBuffer* pCommandBuffers)
 {
-    VulkanCameraExtractor::Get().OnExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
+    try {
+        VulkanCameraExtractor::Get().OnExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
+    } catch (...) {}
 
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(VulkanQueueManager::Get().GetDevice());
     if (dt && dt->CmdExecuteCommands) {
         dt->CmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
+    } else {
+        auto pfn = GetLoaderExport<PFN_vkCmdExecuteCommands>("vkCmdExecuteCommands");
+        if (pfn) pfn(commandBuffer, commandBufferCount, pCommandBuffers);
     }
 }
 
 VKAPI_ATTR void VKAPI_CALL Hooked_vkCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin, VkSubpassContents contents) {
     auto device = VulkanQueueManager::Get().GetDevice();
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
-    if (dt && dt->CmdBeginRenderPass) dt->CmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
+    if (dt && dt->CmdBeginRenderPass) {
+        dt->CmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
+    } else {
+        auto pfn = GetLoaderExport<PFN_vkCmdBeginRenderPass>("vkCmdBeginRenderPass");
+        if (pfn) pfn(commandBuffer, pRenderPassBegin, contents);
+    }
 }
 
 VKAPI_ATTR void VKAPI_CALL Hooked_vkCmdEndRenderPass(VkCommandBuffer commandBuffer) {
     auto device = VulkanQueueManager::Get().GetDevice();
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
-    if (dt && dt->CmdEndRenderPass) dt->CmdEndRenderPass(commandBuffer);
+    if (dt && dt->CmdEndRenderPass) {
+        dt->CmdEndRenderPass(commandBuffer);
+    } else {
+        auto pfn = GetLoaderExport<PFN_vkCmdEndRenderPass>("vkCmdEndRenderPass");
+        if (pfn) pfn(commandBuffer);
+    }
 }
 
 VKAPI_ATTR void VKAPI_CALL Hooked_vkCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) {
     auto device = VulkanQueueManager::Get().GetDevice();
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
-    if (dt && dt->CmdBeginRendering) dt->CmdBeginRendering(commandBuffer, pRenderingInfo);
+    if (dt && dt->CmdBeginRendering) {
+        dt->CmdBeginRendering(commandBuffer, pRenderingInfo);
+    } else {
+        auto pfn = GetLoaderExport<PFN_vkCmdBeginRendering>("vkCmdBeginRendering");
+        if (pfn) pfn(commandBuffer, pRenderingInfo);
+    }
 }
 
 VKAPI_ATTR void VKAPI_CALL Hooked_vkCmdEndRendering(VkCommandBuffer commandBuffer) {
     auto device = VulkanQueueManager::Get().GetDevice();
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
-    if (dt && dt->CmdEndRendering) dt->CmdEndRendering(commandBuffer);
+    if (dt && dt->CmdEndRendering) {
+        dt->CmdEndRendering(commandBuffer);
+    } else {
+        auto pfn = GetLoaderExport<PFN_vkCmdEndRendering>("vkCmdEndRendering");
+        if (pfn) pfn(commandBuffer);
+    }
 }
 
 VKAPI_ATTR void VKAPI_CALL Hooked_vkCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers, uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) {
     auto device = VulkanQueueManager::Get().GetDevice();
-    VulkanImageStateTracker::Get().OnCmdPipelineBarrier(device, commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    try {
+        VulkanImageStateTracker::Get().OnCmdPipelineBarrier(device, commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    } catch (...) {}
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
-    if (dt && dt->CmdPipelineBarrier) dt->CmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    if (dt && dt->CmdPipelineBarrier) {
+        dt->CmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    } else {
+        auto pfn = GetLoaderExport<PFN_vkCmdPipelineBarrier>("vkCmdPipelineBarrier");
+        if (pfn) pfn(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    }
 }
 
 VKAPI_ATTR void VKAPI_CALL Hooked_vkCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo) {
     auto device = VulkanQueueManager::Get().GetDevice();
-    // In a complete implementation we'd unpack pDependencyInfo for ImageStateTracker. For now, pass.
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
-    if (dt && dt->CmdPipelineBarrier2) dt->CmdPipelineBarrier2(commandBuffer, pDependencyInfo);
+    if (dt && dt->CmdPipelineBarrier2) {
+        dt->CmdPipelineBarrier2(commandBuffer, pDependencyInfo);
+    } else {
+        auto pfn = GetLoaderExport<PFN_vkCmdPipelineBarrier2>("vkCmdPipelineBarrier2");
+        if (pfn) pfn(commandBuffer, pDependencyInfo);
+    }
 }
 
 VKAPI_ATTR void VKAPI_CALL Hooked_vkCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers, uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) {
     auto device = VulkanQueueManager::Get().GetDevice();
-    VulkanImageStateTracker::Get().OnCmdWaitEvents(device, commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    try {
+        VulkanImageStateTracker::Get().OnCmdWaitEvents(device, commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    } catch (...) {}
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
-    if (dt && dt->CmdWaitEvents) dt->CmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    if (dt && dt->CmdWaitEvents) {
+        dt->CmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    } else {
+        auto pfn = GetLoaderExport<PFN_vkCmdWaitEvents>("vkCmdWaitEvents");
+        if (pfn) pfn(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    }
 }
 
 VKAPI_ATTR void VKAPI_CALL Hooked_vkCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
     auto device = VulkanQueueManager::Get().GetDevice();
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
-    if (dt && dt->CmdNextSubpass) dt->CmdNextSubpass(commandBuffer, contents);
+    if (dt && dt->CmdNextSubpass) {
+        dt->CmdNextSubpass(commandBuffer, contents);
+    } else {
+        auto pfn = GetLoaderExport<PFN_vkCmdNextSubpass>("vkCmdNextSubpass");
+        if (pfn) pfn(commandBuffer, contents);
+    }
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL Hooked_vkCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkImageView* pView) {
@@ -616,7 +667,12 @@ VKAPI_ATTR void VKAPI_CALL Hooked_vkDestroyFramebuffer(VkDevice device, VkFrameb
 VKAPI_ATTR void VKAPI_CALL Hooked_vkCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout, const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount, const VkImageSubresourceRange* pRanges) {
     auto device = VulkanQueueManager::Get().GetDevice();
     auto dt = VulkanDispatchTable::Get().GetDeviceDispatch(device);
-    if (dt && dt->CmdClearDepthStencilImage) dt->CmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
+    if (dt && dt->CmdClearDepthStencilImage) {
+        dt->CmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
+    } else {
+        auto pfn = GetLoaderExport<PFN_vkCmdClearDepthStencilImage>("vkCmdClearDepthStencilImage");
+        if (pfn) pfn(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
+    }
 }
 
 
@@ -673,23 +729,23 @@ void InstallVulkanHooks() {
         }
     }
 
-    auto realCreateSwapchain = (PFN_vkCreateSwapchainKHR)GetProcAddress(vulkanModule, "vkCreateSwapchainKHR");
-    if (realCreateSwapchain) {
-        if (MH_CreateHook((LPVOID)realCreateSwapchain, (LPVOID)Hooked_vkCreateSwapchainKHR, nullptr) == MH_OK) {
+    s_realCreateSwapchain = (PFN_vkCreateSwapchainKHR)GetProcAddress(vulkanModule, "vkCreateSwapchainKHR");
+    if (s_realCreateSwapchain) {
+        if (MH_CreateHook((LPVOID)s_realCreateSwapchain, (LPVOID)Hooked_vkCreateSwapchainKHR, nullptr) == MH_OK) {
             LOG_DEBUG("InstallVulkanHooks: Successfully created hook for exported vkCreateSwapchainKHR");
         }
     }
 
-    auto realQueuePresent = (PFN_vkQueuePresentKHR)GetProcAddress(vulkanModule, "vkQueuePresentKHR");
-    if (realQueuePresent) {
-        if (MH_CreateHook((LPVOID)realQueuePresent, (LPVOID)Hooked_vkQueuePresentKHR, reinterpret_cast<LPVOID*>(&True_vkQueuePresentKHR_Direct)) == MH_OK) {
+    s_realQueuePresent = (PFN_vkQueuePresentKHR)GetProcAddress(vulkanModule, "vkQueuePresentKHR");
+    if (s_realQueuePresent) {
+        if (MH_CreateHook((LPVOID)s_realQueuePresent, (LPVOID)Hooked_vkQueuePresentKHR, reinterpret_cast<LPVOID*>(&True_vkQueuePresentKHR_Direct)) == MH_OK) {
             LOG_DEBUG("InstallVulkanHooks: Successfully created hook for exported vkQueuePresentKHR");
         }
     }
 
-    auto realQueueSubmit = (PFN_vkQueueSubmit)GetProcAddress(vulkanModule, "vkQueueSubmit");
-    if (realQueueSubmit) {
-        if (MH_CreateHook((LPVOID)realQueueSubmit, (LPVOID)Hooked_vkQueueSubmit, reinterpret_cast<LPVOID*>(&True_vkQueueSubmit_Direct)) == MH_OK) {
+    s_realQueueSubmit = (PFN_vkQueueSubmit)GetProcAddress(vulkanModule, "vkQueueSubmit");
+    if (s_realQueueSubmit) {
+        if (MH_CreateHook((LPVOID)s_realQueueSubmit, (LPVOID)Hooked_vkQueueSubmit, reinterpret_cast<LPVOID*>(&True_vkQueueSubmit_Direct)) == MH_OK) {
             LOG_DEBUG("InstallVulkanHooks: Successfully created hook for exported vkQueueSubmit");
         }
     }
@@ -711,6 +767,21 @@ void RemoveVulkanHooks() {
     if (True_vkGetDeviceProcAddr) {
         MH_DisableHook((LPVOID)True_vkGetDeviceProcAddr);
         MH_RemoveHook((LPVOID)True_vkGetDeviceProcAddr);
+    }
+    if (s_realCreateSwapchain) {
+        MH_DisableHook((LPVOID)s_realCreateSwapchain);
+        MH_RemoveHook((LPVOID)s_realCreateSwapchain);
+        s_realCreateSwapchain = nullptr;
+    }
+    if (s_realQueuePresent) {
+        MH_DisableHook((LPVOID)s_realQueuePresent);
+        MH_RemoveHook((LPVOID)s_realQueuePresent);
+        s_realQueuePresent = nullptr;
+    }
+    if (s_realQueueSubmit) {
+        MH_DisableHook((LPVOID)s_realQueueSubmit);
+        MH_RemoveHook((LPVOID)s_realQueueSubmit);
+        s_realQueueSubmit = nullptr;
     }
 }
 

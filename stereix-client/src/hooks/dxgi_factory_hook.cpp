@@ -150,9 +150,9 @@ void Shutdown() {
     g_capturedCommandQueue.Reset();
 }
 
-ID3D12CommandQueue* GetCapturedCommandQueue() {
+Microsoft::WRL::ComPtr<ID3D12CommandQueue> GetCapturedCommandQueue() {
     std::lock_guard<std::mutex> lock(g_mutex);
-    return g_capturedCommandQueue.Get();
+    return g_capturedCommandQueue;
 }
 
 void SetCapturedCommandQueue(ID3D12CommandQueue* queue) {

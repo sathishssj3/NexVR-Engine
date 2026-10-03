@@ -7,7 +7,7 @@ import { assertTrustedIpcSender, gamePathsMap, gameExeMap, validateGameId, valid
 const defaultVRConfig: VRConfig = {
   motionAimSensitivity: 1.0,
   useRecommendedResolution: true,
-  srgbCorrection: true,
+  srgbCorrection: false,
   depthSubmission: false,
   rawInputMode: true,
   autoInjectOnLaunch: true,
@@ -383,8 +383,19 @@ ipcMain.handle('config:write', async (event, id: string, cfg: unknown) => {
 
     for (const dir of dirsToSync) {
       const cfgPath = path.join(dir, 'vrinject.json');
+      // F-5: Read existing vrinject.json to preserve C++-managed fields (IPD, HUD, comfort, shaders, etc.)
+      let existingCfg: Record<string, any> = {};
+      if (fs.existsSync(cfgPath)) {
+        try {
+          existingCfg = JSON.parse(fs.readFileSync(cfgPath, 'utf-8'));
+        } catch {}
+      }
+      const mergedCfg = {
+        ...existingCfg,
+        ...finalCfg,
+      };
       const tempPath = path.join(dir, `vrinject.${process.pid}.tmp`);
-      fs.writeFileSync(tempPath, JSON.stringify(finalCfg, null, 2));
+      fs.writeFileSync(tempPath, JSON.stringify(mergedCfg, null, 2));
       fs.renameSync(tempPath, cfgPath);
       try {
         fs.chmodSync(cfgPath, 0o600); // S6.3: Owner rw only

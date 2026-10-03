@@ -20,6 +20,11 @@ bool CameraClassifier::IsPerspectiveProjection(const Matrix4x4& mat, bool rowMaj
     float m33 = M(mat, 3, 3, rowMajor);
     float m23 = M(mat, 2, 3, rowMajor);
 
+    // M-8: Reject corrupted matrices with NaN/infinity elements
+    if (!std::isfinite(m33) || !std::isfinite(m23)) {
+        return false;
+    }
+
     if (std::abs(m33) > 0.001f) {
         return false; // Typically 0 in projection
     }

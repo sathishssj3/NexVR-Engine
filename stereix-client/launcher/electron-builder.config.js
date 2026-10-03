@@ -64,6 +64,18 @@ module.exports = {
       to:   'DirectML.dll'
     },
     {
+      from: '../build/bin/proxy/d3d11.dll',
+      to:   'proxy/d3d11.dll'
+    },
+    {
+      from: '../build/bin/proxy/dxgi.dll',
+      to:   'proxy/dxgi.dll'
+    },
+    {
+      from: '../build/bin/stereix_sdk.dll',
+      to:   'stereix_sdk.dll'
+    },
+    {
       from: '../build/bin/shaders',
       to:   'shaders'
     },

@@ -112,7 +112,7 @@ bool ConfigManager::Load(const std::string& moduleDir, const std::string& explic
             j.value("motionAimSensitivity", 1.0f), 0.1f, 10.0f);
             
         m_config.useRecommendedResolution = j.value("useRecommendedResolution", true);
-        m_config.srgbCorrection = j.value("srgbCorrection", true);
+        m_config.srgbCorrection = j.value("srgbCorrection", false);
 
         m_config.contrast = std::clamp(j.value("contrast", 1.0f), 0.5f, 2.0f);
         m_config.saturation = std::clamp(j.value("saturation", 1.0f), 0.5f, 2.0f);
@@ -123,7 +123,16 @@ bool ConfigManager::Load(const std::string& moduleDir, const std::string& explic
         m_config.vrScaleFactor = j.value("vrScaleFactor", 100.0f);
         m_config.vrThreadPriority = j.value("vrThreadPriority", THREAD_PRIORITY_HIGHEST);
         m_config.shaderDir = j.value("shaderDir", "");
+        // M-4: Reject path traversal in user-configurable directory paths
+        if (m_config.shaderDir.find("..") != std::string::npos) {
+            LOG_WARN("ConfigManager: shaderDir contains path traversal ('..'), ignoring.");
+            m_config.shaderDir = "";
+        }
         m_config.modelDir = j.value("modelDir", "");
+        if (m_config.modelDir.find("..") != std::string::npos) {
+            LOG_WARN("ConfigManager: modelDir contains path traversal ('..'), ignoring.");
+            m_config.modelDir = "";
+        }
         m_config.depthBufferMaxSizeMultiplier = j.value("depthBufferMaxSizeMultiplier", 16.0f);
 
         // Per-game engine profile overrides

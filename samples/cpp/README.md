@@ -1,32 +1,41 @@
-# Stereix Engine — Minimal C++ Direct3D 11 Integration Sample
+# Stereix Engine — Minimal C++ Integration Samples (Direct3D 11 & Direct3D 12)
 
-This sample demonstrates how to integrate `stereix_sdk.dll` directly into custom C++ game engines, proprietary graphics renderers, and simulation frameworks without Unreal Engine or Unity.
+These samples demonstrate how to integrate `stereix_sdk.dll` directly into custom C++ game engines, proprietary graphics renderers, and enterprise simulation frameworks without Unreal Engine or Unity.
 
 ---
 
 ## Architecture & Integration Flow
 
-The integration follows a strict, deterministic 5-step lifecycle:
+The integration follows a deterministic 5-step lifecycle across both DirectX 11 and DirectX 12:
 
-```
-[1] Stereix_GetGraphicsRequirements(&reqs)
+```text
+[1] Query Requirements:
+    - Stereix_GetGraphicsRequirements(&reqs)         [D3D11]
+    - Stereix_GetGraphicsRequirementsDX12(&reqs)     [D3D12]
          │  (Identifies required adapter LUID and per-eye target resolution)
          ▼
-[2] D3D11CreateDevice(...) + CreateTexture2D(...)
-         │  (Allocates device matching adapter LUID & render target dimensions)
+[2] Allocate Device & Render Target:
+    - D3D11CreateDevice(...) + CreateTexture2D(...)
+    - D3D12CreateDevice(...) + CreateCommandQueue(...) + CreateCommittedResource(...)
+         │  (Allocates matching GPU resources on the runtime-specified adapter)
          ▼
-[3] Stereix_InitializeDX11(&initInfo, &session)
+[3] Initialize Session:
+    - Stereix_InitializeDX11(&initInfo, &session)
+    - Stereix_InitializeDX12(&initInfo, &session)
          │  (Establishes OpenXR session and allocates VR compositor swapchains)
          ▼
 [4] Frame Loop:
-         ├── Stereix_WaitFrame(session, &frameState)
-         ├── Render scene with predicted eye poses (views[0], views[1])
-         ├── Stereix_SubmitFrameDX11(session, frameState.token, renderTarget)
-         └── Stereix_SyncInput(session) + Stereix_GetControllerState(...)
+    ├── Stereix_WaitFrame(session, &frameState)
+    ├── Render scene with predicted eye poses (views[0], views[1])
+    ├── Submit Frame:
+    │     - Stereix_SubmitFrameDX11(session, frameState.token, renderTarget)
+    │     - Stereix_SubmitFrameDX12(session, frameState.token, renderTarget, D3D12_RESOURCE_STATE_RENDER_TARGET)
+    └── Stereix_SyncInput(session) + Stereix_GetControllerState(...)
          │
          ▼
-[5] Stereix_Shutdown(session)
-            (Destroys VR session and frees all swapchains cleanly)
+[5] Clean Teardown:
+    Stereix_Shutdown(session)
+        (Destroys VR session and frees all compositor swapchains cleanly)
 ```
 
 ---
@@ -37,27 +46,36 @@ The integration follows a strict, deterministic 5-step lifecycle:
 * Visual Studio 2022 (MSVC v143+) with C++ Desktop Development workload
 * CMake 3.25+
 * An OpenXR-compliant VR runtime (Meta Quest Link, Valve SteamVR, Virtual Desktop, or Pico VR).
-  * *Note: If run without an active HMD/runtime, the sample detects this, outputs diagnostic advice, and exits with code 0.*
+  * *Note: If executed in headless CI or non-VR developer machines, the samples detect this, log diagnostic guidance, and exit cleanly with code 0.*
 
 ---
 
 ## Building and Running
 
-### Building as Part of Stereix Engine
+### Building with CMake
 From the repository root:
 
 ```powershell
 cmake -B build -S . -A x64 -DBUILD_TESTS=ON
-cmake --build build --config Release --target stereix_sample_d3d11
+cmake --build build --config Release --target stereix_sample_d3d11 stereix_sample_d3d12
 ```
 
-### Running the Sample
+### Running the Direct3D 11 Sample
 ```powershell
 # Run 60 frames (default):
 .\build\bin\stereix_sample_d3d11.exe
 
 # Custom frame count:
 .\build\bin\stereix_sample_d3d11.exe --frames 120
+```
+
+### Running the Direct3D 12 Sample
+```powershell
+# Run 60 frames (default):
+.\build\bin\stereix_sample_d3d12.exe
+
+# Custom frame count:
+.\build\bin\stereix_sample_d3d12.exe --frames 120
 ```
 
 ---

@@ -150,6 +150,29 @@ std::wstring ComputeFileHashSHA256(const std::string& filePath) {
     return hashResult;
 }
 
+bool IsSameFile(const std::string& path1, const std::string& path2) {
+    if (_stricmp(path1.c_str(), path2.c_str()) == 0) return true;
+    HANDLE h1 = ::CreateFileA(path1.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                              nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+    if (h1 == INVALID_HANDLE_VALUE) return false;
+    HANDLE h2 = ::CreateFileA(path2.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                              nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+    if (h2 == INVALID_HANDLE_VALUE) {
+        ::CloseHandle(h1);
+        return false;
+    }
+    BY_HANDLE_FILE_INFORMATION info1{}, info2{};
+    bool same = false;
+    if (::GetFileInformationByHandle(h1, &info1) && ::GetFileInformationByHandle(h2, &info2)) {
+        same = (info1.dwVolumeSerialNumber == info2.dwVolumeSerialNumber &&
+                info1.nFileIndexHigh == info2.nFileIndexHigh &&
+                info1.nFileIndexLow == info2.nFileIndexLow);
+    }
+    ::CloseHandle(h1);
+    ::CloseHandle(h2);
+    return same;
+}
+
 } // namespace
 
 bool InjectDll(DWORD pid, const std::string& dllPath) {
@@ -166,6 +189,16 @@ bool InjectDll(DWORD pid, const std::string& dllPath) {
         PrintErr("Target process is 32-bit (x86). Stereix Engine only supports 64-bit (x64) games.");
         ::CloseHandle(hProcess);
         return false;
+    }
+
+    // L-4: Target process validation - verify working set is > 1MB to avoid uninitialized/ghost processes
+    PROCESS_MEMORY_COUNTERS pmc{};
+    if (::GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc))) {
+        if (pmc.WorkingSetSize < 1024 * 1024) {
+            PrintErr("Target process working set is too small (< 1 MB). Process may be uninitialized or exiting.");
+            ::CloseHandle(hProcess);
+            return false;
+        }
     }
 
     SIZE_T pathLen = dllPath.size() + 1;
@@ -220,7 +253,26 @@ bool InjectDll(DWORD pid, const std::string& dllPath) {
         if (waitResult == WAIT_OBJECT_0) {
             DWORD exitCode = 0;
             ::GetExitCodeThread(hThread, &exitCode);
-            if (exitCode != 0) {
+            bool isLoaded = (exitCode != 0);
+            if (!isLoaded) {
+                // L-1: Verify load via EnumProcessModules in case low 32 bits of 64-bit HMODULE were 0
+                HMODULE hMods[1024];
+                DWORD cbNeeded = 0;
+                if (::EnumProcessModules(hProcess, hMods, sizeof(hMods), &cbNeeded)) {
+                    DWORD numMods = cbNeeded / sizeof(HMODULE);
+                    char modName[MAX_PATH];
+                    for (DWORD m = 0; m < numMods; ++m) {
+                        if (::GetModuleFileNameExA(hProcess, hMods[m], modName, MAX_PATH)) {
+                            if (strstr(modName, "vrinject.dll")) {
+                                isLoaded = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (isLoaded) {
                 PrintOK("DLL loaded successfully! Remote HMODULE = 0x%08lX", exitCode);
                 success = true;
                 ::CloseHandle(hThread);
@@ -236,17 +288,22 @@ bool InjectDll(DWORD pid, const std::string& dllPath) {
         } else if (waitResult == WAIT_TIMEOUT) {
             PrintErr("Remote thread timed out (10 s). The target may be hung.");
             ::CloseHandle(hThread);
+            // H-4: Do NOT free remoteMem here because the remote thread may still be executing.
+            remoteMem = nullptr;
             break;
         } else {
             PrintErr("WaitForSingleObject failed: %s", LastErrorMessage().c_str());
             ::CloseHandle(hThread);
+            remoteMem = nullptr;
             break;
         }
 
         ::CloseHandle(hThread);
     }
 
-    ::VirtualFreeEx(hProcess, remoteMem, 0, MEM_RELEASE);
+    if (remoteMem) {
+        ::VirtualFreeEx(hProcess, remoteMem, 0, MEM_RELEASE);
+    }
     ::CloseHandle(hProcess);
 
     return success;
@@ -263,6 +320,7 @@ int main(int argc, char* argv[]) {
     std::string dllPath;
     std::string copySrc;
     std::string copyDst;
+    bool allowUnverifiedHotfix = false;
 
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--pid") == 0 && i + 1 < argc) {
@@ -273,9 +331,186 @@ int main(int argc, char* argv[]) {
             copySrc = argv[++i];
         } else if (std::strcmp(argv[i], "--copy-dst") == 0 && i + 1 < argc) {
             copyDst = argv[++i];
+        } else if (std::strcmp(argv[i], "--allow-unverified-hotfix") == 0) {
+            allowUnverifiedHotfix = true;
         }
     }
 
+    // S3.3: Origin Restriction (Authentication runs FIRST before any file or process actions - C-3)
+    const char* envToken = std::getenv("STEREIX_AUTH_TOKEN");
+    if (!envToken) envToken = std::getenv("NEXVR_AUTH_TOKEN");
+    if (!envToken || std::string(envToken).empty()) {
+        PrintErr("[ERROR] Unauthorized origin. Missing security token. Please launch via the Stereix Engine UI.");
+        return 13;
+    }
+
+    DWORD parentPid = 0;
+    HANDLE hSnap2 = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hSnap2 == INVALID_HANDLE_VALUE) {
+        PrintErr("[ERROR] Failed to query caller processes — aborting.");
+        return 22;
+    }
+    PROCESSENTRY32W pe2 = { sizeof(pe2) };
+    DWORD selfPid = ::GetCurrentProcessId();
+    if (::Process32FirstW(hSnap2, &pe2)) {
+        do {
+            if (pe2.th32ProcessID == selfPid) {
+                parentPid = pe2.th32ParentProcessID;
+                break;
+            }
+        } while (::Process32NextW(hSnap2, &pe2));
+    }
+    ::CloseHandle(hSnap2);
+
+    if (parentPid == 0) {
+        PrintErr("[ERROR] Unable to resolve parent process — aborting");
+        return 22;
+    }
+
+    HANDLE hParent = ::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, parentPid);
+    if (!hParent) {
+        PrintErr("[ERROR] Unable to inspect parent process — aborting");
+        return 22;
+    }
+    wchar_t parentName[MAX_PATH] = {0};
+    DWORD parentNameSize = MAX_PATH;
+    if (!::QueryFullProcessImageNameW(hParent, 0, parentName, &parentNameSize)) {
+        ::CloseHandle(hParent);
+        PrintErr("[ERROR] Unable to verify caller process identity — aborting");
+        return 22;
+    }
+    ::CloseHandle(hParent);
+
+    std::wstring pname = parentName;
+    for (auto& c : pname) c = towlower(c);
+    if (pname.find(L"antigravity") == std::wstring::npos &&
+        pname.find(L"electron")    == std::wstring::npos &&
+        pname.find(L"nexvr")       == std::wstring::npos &&
+        pname.find(L"node")        == std::wstring::npos &&
+        pname.find(L"powershell")  == std::wstring::npos &&
+        pname.find(L"cmd")         == std::wstring::npos &&
+        pname.find(L"svchost")     == std::wstring::npos &&
+        pname.find(L"consent")     == std::wstring::npos) {
+        PrintErr("[ERROR] Unauthorized caller — aborting");
+        return 22;
+    }
+
+    // S3.4: Anti-Cheat Protection Tripwire (M-5: covers BattlEye variants and active anti-cheat engines)
+    const char* strict_ac_blocklist[] = { 
+        "vgc.exe", 
+        "vgtray.exe", 
+        "easyanticheat.exe", 
+        "easyanticheat_eos.exe", 
+        "beservice.exe",
+        "beservice_x64.exe",
+        "beservice.dll",
+        "ricochet.exe",
+        "faceitservice.exe"
+    };
+    HANDLE hSnapAC = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hSnapAC != INVALID_HANDLE_VALUE) {
+        PROCESSENTRY32 peAC{};
+        peAC.dwSize = sizeof(peAC);
+        if (::Process32First(hSnapAC, &peAC)) {
+            do {
+                std::string pName = peAC.szExeFile;
+                for (char& c : pName) c = static_cast<char>(std::tolower(c));
+                for (const char* blocked : strict_ac_blocklist) {
+                    if (pName.find(blocked) != std::string::npos) {
+                        PrintErr("[SECURITY] Active Anti-Cheat process detected (%s). Injection REFUSED to protect account from bans.", peAC.szExeFile);
+                        ::CloseHandle(hSnapAC);
+                        return 15;
+                    }
+                }
+            } while (::Process32Next(hSnapAC, &peAC));
+        }
+        ::CloseHandle(hSnapAC);
+    }
+
+    // Validate required arguments
+    if (targetPid <= 4 || dllPath.empty()) {
+        PrintErr("[ERROR] Missing or invalid required arguments (--pid and --dll). Target PID must be > 4.");
+        return 1;
+    }
+
+    // S3.1: System Process Protection & PID Verification (L-4: fail closed)
+    bool pidFound = false;
+    for (int retry = 0; retry < 10 && !pidFound; ++retry) {
+        HANDLE hTemp = ::OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, targetPid);
+        if (hTemp) {
+            PROCESS_MEMORY_COUNTERS pmc{};
+            if (::GetProcessMemoryInfo(hTemp, &pmc, sizeof(pmc))) {
+                if (pmc.WorkingSetSize >= 1024 * 1024) {
+                    pidFound = true;
+                }
+            }
+            ::CloseHandle(hTemp);
+        }
+        if (!pidFound) {
+            ::Sleep(200);
+        }
+    }
+    
+    if (!pidFound) {
+        PrintErr("[ERROR] Real Game Process (PID %lu) not found, exited, or insufficient working set.", targetPid);
+        return 21;
+    }
+
+    // S1.2: Path Traversal Check
+    if (dllPath.find("..") != std::string::npos ||
+        (!copySrc.empty() && copySrc.find("..") != std::string::npos) ||
+        (!copyDst.empty() && copyDst.find("..") != std::string::npos)) {
+        PrintErr("[ERROR] Path traversal rejected");
+        return 10;
+    }
+
+    char fullPath[MAX_PATH];
+    if (::GetFullPathNameA(dllPath.c_str(), MAX_PATH, fullPath, nullptr) == 0 || dllPath != fullPath) {
+        if (::PathIsRelativeA(dllPath.c_str())) {
+            PrintErr("[ERROR] Relative DLL paths are blocked for security");
+            return 11;
+        }
+    }
+
+    // S1.3: Source PE Validation Check (fail closed)
+    DWORD attrs = ::GetFileAttributesA(dllPath.c_str());
+    if (attrs == INVALID_FILE_ATTRIBUTES) {
+        PrintErr("DLL not found at: %s", dllPath.c_str());
+        return 12;
+    }
+    
+    FILE* f = nullptr;
+    if (fopen_s(&f, dllPath.c_str(), "rb") != 0 || !f) {
+        PrintErr("[ERROR] Failed to open DLL for PE header verification: %s", dllPath.c_str());
+        return 12;
+    }
+    char mz[2] = {0};
+    size_t bytesRead = fread(mz, 1, 2, f);
+    fclose(f);
+    if (bytesRead != 2 || mz[0] != 'M' || mz[1] != 'Z') {
+        PrintErr("[ERROR] Invalid PE header in DLL");
+        return 12;
+    }
+
+    // S1.4: DLL Hash Verification (C-1: fail closed unless explicit operator override is granted)
+    std::wstring computedHash = ComputeFileHashSHA256(dllPath);
+    if (computedHash.empty()) {
+        PrintErr("[ERROR] Failed to compute SHA-256 hash of DLL: %s", dllPath.c_str());
+        return 14;
+    }
+    if (computedHash != EXPECTED_DLL_HASH) {
+        if (allowUnverifiedHotfix) {
+            PrintWarn("[SECURITY WARNING] DLL hash differs from build baseline, but --allow-unverified-hotfix was explicitly granted.");
+        } else {
+            PrintErr("[SECURITY ERROR] DLL hash verification failed!");
+            PrintErr("  Expected: %ls", EXPECTED_DLL_HASH);
+            PrintErr("  Computed: %ls", computedHash.c_str());
+            PrintErr("Injection aborted to prevent untrusted code execution. Use --allow-unverified-hotfix if deploying an authorized OTA hotfix.");
+            return 14;
+        }
+    } else {
+        PrintOK("DLL hash verified against build baseline.");
+    }
 
     // Auto-resolve copy paths if omitted
     char selfExePath[MAX_PATH] = {0};
@@ -306,7 +541,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // Copy dependencies to game directory using elevated permissions
+    // Copy dependencies to game directory using elevated permissions (only runs AFTER auth & origin checks succeed)
     if (!copySrc.empty() && !copyDst.empty()) {
         PrintInfo("Synchronizing engine dependencies from %s to %s", copySrc.c_str(), copyDst.c_str());
 
@@ -336,7 +571,7 @@ int main(int argc, char* argv[]) {
             char fullDstPath[MAX_PATH] = {0};
             ::GetFullPathNameA(dllPath.c_str(), MAX_PATH, fullDllPath, nullptr);
             ::GetFullPathNameA(targetDllDst.c_str(), MAX_PATH, fullDstPath, nullptr);
-            if (_stricmp(fullDllPath, fullDstPath) != 0) {
+            if (!IsSameFile(fullDllPath, targetDllDst)) {
                 dllSourceToDeploy = dllPath;
             }
         }
@@ -348,7 +583,7 @@ int main(int argc, char* argv[]) {
                     char fullDstPath[MAX_PATH] = {0};
                     ::GetFullPathNameA(cand.c_str(), MAX_PATH, fullCandPath, nullptr);
                     ::GetFullPathNameA(targetDllDst.c_str(), MAX_PATH, fullDstPath, nullptr);
-                    if (_stricmp(fullCandPath, fullDstPath) != 0) {
+                    if (!IsSameFile(fullCandPath, targetDllDst)) {
                         dllSourceToDeploy = cand;
                         break;
                     }
@@ -372,18 +607,18 @@ int main(int argc, char* argv[]) {
 
         // 2. Synchronize support runtime DLLs (onnxruntime.dll, DirectML.dll)
         const char* supportDlls[] = {"onnxruntime.dll", "DirectML.dll"};
-        for (const char* f : supportDlls) {
-            std::string dst = copyDst + "\\" + f;
+        for (const char* sf : supportDlls) {
+            std::string dst = copyDst + "\\" + sf;
             for (const auto& d : srcDirs) {
-                std::string src = d + "\\" + f;
-                if (::GetFileAttributesA(src.c_str()) != INVALID_FILE_ATTRIBUTES) {
+                std::string src = d + "\\" + sf;
+                if (::GetFileAttributesA(src.c_str()) != INVALID_FILE_ATTRIBUTES && !IsSameFile(src, dst)) {
                     if (::GetFileAttributesA(dst.c_str()) != INVALID_FILE_ATTRIBUTES) {
                         std::string dstOld = dst + ".old";
                         ::DeleteFileA(dstOld.c_str());
                         ::MoveFileA(dst.c_str(), dstOld.c_str());
                     }
                     if (::CopyFileA(src.c_str(), dst.c_str(), FALSE)) {
-                        PrintOK("Deployed %s to target directory.", f);
+                        PrintOK("Deployed %s to target directory.", sf);
                     }
                     break;
                 }
@@ -391,12 +626,11 @@ int main(int argc, char* argv[]) {
         }
 
         // 3. Synchronize vrinject.json ONLY if destination does not already exist
-        // NEVER overwrite existing per-game tuned configurations (e.g. Hogwarts Legacy UE4/reverseZ/Float32)
         std::string jsonDst = copyDst + "\\vrinject.json";
         if (::GetFileAttributesA(jsonDst.c_str()) == INVALID_FILE_ATTRIBUTES) {
             for (const auto& d : srcDirs) {
                 std::string jsonSrc = d + "\\vrinject.json";
-                if (::GetFileAttributesA(jsonSrc.c_str()) != INVALID_FILE_ATTRIBUTES) {
+                if (::GetFileAttributesA(jsonSrc.c_str()) != INVALID_FILE_ATTRIBUTES && !IsSameFile(jsonSrc, jsonDst)) {
                     if (::CopyFileA(jsonSrc.c_str(), jsonDst.c_str(), FALSE)) {
                         PrintOK("Deployed initial vrinject.json to target directory.");
                     }
@@ -408,156 +642,26 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // S3.3: Origin Restriction (Environment variable token and parent process check)
-    const char* envToken = std::getenv("STEREIX_AUTH_TOKEN");
-    if (!envToken) envToken = std::getenv("NEXVR_AUTH_TOKEN");
-    if (!envToken || std::string(envToken).empty()) {
-        PrintErr("[ERROR] Unauthorized origin. Missing security token. Please launch via the Stereix Engine UI.");
-        return 13;
-    }
-
-    DWORD parentPid = 0;
-    HANDLE hSnap2 = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    PROCESSENTRY32W pe2 = { sizeof(pe2) };
-    DWORD selfPid = ::GetCurrentProcessId();
-    if (::Process32FirstW(hSnap2, &pe2)) {
-        do {
-            if (pe2.th32ProcessID == selfPid) {
-                parentPid = pe2.th32ParentProcessID;
-                break;
-            }
-        } while (::Process32NextW(hSnap2, &pe2));
-    }
-    ::CloseHandle(hSnap2);
-
-    HANDLE hParent = ::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, parentPid);
-    if (hParent) {
-        wchar_t parentName[MAX_PATH];
-        DWORD size = MAX_PATH;
-        ::QueryFullProcessImageNameW(hParent, 0, parentName, &size);
-        ::CloseHandle(hParent);
-        std::wstring pname = parentName;
-        for (auto& c : pname) c = towlower(c);
-        if (pname.find(L"antigravity") == std::wstring::npos &&
-            pname.find(L"electron")    == std::wstring::npos &&
-            pname.find(L"nexvr")       == std::wstring::npos &&
-            pname.find(L"node")        == std::wstring::npos &&
-            pname.find(L"powershell")  == std::wstring::npos &&
-            pname.find(L"cmd")         == std::wstring::npos &&
-            pname.find(L"svchost")     == std::wstring::npos &&
-            pname.find(L"consent")     == std::wstring::npos) {
-            PrintErr("[ERROR] Unauthorized caller — aborting");
-            return 22;
-        }
-    }
-
-    // S3.4: Anti-Cheat Protection Tripwire
-    // Active kernel/competitive anti-cheat processes (Vanguard, active EAC, BattlEye)
-    // are strictly blocked to prevent multiplayer account bans per project security policy.
-    const char* strict_ac_blocklist[] = { 
-        "vgc.exe", 
-        "vgtray.exe", 
-        "easyanticheat.exe", 
-        "easyanticheat_eos.exe", 
-        "beservice.exe",
-        "ricochet.exe",
-        "faceitservice.exe"
-    };
-    HANDLE hSnapAC = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (hSnapAC != INVALID_HANDLE_VALUE) {
-        PROCESSENTRY32 peAC{};
-        peAC.dwSize = sizeof(peAC);
-        if (::Process32First(hSnapAC, &peAC)) {
-            do {
-                std::string pName = peAC.szExeFile;
-                for (char& c : pName) c = static_cast<char>(std::tolower(c));
-                for (const char* blocked : strict_ac_blocklist) {
-                    if (pName.find(blocked) != std::string::npos) {
-                        PrintErr("[SECURITY] Active Anti-Cheat process detected (%s). Injection REFUSED to protect account from bans.", peAC.szExeFile);
-                        ::CloseHandle(hSnapAC);
-                        return 15;
-                    }
-                }
-            } while (::Process32Next(hSnapAC, &peAC));
-        }
-        ::CloseHandle(hSnapAC);
-    }
-
-    if (targetPid == 0 || dllPath.empty()) {
-        PrintErr("[ERROR] Missing required arguments (--pid and --dll).");
-        return 1;
-    }
-
-    // S3.1: System Process Protection & PID Verification & Smart Target Selection
-    if (targetPid <= 4) {
-        PrintErr("[ERROR] Invalid PID (system process)");
-        return 21;
-    }
-
-    bool pidFound = false;
-    // Retry briefly if the process is in very early launch phase
-    for (int retry = 0; retry < 10 && !pidFound; ++retry) {
-        HANDLE hTemp = ::OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, targetPid);
-        if (hTemp) {
-            PROCESS_MEMORY_COUNTERS pmc;
-            if (::GetProcessMemoryInfo(hTemp, &pmc, sizeof(pmc))) {
-                // Any valid game process running user code will have at least 1MB
-                if (pmc.WorkingSetSize >= 1024 * 1024) {
-                    pidFound = true;
-                }
-            } else {
-                pidFound = true; // Handle acquired successfully
-            }
-            ::CloseHandle(hTemp);
-        }
-        if (!pidFound) {
-            ::Sleep(200);
-        }
-    }
-    
-    if (!pidFound) {
-        PrintErr("[ERROR] Real Game Process (PID %lu) not found or exited", targetPid);
-        return 21;
-    }
-
-    // S1.2: Path Traversal Check
-    if (dllPath.find("..") != std::string::npos) {
-        PrintErr("[ERROR] Path traversal rejected");
-        return 10;
-    }
-
-    char fullPath[MAX_PATH];
-    if (::GetFullPathNameA(dllPath.c_str(), MAX_PATH, fullPath, nullptr) == 0 || dllPath != fullPath) {
-        // Enforce absolute paths
-        if (::PathIsRelativeA(dllPath.c_str())) {
-            PrintErr("[ERROR] Relative DLL paths are blocked for security");
-            return 11;
-        }
-    }
-
-    // S1.3: PE Validation Check
-    DWORD attrs = ::GetFileAttributesA(dllPath.c_str());
-    if (attrs == INVALID_FILE_ATTRIBUTES) {
-        PrintErr("DLL not found at: %s", dllPath.c_str());
-        return 12;
-    }
-    
-    FILE* f = nullptr;
-    fopen_s(&f, dllPath.c_str(), "rb");
-    if (f) {
-        char mz[2] = {0};
-        fread(mz, 1, 2, f);
-        fclose(f);
-        if (mz[0] != 'M' || mz[1] != 'Z') {
-            PrintErr("[ERROR] Invalid PE header in DLL");
+    // Re-verify deployed DLL integrity before injection to prevent TOCTOU
+    {
+        FILE* verifyF = nullptr;
+        if (fopen_s(&verifyF, dllPath.c_str(), "rb") != 0 || !verifyF) {
+            PrintErr("[ERROR] Unable to open target DLL for final pre-injection check: %s", dllPath.c_str());
             return 12;
         }
-    }
-    
-    // S1.4: DLL Hash Verification with Self-Healing Fallback
-    std::wstring computedHash = ComputeFileHashSHA256(dllPath);
-    if (computedHash.empty() || computedHash != EXPECTED_DLL_HASH) {
-        PrintInfo("[INFO] DLL hash differs from build baseline (OTA hotfix / updated engine). Proceeding with verified PE image.");
+        char mz[2] = {0};
+        size_t n = fread(mz, 1, 2, verifyF);
+        fclose(verifyF);
+        if (n != 2 || mz[0] != 'M' || mz[1] != 'Z') {
+            PrintErr("[ERROR] Target DLL image corrupted before injection");
+            return 12;
+        }
+
+        std::wstring finalHash = ComputeFileHashSHA256(dllPath);
+        if (finalHash != EXPECTED_DLL_HASH && !allowUnverifiedHotfix) {
+            PrintErr("[SECURITY ERROR] Final DLL hash check failed immediately before injection!");
+            return 14;
+        }
     }
 
     PrintInfo("Target PID:  %lu", targetPid);

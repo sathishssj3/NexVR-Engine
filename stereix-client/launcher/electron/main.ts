@@ -173,7 +173,7 @@ function createWindow() {
   }
 
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    if (!isDev && !url.startsWith('stereix://app/') && !url.startsWith('nexvr://app/') && !url.startsWith('file://')) {
+    if (!isDev && !url.startsWith('stereix://app/') && !url.startsWith('nexvr://app/')) {
       event.preventDefault();
       console.log(`[SECURITY] Blocked navigation to: ${url}`);
     }

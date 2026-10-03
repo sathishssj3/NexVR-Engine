@@ -69,8 +69,9 @@ void VulkanDispatchTable::RegisterInstance(VkInstance instance) {
     table.GetPhysicalDeviceProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties>(m_originalGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties"));
     table.GetPhysicalDeviceMemoryProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(m_originalGetInstanceProcAddr(instance, "vkGetPhysicalDeviceMemoryProperties"));
 
+    auto tablePtr = std::make_shared<InstanceDispatchTable>(table);
     std::unique_lock lock(m_mutex);
-    m_instanceTables[instance] = table;
+    m_instanceTables[instance] = std::move(tablePtr);
 }
 
 void VulkanDispatchTable::UnregisterInstance(VkInstance instance) {
@@ -168,8 +169,9 @@ void VulkanDispatchTable::RegisterDevice(VkDevice device, VkInstance instance) {
     table.DestroySampler = reinterpret_cast<PFN_vkDestroySampler>(getDeviceProcAddr(device, "vkDestroySampler"));
     table.DestroyPipeline = reinterpret_cast<PFN_vkDestroyPipeline>(getDeviceProcAddr(device, "vkDestroyPipeline"));
 
+    auto tablePtr = std::make_shared<DeviceDispatchTable>(table);
     std::unique_lock lock(m_mutex);
-    m_deviceTables[device] = table;
+    m_deviceTables[device] = std::move(tablePtr);
     if (instance) {
         m_deviceToInstance[device] = instance;
     }
@@ -181,16 +183,16 @@ void VulkanDispatchTable::UnregisterDevice(VkDevice device) {
     m_deviceToInstance.erase(device);
 }
 
-const InstanceDispatchTable* VulkanDispatchTable::GetInstanceDispatch(VkInstance instance) {
+std::shared_ptr<const InstanceDispatchTable> VulkanDispatchTable::GetInstanceDispatch(VkInstance instance) {
     std::shared_lock lock(m_mutex);
     auto it = m_instanceTables.find(instance);
-    return it != m_instanceTables.end() ? &it->second : nullptr;
+    return it != m_instanceTables.end() ? it->second : nullptr;
 }
 
-const DeviceDispatchTable* VulkanDispatchTable::GetDeviceDispatch(VkDevice device) {
+std::shared_ptr<const DeviceDispatchTable> VulkanDispatchTable::GetDeviceDispatch(VkDevice device) {
     std::shared_lock lock(m_mutex);
     auto it = m_deviceTables.find(device);
-    return it != m_deviceTables.end() ? &it->second : nullptr;
+    return it != m_deviceTables.end() ? it->second : nullptr;
 }
 
 VkInstance VulkanDispatchTable::GetInstanceForDevice(VkDevice device) {

@@ -43,6 +43,7 @@ bool PageScanner::Initialize() {
                         cand.isProjectionMatrix = false;
                         
                         std::lock_guard<std::mutex> lock(m_candidatesMutex);
+                        m_cachedCandidates.push_back(cand);
                         m_dynamicCandidates.push_back(cand);
                         m_candidatePointers.push_back(ptr);
                     }
@@ -299,6 +300,31 @@ void PageScanner::ScanDynamicHeaps() {
 
         if (m_scanRunning) {
             std::lock_guard<std::mutex> lock(m_candidatesMutex);
+            // L-5: Merge and preserve fast-path cached candidates across sweeps
+            for (const auto& cached : m_cachedCandidates) {
+                bool alreadyPresent = false;
+                for (const auto& existing : newDynamicCandidates) {
+                    if (existing.address == cached.address) {
+                        alreadyPresent = true;
+                        break;
+                    }
+                }
+                if (!alreadyPresent) {
+                    if (cached.isDoublePrecision) {
+                        double mat[16];
+                        if (seh::SafeReadMemory(cached.address, mat, sizeof(mat)) && IsValidViewMatrixDouble(mat)) {
+                            newDynamicCandidates.insert(newDynamicCandidates.begin(), cached);
+                            newCandidatePointers.insert(newCandidatePointers.begin(), cached.address);
+                        }
+                    } else {
+                        float mat[16];
+                        if (seh::SafeReadMemory(cached.address, mat, sizeof(mat)) && IsValidViewMatrixFloat(mat)) {
+                            newDynamicCandidates.insert(newDynamicCandidates.begin(), cached);
+                            newCandidatePointers.insert(newCandidatePointers.begin(), cached.address);
+                        }
+                    }
+                }
+            }
             m_dynamicCandidates = newDynamicCandidates;
             m_candidatePointers = newCandidatePointers;
         }

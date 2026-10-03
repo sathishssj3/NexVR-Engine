@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <shared_mutex>
 #include <mutex>
+#include <memory>
 
 namespace vrinject {
 namespace vulkan {
@@ -118,8 +119,8 @@ public:
     void RegisterDevice(VkDevice device, VkInstance instance);
     void UnregisterDevice(VkDevice device);
 
-    const InstanceDispatchTable* GetInstanceDispatch(VkInstance instance);
-    const DeviceDispatchTable* GetDeviceDispatch(VkDevice device);
+    std::shared_ptr<const InstanceDispatchTable> GetInstanceDispatch(VkInstance instance);
+    std::shared_ptr<const DeviceDispatchTable> GetDeviceDispatch(VkDevice device);
     VkInstance GetInstanceForDevice(VkDevice device);
 
 private:
@@ -129,8 +130,8 @@ private:
     PFN_vkGetDeviceProcAddr m_originalGetDeviceProcAddr = nullptr;
     
     std::shared_mutex m_mutex;
-    std::unordered_map<VkInstance, InstanceDispatchTable> m_instanceTables;
-    std::unordered_map<VkDevice, DeviceDispatchTable> m_deviceTables;
+    std::unordered_map<VkInstance, std::shared_ptr<InstanceDispatchTable>> m_instanceTables;
+    std::unordered_map<VkDevice, std::shared_ptr<DeviceDispatchTable>> m_deviceTables;
     std::unordered_map<VkDevice, VkInstance> m_deviceToInstance;
 };
 

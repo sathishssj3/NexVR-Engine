@@ -131,7 +131,7 @@ HRESULT ProcessPresent(SwapChainType* pSwapChain, OriginalFunc originalFunc, Arg
                 LOG_INFO("DX11Hook: Swapchain %p verified as DX12 (has ID3D12Resource buffers)", baseSwapChain);
                 
                 // If command queue hasn't been captured via hooks yet, query it directly from the swapchain
-                if (!DXGIFactoryHook::GetCapturedCommandQueue()) {
+                if (!DXGIFactoryHook::GetCapturedCommandQueue().Get()) {
                     Microsoft::WRL::ComPtr<ID3D12CommandQueue> scQueue;
                     if (SUCCEEDED(baseSwapChain->GetDevice(IID_PPV_ARGS(&scQueue)))) {
                         DXGIFactoryHook::SetCapturedCommandQueue(scQueue.Get());
@@ -147,17 +147,17 @@ HRESULT ProcessPresent(SwapChainType* pSwapChain, OriginalFunc originalFunc, Arg
         bool useDX12 = s_lastProbeWasDX12 && (s_dx12FailCount < 60);
         
         if (useDX12) {
-            ID3D12CommandQueue* capturedQueue = DXGIFactoryHook::GetCapturedCommandQueue();
+            Microsoft::WRL::ComPtr<ID3D12CommandQueue> capturedQueue = DXGIFactoryHook::GetCapturedCommandQueue();
             if (!capturedQueue) {
                 Microsoft::WRL::ComPtr<ID3D12CommandQueue> scQueue;
                 if (SUCCEEDED(baseSwapChain->GetDevice(IID_PPV_ARGS(&scQueue)))) {
-                    capturedQueue = scQueue.Get();
-                    DXGIFactoryHook::SetCapturedCommandQueue(capturedQueue);
-                    LOG_INFO("DX11Hook: Retrieved DX12 CommandQueue from swapchain in ProcessPresent: %p", capturedQueue);
+                    capturedQueue = scQueue;
+                    DXGIFactoryHook::SetCapturedCommandQueue(capturedQueue.Get());
+                    LOG_INFO("DX11Hook: Retrieved DX12 CommandQueue from swapchain in ProcessPresent: %p", capturedQueue.Get());
                 }
             }
             snapshot = Dx12LifecycleManager::Get().ProcessPresent(
-                baseSwapChain, capturedQueue, hr);
+                baseSwapChain, capturedQueue.Get(), hr);
             // Self-healing: if DX12 lifecycle stays broken, auto-fallback to DX11
             if (snapshot.state == RenderState::DEGRADED || 
                 snapshot.state == RenderState::DEVICE_REMOVED ||
@@ -186,7 +186,10 @@ HRESULT ProcessPresent(SwapChainType* pSwapChain, OriginalFunc originalFunc, Arg
         }
 
         // Exception-safe RAII frame lifecycle
-        ScopedFrame frame(*SubsystemContext::Get().GetFrameCoordinator(), snapshot);
+        auto* frameCoord = SubsystemContext::Get().GetFrameCoordinator();
+        if (frameCoord) {
+            ScopedFrame frame(*frameCoord, snapshot);
+        }
 
         // Periodically verify hook integrity to prevent external unhooking (e.g. by anti-cheats or overlays)
         static int s_frameCount = 0;
@@ -281,10 +284,17 @@ HRESULT __stdcall hkCreateTexture2D(ID3D11Device* pDevice, const D3D11_TEXTURE2D
     HRESULT hr = OriginalCreateTexture2D ? OriginalCreateTexture2D(pDevice, pDesc, pInitialData, ppTexture2D) : DXGI_ERROR_INVALID_CALL;
     if (SUCCEEDED(hr) && ppTexture2D && *ppTexture2D && pDesc) {
         if (pDesc->BindFlags & D3D11_BIND_DEPTH_STENCIL) {
-            uint32_t gen = s_globalTextureGeneration.fetch_add(1, std::memory_order_relaxed);
-            SubsystemContext::Get().GetDepthCandidateCollector()->OnDepthSurfaceCreated(
-                *ppTexture2D, pDesc->Width, pDesc->Height, pDesc->Format, 
-                pDesc->SampleDesc.Count, pDesc->ArraySize, pDesc->MipLevels, gen);
+            __try {
+                auto* collector = SubsystemContext::Get().GetDepthCandidateCollector();
+                if (collector) {
+                    uint32_t gen = s_globalTextureGeneration.fetch_add(1, std::memory_order_relaxed);
+                    collector->OnDepthSurfaceCreated(
+                        *ppTexture2D, pDesc->Width, pDesc->Height, pDesc->Format, 
+                        pDesc->SampleDesc.Count, pDesc->ArraySize, pDesc->MipLevels, gen);
+                }
+            } __except(EXCEPTION_EXECUTE_HANDLER) {
+                LOG_WARN("DX11Hook: Exception caught in hkCreateTexture2D callback");
+            }
         }
     }
     return hr;
@@ -292,11 +302,18 @@ HRESULT __stdcall hkCreateTexture2D(ID3D11Device* pDevice, const D3D11_TEXTURE2D
 
 void __stdcall hkOMSetRenderTargets(ID3D11DeviceContext* pContext, UINT NumViews, ID3D11RenderTargetView *const *ppRenderTargetViews, ID3D11DepthStencilView *pDepthStencilView) {
     if (pDepthStencilView) {
-        ID3D11Resource* pResource = nullptr;
-        pDepthStencilView->GetResource(&pResource);
-        if (pResource) {
-            SubsystemContext::Get().GetDepthCandidateCollector()->OnOMSetRenderTargets(pResource);
-            pResource->Release(); // GetResource adds a ref
+        __try {
+            auto* collector = SubsystemContext::Get().GetDepthCandidateCollector();
+            if (collector) {
+                ID3D11Resource* pResource = nullptr;
+                pDepthStencilView->GetResource(&pResource);
+                if (pResource) {
+                    collector->OnOMSetRenderTargets(pResource);
+                    pResource->Release(); // GetResource adds a ref
+                }
+            }
+        } __except(EXCEPTION_EXECUTE_HANDLER) {
+            LOG_WARN("DX11Hook: Exception caught in hkOMSetRenderTargets callback");
         }
     }
     if (OriginalOMSetRenderTargets) {
@@ -306,11 +323,18 @@ void __stdcall hkOMSetRenderTargets(ID3D11DeviceContext* pContext, UINT NumViews
 
 void __stdcall hkClearDepthStencilView(ID3D11DeviceContext* pContext, ID3D11DepthStencilView *pDepthStencilView, UINT ClearFlags, FLOAT Depth, UINT8 Stencil) {
     if (pDepthStencilView && (ClearFlags & D3D11_CLEAR_DEPTH)) {
-        ID3D11Resource* pResource = nullptr;
-        pDepthStencilView->GetResource(&pResource);
-        if (pResource) {
-            SubsystemContext::Get().GetDepthCandidateCollector()->OnClearDepthStencilView(pResource, Depth);
-            pResource->Release();
+        __try {
+            auto* collector = SubsystemContext::Get().GetDepthCandidateCollector();
+            if (collector) {
+                ID3D11Resource* pResource = nullptr;
+                pDepthStencilView->GetResource(&pResource);
+                if (pResource) {
+                    collector->OnClearDepthStencilView(pResource, Depth);
+                    pResource->Release();
+                }
+            }
+        } __except(EXCEPTION_EXECUTE_HANDLER) {
+            LOG_WARN("DX11Hook: Exception caught in hkClearDepthStencilView callback");
         }
     }
     if (OriginalClearDepthStencilView) {
@@ -320,17 +344,24 @@ void __stdcall hkClearDepthStencilView(ID3D11DeviceContext* pContext, ID3D11Dept
 
 void __stdcall hkUpdateSubresource(ID3D11DeviceContext* pContext, ID3D11Resource* pDstResource, UINT DstSubresource, const D3D11_BOX* pDstBox, const void* pSrcData, UINT SrcRowPitch, UINT SrcDepthPitch) {
     if (pDstResource && pSrcData) {
-        D3D11_RESOURCE_DIMENSION dim;
-        pDstResource->GetType(&dim);
-        if (dim == D3D11_RESOURCE_DIMENSION_BUFFER) {
-            ID3D11Buffer* pBuffer = static_cast<ID3D11Buffer*>(pDstResource);
-            D3D11_BUFFER_DESC desc;
-            pBuffer->GetDesc(&desc);
-            if (desc.BindFlags & D3D11_BIND_CONSTANT_BUFFER) {
-                if (desc.ByteWidth >= sizeof(vrinject::Matrix4x4)) {
-                    SubsystemContext::Get().GetCandidateCollector()->OnConstantBufferUpdate(pBuffer, pSrcData, desc.ByteWidth);
+        __try {
+            D3D11_RESOURCE_DIMENSION dim;
+            pDstResource->GetType(&dim);
+            if (dim == D3D11_RESOURCE_DIMENSION_BUFFER) {
+                ID3D11Buffer* pBuffer = static_cast<ID3D11Buffer*>(pDstResource);
+                D3D11_BUFFER_DESC desc;
+                pBuffer->GetDesc(&desc);
+                if (desc.BindFlags & D3D11_BIND_CONSTANT_BUFFER) {
+                    if (desc.ByteWidth >= sizeof(vrinject::Matrix4x4)) {
+                        auto* collector = SubsystemContext::Get().GetCandidateCollector();
+                        if (collector) {
+                            collector->OnConstantBufferUpdate(pBuffer, pSrcData, desc.ByteWidth);
+                        }
+                    }
                 }
             }
+        } __except(EXCEPTION_EXECUTE_HANDLER) {
+            LOG_WARN("DX11Hook: Exception caught in hkUpdateSubresource callback");
         }
     }
     if (OriginalUpdateSubresource) {
@@ -440,6 +471,31 @@ bool Initialize() {
                 reinterpret_cast<LPCSTR>(addr), &hMod) || !hMod) {
             LOG_WARN("DX11Hook: Hook target %p has no owning module — likely a proxy vtable, skipping.", addr);
             return false;
+        }
+        char modName[MAX_PATH] = {};
+        GetModuleFileNameA(hMod, modName, MAX_PATH);
+        std::string path(modName);
+        size_t lastSlash = path.find_last_of("\\/");
+        std::string filename = (lastSlash == std::string::npos) ? path : path.substr(lastSlash + 1);
+        auto toLower = [](std::string s) { for (auto& c : s) c = (char)tolower(c); return s; };
+        std::string filenameLower = toLower(filename);
+        std::string pathLower = toLower(path);
+        
+        if (filenameLower != "d3d11.dll" &&
+            filenameLower != "dxgi.dll" &&
+            filenameLower != "d3d12.dll" &&
+            filenameLower != "d3d12core.dll") {
+            LOG_WARN("DX11Hook: Hook target %p is in '%s', not a known D3D/DXGI system DLL — skipping.", addr, modName);
+            return false;
+        }
+
+        char sysDir[MAX_PATH] = {};
+        if (GetSystemDirectoryA(sysDir, MAX_PATH)) {
+            std::string sysPathLower = toLower(sysDir);
+            if (pathLower.rfind(sysPathLower, 0) != 0) {
+                LOG_WARN("DX11Hook: Hook target %p resides in '%s', which is outside Windows system directory '%s' — skipping.", addr, modName, sysDir);
+                return false;
+            }
         }
         return true;
     };

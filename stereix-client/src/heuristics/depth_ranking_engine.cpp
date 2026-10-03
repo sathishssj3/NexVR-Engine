@@ -18,7 +18,7 @@ void DepthRankingEngine::Rank(std::vector<DepthCandidate>& candidates, const Dep
             (candidate.temporalStabilityScore * weights.temporalStability) +
             (candidate.classifierScore * weights.classifier);
             
-        candidate.confidence = candidate.totalScore * 100.0f;
+        candidate.confidence = std::clamp(candidate.totalScore * 100.0f, 0.0f, 100.0f);
     }
 
     // Sort descending by score

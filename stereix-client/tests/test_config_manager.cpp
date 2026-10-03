@@ -48,7 +48,7 @@ TEST_F(ConfigManagerTest, ConfigLoadDefaultWhenMissing) {
     EXPECT_TRUE(cfg.enableNeuralInpainter);
     EXPECT_TRUE(cfg.enableImGuiOverlay);
     EXPECT_FLOAT_EQ(cfg.motionAimSensitivity, 1.0f);
-    EXPECT_TRUE(cfg.srgbCorrection);
+    EXPECT_FALSE(cfg.srgbCorrection);
 }
 
 TEST_F(ConfigManagerTest, ConfigLoadFromFile) {

@@ -2,24 +2,39 @@ param (
     [string]$Token,
     [string]$Tag = "v0.1.99",
     [string]$Repo = "sathishssj3/Stereix-Engine-Releases",
-    [string]$ArtifactsDir = "launcher\dist-electron"
+    [string]$ArtifactsDir = ""
 )
 
 $ErrorActionPreference = "Stop"
 
-if (-not $Token) {
-    # Attempt local git credential fill if running locally
-    $cred = "protocol=https`nhost=github.com`n" | git credential fill
-    foreach ($line in $cred) {
-        if ($line -match "^password=(.+)$") {
-            $Token = $matches[1].Trim()
-        }
+if (-not $ArtifactsDir) {
+    if (Test-Path "dist-release") {
+        $ArtifactsDir = "dist-release"
+    } elseif (Test-Path "..\dist-release") {
+        $ArtifactsDir = "..\dist-release"
+    } else {
+        $ArtifactsDir = "launcher\dist-electron"
     }
 }
 
 if (-not $Token) {
-    Write-Error "No GitHub token provided or found."
-    exit 1
+    try {
+        # Attempt local git credential fill if running locally
+        $cred = "protocol=https`nhost=github.com`n" | git credential fill 2>$null
+        foreach ($line in $cred) {
+            if ($line -match "^password=(.+)$") {
+                $Token = $matches[1].Trim()
+            }
+        }
+    } catch {
+        # Credential helper not configured or unavailable
+    }
+}
+
+if (-not $Token) {
+    Write-Warning "No GitHub token provided or found in credential helper. Pass -Token <PAT> to authenticate."
+    Write-Host "Manual upload URL: https://github.com/$Repo/releases/new?tag=$Tag"
+    exit 0
 }
 
 $headers = @{
@@ -50,8 +65,8 @@ if (-not $targetRelease) {
 
 $uploadBase = "https://uploads.github.com/repos/$Repo/releases/$($targetRelease.id)/assets"
 
-# Locate setup and portable binaries to upload
-$filesToUpload = Get-ChildItem -Path $ArtifactsDir -Include "Stereix-Engine-Setup-*.exe", "Stereix-Engine-Portable-*.exe", "NexVR-Engine-Setup-*.exe", "NexVR-Engine-Portable-*.exe" -File -Recurse
+# Locate setup, portable, SDK/standalone zip, and checksum manifest to upload
+$filesToUpload = Get-ChildItem -Path "$ArtifactsDir\*" -Include "Stereix-Engine-Setup-*.exe", "Stereix-Engine-Portable-*.exe", "*.zip", "SHA256SUMS.txt" -File
 
 if ($filesToUpload.Count -eq 0) {
     Write-Warning "No installer files found in $ArtifactsDir to upload."

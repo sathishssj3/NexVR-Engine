@@ -17,7 +17,7 @@ void VulkanQueueManager::Initialize(VkPhysicalDevice physicalDevice, VkDevice de
     m_knownQueues.clear();
     m_cachedMainQueue = nullptr;
 
-    const auto* instanceDt = VulkanDispatchTable::Get().GetInstanceDispatch(nullptr); // Needs instance, but GetPhysicalDeviceProperties is instance level.
+    auto instanceDt = VulkanDispatchTable::Get().GetInstanceDispatch(nullptr); // Needs instance, but GetPhysicalDeviceProperties is instance level.
     // For now we assume the instance dispatch table has GetPhysicalDeviceProperties globally accessible or we find it.
     // Wait, queue properties are from vkGetPhysicalDeviceQueueFamilyProperties. Let's just hook or retrieve it.
     // Actually, we don't strictly need it right now if we trust what the app requests, but it's better to have.

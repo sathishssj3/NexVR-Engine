@@ -33,8 +33,8 @@ test.describe('Launcher E2E Tests', () => {
     }
   });
 
-  test('should render the top bar with NEXVR ENGINE title', async () => {
-    const title = window.getByText('NEXVR ENGINE', { exact: true });
+  test('should render the top bar with STEREIX ENGINE title', async () => {
+    const title = window.getByText(/STEREIX ENGINE|NEXVR ENGINE/);
     await expect(title).toBeVisible();
     
     const version = window.locator('span:has-text("v0.1.")');

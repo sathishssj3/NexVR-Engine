@@ -315,11 +315,7 @@ VKAPI_ATTR VkResult VKAPI_CALL VRInject_QueuePresentKHR(VkQueue queue, const VkP
         LOG_INFO("Vulkan Layer: vkQueuePresentKHR called with NULL pPresentInfo!");
     }
 
-    VkPresentInfoKHR modifiedPresentInfo = {};
-    if (pPresentInfo) {
-        modifiedPresentInfo = *pPresentInfo;
-    }
-    VkSemaphore ourSemaphore = VK_NULL_HANDLE;
+
 
     if (device != VK_NULL_HANDLE) {
         vrinject::RenderFrameSnapshot snapshot = vrinject::vulkan::VulkanLifecycleManager::Get().CreateSnapshot(queue);
@@ -358,9 +354,6 @@ VKAPI_ATTR VkResult VKAPI_CALL VRInject_QueuePresentKHR(VkQueue queue, const VkP
             vrinject::SubsystemContext::Get().GetFrameCoordinator()->OnPresentBegin(snapshot);
             vrinject::SubsystemContext::Get().GetFrameCoordinator()->OnPresentEnd();
             
-            // Wait for our compute shader to finish before presenting
-            if (dt) dt->QueueWaitIdle(queue);
-            
         } else {
             static int logCount = 0;
             if (logCount < 50) {
@@ -382,13 +375,6 @@ VKAPI_ATTR VkResult VKAPI_CALL VRInject_QueuePresentKHR(VkQueue queue, const VkP
     if (!nextFunc) {
         LOG_WARN("Vulkan Layer: vkQueuePresentKHR on an untracked queue - failing the call.");
         return VK_ERROR_INITIALIZATION_FAILED;
-    }
-    
-    // Replace the game's wait semaphores with OUR semaphore!
-    if (ourSemaphore != VK_NULL_HANDLE && pPresentInfo) {
-        modifiedPresentInfo.waitSemaphoreCount = 1;
-        modifiedPresentInfo.pWaitSemaphores = &ourSemaphore;
-        return nextFunc(queue, &modifiedPresentInfo);
     }
     
     return nextFunc(queue, pPresentInfo);

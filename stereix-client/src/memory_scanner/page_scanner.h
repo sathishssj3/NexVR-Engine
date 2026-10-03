@@ -65,6 +65,7 @@ private:
     std::atomic<bool> m_scanRunning{false};
 
     std::mutex m_candidatesMutex;
+    std::vector<MemoryMatrixCandidate> m_cachedCandidates;
     std::vector<MemoryMatrixCandidate> m_dynamicCandidates;
     std::vector<uint8_t*> m_candidatePointers;
 };

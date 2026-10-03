@@ -10,7 +10,46 @@
 #include <shlobj.h>
 #include <chrono>
 
+#include <tlhelp32.h>
+
 namespace vrinject {
+namespace {
+
+bool CheckAntiCheatRunning() {
+    const char* strict_ac_blocklist[] = { 
+        "vgc.exe", 
+        "vgtray.exe", 
+        "easyanticheat.exe", 
+        "easyanticheat_eos.exe", 
+        "beservice.exe",
+        "beservice_x64.exe",
+        "beservice.dll",
+        "ricochet.exe",
+        "faceitservice.exe"
+    };
+    HANDLE hSnap = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hSnap == INVALID_HANDLE_VALUE) return false;
+    PROCESSENTRY32 pe{};
+    pe.dwSize = sizeof(pe);
+    bool detected = false;
+    if (::Process32First(hSnap, &pe)) {
+        do {
+            std::string pName = pe.szExeFile;
+            for (char& c : pName) c = static_cast<char>(std::tolower(c));
+            for (const char* blocked : strict_ac_blocklist) {
+                if (pName.find(blocked) != std::string::npos) {
+                    detected = true;
+                    break;
+                }
+            }
+            if (detected) break;
+        } while (::Process32Next(hSnap, &pe));
+    }
+    ::CloseHandle(hSnap);
+    return detected;
+}
+
+} // anonymous namespace
 
 void RuntimeState::TransitionTo(RuntimePhase newPhase) {
     {
@@ -37,13 +76,6 @@ void RuntimeState::OnDllProcessAttach(void* hModule) {
 
 void RuntimeState::OnDllProcessDetach() {
     TransitionTo(RuntimePhase::Stopping);
-
-    // R5: Bounded wait to prevent DLL unloading while teardown is running
-    // The existing m_workerThread will wake up, run teardown, and transition to Stopped.
-    std::unique_lock<std::mutex> lock(m_stateMutex);
-    m_stateCv.wait_for(lock, std::chrono::milliseconds(100), [this]() {
-        return m_phase.load() == RuntimePhase::Stopped;
-    });
 }
 
 void RuntimeState::BackgroundInitialize() {
@@ -124,6 +156,13 @@ void RuntimeState::BackgroundInitialize() {
         return;
     }
     
+    // L-6: Check if anti-cheat process is running before installing hooks
+    if (CheckAntiCheatRunning()) {
+        LOG_ERROR("[SECURITY] Anti-Cheat service detected at runtime. Aborting injection to protect account from bans.");
+        TransitionTo(RuntimePhase::Error);
+        return;
+    }
+
     LOG_DEBUG("Waiting for remote injection thread to exit...");
     Sleep(1000); // Prevent MH_EnableHook from deadlocking against the exiting injection thread
 
@@ -140,12 +179,22 @@ void RuntimeState::BackgroundInitialize() {
         TransitionTo(RuntimePhase::Error);
     }
 
-    // R5: Park the existing worker thread here, waiting for OnDllProcessDetach to set Stopping
+    // R5 / L-6: Park the existing worker thread here, with periodic anti-cheat polling
     {
         std::unique_lock<std::mutex> lock(m_stateMutex);
-        m_stateCv.wait(lock, [this]() {
-            return m_phase.load() == RuntimePhase::Stopping || m_phase.load() == RuntimePhase::Stopped;
-        });
+        while (m_phase.load() != RuntimePhase::Stopping && m_phase.load() != RuntimePhase::Stopped) {
+            if (m_stateCv.wait_for(lock, std::chrono::seconds(5), [this]() {
+                return m_phase.load() == RuntimePhase::Stopping || m_phase.load() == RuntimePhase::Stopped;
+            })) {
+                break;
+            }
+            // Periodic L-6 anti-cheat tripwire check while running
+            if (m_phase.load() == RuntimePhase::Running && CheckAntiCheatRunning()) {
+                LOG_ERROR("[SECURITY] Anti-Cheat service launched after injection! Initiating emergency shutdown.");
+                m_phase.store(RuntimePhase::Stopping);
+                break;
+            }
+        }
     }
 
     // Perform teardown on the original worker thread

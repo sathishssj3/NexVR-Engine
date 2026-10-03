@@ -98,6 +98,10 @@ HRESULT __stdcall hkMap(ID3D12Resource* pResource, UINT Subresource, const D3D12
     HRESULT hr = OriginalMap ? OriginalMap(pResource, Subresource, pReadRange, ppData) : E_FAIL;
     if (SUCCEEDED(hr) && ppData && *ppData && vrinject::seh::IsValidMemoryPointer(pResource)) {
         std::lock_guard<std::recursive_mutex> lock(g_dx12MapMutex);
+        constexpr size_t MAX_MAPPED_RESOURCES = 4096;
+        if (g_dx12MappedResources.size() >= MAX_MAPPED_RESOURCES) {
+            g_dx12MappedResources.clear();
+        }
         g_dx12MappedResources[pResource] = *ppData;
     }
     return hr;
@@ -380,7 +384,8 @@ void __stdcall hkClearDepthStencilView(ID3D12GraphicsCommandList* pCommandList, 
 
 bool Initialize() {
     LOG_INFO("DX12Hook: Initialize started");
-    if (MH_Initialize() != MH_OK && MH_Initialize() != MH_ERROR_ALREADY_INITIALIZED) {
+    MH_STATUS status = MH_Initialize();
+    if (status != MH_OK && status != MH_ERROR_ALREADY_INITIALIZED) {
         LOG_ERROR("DX12Hook: MinHook failed");
         return false;
     }

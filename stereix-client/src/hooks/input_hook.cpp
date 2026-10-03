@@ -106,6 +106,7 @@ UINT WINAPI HookedGetRawInputData(HRAWINPUT hRawInput, UINT uiCommand, LPVOID pD
     if ((uintptr_t)hRawInput == GetRawInputMagicHandle() &&
         InputHook::GetInstance().IsCaptureActive()) {
         if (uiCommand == RID_INPUT) {
+            if (!pcbSize) return (UINT)-1;
             if (pData == nullptr) {
                 *pcbSize = sizeof(RAWINPUT);
                 return 0;
@@ -158,7 +159,8 @@ HCURSOR WINAPI HookedSetCursor(HCURSOR hCursor) {
 bool InputHook::Initialize() {
     if (m_initialized) return true;
 
-    if (MH_Initialize() != MH_OK && MH_Initialize() != MH_ERROR_ALREADY_INITIALIZED) {
+    MH_STATUS status = MH_Initialize();
+    if (status != MH_OK && status != MH_ERROR_ALREADY_INITIALIZED) {
         LOG_ERROR("InputHook: Failed to initialize MinHook.");
         return false;
     }

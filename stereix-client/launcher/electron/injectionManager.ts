@@ -1,6 +1,7 @@
 import { app, shell, ipcMain } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as crypto from 'crypto';
 import * as child_process from 'child_process';
 import * as util from 'util';
 import { InjectResult } from '../src/types';
@@ -57,7 +58,28 @@ export function pickPreferredAsset(canonicalPath: string, otaPath: string, minSi
   try {
     const otaMtime = fs.statSync(otaPath).mtimeMs;
     const canonMtime = fs.statSync(canonicalPath).mtimeMs;
-    return otaMtime >= canonMtime ? otaPath : canonicalPath;
+    if (otaMtime >= canonMtime) {
+      // M-11: Re-verify the OTA cache file's SHA-256 against signed local manifest
+      try {
+        const local = getLocalManifest();
+        if (local && local.hashes) {
+          const basename = path.basename(otaPath);
+          const expectedHash = local.hashes[basename];
+          if (expectedHash) {
+            const fileBuf = fs.readFileSync(otaPath);
+            const actualHash = crypto.createHash('sha256').update(fileBuf).digest('hex').toLowerCase();
+            if (actualHash !== expectedHash.toLowerCase()) {
+              console.warn(`[SECURITY] OTA file ${basename} SHA-256 mismatch at deploy time! Discarding OTA and falling back to bundled binary.`);
+              return canonicalPath;
+            }
+          }
+        }
+      } catch {
+        return canonicalPath;
+      }
+      return otaPath;
+    }
+    return canonicalPath;
   } catch {
     return canonicalPath;
   }
@@ -359,10 +381,11 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     if (validId.startsWith('custom_') && gameExeMap[validId]) {
       const customExe = canonicalExistingPath(gameExeMap[validId], 'file');
       resolveWithinRoot(installPath, path.relative(installPath, customExe));
-      // Use child_process.exec with Windows 'start' command to properly set CWD and handle ShellExecute
-      // This bypasses Node's spawn EACCES limitation when launching games that require elevation or special permissions.
+      // F-3: Use child_process.execFile with structured argument array to avoid %VAR% shell expansion and command injection
       const exeCwd = path.dirname(customExe);
-      child_process.exec(`start "" /d "${exeCwd}" "${customExe}"`);
+      child_process.execFile('cmd.exe', ['/c', 'start', '""', '/d', exeCwd, customExe], {
+        windowsHide: true,
+      });
     } else if (/^\d+$/.test(validId)) {
       await shell.openExternal(`steam://rungameid/${validId}`);
     } else {
@@ -520,6 +543,7 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
               if (isMatch) {
                 const parsed = JSON.parse(fs.readFileSync(path.join(pDir, f), 'utf-8'));
                 if (parsed.srgbCorrection === false) parsed.srgbCorrection = true;
+                delete parsed.telemetryOptIn; // F-4: Profile JSONs cannot override user privacy consent
                 baseProfile = { ...baseProfile, ...parsed };
                 break;
               }
