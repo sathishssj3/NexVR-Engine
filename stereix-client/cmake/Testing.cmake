@@ -40,6 +40,12 @@ target_link_directories(test_tensor_bridge PRIVATE ${ONNXRUNTIME_LIB_DIR})
 target_link_libraries(test_tensor_bridge PRIVATE NexVRCore onnxruntime gtest_main)
 add_test(NAME TensorBridgeTest COMMAND test_tensor_bridge)
 
+add_executable(test_midas_inpainter ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_midas_inpainter.cpp)
+target_include_directories(test_midas_inpainter PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR} ${ONNXRUNTIME_INCLUDE_DIR})
+target_link_directories(test_midas_inpainter PRIVATE ${ONNXRUNTIME_LIB_DIR})
+target_link_libraries(test_midas_inpainter PRIVATE NexVRCore onnxruntime gtest_main)
+add_test(NAME MidasInpainterTest COMMAND test_midas_inpainter)
+
 add_nexvr_gtest(test_vulkan_async_scheduler ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_vulkan_async_scheduler.cpp)
 add_nexvr_gtest(test_cross_backend_ai ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_cross_backend_ai.cpp)
 

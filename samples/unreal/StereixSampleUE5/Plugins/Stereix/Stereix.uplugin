@@ -1,0 +1,27 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.2.2",
+	"FriendlyName": "Stereix Engine B2B Adapter",
+	"Description": "Universal VR injection and stereo reprojection adapter for Unreal Engine 4 and 5 with hardware depth buffer submission.",
+	"Category": "Virtual Reality",
+	"CreatedBy": "Mesmeran Lab",
+	"CreatedByURL": "https://github.com/sathishssj3/Stereix-Engine",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "Stereix",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit",
+			"PlatformAllowList": [
+				"Win64"
+			]
+		}
+	]
+}

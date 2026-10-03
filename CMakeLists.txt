@@ -11,3 +11,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/stereix-client")
 else()
     add_subdirectory(nexvr-client)
 endif()
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/samples/cpp")
+    add_subdirectory(samples/cpp)
+endif()
