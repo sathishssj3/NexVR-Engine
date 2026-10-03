@@ -103,6 +103,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cmake --build build --config Release --target vr-inject-cli -- /maxcpucount
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build build --config Release --target d3d11_proxy dxgi_proxy -- /maxcpucount
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

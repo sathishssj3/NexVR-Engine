@@ -72,10 +72,6 @@ module.exports = {
       to:   'proxy/dxgi.dll'
     },
     {
-      from: '../build/bin/stereix_sdk.dll',
-      to:   'stereix_sdk.dll'
-    },
-    {
       from: '../build/bin/shaders',
       to:   'shaders'
     },

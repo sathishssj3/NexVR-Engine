@@ -384,6 +384,8 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
       path.resolve(process.resourcesPath, 'models'),
     ];
     const modelsSource = candidateModelDirs.find((d) => fs.existsSync(d)) || resolveWithinRoot(canonicalBinSourceDir, 'models');
+    const updatesDir = path.join(app.getPath('userData'), 'updates');
+    const hotfixShaders = path.join(updatesDir, 'shaders');
 
     if (validId.startsWith('custom_') && gameExeMap[validId]) {
       const customExe = canonicalExistingPath(gameExeMap[validId], 'file');
@@ -834,7 +836,6 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     }
 
     const escapePs = (str: string) => str.replace(/'/g, "''");
-    const updatesDir = path.join(app.getPath('userData'), 'updates');
     const copySources = (!app.isPackaged ? [canonicalBinSourceDir, updatesDir] : [updatesDir, canonicalBinSourceDir])
       .filter(d => fs.existsSync(d)).join(';');
     const effectiveCopySrc = copySources || canonicalBinSourceDir;
