@@ -78,6 +78,25 @@ bool MidasInpainter::GenerateDepthMap(const float* rgbPlanar, float* outDepth, i
                 actualInputNames, &inputTensor, 1,
                 actualOutputNames, &outputTensor, 1
             );
+
+            // Normalize neural disparity outputs into standard VR depth [0.05, 1.0]
+            float minVal = outDepth[0];
+            float maxVal = outDepth[0];
+            for (size_t i = 1; i < planeSize; ++i) {
+                if (outDepth[i] < minVal) minVal = outDepth[i];
+                if (outDepth[i] > maxVal) maxVal = outDepth[i];
+            }
+            float range = maxVal - minVal;
+            if (range > 1e-5f) {
+                for (size_t i = 0; i < planeSize; ++i) {
+                    float normDepth = (outDepth[i] - minVal) / range;
+                    outDepth[i] = std::clamp(0.05f + 0.95f * normDepth, 0.05f, 1.0f);
+                }
+            } else {
+                for (size_t i = 0; i < planeSize; ++i) {
+                    outDepth[i] = 0.5f;
+                }
+            }
         } catch (const Ort::Exception& ex) {
             std::cerr << "[Stereix DirectML Depth] Inference warning: " << ex.what() 
                       << ". Engaging robust depth heuristic fallback.\n";

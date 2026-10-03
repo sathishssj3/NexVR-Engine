@@ -42,9 +42,9 @@ public:
                 return 0.0f;
             }
             
-            // Prepare dummy input tensor [Batch=1, Channels=4, Height=256, Width=256]
+            // Prepare input tensor [Batch=1, Channels=3, Height=256, Width=256]
             const int64_t batch = 1;
-            const int64_t channels = 4;
+            const int64_t channels = 3;
             const int64_t height = 256;
             const int64_t width = 256;
             const int64_t tensorSize = batch * channels * height * width;
@@ -57,8 +57,11 @@ public:
             Ort::Value inputTensor = Ort::Value::CreateTensor<float>(
                 *m_memoryInfo, inputData.data(), tensorSize, inputDims.data(), inputDims.size());
             
-            const char* inputNames[] = { "input" };
-            const char* outputNames[] = { "output" };
+            Ort::AllocatorWithDefaultOptions allocator;
+            auto inputNameAlloc = m_session->GetInputNameAllocated(0, allocator);
+            auto outputNameAlloc = m_session->GetOutputNameAllocated(0, allocator);
+            const char* inputNames[] = { inputNameAlloc.get() };
+            const char* outputNames[] = { outputNameAlloc.get() };
             
             std::cout << "Running 10 warmup iterations...\n";
             try {
