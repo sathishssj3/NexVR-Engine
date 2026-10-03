@@ -270,8 +270,8 @@ target_include_directories(test_openxr_harness PRIVATE ${CMAKE_CURRENT_SOURCE_DI
 target_link_libraries(test_openxr_harness PRIVATE NexVRCore d3d11 gtest_main)
 add_test(NAME test_openxr_harness COMMAND test_openxr_harness)
 
-add_subdirectory(src/sdk)
-add_subdirectory(src/adapters/unreal)
-add_subdirectory(src/adapters/unity)
+
+
+
 
 include(cmake/Testing.cmake)

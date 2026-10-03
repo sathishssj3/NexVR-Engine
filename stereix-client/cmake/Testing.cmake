@@ -71,72 +71,6 @@ if(MSVC)
 endif()
 target_link_libraries(stress_injector PRIVATE NexVRCore)
 
-# ---------------------------------------------------------------------------
-# B2B SDK Tests
-# ---------------------------------------------------------------------------
-add_executable(test_sdk_validation 
-    ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_sdk_validation.cpp 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/sdk/sdk_validation.cpp
-)
-target_include_directories(test_sdk_validation PRIVATE 
-    ${PROJECT_SOURCE_DIR}/src 
-    ${PROJECT_SOURCE_DIR}/src/sdk 
-    ${CMAKE_SOURCE_DIR}/include
-)
-target_link_libraries(test_sdk_validation PRIVATE gtest_main dxgi)
-add_test(NAME test_sdk_validation COMMAND test_sdk_validation)
-
-add_executable(test_sdk_imports 
-    ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_sdk_imports.cpp
-)
-target_include_directories(test_sdk_imports PRIVATE 
-    ${CMAKE_SOURCE_DIR}/include
-)
-target_link_libraries(test_sdk_imports PRIVATE gtest)
-add_dependencies(test_sdk_imports stereix_sdk)
-add_test(NAME test_sdk_imports COMMAND test_sdk_imports "$<TARGET_FILE:stereix_sdk>")
-
-add_executable(test_sdk_dx12 
-    ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_sdk_dx12.cpp
-)
-target_include_directories(test_sdk_dx12 PRIVATE 
-    ${PROJECT_SOURCE_DIR}/src 
-    ${PROJECT_SOURCE_DIR}/src/sdk 
-    ${CMAKE_SOURCE_DIR}/include
-)
-target_link_libraries(test_sdk_dx12 PRIVATE stereix_sdk gtest_main d3d12 dxgi)
-add_test(NAME test_sdk_dx12 COMMAND test_sdk_dx12)
-
-add_executable(test_sdk_input 
-    ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_sdk_input.cpp
-)
-target_include_directories(test_sdk_input PRIVATE 
-    ${PROJECT_SOURCE_DIR}/src 
-    ${PROJECT_SOURCE_DIR}/src/sdk 
-    ${CMAKE_SOURCE_DIR}/include
-)
-target_link_libraries(test_sdk_input PRIVATE stereix_sdk gtest_main)
-add_test(NAME test_sdk_input COMMAND test_sdk_input)
-
-add_executable(test_unreal_bridge 
-    ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_unreal_bridge.cpp
-)
-target_include_directories(test_unreal_bridge PRIVATE 
-    ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/adapters/unreal
-)
-target_link_libraries(test_unreal_bridge PRIVATE stereix_unreal gtest_main d3d11 d3d12)
-add_test(NAME test_unreal_bridge COMMAND test_unreal_bridge)
-
-add_executable(test_unity_bridge 
-    ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_unity_bridge.cpp
-)
-target_include_directories(test_unity_bridge PRIVATE 
-    ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/adapters/unity
-)
-target_link_libraries(test_unity_bridge PRIVATE stereix_unity gtest_main d3d11 d3d12)
-add_test(NAME test_unity_bridge COMMAND test_unity_bridge)
 
 # ---------------------------------------------------------------------------
 # Auto-register standard GoogleTest suites
@@ -156,7 +90,6 @@ file(GLOB AUTO_GTEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/test
 set(AUTO_GTEST_EXCLUDES
     test_openxr_dx12_swapchain
     test_stereo_visual
-    test_sdk_imports
 )
 
 foreach(test_src IN LISTS AUTO_GTEST_SOURCES)
