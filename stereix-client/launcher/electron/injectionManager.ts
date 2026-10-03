@@ -59,7 +59,7 @@ export function pickPreferredAsset(canonicalPath: string, otaPath: string, minSi
     const otaMtime = fs.statSync(otaPath).mtimeMs;
     const canonMtime = fs.statSync(canonicalPath).mtimeMs;
     if (otaMtime >= canonMtime) {
-      // M-11: Re-verify the OTA cache file's SHA-256 against signed local manifest
+      // C-4: Re-verify the OTA cache file's SHA-256 against signed local manifest
       try {
         const local = getLocalManifest();
         if (local && local.hashes) {
@@ -70,9 +70,16 @@ export function pickPreferredAsset(canonicalPath: string, otaPath: string, minSi
             const actualHash = crypto.createHash('sha256').update(fileBuf).digest('hex').toLowerCase();
             if (actualHash !== expectedHash.toLowerCase()) {
               console.warn(`[SECURITY] OTA file ${basename} SHA-256 mismatch at deploy time! Discarding OTA and falling back to bundled binary.`);
+              try { fs.unlinkSync(otaPath); } catch {}
               return canonicalPath;
             }
+          } else {
+            console.warn(`[SECURITY] OTA file ${basename} not found in verified manifest hashes! Discarding.`);
+            return canonicalPath;
           }
+        } else {
+          console.warn(`[SECURITY] No cryptographically verified manifest found for ${otaPath}! Discarding OTA cache.`);
+          return canonicalPath;
         }
       } catch {
         return canonicalPath;
@@ -381,11 +388,8 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     if (validId.startsWith('custom_') && gameExeMap[validId]) {
       const customExe = canonicalExistingPath(gameExeMap[validId], 'file');
       resolveWithinRoot(installPath, path.relative(installPath, customExe));
-      // F-3: Use child_process.execFile with structured argument array to avoid %VAR% shell expansion and command injection
-      const exeCwd = path.dirname(customExe);
-      child_process.execFile('cmd.exe', ['/c', 'start', '""', '/d', exeCwd, customExe], {
-        windowsHide: true,
-      });
+      // M-9: Use shell.openPath directly to eliminate cmd.exe %VAR% expansion and command injection
+      await shell.openPath(customExe);
     } else if (/^\d+$/.test(validId)) {
       await shell.openExternal(`steam://rungameid/${validId}`);
     } else {
@@ -457,11 +461,22 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
     }
 
     try {
-      const updatesDir = path.join(app.getPath('userData'), 'updates');
-      const hotfixShaders = path.join(updatesDir, 'shaders');
-      const activeShadersSource = (!app.isPackaged && fs.existsSync(shadersSource))
-        ? shadersSource
-        : (fs.existsSync(hotfixShaders) && fs.readdirSync(hotfixShaders).length > 0 ? hotfixShaders : shadersSource);
+      let activeShadersSource = shadersSource;
+      if (!app.isPackaged && fs.existsSync(shadersSource)) {
+        activeShadersSource = shadersSource;
+      } else if (fs.existsSync(hotfixShaders) && fs.readdirSync(hotfixShaders).length > 0) {
+        try {
+          const local = getLocalManifest();
+          const appVer = app.getVersion();
+          if (local && appVer && compareSemver(appVer, local.engineVersion) >= 0) {
+            activeShadersSource = shadersSource;
+          } else {
+            activeShadersSource = hotfixShaders;
+          }
+        } catch {
+          activeShadersSource = shadersSource;
+        }
+      }
 
       const targetDirs = new Set<string>([targetExeDir, installPath]);
       for (const sub of ['Phoenix/Binaries/Win64', 'Chameleon/Binaries/Win64', 'Dungeonhaven/Binaries/Win64', 'Binaries/Win64']) {
@@ -641,6 +656,7 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
         activeConfig.srgbCorrection = true;
       }
 
+      delete activeConfig.telemetryOptIn; // M-6: Ensure planted vrinject.json or profile never overrides telemetry consent
       activeSessionConfig = activeConfig;
 
       if (Object.keys(activeConfig).length > 0) {
@@ -823,6 +839,7 @@ ipcMain.handle('inject:deploy', async (event, id: string): Promise<InjectResult>
       .filter(d => fs.existsSync(d)).join(';');
     const effectiveCopySrc = copySources || canonicalBinSourceDir;
     const innerScript =
+      `$env:STEREIX_AUTH_TOKEN = '${escapePs(process.env.STEREIX_AUTH_TOKEN || '')}'; ` +
       `$env:NEXVR_AUTH_TOKEN = '${escapePs(process.env.NEXVR_AUTH_TOKEN || '')}'; ` +
       `& '${escapePs(cliSource)}' --pid ${targetPid} --dll '${escapePs(dllTarget)}' ` +
       `--copy-src '${escapePs(effectiveCopySrc)}' --copy-dst '${escapePs(targetExeDir)}' ` +

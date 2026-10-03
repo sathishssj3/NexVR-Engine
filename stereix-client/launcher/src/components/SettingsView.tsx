@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { VRConfig, UpdateStatus, VRStatus, SystemHealthReport } from '../types';
 import { ConfirmModal } from './ConfirmModal';
 
@@ -86,11 +86,24 @@ export function SettingsView({
     };
   });
 
+  useEffect(() => {
+    if (window.ag && window.ag.config) {
+      window.ag.config.read('global').then((cfg: VRConfig) => {
+        if (cfg) {
+          setGlobalConfig(prev => ({ ...prev, ...cfg }));
+        }
+      }).catch(() => {});
+    }
+  }, []);
+
   const saveGlobalConfig = (updated: VRConfig) => {
     setGlobalConfig(updated);
     try {
       localStorage.setItem('nexvr_global_config', JSON.stringify(updated));
     } catch {}
+    if (window.ag && window.ag.config) {
+      window.ag.config.write('global', updated).catch(() => {});
+    }
   };
 
   const handleResetDefaults = () => {

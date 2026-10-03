@@ -30,9 +30,7 @@ if (!gotTheLock) {
 
 // Disable GPU disk cache in dev mode to prevent Chromium Windows file lock errors (0x5)
 app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
-// Disable Chromium OS-level process sandbox on Windows to prevent silent startup crashes
-// when installed in user profile directories (e.g. %LOCALAPPDATA%\Programs) with restricted ACLs.
-app.commandLine.appendSwitch('no-sandbox');
+// M-10: Renderer sandbox enabled by default for defense-in-depth isolation
 
 // Initialize core authorization token for DLL injector validation
 const STEREIX_AUTH_TOKEN = crypto.randomUUID();
@@ -111,7 +109,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: false,
+      sandbox: true,
       webSecurity: true,
       allowRunningInsecureContent: false,
       preload: path.join(__dirname, 'preload.js'),

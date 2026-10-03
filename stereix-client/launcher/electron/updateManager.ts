@@ -123,11 +123,21 @@ export function getLocalManifest(): UpdateManifest | null {
   try {
     const file = path.join(getUpdatesDir(), 'installed_manifest.json');
     if (fs.existsSync(file)) {
-      return JSON.parse(fs.readFileSync(file, 'utf-8'));
+      const manifest = JSON.parse(fs.readFileSync(file, 'utf-8'));
+      if (manifest && verifyManifestSignature(manifest)) {
+        return manifest;
+      }
+      console.warn('[SECURITY] Local installed_manifest.json failed cryptographic signature check. Rejecting untrusted manifest.');
+      return null;
     }
     const legacy = path.join(getUpdatesDir(), 'manifest.json');
     if (fs.existsSync(legacy)) {
-      return JSON.parse(fs.readFileSync(legacy, 'utf-8'));
+      const manifest = JSON.parse(fs.readFileSync(legacy, 'utf-8'));
+      if (manifest && verifyManifestSignature(manifest)) {
+        return manifest;
+      }
+      console.warn('[SECURITY] Local legacy manifest.json failed cryptographic signature check. Rejecting untrusted manifest.');
+      return null;
     }
   } catch {}
   return null;

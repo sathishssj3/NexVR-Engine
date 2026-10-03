@@ -20,6 +20,9 @@ const mockDb = {
   refreshToken: {
     create: jest.fn(),
     findUnique: jest.fn(),
+    findFirst: jest.fn(),
+    update: jest.fn(),
+    updateMany: jest.fn(),
     delete: jest.fn(),
     deleteMany: jest.fn(),
   },
@@ -126,6 +129,43 @@ describe('AuthService', () => {
 
       await expect(
         authService.login('tester@example.test', 'WrongPassword')
+      ).rejects.toThrow(UnauthorizedError);
+    });
+  });
+
+  describe('refreshToken', () => {
+    it('rotates refresh token atomically when valid', async () => {
+      mockDb.refreshToken.updateMany.mockResolvedValue({ count: 1 });
+      mockDb.refreshToken.findFirst.mockResolvedValue({
+        id: 'tok_004',
+        user: {
+          id: 'usr_004',
+          email: 'rotate@example.test',
+          role: 'USER',
+          tier: 'PRO',
+        },
+      });
+      mockDb.refreshToken.create.mockResolvedValue({ id: 'tok_new' });
+
+      const res = await authService.refreshToken('valid_refresh_token');
+
+      expect(mockDb.refreshToken.updateMany).toHaveBeenCalledWith({
+        where: {
+          token: 'valid_refresh_token',
+          revoked: false,
+          expiresAt: expect.any(Object),
+        },
+        data: { revoked: true },
+      });
+      expect(res.accessToken).toBeDefined();
+      expect(res.refreshToken).toBeDefined();
+    });
+
+    it('rejects refresh token when token is already revoked or expired (race mitigation)', async () => {
+      mockDb.refreshToken.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(
+        authService.refreshToken('already_revoked_token')
       ).rejects.toThrow(UnauthorizedError);
     });
   });

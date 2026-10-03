@@ -228,11 +228,12 @@ function loadProfilesFromDisk(): Record<string, Partial<VRConfig>> {
       path.resolve(__dirname, '../../profiles'),
       path.join(process.resourcesPath, 'profiles'),
     ];
+    // L-14: In DEV mode, local profiles take precedence over downloaded OTA cache. In packaged mode, OTA hotfix profiles take precedence.
     const candidateDirs = (!app?.isPackaged)
       ? [
-          ...(userUpdatesProfiles ? [userUpdatesProfiles] : []),
-          ...(customProfilesDir ? [customProfilesDir] : []),
           ...localDirs,
+          ...(customProfilesDir ? [customProfilesDir] : []),
+          ...(userUpdatesProfiles ? [userUpdatesProfiles] : []),
         ]
       : [
           ...(userUpdatesProfiles ? [userUpdatesProfiles] : []),
@@ -296,6 +297,17 @@ ipcMain.handle('config:read', async (event, id: string): Promise<VRConfig> => {
   try {
     assertTrustedIpcSender(event);
     const validId = validateGameId(id);
+    if (validId === 'global') {
+      const globalCfgPath = path.join(app.getPath('userData'), 'global_config.json');
+      if (fs.existsSync(globalCfgPath)) {
+        try {
+          const parsed = JSON.parse(fs.readFileSync(globalCfgPath, 'utf-8'));
+          return validateConfig({ ...defaultVRConfig, ...parsed });
+        } catch {}
+      }
+      return defaultVRConfig;
+    }
+
     const installPath = gamePathsMap[validId];
     const registeredExe = gameExeMap[validId];
     const activeProfiles = getActiveProfiles();
@@ -356,6 +368,12 @@ ipcMain.handle('config:write', async (event, id: string, cfg: unknown) => {
     
     const validId = validateGameId(id);
     const validCfg = validateConfig(cfg);
+    if (validId === 'global') {
+      const globalCfgPath = path.join(app.getPath('userData'), 'global_config.json');
+      fs.writeFileSync(globalCfgPath, JSON.stringify(validCfg, null, 2), 'utf-8');
+      return { success: true };
+    }
+
     const installPath = gamePathsMap[validId];
     if (!installPath) return { success: false, error: 'Game path not found' };
 

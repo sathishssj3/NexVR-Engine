@@ -1,6 +1,20 @@
+import { app } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import { getAppVersion } from './updateManager';
+
+export function isUserTelemetryOptedIn(): boolean {
+  try {
+    const userDataDir = app ? app.getPath('userData') : '';
+    if (!userDataDir) return false;
+    const globalPath = path.join(userDataDir, 'global_config.json');
+    if (fs.existsSync(globalPath)) {
+      const parsed = JSON.parse(fs.readFileSync(globalPath, 'utf-8'));
+      return parsed.telemetryOptIn === true;
+    }
+  } catch {}
+  return false;
+}
 
 export const CLOUDFLARE_TELEMETRY_API =
   process.env.STEREIX_TELEMETRY_API ||
@@ -40,12 +54,26 @@ export interface TelemetryPayload {
 export function sanitizeTelemetry(text: string): string {
   if (!text) return '';
   let s = text;
-  // Redact Windows user home paths: C:\Users\<username>\ -> C:\Users\[USER]\
+  // Redact Windows backslash user home paths: C:\Users\<username>\ -> C:\Users\[USER]\
   s = s.replace(/([A-Za-z]:\\Users\\)[^\s\\/"']+/gi, '$1[USER]');
+  // Redact forward-slash user paths: C:/Users/<username>/ or /Users/<username>/ or /home/<user>/
+  s = s.replace(/([A-Za-z]:\/Users\/|\/Users\/|\/home\/)[^\s\\/"']+/gi, '$1[USER]');
   // Redact UNC user paths
   s = s.replace(/(\\\\[^\s\\/"']+\\Users\\)[^\s\\/"']+/gi, '$1[USER]');
-  // Redact IPv4 addresses
-  s = s.replace(/\b(?:192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})\b/g, '[REDACTED_IP]');
+  // Redact exact USERPROFILE directory if defined
+  if (process.env.USERPROFILE) {
+    const esc = process.env.USERPROFILE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    s = s.replace(new RegExp(esc, 'gi'), '[USERPROFILE]');
+  }
+  // Redact USERNAME occurrences in paths
+  if (process.env.USERNAME && process.env.USERNAME.length > 2) {
+    const esc = process.env.USERNAME.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    s = s.replace(new RegExp(`([\\\\/])${esc}([\\\\/\\s"'])`, 'gi'), '$1[USER]$2');
+  }
+  // Redact all IPv4 addresses
+  s = s.replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, '[REDACTED_IP]');
+  // Redact IPv6 addresses
+  s = s.replace(/\b(?:[0-9a-fA-F]{1,4}:){2,7}[0-9a-fA-F]{1,4}\b/g, '[REDACTED_IPV6]');
   return s;
 }
 
@@ -61,8 +89,8 @@ export async function sendDiscordTelemetry(
     lastManualReportTimestamp = now;
   } else {
     // Automated background diagnostics (session started, completed, lifecycle errors)
-    // require explicit user opt-in in accordance with privacy regulations and audit standards.
-    const isOptedIn = payload.config && (payload.config as any).telemetryOptIn === true;
+    // require explicit user opt-in in accordance with privacy regulations and audit standards (M-6).
+    const isOptedIn = isUserTelemetryOptedIn();
     if (!isOptedIn) {
       return { success: true, message: 'Automatic diagnostic transmission suppressed (opt-in disabled).' };
     }

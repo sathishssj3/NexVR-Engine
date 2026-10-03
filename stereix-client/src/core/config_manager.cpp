@@ -105,7 +105,13 @@ bool ConfigManager::Load(const std::string& moduleDir, const std::string& explic
         m_config.ipd = j.value("ipd", 0.064f);
         m_config.convergence = j.value("convergence", 10.0f);
         m_config.resolutionScale = j.value("resolutionScale", 1.0f);
-        m_config.enableNeuralInpainter = j.value("enableNeuralInpainter", true);
+        if (j.contains("enableNeuralInpainter")) {
+            m_config.enableNeuralInpainter = j.value("enableNeuralInpainter", true);
+        } else if (j.contains("aiInpainting")) {
+            m_config.enableNeuralInpainter = j.value("aiInpainting", true);
+        } else {
+            m_config.enableNeuralInpainter = true;
+        }
         m_config.enableImGuiOverlay = j.value("enableImGuiOverlay", true);
         
         m_config.motionAimSensitivity = std::clamp(

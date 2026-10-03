@@ -23,9 +23,10 @@ The deployed password cannot be read back. Set a new one:
 }
 
 const pw = fs.readFileSync(FILE, 'utf8').trim();
+const masked = pw.length > 4 ? pw.slice(0, 2) + '*'.repeat(pw.length - 4) + pw.slice(-2) : '****';
 console.log(`
-  Admin password:  ${pw}
+  Admin password:  ${masked} (masked for security)
 
   Sign in at:      https://stereix-engine.pages.dev/admin
-  Save it somewhere safe, then delete _admin-password.txt
+  Please configure ADMIN_PASSWORD securely in Cloudflare Dashboard and delete local credential files.
 `);

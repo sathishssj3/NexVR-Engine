@@ -90,16 +90,22 @@ foreach ($file in $filesToUpload) {
     $escapedName = [Uri]::EscapeDataString($fileName)
     $uploadUri = "${uploadBase}?name=${escapedName}"
 
-    $curlArgs = @(
-        "-s",
-        "-X", "POST",
-        "-H", "Authorization: Bearer $Token",
-        "-H", "Content-Type: application/octet-stream",
-        "--data-binary", "@$($file.FullName)",
-        $uploadUri
-    )
-
-    & curl.exe @curlArgs | Out-Null
+    # L-12: Write authorization header to a transient curl config file to avoid exposing token on command line
+    $curlCfg = [System.IO.Path]::GetTempFileName()
+    try {
+        [System.IO.File]::WriteAllLines($curlCfg, @("header = `"Authorization: Bearer $Token`""))
+        $curlArgs = @(
+            "-s",
+            "-K", $curlCfg,
+            "-X", "POST",
+            "-H", "Content-Type: application/octet-stream",
+            "--data-binary", "@$($file.FullName)",
+            $uploadUri
+        )
+        & curl.exe @curlArgs | Out-Null
+    } finally {
+        if (Test-Path $curlCfg) { Remove-Item $curlCfg -Force }
+    }
     Write-Host ">>> Upload complete for $fileName"
 }
 

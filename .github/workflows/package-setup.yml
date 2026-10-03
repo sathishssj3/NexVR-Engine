@@ -61,8 +61,9 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $VulkanURL = "https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-sdk.exe"
-          Write-Host "Downloading Vulkan SDK..."
+          $VulkanVersion = "1.3.296.0"
+          $VulkanURL = "https://sdk.lunarg.com/sdk/download/$VulkanVersion/windows/VulkanSDK-$VulkanVersion-Installer.exe"
+          Write-Host "Downloading Vulkan SDK $VulkanVersion..."
           Invoke-WebRequest -Uri $VulkanURL -OutFile VulkanSDK.exe
           Write-Host "Installing Vulkan SDK..."
           Start-Process -FilePath ".\VulkanSDK.exe" -ArgumentList "--root", "C:\VulkanSDK", "--accept-licenses", "--default-answer", "--confirm-command", "install" -Wait -NoNewWindow
@@ -112,7 +113,7 @@ jobs:
 
       - name: Install Launcher Dependencies
         working-directory: ./stereix-client/launcher
-        run: npm install
+        run: npm ci
 
       - name: Link Build Output for Launcher Packaging
         shell: pwsh

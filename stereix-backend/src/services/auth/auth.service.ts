@@ -73,12 +73,27 @@ export class AuthService {
   }
 
   async refreshToken(token: string) {
-    const storedToken = await db.refreshToken.findUnique({
+    // M-11: Atomic rotation - conditionally revoke in a single atomic update query
+    // If concurrent requests attempt to use the same token, only one succeeds.
+    const updated = await db.refreshToken.updateMany({
+      where: {
+        token,
+        revoked: false,
+        expiresAt: { gt: new Date() },
+      },
+      data: { revoked: true },
+    });
+
+    if (!updated || updated.count === 0) {
+      throw new UnauthorizedError('Invalid or expired refresh token');
+    }
+
+    const storedToken = await db.refreshToken.findFirst({
       where: { token },
       include: { user: true },
     });
 
-    if (!storedToken || storedToken.revoked || storedToken.expiresAt < new Date()) {
+    if (!storedToken || !storedToken.user) {
       throw new UnauthorizedError('Invalid or expired refresh token');
     }
 
@@ -88,12 +103,6 @@ export class AuthService {
       role: storedToken.user.role,
       tier: storedToken.user.tier,
     };
-
-    // Rotate refresh token
-    await db.refreshToken.update({
-      where: { id: storedToken.id },
-      data: { revoked: true },
-    });
 
     return await this.generateTokens(userPayload);
   }

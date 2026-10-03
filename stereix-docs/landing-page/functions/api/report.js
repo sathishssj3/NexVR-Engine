@@ -65,6 +65,20 @@ export async function onRequestPost({ request, env }) {
     reader.releaseLock();
   }
 
+  // M-12: Rate limiting per IP to prevent unauthenticated write floods from evicting reports
+  const clientIp = request.headers.get('cf-connecting-ip');
+  if (clientIp && env.WAITLIST) {
+    const rlKey = `RL:REPORT:${clientIp}`;
+    try {
+      const count = await env.WAITLIST.get(rlKey);
+      if (count && Number(count) >= 5) {
+        return json({ error: 'Too many reports submitted. Please wait a few minutes before submitting another report.' }, 429);
+      }
+      const nextCount = (Number(count) || 0) + 1;
+      await env.WAITLIST.put(rlKey, String(nextCount), { expirationTtl: 60 });
+    } catch {}
+  }
+
   const timestamp = Date.now();
   const randomSuffix = Math.random().toString(36).slice(2, 8);
   const reportId = `rep_${timestamp}_${randomSuffix}`;

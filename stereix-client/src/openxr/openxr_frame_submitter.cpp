@@ -242,7 +242,6 @@ bool OpenXRFrameSubmitter::ReleaseAndEndDX11(
     endInfo.layers = layers;
 
     XrResult res = xrEndFrame(session, &endInfo);
-    return res == XR_SUCCESS;
     if (XR_FAILED(res)) {
         if (healthMonitor_) healthMonitor_->RecordFrameDropped();
         return false;
