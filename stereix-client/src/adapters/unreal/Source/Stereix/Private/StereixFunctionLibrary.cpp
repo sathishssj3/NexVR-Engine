@@ -1,47 +1,42 @@
-#include "NexVRFunctionLibrary.h"
-#include "NexVRModule.h"
-#include "nexvr_unreal_bridge.h"
+#include "StereixFunctionLibrary.h"
+#include "StereixModule.h"
+#include "stereix_unreal_bridge.h"
+#include "stereix_sdk.h"
 
-bool UNexVRFunctionLibrary::IsSessionRunning()
+bool UStereixFunctionLibrary::IsSessionRunning()
 {
-    if (INexVRModule::IsAvailable())
-    {
-        return INexVRModule::Get().IsSessionRunning();
-    }
-    return false;
+    return IStereixModule::IsAvailable() && IStereixModule::Get().IsSessionRunning();
 }
 
-bool UNexVRFunctionLibrary::SupportsDepthSubmission()
+bool UStereixFunctionLibrary::SupportsDepthSubmission()
 {
-    return NexVR_Unreal_SupportsDepthSubmission() != 0;
+    return Stereix_Unreal_SupportsDepthSubmission() != 0;
 }
 
-void UNexVRFunctionLibrary::GetSessionStats(int32& OutSubmitted, int32& OutDropped,
-                                            int32& OutFailed, int32& OutLastResult)
+void UStereixFunctionLibrary::GetSessionStats(int32& Submitted, int32& Dropped, int32& Failed, int32& LastResult)
 {
-    uint32_t Submitted = 0, Dropped = 0, Failed = 0;
-    int32_t LastResult = 0;
+    uint32_t Sub = 0, Drop = 0, Fail = 0;
+    int32_t Res = 0;
+    Stereix_Unreal_GetStats(&Sub, &Drop, &Fail, &Res);
 
-    NexVR_Unreal_GetStats(&Submitted, &Dropped, &Failed, &LastResult);
-
-    OutSubmitted = static_cast<int32>(Submitted);
-    OutDropped = static_cast<int32>(Dropped);
-    OutFailed = static_cast<int32>(Failed);
-    OutLastResult = LastResult;
+    Submitted = static_cast<int32>(Sub);
+    Dropped = static_cast<int32>(Drop);
+    Failed = static_cast<int32>(Fail);
+    LastResult = Res;
 }
 
-bool UNexVRFunctionLibrary::SyncInput()
+bool UStereixFunctionLibrary::SyncInput()
 {
-    return NexVR_Unreal_SyncInput() != 0;
+    return Stereix_Unreal_SyncInput() == 0;
 }
 
-bool UNexVRFunctionLibrary::GetControllerState(int32 Hand, FNexVRControllerState& OutState)
+bool UStereixFunctionLibrary::GetControllerState(int32 Hand, FStereixControllerState& OutState)
 {
-    NexVR_ControllerState NativeState{};
-    NativeState.structSize = sizeof(NexVR_ControllerState);
+    Stereix_ControllerState NativeState{};
+    NativeState.structSize = sizeof(Stereix_ControllerState);
 
-    int Result = NexVR_Unreal_GetControllerState(Hand, &NativeState);
-    if (Result == 0)
+    int Res = Stereix_Unreal_GetControllerState(Hand, &NativeState);
+    if (Res != 0)
     {
         return false;
     }
@@ -50,26 +45,32 @@ bool UNexVRFunctionLibrary::GetControllerState(int32 Hand, FNexVRControllerState
     OutState.bGripPoseValid = (NativeState.gripPoseValid != 0);
     OutState.bAimPoseValid = (NativeState.aimPoseValid != 0);
 
-    // OpenXR coordinates: +X Right, +Y Up, -Z Forward in meters.
-    // Unreal coordinates: +X Forward, +Y Right, +Z Up in centimeters (1m = 100cm).
-    auto ConvertOpenXRPose = [](const NexVR_Pose& P) -> FTransform
+    // Convert OpenXR coordinates to Unreal Engine:
+    // OpenXR: +X Right, +Y Up, -Z Forward (meters)
+    // Unreal: +X Forward, +Y Right, +Z Up (centimeters)
+    auto ConvertPose = [](const Stereix_Pose& P) -> FTransform
     {
-        // OpenXR (x, y, z) -> Unreal ( -z*100, x*100, y*100 )
-        FVector Location(-P.position[2] * 100.0f, P.position[0] * 100.0f, P.position[1] * 100.0f);
-        // Quaternion conversion
-        FQuat Rotation(-P.orientation[2], P.orientation[0], P.orientation[1], P.orientation[3]);
+        FVector Location(
+            -P.position[2] * 100.0f, // Forward (-Z -> +X)
+             P.position[0] * 100.0f, // Right   (+X -> +Y)
+             P.position[1] * 100.0f  // Up      (+Y -> +Z)
+        );
+
+        FQuat Rotation(
+            -P.orientation[2],
+             P.orientation[0],
+             P.orientation[1],
+             P.orientation[3]
+        );
+
         return FTransform(Rotation, Location);
     };
 
-    OutState.GripTransform = ConvertOpenXRPose(NativeState.gripPose);
-    OutState.AimTransform = ConvertOpenXRPose(NativeState.aimPose);
+    OutState.GripTransform = ConvertPose(NativeState.gripPose);
+    OutState.AimTransform = ConvertPose(NativeState.aimPose);
 
-    OutState.LinearVelocity = FVector(-NativeState.linearVelocity[2] * 100.0f,
-                                      NativeState.linearVelocity[0] * 100.0f,
-                                      NativeState.linearVelocity[1] * 100.0f);
-    OutState.AngularVelocity = FVector(FMath::RadiansToDegrees(-NativeState.angularVelocity[2]),
-                                       FMath::RadiansToDegrees(NativeState.angularVelocity[0]),
-                                       FMath::RadiansToDegrees(NativeState.angularVelocity[1]));
+    OutState.LinearVelocity = FVector(-NativeState.linearVelocity[2] * 100.0f, NativeState.linearVelocity[0] * 100.0f, NativeState.linearVelocity[1] * 100.0f);
+    OutState.AngularVelocity = FVector(FMath::RadiansToDegrees(-NativeState.angularVelocity[2]), FMath::RadiansToDegrees(NativeState.angularVelocity[0]), FMath::RadiansToDegrees(NativeState.angularVelocity[1]));
 
     OutState.Trigger = NativeState.trigger;
     OutState.Grip = NativeState.grip;
@@ -80,12 +81,12 @@ bool UNexVRFunctionLibrary::GetControllerState(int32 Hand, FNexVRControllerState
     return true;
 }
 
-bool UNexVRFunctionLibrary::TriggerHaptic(int32 Hand, float DurationMs, float FrequencyHz, float Amplitude)
+bool UStereixFunctionLibrary::TriggerHaptic(int32 Hand, float DurationMs, float FrequencyHz, float Amplitude)
 {
-    return NexVR_Unreal_TriggerHaptic(Hand, DurationMs, FrequencyHz, Amplitude) != 0;
+    return Stereix_Unreal_TriggerHaptic(Hand, DurationMs, FrequencyHz, Amplitude) == 0;
 }
 
-bool UNexVRFunctionLibrary::StopHaptic(int32 Hand)
+bool UStereixFunctionLibrary::StopHaptic(int32 Hand)
 {
-    return NexVR_Unreal_StopHaptic(Hand) != 0;
+    return Stereix_Unreal_StopHaptic(Hand) == 0;
 }

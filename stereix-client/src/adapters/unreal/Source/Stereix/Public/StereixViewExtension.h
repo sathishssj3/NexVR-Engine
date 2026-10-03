@@ -4,22 +4,23 @@
 #include "SceneViewExtension.h"
 #include "RHI.h"
 #include "RenderResource.h"
+#include "stereix_sdk.h"
 
 /**
  * SceneViewExtension that hooks into Unreal's rendering pipeline.
  *
  * Game Thread:
- *   - SetupView: Calls NexVR_WaitFrame, updates head poses and projection matrices.
+ *   - SetupView: Calls Stereix_WaitFrame, updates head poses and projection matrices.
  *
  * Render Thread:
  *   - PostRenderViewFamily_RenderThread: Extracts D3D11 color and scene depth textures,
- *     and submits the stereoscopic frame to OpenXR via NexVR_SubmitFrameWithDepthDX11.
+ *     and submits the stereoscopic frame to OpenXR via Stereix_SubmitFrameWithDepthDX11.
  */
-class NEXVR_API FNexVRViewExtension : public FSceneViewExtensionBase
+class STEREIX_API FStereixViewExtension : public FSceneViewExtensionBase
 {
 public:
-    FNexVRViewExtension(const FAutoRegister& AutoRegister);
-    virtual ~FNexVRViewExtension() override;
+    FStereixViewExtension(const FAutoRegister& AutoRegister);
+    virtual ~FStereixViewExtension() override;
 
     // FSceneViewExtensionBase interface
     virtual void SetupViewFamily(FSceneViewFamily& InViewFamily) override;
@@ -39,3 +40,6 @@ private:
     float NearClipPlane{0.1f};
     float FarClipPlane{1000.0f};
 };
+
+// Backwards-compatibility alias
+typedef FStereixViewExtension FNexVRViewExtension;

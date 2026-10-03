@@ -88,7 +88,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          cmake --build build --config Release --target nexvr_sdk nexvr_unity nexvr_unreal test_sdk_validation test_sdk_imports test_sdk_dx12 test_sdk_input test_unreal_bridge test_unity_bridge stereix_sample_d3d11 -- /maxcpucount
+          cmake --build build --config Release --target stereix_sdk stereix_unity stereix_unreal test_sdk_validation test_sdk_imports test_sdk_dx12 test_sdk_input test_unreal_bridge test_unity_bridge stereix_sample_d3d11 -- /maxcpucount
 
       - name: Run SDK Zero-Crash & Anti-Cheat Security Test Suite
         shell: pwsh

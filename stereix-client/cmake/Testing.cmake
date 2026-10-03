@@ -93,8 +93,8 @@ target_include_directories(test_sdk_imports PRIVATE
     ${CMAKE_SOURCE_DIR}/include
 )
 target_link_libraries(test_sdk_imports PRIVATE gtest)
-add_dependencies(test_sdk_imports nexvr_sdk)
-add_test(NAME test_sdk_imports COMMAND test_sdk_imports "$<TARGET_FILE:nexvr_sdk>")
+add_dependencies(test_sdk_imports stereix_sdk)
+add_test(NAME test_sdk_imports COMMAND test_sdk_imports "$<TARGET_FILE:stereix_sdk>")
 
 add_executable(test_sdk_dx12 
     ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_sdk_dx12.cpp
@@ -104,7 +104,7 @@ target_include_directories(test_sdk_dx12 PRIVATE
     ${PROJECT_SOURCE_DIR}/src/sdk 
     ${CMAKE_SOURCE_DIR}/include
 )
-target_link_libraries(test_sdk_dx12 PRIVATE nexvr_sdk gtest_main d3d12 dxgi)
+target_link_libraries(test_sdk_dx12 PRIVATE stereix_sdk gtest_main d3d12 dxgi)
 add_test(NAME test_sdk_dx12 COMMAND test_sdk_dx12)
 
 add_executable(test_sdk_input 
@@ -115,7 +115,7 @@ target_include_directories(test_sdk_input PRIVATE
     ${PROJECT_SOURCE_DIR}/src/sdk 
     ${CMAKE_SOURCE_DIR}/include
 )
-target_link_libraries(test_sdk_input PRIVATE nexvr_sdk gtest_main)
+target_link_libraries(test_sdk_input PRIVATE stereix_sdk gtest_main)
 add_test(NAME test_sdk_input COMMAND test_sdk_input)
 
 add_executable(test_unreal_bridge 
@@ -125,7 +125,7 @@ target_include_directories(test_unreal_bridge PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src/adapters/unreal
 )
-target_link_libraries(test_unreal_bridge PRIVATE nexvr_unreal gtest_main d3d11 d3d12)
+target_link_libraries(test_unreal_bridge PRIVATE stereix_unreal gtest_main d3d11 d3d12)
 add_test(NAME test_unreal_bridge COMMAND test_unreal_bridge)
 
 add_executable(test_unity_bridge 
@@ -135,7 +135,7 @@ target_include_directories(test_unity_bridge PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src/adapters/unity
 )
-target_link_libraries(test_unity_bridge PRIVATE nexvr_unity gtest_main d3d11 d3d12)
+target_link_libraries(test_unity_bridge PRIVATE stereix_unity gtest_main d3d11 d3d12)
 add_test(NAME test_unity_bridge COMMAND test_unity_bridge)
 
 # ---------------------------------------------------------------------------

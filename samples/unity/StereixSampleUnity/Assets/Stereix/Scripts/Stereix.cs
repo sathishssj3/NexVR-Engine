@@ -229,57 +229,82 @@ namespace Stereix
     /// <summary>
     /// Direct P/Invoke bindings into the native Stereix / NexVR engine DLLs.
     /// </summary>
+    /// <summary>
+    /// Direct P/Invoke bindings into the native Stereix Engine DLLs (stereix_sdk.dll & stereix_unity.dll).
+    /// </summary>
     public static class StereixNative
     {
-        private const string SdkDll = "nexvr_sdk.dll";
-        private const string UnityBridgeDll = "nexvr_unity.dll";
+        private const string SdkDll = "stereix_sdk.dll";
+        private const string UnityBridgeDll = "stereix_unity.dll";
+
+        // --- Core Stereix SDK Functions ---
+        [DllImport(SdkDll, CallingConvention = CallingConvention.StdCall)]
+        public static extern StereixResult Stereix_GetGraphicsRequirements(ref StereixGraphicsRequirements requirements);
 
         [DllImport(SdkDll, CallingConvention = CallingConvention.StdCall)]
-        public static extern StereixResult NexVR_GetGraphicsRequirements(ref StereixGraphicsRequirements requirements);
+        public static extern StereixResult Stereix_InitializeDX11(ref StereixInitializeDX11Info info, out IntPtr outSession);
 
         [DllImport(SdkDll, CallingConvention = CallingConvention.StdCall)]
-        public static extern StereixResult NexVR_InitializeDX11(ref StereixInitializeDX11Info info, out IntPtr outSession);
+        public static extern StereixResult Stereix_WaitFrame(IntPtr session, ref StereixFrameState frameState);
 
         [DllImport(SdkDll, CallingConvention = CallingConvention.StdCall)]
-        public static extern StereixResult NexVR_WaitFrame(IntPtr session, ref StereixFrameState frameState);
+        public static extern StereixResult Stereix_SubmitFrameDX11(IntPtr session, ulong frameToken, IntPtr renderTarget);
 
         [DllImport(SdkDll, CallingConvention = CallingConvention.StdCall)]
-        public static extern StereixResult NexVR_SubmitFrameDX11(IntPtr session, ulong frameToken, IntPtr renderTarget);
+        public static extern StereixResult Stereix_SubmitFrameWithDepthDX11(IntPtr session, ulong frameToken, IntPtr renderTarget, ref StereixDepthInfoDX11 depthInfo);
 
         [DllImport(SdkDll, CallingConvention = CallingConvention.StdCall)]
-        public static extern StereixResult NexVR_SubmitFrameWithDepthDX11(IntPtr session, ulong frameToken, IntPtr renderTarget, ref StereixDepthInfoDX11 depthInfo);
+        public static extern StereixResult Stereix_SyncInput(IntPtr session);
 
         [DllImport(SdkDll, CallingConvention = CallingConvention.StdCall)]
-        public static extern StereixResult NexVR_GetTrackingState(IntPtr session, StereixTrackingOrigin origin, ref StereixTrackingState outState);
+        public static extern StereixResult Stereix_GetControllerState(IntPtr session, StereixHand hand, ref StereixControllerState outState);
 
         [DllImport(SdkDll, CallingConvention = CallingConvention.StdCall)]
-        public static extern StereixResult NexVR_GetControllerState(IntPtr session, StereixHand hand, ref StereixControllerState outState);
+        public static extern StereixResult Stereix_TriggerHaptic(IntPtr session, StereixHand hand, ref StereixHapticFeedback haptic);
 
         [DllImport(SdkDll, CallingConvention = CallingConvention.StdCall)]
-        public static extern void NexVR_Shutdown(IntPtr session);
+        public static extern StereixResult Stereix_StopHaptic(IntPtr session, StereixHand hand);
 
         [DllImport(SdkDll, CallingConvention = CallingConvention.StdCall)]
-        private static extern IntPtr NexVR_GetLastErrorDetail();
+        public static extern void Stereix_Shutdown(IntPtr session);
+
+        [DllImport(SdkDll, CallingConvention = CallingConvention.StdCall)]
+        private static extern IntPtr Stereix_GetLastErrorDetail();
 
         public static string GetLastErrorDetail()
         {
-            IntPtr ptr = NexVR_GetLastErrorDetail();
+            IntPtr ptr = Stereix_GetLastErrorDetail();
             return ptr == IntPtr.Zero ? string.Empty : Marshal.PtrToStringAnsi(ptr);
         }
 
+        // --- Stereix Unity Native Render Bridge Functions ---
         [DllImport(UnityBridgeDll, CallingConvention = CallingConvention.StdCall)]
-        public static extern IntPtr NexVR_Unity_GetRenderEventFunc();
+        public static extern IntPtr Stereix_Unity_GetRenderEventFunc();
 
         [DllImport(UnityBridgeDll, CallingConvention = CallingConvention.StdCall)]
-        public static extern int NexVR_Unity_StageFrameWithDepth(ulong token, IntPtr colorTex, IntPtr depthTex, float nearZ, float farZ, StereixDepthRange range);
+        public static extern int Stereix_Unity_StageFrameWithDepth(ulong token, IntPtr colorTex, IntPtr depthTex, float nearZ, float farZ, StereixDepthRange range);
 
         [DllImport(UnityBridgeDll, CallingConvention = CallingConvention.StdCall)]
-        public static extern void NexVR_Unity_Attach(IntPtr session);
+        public static extern void Stereix_Unity_Attach(IntPtr session);
 
         [DllImport(UnityBridgeDll, CallingConvention = CallingConvention.StdCall)]
-        public static extern void NexVR_Unity_Detach();
+        public static extern void Stereix_Unity_Detach();
 
         [DllImport(UnityBridgeDll, CallingConvention = CallingConvention.StdCall)]
-        public static extern IntPtr NexVR_Unity_GetDeviceFromTexture(IntPtr textureNativePtr);
+        public static extern IntPtr Stereix_Unity_GetDeviceFromTexture(IntPtr textureNativePtr);
+
+        // --- Backwards-Compatibility Aliases ---
+        public static StereixResult NexVR_GetGraphicsRequirements(ref StereixGraphicsRequirements reqs) => Stereix_GetGraphicsRequirements(ref reqs);
+        public static StereixResult NexVR_InitializeDX11(ref StereixInitializeDX11Info info, out IntPtr session) => Stereix_InitializeDX11(ref info, out session);
+        public static StereixResult NexVR_WaitFrame(IntPtr session, ref StereixFrameState frame) => Stereix_WaitFrame(session, ref frame);
+        public static StereixResult NexVR_SubmitFrameDX11(IntPtr session, ulong token, IntPtr rt) => Stereix_SubmitFrameDX11(session, token, rt);
+        public static StereixResult NexVR_SubmitFrameWithDepthDX11(IntPtr session, ulong token, IntPtr rt, ref StereixDepthInfoDX11 depth) => Stereix_SubmitFrameWithDepthDX11(session, token, rt, ref depth);
+        public static StereixResult NexVR_GetControllerState(IntPtr session, StereixHand hand, ref StereixControllerState state) => Stereix_GetControllerState(session, hand, ref state);
+        public static void NexVR_Shutdown(IntPtr session) => Stereix_Shutdown(session);
+        public static IntPtr NexVR_Unity_GetRenderEventFunc() => Stereix_Unity_GetRenderEventFunc();
+        public static int NexVR_Unity_StageFrameWithDepth(ulong token, IntPtr color, IntPtr depth, float nearZ, float farZ, StereixDepthRange range) => Stereix_Unity_StageFrameWithDepth(token, color, depth, nearZ, farZ, range);
+        public static void NexVR_Unity_Attach(IntPtr session) => Stereix_Unity_Attach(session);
+        public static void NexVR_Unity_Detach() => Stereix_Unity_Detach();
+        public static IntPtr NexVR_Unity_GetDeviceFromTexture(IntPtr tex) => Stereix_Unity_GetDeviceFromTexture(tex);
     }
 }

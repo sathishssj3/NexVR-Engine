@@ -2,35 +2,36 @@
 
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
+#include "stereix_sdk.h"
 
-struct NexVR_Session_T;
-typedef struct NexVR_Session_T* NexVR_Session;
-
-class FNexVRViewExtension;
+class FStereixViewExtension;
 
 /**
- * Main Unreal Engine module interface for NexVR.
+ * Main Unreal Engine module interface for Stereix Engine.
  * Manages SDK initialization, session lifecycle, and SceneViewExtension registration.
  */
-class NEXVR_API INexVRModule : public IModuleInterface
+class STEREIX_API IStereixModule : public IModuleInterface
 {
 public:
-    static inline INexVRModule& Get()
+    static inline IStereixModule& Get()
     {
-        return FModuleManager::LoadModuleChecked<INexVRModule>("NexVR");
+        return FModuleManager::LoadModuleChecked<IStereixModule>("Stereix");
     }
 
     static inline bool IsAvailable()
     {
-        return FModuleManager::Get().IsModuleLoaded("NexVR");
+        return FModuleManager::Get().IsModuleLoaded("Stereix");
     }
 
-    /** Returns the active NexVR OpenXR session handle, or nullptr if not running. */
-    virtual NexVR_Session GetSession() const = 0;
+    /** Returns the active Stereix OpenXR session handle, or nullptr if not running. */
+    virtual Stereix_Session GetSession() const = 0;
 
-    /** Whether the NexVR runtime session is actively running. */
+    /** Whether the Stereix runtime session is actively running. */
     virtual bool IsSessionRunning() const = 0;
 
     /** Whether the OpenXR runtime supports hardware depth submission. */
     virtual bool SupportsDepthSubmission() const = 0;
 };
+
+// Backwards-compatibility alias
+typedef IStereixModule INexVRModule;

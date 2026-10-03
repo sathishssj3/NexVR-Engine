@@ -12,7 +12,7 @@ target_include_directories(stereix_sample_d3d11 PRIVATE
 )
 
 target_link_libraries(stereix_sample_d3d11 PRIVATE
-    nexvr_sdk
+    stereix_sdk
     d3d11
     dxgi
 )

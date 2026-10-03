@@ -50,18 +50,18 @@ public class Stereix : ModuleRules
 
         if (Target.Platform == UnrealTargetPlatform.Win64)
         {
-            // Link nexvr_sdk.lib import library
+            // Link stereix_sdk.lib import library
             string SdkLibPath = Path.Combine(PluginDirectory, "Binaries", "Win64");
-            PublicAdditionalLibraries.Add(Path.Combine(SdkLibPath, "nexvr_sdk.lib"));
-            PublicAdditionalLibraries.Add(Path.Combine(SdkLibPath, "nexvr_unreal.lib"));
+            PublicAdditionalLibraries.Add(Path.Combine(SdkLibPath, "stereix_sdk.lib"));
+            PublicAdditionalLibraries.Add(Path.Combine(SdkLibPath, "stereix_unreal.lib"));
 
             // Delay-load runtime DLLs so initialization order is fully controlled
-            PublicDelayLoadDLLs.Add("nexvr_sdk.dll");
-            PublicDelayLoadDLLs.Add("nexvr_unreal.dll");
+            PublicDelayLoadDLLs.Add("stereix_sdk.dll");
+            PublicDelayLoadDLLs.Add("stereix_unreal.dll");
 
             // Stage DLLs beside the game executable in packaged builds
-            RuntimeDependencies.Add(Path.Combine(PluginDirectory, "Binaries", "Win64", "nexvr_sdk.dll"));
-            RuntimeDependencies.Add(Path.Combine(PluginDirectory, "Binaries", "Win64", "nexvr_unreal.dll"));
+            RuntimeDependencies.Add(Path.Combine(PluginDirectory, "Binaries", "Win64", "stereix_sdk.dll"));
+            RuntimeDependencies.Add(Path.Combine(PluginDirectory, "Binaries", "Win64", "stereix_unreal.dll"));
         }
     }
 }
