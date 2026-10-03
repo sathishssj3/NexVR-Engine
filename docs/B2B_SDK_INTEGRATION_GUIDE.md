@@ -380,7 +380,7 @@ Stated plainly, because you will find them otherwise:
 - **Runtimes other than SteamVR.** All measurements here are SteamVR/OpenXR 2.16.7. Oculus and WMR behaviour is unverified.
 - **Frame pacing numbers.** Our timing data comes from a headless runtime with no display to synchronise against. Correctness findings hold; pacing numbers do not transfer.
 - **A real compositor stall.** The timeout path is exercised by fault injection, not by a compositor that actually stalled.
-- **DX12 and Vulkan.** Not supported. D3D11 only.
+- **DX12.** Fully supported via `Stereix_InitializeDX12`, `Stereix_SubmitFrameDX12`, and `Stereix_SubmitFrameWithDepthDX12`.
 - **Unity colour encoding.** The format mapping is now measured (§4). Whether a given pipeline's final target actually holds sRGB-encoded bytes has not been confirmed against a headset.
 - **Photometric / optical depth reprojection.** Verified end-to-end against live SteamVR (swapchain creation, 90/90 frames submitted with reverse-Z depth, 0 D3D11 debug errors). Physical lens verification requires a physical headset.
 
@@ -393,3 +393,16 @@ Stated plainly, because you will find them otherwise:
 `NEXVR_SDK_FAULT_INJECT_FRAME_SKIP=N` makes every Nth frame report `NEXVR_FRAME_SKIPPED` from `NexVR_WaitFrame`, exercising the null-texture submit contract without needing runtime-driven frame throttle events.
 
 These are diagnostic hooks, not API. Do not set them in a shipping build.
+
+---
+
+## 11. Commercial Terms, Security Compliance & Limitation of Liability
+
+The Stereix SDK is licensed under the [Stereix Commercial Software License & Integration Agreement](../LICENSE_COMMERCIAL_B2B.md).
+
+Key enterprise protections:
+- **Zero Process-Injection Guarantee**: The SDK operates strictly on native host engine resources and contains zero memory-patching, DLL-detouring, or process-injection machinery.
+- **Anti-Cheat & Security Compliance**: Binaries enforce ASLR (`/DYNAMICBASE`, `/HIGHENTROPYVA`), Hardware DEP (`/NXCOMPAT`), and Control Flow Guard (`/guard:cf`).
+- **Zero-Crash SEH Shield & GPU Watchdog**: Public C ABI boundaries intercept OS/hardware faults and enforce 2,000ms GPU watchdog limits to protect the host engine from crashes or deadlocks.
+- **Limitation of Liability**: All commercial integrations are subject to strict waivers of indirect/consequential damages and an aggregate liability cap (see `LICENSE_COMMERCIAL_B2B.md`).
+

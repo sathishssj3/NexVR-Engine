@@ -31,6 +31,7 @@ uint32_t RvaToOffset(uint32_t rva, const std::vector<IMAGE_SECTION_HEADER>& sect
 
 struct PeAnalysis {
     bool valid{false};
+    uint16_t dllCharacteristics{0};
     std::set<std::string> exports;
     std::set<std::string> imports;
     std::set<std::string> importedDlls;
@@ -60,6 +61,8 @@ PeAnalysis AnalyzePeFile(const std::string& path) {
 
     auto* ntHeaders = reinterpret_cast<const IMAGE_NT_HEADERS64*>(buffer.data() + dosHeader->e_lfanew);
     if (ntHeaders->Signature != IMAGE_NT_SIGNATURE) return result;
+
+    result.dllCharacteristics = ntHeaders->OptionalHeader.DllCharacteristics;
 
     // Read section headers
     const auto* sectionHeader = IMAGE_FIRST_SECTION(ntHeaders);
@@ -296,6 +299,19 @@ TEST_F(SdkImportsTest, ForbidsMinHook) {
         EXPECT_FALSE(sym.starts_with("MH_"))
             << "nexvr_sdk.dll imports MinHook symbol: " << sym;
     }
+}
+
+TEST_F(SdkImportsTest, EnforcesAntiCheatSecurityCharacteristics) {
+    // Enterprise anti-cheat engines (Easy Anti-Cheat, BattlEye, Ricochet, Vanguard)
+    // require production DLLs to enforce ASLR, High-Entropy 64-bit VA, and Hardware DEP.
+    EXPECT_TRUE(pe.dllCharacteristics & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE)
+        << "ASLR (DYNAMIC_BASE) must be enabled for anti-cheat and security compliance";
+    EXPECT_TRUE(pe.dllCharacteristics & IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA)
+        << "64-bit High Entropy ASLR must be enabled for anti-cheat and security compliance";
+    EXPECT_TRUE(pe.dllCharacteristics & IMAGE_DLLCHARACTERISTICS_NX_COMPAT)
+        << "Hardware DEP (NX_COMPAT) must be enabled for anti-cheat and security compliance";
+    EXPECT_TRUE(pe.dllCharacteristics & IMAGE_DLLCHARACTERISTICS_GUARD_CF)
+        << "Control Flow Guard (GUARD_CF) must be enabled for anti-cheat and security compliance";
 }
 
 int main(int argc, char** argv) {

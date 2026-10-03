@@ -2,8 +2,13 @@
   stereix_sdk.h — Stereix Engine B2B SDK, Official C ABI
   Copyright (c) 2026 Mesmeran Lab. All rights reserved.
   ---------------------------------------------------------------------------
-  DirectX 11 & DirectX 12 real-time VR injection & spatial rendering runtime
-  for enterprise game studios and simulation developers.
+  DirectX 11 & DirectX 12 real-time VR spatial rendering runtime for enterprise
+  game studios and simulation developers.
+  
+  Licensed under the Stereix Commercial Software License & Integration Agreement
+  (see LICENSE_COMMERCIAL_B2B.md). Use of this SDK constitutes acceptance of
+  terms including strict limitations of liability, consequential damages waiver,
+  and mandatory arbitration.
 ===========================================================================*/
 
 #ifndef STEREIX_SDK_H
